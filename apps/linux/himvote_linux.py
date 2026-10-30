@@ -3468,9 +3468,27 @@ class HimVoteLinuxApp(tk.Tk):
             filtered.append(e)
 
         if not filtered:
-            empty = ttk.Frame(self.election_list, style="Card.TFrame", padding=24)
-            empty.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=20)
-            ttk.Label(empty, text="No elections match your current search or filter criteria.", style="CardBody.TLabel").pack()
+            empty = ttk.Frame(self.election_list, style="Card.TFrame", padding=(28, 20))
+            empty.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=24)
+            ttk.Label(empty, text="🔍", font=("DejaVu Sans", 22)).pack(pady=(0, 6))
+            ttk.Label(empty, text="No Elections Match Your Filter", font=("DejaVu Sans", 12, "bold"), foreground=NAVY).pack(pady=(0, 4))
+            ttk.Label(
+                empty,
+                text="Try searching for a different keyword or reset the status filters to view all institutional contests.",
+                font=("DejaVu Sans", 9),
+                foreground=MUTED,
+                wraplength=480,
+                justify="center",
+            ).pack(pady=(0, 14))
+
+            def reset_all_filters() -> None:
+                self.election_filter = "ALL"
+                self.election_search_query = ""
+                if hasattr(self, "search_entry"):
+                    self.search_entry.delete(0, "end")
+                self._render_filtered_elections()
+
+            ttk.Button(empty, text="Clear Search & Show All", command=reset_all_filters, style="Action.TButton").pack()
             return
 
         for index, election in enumerate(filtered):
@@ -3745,18 +3763,23 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(right_card, text="Simulate distinct institutional actors in local disconnected mode:", style="CardBody.TLabel").pack(anchor="w", pady=(0, 14))
 
         for demo_u in demo_sessions():
-            box = ttk.Frame(right_card, style="Card.TFrame", padding=10)
+            is_active = bool(self.user_session and self.user_session.role == demo_u.role)
+            box = ttk.Frame(right_card, style="Card.TFrame", padding=12)
             box.pack(fill="x", pady=6)
             top = ttk.Frame(box, style="Card.TFrame")
             top.pack(fill="x")
             ttk.Label(top, text=demo_u.full_name, font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(side="left")
-            StatusChip(top, text=demo_u.role.upper(), variant="accent" if demo_u.role == "Student" else "success").pack(side="right")
+            chip_variant = "success" if is_active else ("accent" if demo_u.role == "Student" else "info")
+            chip_text = f"● ACTIVE {demo_u.role.upper()}" if is_active else demo_u.role.upper()
+            StatusChip(top, text=chip_text, variant=chip_variant).pack(side="right")
             ttk.Label(box, text=demo_u.email, font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w", pady=(2, 6))
 
             def make_handler(user_obj: UserSession):
                 return lambda: self._apply_session(user_obj)
 
-            ttk.Button(box, text=f"Sign In as {demo_u.role}", command=make_handler(demo_u), style="Action.TButton").pack(anchor="w")
+            btn_text = f"✓ Currently Signed In" if is_active else f"Switch to {demo_u.role}"
+            btn_style = "Secondary.TButton" if is_active else "Action.TButton"
+            ttk.Button(box, text=btn_text, command=make_handler(demo_u), style=btn_style).pack(anchor="w")
 
     def _apply_session(self, session: UserSession) -> None:
         self.user_session = session
@@ -3782,7 +3805,23 @@ class HimVoteLinuxApp(tk.Tk):
         net_card = ttk.Frame(container, style="Card.TFrame", padding=20)
         net_card.pack(fill="x", pady=(0, 16))
 
-        ttk.Label(net_card, text="Network Endpoint Configuration", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 6))
+        net_hdr = ttk.Frame(net_card, style="Card.TFrame")
+        net_hdr.pack(fill="x", pady=(0, 6))
+        ttk.Label(net_hdr, text="Network Endpoint Configuration", style="SubTitle.TLabel").pack(side="left")
+
+        def test_all_endpoints() -> None:
+            for n, entry_widget in self._endpoint_entries.items():
+                target = entry_widget.get().strip()
+                ok, msg, ms = LinuxApiClient.check_origin_health(target)
+                stat_lbl = self._endpoint_status_labels.get(n)
+                if stat_lbl:
+                    if ok:
+                        stat_lbl.configure(text=f"CONNECTED - {ms:.1f}ms (OK)", foreground=GREEN)
+                    else:
+                        stat_lbl.configure(text=f"OFFLINE - {ms:.1f}ms ({msg[:25]})", foreground=AMBER)
+            self.show_toast("Origin ping diagnostics completed", variant="info")
+
+        ttk.Button(net_hdr, text="⚡ Test All Endpoints", command=test_all_endpoints, style="Action.TButton").pack(side="right")
         ttk.Label(
             net_card,
             text="HimVote enforces strict origin separation: Identity (authentication), Casting (anonymous ballots), and Witness (independent log checkpoints).",
@@ -4092,7 +4131,7 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Button(toolbar, text="Load Demo Archive", command=self._load_demo_archive, style="Secondary.TButton").pack(side="left", padx=(0, 6))
         ttk.Button(toolbar, text="Compare Results [DESKTOP-05]", command=self._open_results_comparison, style="Secondary.TButton").pack(side="left", padx=(0, 6))
         ttk.Button(toolbar, text="Copy CLI [DESKTOP-06]", command=self._copy_cli_reproduction, style="Secondary.TButton").pack(side="left", padx=(0, 6))
-        ttk.Button(toolbar, text="Discard Archive [DESKTOP-02]", command=self._discard_archive, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Discard Archive [DESKTOP-02]", command=self._discard_archive, style="Danger.TButton").pack(side="left", padx=(0, 6))
 
         self.archive_path_label = ttk.Label(toolbar, text="No archive loaded", style="Muted.TLabel")
         self.archive_path_label.pack(side="left", padx=8)
@@ -4121,13 +4160,22 @@ class HimVoteLinuxApp(tk.Tk):
         for tab in (self.tab_overview, self.tab_merkle, self.tab_tally):
             for child in tab.winfo_children():
                 child.destroy()
-            placeholder = ttk.Frame(tab, style="Card.TFrame", padding=30)
+            placeholder = ttk.Frame(tab, style="Card.TFrame", padding=(32, 24))
             placeholder.pack(fill="both", expand=True, pady=10)
+            ttk.Label(placeholder, text="📁", font=("DejaVu Sans", 24)).pack(pady=(0, 6))
+            ttk.Label(placeholder, text="No Election Evidence Archive Loaded", font=("DejaVu Sans", 13, "bold"), foreground=NAVY).pack(pady=(0, 4))
             ttk.Label(
                 placeholder,
-                text="Select an archive file or directory to inspect election evidence.",
-                style="CardBody.TLabel",
-            ).pack(anchor="w")
+                text="Load an offline election bundle (.zip, .tar.gz, or directory) to independently recompute the RFC 9162 Merkle tree, verify zero-knowledge voter nullifiers, and audit candidate tallies.",
+                font=("DejaVu Sans", 9),
+                foreground=MUTED,
+                wraplength=540,
+                justify="center",
+            ).pack(pady=(0, 16))
+            btn_box = ttk.Frame(placeholder, style="Card.TFrame")
+            btn_box.pack()
+            ttk.Button(btn_box, text="⚡ Load Simulation Demo Archive", command=self._load_demo_archive, style="Action.TButton").pack(side="left", padx=4)
+            ttk.Button(btn_box, text="📂 Choose Evidence File", command=self._open_archive_file, style="Secondary.TButton").pack(side="left", padx=4)
 
         self._render_verifier_tab()
 
@@ -4690,6 +4738,12 @@ class HimVoteLinuxApp(tk.Tk):
             self._inspect_leaf_proof()
 
     def _handle_escape_shortcut(self) -> None:
+        if hasattr(self, "_active_toast") and self._active_toast:
+            try:
+                self._active_toast.dismiss()
+            except Exception:
+                pass
+            self._active_toast = None
         if self.receipt_modal:
             try:
                 self.receipt_modal.destroy()

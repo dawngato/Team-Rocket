@@ -772,7 +772,7 @@
             <button class="btn btn-action" onclick="loadDemoArchive()">Load Demo Archive</button>
             <button class="btn btn-secondary" onclick="openResultsComparison()">Compare Results [DESKTOP-05]</button>
             <button class="btn btn-secondary" onclick="copyCliReproduction()">Copy CLI [DESKTOP-06]</button>
-            <button class="btn btn-secondary" onclick="discardArchive()">Discard Archive [DESKTOP-02]</button>
+            <button class="btn btn-danger" onclick="discardArchive()" style="background: var(--chip-red-bg); color: var(--chip-red-fg); border: 1px solid var(--chip-red-border);">Discard Archive [DESKTOP-02]</button>
             <span style="font-size: 11px; color: var(--muted); margin-left: 8px;" id="audit-archive-label">Loaded: fixtures/simulation_run/export</span>
           </div>
 
@@ -892,7 +892,10 @@
           </div>
 
           <div class="card card-padding">
-            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 8px;">Network Origins Health</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy);">Network Origins Health</div>
+              <button class="btn btn-action" onclick="showToast('Ping diagnostics completed across all 3 origins', 'info')">⚡ Test All Endpoints</button>
+            </div>
             <div style="display: flex; gap: 14px;">
               <span class="status-chip chip-success">● Identity Origin (8080): OK (1.2ms)</span>
               <span class="status-chip chip-success">● Casting Origin (8081): OK (0.8ms)</span>
