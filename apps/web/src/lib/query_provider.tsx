@@ -7,6 +7,8 @@ interface AppContextType {
   toggleTheme: () => void;
   locale: "en" | "hi";
   setLocale: (l: "en" | "hi") => void;
+  currentRole: string;
+  setCurrentRole: (r: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -34,6 +36,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [locale, setLocale] = useState<"en" | "hi">("en");
+  const [currentRole, setCurrentRole] = useState<string>("public");
 
   useEffect(() => {
     try {
@@ -79,6 +82,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
           toggleTheme,
           locale,
           setLocale,
+          currentRole,
+          setCurrentRole,
         }}
       >
         {children}

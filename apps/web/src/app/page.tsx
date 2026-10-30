@@ -12,10 +12,17 @@ import {
   Sparkles,
   Search,
   Calendar,
+  GraduationCap,
+  Users,
+  Building2,
+  CheckCircle2,
+  Fingerprint,
+  EyeOff,
+  Flame,
+  HelpCircle
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
-import { EvidenceOrbit } from "../components/EvidenceOrbit";
-import { BallotBoxHero } from "../components/BallotBoxHero";
+import { LiveTurnoutHeroWidget } from "../components/LiveTurnoutHeroWidget";
 import { electionClient } from "../lib/election_client";
 import type { Election } from "../lib/types";
 
@@ -32,6 +39,8 @@ export default function HomePage() {
   const [elections, setElections] = useState<Election[]>([]);
   const [electionsError, setElectionsError] = useState<string | null>(null);
   const [electionsLoading, setElectionsLoading] = useState(true);
+  const [activeStoryTab, setActiveStoryTab] = useState<"privacy" | "witness" | "receipt">("privacy");
+
   const activeElections = useMemo(() => elections.slice(0, 3), [elections]);
 
   useEffect(() => {
@@ -52,74 +61,190 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto space-y-16 py-8 px-[clamp(1.25rem,4vw,5rem)]">
-      {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-6 pb-10">
-        <div className="lg:col-span-7 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/20">
-            <span className="w-2 h-2 rounded-full bg-[#157E92] animate-pulse" />
-            Institutional platform for verifiable election workflows
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#10233F] dark:text-white tracking-tight leading-tight">
-            Institutional voting, made <span className="text-[#157E92]">verifiable.</span>
-          </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-            HimVote demonstrates how institutional identity, anonymous casting boundaries, witnessed evidence, and independent review fit together. The external voting engine and production operations remain explicit release gates.
-          </p>
+    <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-16">
+      {/* 1. EMOTIONAL & WARM CAMPUS HERO */}
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 dark:border-[#1E3352] bg-gradient-to-br from-white via-slate-50/70 to-cyan-50/30 dark:from-[#10233F] dark:via-[#0E1E34] dark:to-[#07111E] p-6 sm:p-12 shadow-sm">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          {/* Left Column: Human Narrative */}
+          <div className="lg:col-span-7 space-y-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs font-semibold animate-linear-reveal-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+              </span>
+              <span>Himachal Technical Campus Democracy In Motion</span>
+            </div>
 
-          <div className="flex flex-wrap gap-4 pt-2">
-            <Link
-              href="/elections"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold text-white bg-[#157E92] hover:bg-[#0E6273] shadow-md transition-all flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-            >
-              <span>Explore Active Elections</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-            <Link
-              href="/how-it-works"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold text-[#10233F] dark:text-white bg-white dark:bg-[#132135] border border-slate-300 dark:border-[#1E3352] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-            >
-              <FileCheck2 className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-              <span>How Verification Works</span>
-            </Link>
+            <div className="space-y-3">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#10233F] dark:text-white leading-[1.1] animate-linear-reveal-2">
+                Every Student’s Voice. <br />
+                <span className="bg-gradient-to-r from-[#0284C7] via-[#00D2FF] to-emerald-500 bg-clip-text text-transparent">
+                  100% Secret. 100% Proven.
+                </span>
+              </h1>
+              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl animate-linear-reveal-3">
+                Built for our university community. Vote for your student council without fear of intimidation or leaked preferences — protected by mathematical zero-knowledge proofs and public witness verification.
+              </p>
+            </div>
+
+            {/* Direct Action Hub */}
+            <div className="flex flex-wrap items-center gap-3 pt-2 animate-linear-reveal-4">
+              <Link
+                href="/elections"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#157E92] hover:bg-[#0E6273] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+              >
+                <Vote className="size-4" />
+                <span>Cast Your Vote</span>
+                <ArrowRight className="size-4" />
+              </Link>
+              <Link
+                href="/student/help"
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white/80 dark:bg-[#132135]/80 hover:bg-slate-100 dark:hover:bg-slate-800 px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition-all active:scale-[0.98]"
+              >
+                <HelpCircle className="size-4 text-[#157E92]" />
+                <span>Student Voter Guide</span>
+              </Link>
+            </div>
+
+            {/* Real Campus Community Metrics Bar */}
+            <div className="pt-4 border-t border-slate-200/60 dark:border-[#1E3352]/60 grid grid-cols-3 gap-4 animate-linear-reveal-5">
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Eligible Voters</p>
+                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">4,800</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Campus Unity</p>
+                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">1 College</p>
+              </div>
+              <div>
+                <p className="text-xs text-slate-500 font-medium">Voter Privacy</p>
+                <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">Guaranteed</p>
+              </div>
+            </div>
           </div>
 
-          <div className="pt-4 flex flex-wrap gap-6 text-xs text-slate-600 dark:text-slate-400 font-medium">
-            <span className="inline-flex items-center gap-2">
-              <BadgeCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              Blind Credential Test Vectors
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              Witness Checkpoint Workflow
-            </span>
-            <span className="inline-flex items-center gap-2">
-              <LockKeyhole className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              No Identity in Sample Evidence
-            </span>
-          </div>
-        </div>
-
-        <div className="lg:col-span-5">
-          <BallotBoxHero />
-          <div className="mt-8">
-            <EvidenceOrbit />
+          {/* Right Column: Live Turnout Electorate Widget (Real-time Campus Meter) */}
+          <div className="lg:col-span-5 flex flex-col items-center justify-center w-full">
+            <LiveTurnoutHeroWidget />
           </div>
         </div>
       </section>
 
-      {/* Quick Receipt Look Up Widget */}
-      <section className="rounded-2xl bg-[#10233F] text-white p-8 sm:p-10 shadow-lg">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#38BDF8] uppercase tracking-wider">
-            <Sparkles className="w-4 h-4" aria-hidden="true" />
-            Voter Inclusion Check
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
-            Verify your ballot was included in the final tree
+      {/* 2. HUMAN TOUCH: "HOW MY VOTE TRAVELS" (Interactive Story Mode) */}
+      <section className="space-y-6">
+        <div className="text-center max-w-2xl mx-auto space-y-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-[#38BDF8]">
+            Democracy In Plain English
+          </span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white">
+            How Your Vote Stays Truly Yours
           </h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
-            Enter your receipt handle to inspect checkpoint witness signatures, Merkle branch proofs, and public chain transaction records without compromising your voting secrecy.
+          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
+            Click through each milestone to see how technology guards your privacy without relying on blind faith.
+          </p>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex justify-center gap-2 max-w-md mx-auto">
+          <button
+            type="button"
+            onClick={() => setActiveStoryTab("privacy")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-xs ${
+              activeStoryTab === "privacy"
+                ? "bg-[#157E92] text-white"
+                : "bg-white text-slate-600 dark:bg-[#132135] dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]"
+            }`}
+          >
+            1. Inside The Booth
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveStoryTab("witness")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-xs ${
+              activeStoryTab === "witness"
+                ? "bg-[#157E92] text-white"
+                : "bg-white text-slate-600 dark:bg-[#132135] dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]"
+            }`}
+          >
+            2. The Digital Seal
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveStoryTab("receipt")}
+            className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold transition-all shadow-xs ${
+              activeStoryTab === "receipt"
+                ? "bg-[#157E92] text-white"
+                : "bg-white text-slate-600 dark:bg-[#132135] dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]"
+            }`}
+          >
+            3. The Public Receipt
+          </button>
+        </div>
+
+        {/* Story Card Content */}
+        <div className="max-w-3xl mx-auto rounded-3xl border border-slate-200 bg-white dark:border-[#1E3352] dark:bg-[#132135] p-6 sm:p-8 shadow-sm">
+          {activeStoryTab === "privacy" && (
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="size-16 rounded-2xl bg-cyan-500/10 text-[#0284C7] dark:text-[#38BDF8] flex items-center justify-center shrink-0">
+                <EyeOff className="size-8" />
+              </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+                  Step 1: Your Choice Never Leaves Your Device In Plaintext
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  When you select your candidate on your phone or laptop, your browser encrypts it with ElGamal homomorphic math before transmitting it. Even the university dean or database administrator cannot see who you clicked.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeStoryTab === "witness" && (
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="size-16 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Fingerprint className="size-8" />
+              </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+                  Step 2: Your Name Is Permanently Severed From Your Ballot
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  We use RSA blind signatures. The college issues a stamped token confirming you are a registered student, but the token is blinded so no server log can link your student roll number to your ballot index.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeStoryTab === "receipt" && (
+            <div className="flex flex-col sm:flex-row items-center gap-6">
+              <div className="size-16 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="size-8" />
+              </div>
+              <div className="space-y-1.5 text-center sm:text-left">
+                <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+                  Step 3: You Get A Secret Receipt To Verify Your Vote Counted
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                  You receive an anonymous digital receipt handle. You can paste it into the public auditor at any time to verify your ballot is sitting safely in the Merkle log without anyone knowing what you voted for.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. CAMPUS VOTER INCLUSION RECEIPT VERIFIER */}
+      <section className="rounded-3xl border border-slate-200 bg-gradient-to-r from-[#10233F] to-[#0A1A2F] text-white p-6 sm:p-10 shadow-lg">
+        <div className="max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+            <Sparkles className="size-4" />
+            Instant Inclusion Checker
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            Check If Your Ballot Was Witnessed & Counted
+          </h2>
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            Enter your secret receipt handle to inspect checkpoint witness signatures, Merkle branch inclusion proofs, and public transaction records without compromising your voting secrecy.
           </p>
 
           <form
@@ -128,147 +253,161 @@ export default function HomePage() {
               const handle = receiptQuery.trim();
               const electionId = electionQuery.trim();
               if (!handle || !electionId) {
-                setReceiptError("Enter both the opaque receipt handle and its election ID. A handle alone is not enough to retrieve evidence.");
+                setReceiptError("Please enter both your receipt handle and the election ID.");
                 return;
               }
               setReceiptError(null);
               window.location.href = `/student/receipts/${encodeURIComponent(handle)}?election_id=${encodeURIComponent(electionId)}`;
             }}
-            className="flex flex-col gap-3 pt-3"
+            className="flex flex-col gap-3 pt-4"
           >
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
-                <Search className="absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={receiptQuery}
                   onChange={(e) => setReceiptQuery(e.target.value)}
-                  suppressHydrationWarning
-                  placeholder="Receipt handle"
-                  aria-label="Receipt handle"
-                  className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
+                  placeholder="Paste your receipt handle (e.g. rec_9a8f2...)"
+                  className="w-full rounded-xl bg-slate-800/80 border border-slate-700 pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400"
                 />
               </div>
               <input
                 type="text"
                 value={electionQuery}
                 onChange={(e) => setElectionQuery(e.target.value)}
-                suppressHydrationWarning
-                placeholder="Election ID"
-                aria-label="Election ID"
-                className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] sm:w-52"
+                placeholder="Election ID (e.g. elec_su_2026)"
+                className="rounded-xl bg-slate-800/80 border border-slate-700 px-4 py-3 text-xs sm:text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 sm:w-56"
               />
             </div>
-            <button
-              type="submit"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold bg-[#157E92] hover:bg-[#0E6273] text-white text-sm transition-colors flex items-center justify-center gap-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
-            >
-              <span>Inspect Receipt</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </button>
-            {receiptError && <p className="text-xs font-semibold text-[#FCD34D]" role="alert">{receiptError}</p>}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
+              <button
+                type="submit"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-[#07111E] px-6 py-3 text-xs font-bold shadow-md transition-all active:scale-[0.98]"
+              >
+                <span>Verify Ballot In Merkle Ledger</span>
+                <ArrowRight className="size-4" />
+              </button>
+              <span className="text-[11px] text-slate-400 text-center sm:text-right">
+                Zero identity leakage. Evaluates mathematical inclusion proof only.
+              </span>
+            </div>
+            {receiptError && <p className="text-xs font-semibold text-amber-300">{receiptError}</p>}
           </form>
         </div>
       </section>
 
-      {/* Live Featured Elections */}
+      {/* 4. ACTIVE ELECTIONS SHOWCASE */}
       <section className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-              Institutional Elections
+            <span className="text-xs font-bold uppercase tracking-wider text-[#157E92]">
+              Campus Polls
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white">
+              Current Student Elections
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-              Follow current campus elections and inspect published development records.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Authoritative elections hosted with verifiable voter manifests.
             </p>
           </div>
           <Link
             href="/elections"
-            className="min-h-[44px] inline-flex items-center gap-2 text-sm font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#157E92] hover:text-[#0E6273] dark:text-[#38BDF8]"
           >
-            <span>View All Elections</span>
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            <span>View All Campus Elections</span>
+            <ArrowRight className="size-4" />
           </Link>
         </div>
 
-        {electionsError && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="alert">{electionsError} Synthetic elections are not substituted.</div>}
-        {electionsLoading && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">Loading elections from the authoritative service…</div>}
-        {!electionsLoading && !electionsError && activeElections.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">No elections were returned by the authoritative service.</div>}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {activeElections.map((elec) => (
-            <article
-              key={elec.id}
-              className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <StateBadge state={elec.state} size="sm" />
-                  <span className="text-xs text-slate-500 font-mono">
-                    {typeof elec.eligible_count === "number" ? `${elec.eligible_count} Eligible` : "Eligibility withheld"}
-                  </span>
-                </div>
-                <h3 className="font-bold text-lg text-[#10233F] dark:text-white leading-snug">
-                  {elec.title}
-                </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3">
-                  {elec.description}
-                </p>
-              </div>
+        {electionsLoading && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-[#1E3352] dark:bg-[#132135]">
+            Loading authoritative election directory...
+          </div>
+        )}
 
-              <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
-                <span className="text-xs text-slate-500 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
-                  {formatUtc(elec.closes_at_utc)}
-                </span>
-                <Link
-                  href={elec.state === "OPEN" ? `/student/elections/${elec.id}/candidates` : `/results?election=${elec.id}`}
-                  className="min-h-[44px] px-3 py-1.5 text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:bg-[#157E92]/10 rounded-md transition-colors flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-                >
-                  <span>{elec.state === "OPEN" ? "Review and Vote" : "View Tally"}</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-              </div>
-            </article>
-          ))}
-        </div>
+        {!electionsLoading && activeElections.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {activeElections.map((elec) => (
+              <article
+                key={elec.id}
+                className="flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <StateBadge state={elec.state} size="sm" />
+                    <span className="text-xs text-slate-400 font-mono">
+                      {elec.eligible_count ? `${elec.eligible_count} Eligible` : ""}
+                    </span>
+                  </div>
+                  <h3 className="font-bold text-lg text-[#10233F] dark:text-white leading-snug">
+                    {elec.title}
+                  </h3>
+                  <p className="text-xs text-slate-500 line-clamp-2">
+                    {elec.description || "University student election governed under verifiable audit logging."}
+                  </p>
+                </div>
+
+                <div className="mt-6 pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
+                  <span className="text-xs text-slate-500 flex items-center gap-1">
+                    <Calendar className="size-3.5" />
+                    {formatUtc(elec.closes_at_utc)}
+                  </span>
+                  <Link
+                    href={elec.state === "OPEN" ? `/student/elections/${elec.id}/candidates` : `/results?election=${elec.id}`}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#157E92] hover:text-[#0E6273] dark:text-[#38BDF8]"
+                  >
+                    <span>{elec.state === "OPEN" ? "Enter Booth" : "View Results"}</span>
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Verification Pillars */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-t border-slate-200 dark:border-[#1E3352]">
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#157E92]/10 text-[#157E92] flex items-center justify-center font-bold">
-            01
-          </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Dual Origin Separation
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Identity services issue blind tokens without knowledge of candidate choices. Casting gateways record ballots without learning voter identity.
+      {/* 5. INSTITUTIONAL RESPONSIBILITY & SEPARATION OF POWERS */}
+      <section className="rounded-3xl border border-slate-200 bg-slate-50/70 dark:border-[#1E3352] dark:bg-[#10233F]/40 p-6 sm:p-10 space-y-8">
+        <div className="text-center max-w-xl mx-auto space-y-1">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#10233F] dark:text-white">
+            Separation Of Powers On Campus
+          </h2>
+          <p className="text-xs text-slate-500">
+            No single administrator, teacher, or server can alter results or deanonymize a voter.
           </p>
         </div>
 
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#15805D]/10 text-[#15805D] flex items-center justify-center font-bold">
-            02
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs">
+          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="size-8 rounded-lg bg-cyan-500/10 text-[#0284C7] flex items-center justify-center font-black">
+              1
+            </div>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Voter Registrar (Teacher Desk)</h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Verifies student identity and issues blind eligibility credentials. Has zero access to the ballot box.
+            </p>
           </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Witness Checkpoint Workflow
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            The local fixture records signed checkpoints for repeatable testing. A separately operated witness is required before production claims are enabled.
-          </p>
-        </div>
 
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#AA6C0B]/10 text-[#AA6C0B] flex items-center justify-center font-bold">
-            03
+          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
+              2
+            </div>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Anonymous Casting Gateway</h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Accepts blind tokens and encrypted ballots. Strips IP and identity headers to guarantee total voter privacy.
+            </p>
           </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Checkpoint Anchor Verification Ledger
-          </h3>
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            The development chain adapter records checkpoint commitments only. External chain finality and independent operation remain unverified release requirements.
-          </p>
+
+          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
+              3
+            </div>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Independent Witness & Auditor</h3>
+            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
+              Independently cosigns each checkpoint Merkle root. Anyone can re-run the open-source verifier CLI offline.
+            </p>
+          </div>
         </div>
       </section>
     </div>

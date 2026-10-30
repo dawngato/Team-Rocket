@@ -18,7 +18,7 @@ describe("EvidenceOrbit resource optimization and accessibility", () => {
 
   it("exports a valid React functional component", () => {
     expect(typeof EvidenceOrbit).toBe("function");
-    const element = React.createElement(EvidenceOrbit, {
+    const element = React.createElement(EvidenceOrbit as React.ComponentType<any>, {
       manifestDigest: "0123456789abcdef",
       leafCount: 42,
       anchorTxHash: "0xabcdef1234567890",

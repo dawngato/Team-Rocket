@@ -11,8 +11,12 @@ import {
   CheckCircle2,
   ArrowRight,
   Award,
+  Edit3,
+  Save,
+  RotateCcw,
 } from "lucide-react";
 import { apiClient } from "../../lib/api_client";
+import { getStoredTotalStudents, setStoredTotalStudents } from "../../lib/college_voter_store";
 import type { AuditEvent, Election, StudentRecord, TeacherRecord } from "../../lib/types";
 
 export default function AdminOverviewPage() {
@@ -21,6 +25,32 @@ export default function AdminOverviewPage() {
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // College Student Strength State (editable in Admin)
+  const [collegeTotalStudents, setCollegeTotalStudents] = useState<number>(4800);
+  const [inputStudentCount, setInputStudentCount] = useState<string>("4800");
+  const [isEditingStudents, setIsEditingStudents] = useState<boolean>(false);
+  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const initial = getStoredTotalStudents();
+    setCollegeTotalStudents(initial);
+    setInputStudentCount(String(initial));
+  }, []);
+
+  const handleSaveStudentCount = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseInt(inputStudentCount, 10);
+    if (isNaN(val) || val <= 0) {
+      alert("Please enter a valid positive number for total students.");
+      return;
+    }
+    setStoredTotalStudents(val);
+    setCollegeTotalStudents(val);
+    setIsEditingStudents(false);
+    setSaveSuccessMsg(`Updated: Total college students set to ${val.toLocaleString()}`);
+    setTimeout(() => setSaveSuccessMsg(null), 4000);
+  };
 
   useEffect(() => {
     let active = true;
@@ -120,6 +150,77 @@ export default function AdminOverviewPage() {
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
             Supervise voter rosters, faculty permissions, security events, and election status.
           </p>
+        </div>
+      </div>
+
+      {/* QUICK LIVE ELECTORAL STRENGTH CONTROLLER */}
+      <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/20 via-slate-900/60 to-[#10233F]/30 p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              Live Campus Electorate Setting
+            </div>
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              Total College Eligible Students:{" "}
+              <span className="font-mono text-cyan-300 font-extrabold text-2xl">
+                {collegeTotalStudents.toLocaleString()}
+              </span>
+            </h3>
+            <p className="text-xs text-slate-300 max-w-xl">
+              Changes here synchronize automatically with the Home page live voter turnout ticker.
+              Voter ballots update dynamically as students cast votes.
+            </p>
+            {saveSuccessMsg && (
+              <p className="text-xs font-semibold text-emerald-400 animate-fade-in pt-1">
+                ✓ {saveSuccessMsg}
+              </p>
+            )}
+          </div>
+
+          <div>
+            {!isEditingStudents ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setInputStudentCount(String(collegeTotalStudents));
+                  setIsEditingStudents(true);
+                }}
+                className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 text-xs font-bold shadow transition-all"
+              >
+                <Edit3 className="w-3.5 h-3.5" />
+                <span>Update Student Count</span>
+              </button>
+            ) : (
+              <form onSubmit={handleSaveStudentCount} className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min="1"
+                  max="100000"
+                  value={inputStudentCount}
+                  onChange={(e) => setInputStudentCount(e.target.value)}
+                  className="w-32 px-3 py-1.5 text-xs font-mono font-bold rounded-lg border border-cyan-400 bg-slate-900 text-white focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  placeholder="e.g. 4800"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 text-xs font-bold shadow transition-all"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingStudents(false)}
+                  className="inline-flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1.5 text-xs font-medium border border-slate-700 transition-all"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Cancel</span>
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
 
