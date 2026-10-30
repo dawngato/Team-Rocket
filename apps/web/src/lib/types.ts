@@ -31,6 +31,10 @@ export interface Candidate {
   contest: string;
   statement?: string;
   avatar_url?: string;
+  position?: string;
+  department?: string;
+  roll_number?: string;
+  slate?: string;
 }
 
 export interface ElectionSummary {
