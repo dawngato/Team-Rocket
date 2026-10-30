@@ -5,19 +5,18 @@ public struct VoterBoothPortalView: View {
     @Bindable var electionsViewModel: ElectionsViewModel
     
     @State private var credentialViewModel = CredentialViewModel()
-    @State private var votingViewModel = VotingViewModel()
-    @State private var receiptViewModel = ReceiptViewModel()
+    @State private var votingViewModel: VotingViewModel
     
     @State private var showBoothModal: Bool = false
-    @State private var showProofSheet: Bool = false
-    @State private var activeReceipt: Receipt? = nil
     
     public init(
         authViewModel: AuthViewModel,
-        electionsViewModel: ElectionsViewModel
+        electionsViewModel: ElectionsViewModel,
+        votingViewModel: VotingViewModel
     ) {
         self.authViewModel = authViewModel
         self.electionsViewModel = electionsViewModel
+        _votingViewModel = State(initialValue: votingViewModel)
     }
     
     public var body: some View {
@@ -33,9 +32,6 @@ public struct VoterBoothPortalView: View {
                     // Step 2: Casting Session Action Card
                     castingSessionCard
                     
-                    // Step 3: Latest Witnessed Receipt Card
-                    latestReceiptCard
-                    
                     // Security Disclosures
                     securityLimitationsCard
                     
@@ -45,8 +41,15 @@ public struct VoterBoothPortalView: View {
                 .padding(.top, 12)
             }
             .background(ColorTokens.tailAdminLightBg)
-            .navigationTitle("Voting Booth & Receipt")
+            .navigationTitle("Voting Booth")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if let openElection = electionsViewModel.elections.first(where: { $0.state == "open" }) {
+                    credentialViewModel.loadStoredCredential(electionId: openElection.id)
+                } else {
+                    credentialViewModel.loadStoredCredential(electionId: "elec_01")
+                }
+            }
             .sheet(isPresented: $showBoothModal) {
                 if let election = electionsViewModel.elections.first(where: { $0.state == "open" }) {
                     VotingBoothView(
@@ -56,22 +59,6 @@ public struct VoterBoothPortalView: View {
                         votingViewModel: votingViewModel
                     )
                 }
-            }
-            .sheet(item: $activeReceipt) { rcpt in
-                MerkleProofSheet(
-                    receipt: rcpt,
-                    formattedJson: """
-                    {
-                      "election_id": "\(rcpt.electionId)",
-                      "receipt_handle": "\(rcpt.handle)",
-                      "leaf_index": \(rcpt.leafIndex),
-                      "status": "\(rcpt.status.rawValue)",
-                      "nullifier_commitment": "\(rcpt.nullifierCommitment)",
-                      "witnessed_at_utc": "\(rcpt.witnessedAtUtc ?? "2026-10-30T17:00:00Z")",
-                      "leaf_hash": "\(rcpt.leafHash ?? "0xabc123")"
-                    }
-                    """
-                )
             }
         }
     }
@@ -237,82 +224,6 @@ public struct VoterBoothPortalView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
             .disabled(credentialViewModel.issuedCredential == nil)
-        }
-        .glassCard(cornerRadius: 18, padding: 16)
-    }
-    
-    private var latestReceiptCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("3. Ballot Inclusion Tracker")
-                    .font(Typography.cardHeader)
-                    .foregroundStyle(ColorTokens.textPrimary)
-                
-                Spacer()
-                
-                Text("FINAL WITNESSED")
-                    .font(Typography.badgeText)
-                    .foregroundStyle(ColorTokens.tailAdminSuccess)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(ColorTokens.tailAdminSuccessBg)
-                    .clipShape(Capsule())
-            }
-            
-            let mockReceipt = Receipt(
-                electionId: "elec_01",
-                handle: "rcpt_9824_campus_alpha",
-                leafIndex: 1247,
-                status: .anchored,
-                nullifierCommitment: "0x4981fa12039abec7182930a84920412a84910283",
-                witnessedAtUtc: "2026-10-30T17:42:15Z",
-                leafHash: "0x77bca092149afbf4c8996fb92427ae41e4649b934ca495991b7852b855aa11"
-            )
-            
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Tracker:")
-                        .font(Typography.captionBold)
-                        .foregroundStyle(ColorTokens.textSecondary)
-                    
-                    Text(mockReceipt.handle)
-                        .font(Typography.captionBold)
-                        .foregroundStyle(ColorTokens.tailAdminBrand)
-                    
-                    Spacer()
-                    
-                    Text("Leaf #\(mockReceipt.leafIndex)")
-                        .font(Typography.badgeText)
-                        .foregroundStyle(ColorTokens.tailAdminPurple)
-                }
-                
-                Text("Nullifier Commitment:")
-                    .font(Typography.caption)
-                    .foregroundStyle(ColorTokens.textSecondary)
-                
-                Text(mockReceipt.nullifierCommitment)
-                    .font(Typography.cryptographicDigest)
-                    .foregroundStyle(ColorTokens.textTertiary)
-                
-                Button {
-                    HapticFeedback.light()
-                    activeReceipt = mockReceipt
-                } label: {
-                    HStack {
-                        Image(systemName: "checkmark.shield")
-                        Text("Inspect Merkle Inclusion Proof")
-                    }
-                    .font(Typography.captionBold)
-                    .foregroundStyle(ColorTokens.tailAdminBrand)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(ColorTokens.tailAdminBrandBg)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-            }
-            .padding(12)
-            .background(Color.white.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .glassCard(cornerRadius: 18, padding: 16)
     }

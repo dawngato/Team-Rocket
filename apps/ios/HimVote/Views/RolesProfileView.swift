@@ -6,15 +6,6 @@ public struct RolesProfileView: View {
     @State private var showSecuritySheet: Bool = false
     @State private var showGuidelinesSheet: Bool = false
     
-    let allRoles: [UserRole] = [
-        .student,
-        .electionOfficer,
-        .auditor,
-        .teacher,
-        .administrator,
-        .superAdmin
-    ]
-    
     public init(authViewModel: AuthViewModel) {
         self.authViewModel = authViewModel
     }
@@ -26,17 +17,20 @@ public struct RolesProfileView: View {
                     // Profile Header Card
                     profileCard
                     
-                    // Governance Role Switcher
-                    roleSwitcherSection
+                    if authViewModel.currentUser?.role == .student {
+                        studentAccountDetails
+                    } else {
+                        roleAuthorityBoundarySection
+                        trustPinsSection
+                    }
                     
-                    // Out-of-Band Trust Pins
-                    trustPinsSection
-                    
-                    // iOS Hardware Keychain Vault Status
-                    keychainVaultCard
-                    
-                    // Institutional Sheets Links
-                    quickSheetsSection
+                    if authViewModel.currentUser?.role == .student {
+                        studentGuidelinesLink
+                    } else {
+                        // Implementation and trust details belong in staff accounts.
+                        keychainVaultCard
+                        quickSheetsSection
+                    }
                     
                     // Sign Out Action
                     signOutButton
@@ -47,7 +41,7 @@ public struct RolesProfileView: View {
                 .padding(.top, 12)
             }
             .background(ColorTokens.tailAdminLightBg)
-            .navigationTitle("Governance & Identity")
+            .navigationTitle("Account")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showSecuritySheet) {
                 InstitutionalSecuritySheet()
@@ -106,15 +100,15 @@ public struct RolesProfileView: View {
         .glassCard(cornerRadius: 18, padding: 16)
     }
     
-    private var roleSwitcherSection: some View {
+    private var roleAuthorityBoundarySection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Simulate Role Perspective")
+                    Text("Role Authority & Privacy Isolation")
                         .font(Typography.cardHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
                     
-                    Text("Evaluate client behavior per prompt1 RBAC specification")
+                    Text("Strict cryptographic visibility rules enforced across priority levels")
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.textSecondary)
                 }
@@ -122,66 +116,114 @@ public struct RolesProfileView: View {
                 Spacer()
             }
             
-            VStack(spacing: 8) {
-                ForEach(allRoles, id: \.self) { role in
-                    let isCurrent = authViewModel.currentUser?.role == role
-                    
-                    Button {
-                        HapticFeedback.selection()
-                        switchRole(to: role)
-                    } label: {
-                        HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(isCurrent ? ColorTokens.tailAdminBrand : Color.gray.opacity(0.15))
-                                    .frame(width: 28, height: 28)
-                                
-                                Image(systemName: isCurrent ? "checkmark" : "circle")
-                                    .font(.system(size: 13, weight: .bold))
-                                    .foregroundStyle(isCurrent ? .white : Color.gray)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(role.displayName)
-                                    .font(Typography.callout)
-                                    .fontWeight(isCurrent ? .semibold : .regular)
-                                    .foregroundStyle(ColorTokens.textPrimary)
-                                
-                                Text(roleDescription(for: role))
-                                    .font(Typography.caption)
-                                    .foregroundStyle(ColorTokens.textSecondary)
-                            }
-                            
-                            Spacer()
-                        }
-                        .padding(10)
-                        .background(isCurrent ? ColorTokens.tailAdminBrandBg : Color.white.opacity(0.6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+            if authViewModel.currentUser?.role == .superAdmin {
+                // SUPER USER ISOLATION
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "crown.fill")
+                            .foregroundStyle(ColorTokens.institutionalGold)
+                        Text("Super User Authority: Level 1 Priority")
+                            .font(Typography.callout)
+                            .fontWeight(.bold)
+                            .foregroundStyle(ColorTokens.textPrimary)
                     }
-                    .buttonStyle(.plain)
+                    
+                    Text("• Can provision and inspect all Administrator accounts (\(authViewModel.visibleAdmins.count) active).")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                    Text("• Administrative and student roles CANNOT view or access Super User identity or master tokens.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.tailAdminBrand)
+                    Text("• Zero access to student voter choices or trustee decryption secrets.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.tailAdminSuccess)
                 }
+                .padding(14)
+                .background(ColorTokens.tailAdminPurple.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            } else if authViewModel.currentUser?.role == .administrator || authViewModel.currentUser?.role == .electionOfficer {
+                // ADMIN ISOLATION
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "slider.horizontal.3")
+                            .foregroundStyle(ColorTokens.tailAdminBrand)
+                        Text("Administrator Authority: Level 2 Priority")
+                            .font(Typography.callout)
+                            .fontWeight(.bold)
+                            .foregroundStyle(ColorTokens.textPrimary)
+                    }
+                    
+                    Text("• Can view all registered students (\(authViewModel.visibleStudents.count) students) and nominate them to candidates.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                    Text("• Strict Isolation: Administrator CANNOT view the Super User root account or other departmental authority trees.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.tailAdminWarning)
+                    Text("• Strict Privacy: Administrator CANNOT view individual student ballot contents.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.tailAdminDanger)
+                }
+                .padding(14)
+                .background(ColorTokens.tailAdminBrand.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .glassCard(cornerRadius: 20, padding: 18)
     }
-    
-    private func roleDescription(for role: UserRole) -> String {
-        switch role {
-        case .student:
-            return "Ballot casting, blind credential requests, receipt inclusion check"
-        case .electionOfficer:
-            return "Manifest creation, roster review, election freeze & open/close"
-        case .auditor:
-            return "Independent witness check, standalone verification, attestations"
-        case .teacher:
-            return "Class roster correction, department student verification"
-        case .administrator:
-            return "Department management, staff invitations, activity logs"
-        case .superAdmin:
-            return "Bootstrap authority, university policies, system audit events"
-        case .rosterApprover:
-            return "Cryptographic roster signature prior to election freeze"
+
+    private var studentAccountDetails: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Student details")
+                .font(Typography.cardHeader)
+                .foregroundStyle(ColorTokens.textPrimary)
+
+            if let student = authViewModel.visibleStudents.first {
+                detailRow(title: "Name", value: student.name)
+                detailRow(title: "Student ID", value: student.studentId)
+                detailRow(title: "Department", value: student.department)
+            }
+
+            Text("Your receipt can confirm that a ballot was included without showing your selection.")
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+                .padding(.top, 4)
         }
+        .glassCard(cornerRadius: 18, padding: 16)
+    }
+
+    private var studentGuidelinesLink: some View {
+        Button {
+            HapticFeedback.light()
+            showGuidelinesSheet = true
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(ColorTokens.tailAdminBrand)
+                Text("Voting guidelines")
+                    .font(Typography.callout)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(ColorTokens.textTertiary)
+            }
+            .padding(14)
+            .background(Color.white.opacity(0.7))
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func detailRow(title: String, value: String) -> some View {
+        HStack {
+            Text(title)
+                .foregroundStyle(ColorTokens.textSecondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.medium)
+                .foregroundStyle(ColorTokens.textPrimary)
+        }
+        .font(Typography.caption)
     }
     
     private var trustPinsSection: some View {
@@ -287,7 +329,9 @@ public struct RolesProfileView: View {
     private var signOutButton: some View {
         Button {
             HapticFeedback.medium()
-            authViewModel.logout()
+            Task {
+                await authViewModel.logout()
+            }
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -301,17 +345,5 @@ public struct RolesProfileView: View {
             .background(ColorTokens.tailAdminDangerBg)
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
-    }
-    
-    private func switchRole(to newRole: UserRole) {
-        guard let currentUser = authViewModel.currentUser else { return }
-        let updatedUser = User(
-            userId: currentUser.userId,
-            email: currentUser.email,
-            role: newRole,
-            sessionToken: currentUser.sessionToken,
-            mfaRequired: currentUser.mfaRequired
-        )
-        authViewModel.currentUser = updatedUser
     }
 }

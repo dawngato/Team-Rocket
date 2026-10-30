@@ -12,6 +12,18 @@ public final class CredentialViewModel {
     public var errorMessage: String?
     public var successMessage: String?
     
+    public var issuedCredential: Credential? {
+        currentCredential
+    }
+    
+    public var isLoading: Bool {
+        isRequesting
+    }
+    
+    public func requestCredential(electionId: String, sessionToken: String) async {
+        await requestBlindIssuance(electionId: electionId, sessionToken: sessionToken)
+    }
+    
     private let apiClient: ApiClientProtocol
     private let keychainService: KeychainServiceProtocol
     

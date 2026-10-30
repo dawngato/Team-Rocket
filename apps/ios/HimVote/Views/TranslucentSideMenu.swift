@@ -95,37 +95,7 @@ public struct TranslucentSideMenu: View {
                         .buttonStyle(.plain)
                     }
                     
-                    // Group 3: Role Switcher (Simulate role perspectives as per prompt1/prompt2)
-                    menuGroup(title: "ROLE PERSPECTIVE") {
-                        ForEach([UserRole.student, UserRole.electionOfficer, UserRole.auditor], id: \.self) { role in
-                            let isCurrentRole = authViewModel.currentUser?.role == role
-                            
-                            Button {
-                                HapticFeedback.selection()
-                                switchRole(to: role)
-                            } label: {
-                                HStack(spacing: 10) {
-                                    Image(systemName: isCurrentRole ? "checkmark.circle.fill" : "circle")
-                                        .font(.system(size: 15))
-                                        .foregroundStyle(isCurrentRole ? ColorTokens.tailAdminBrand : ColorTokens.textTertiary)
-                                    
-                                    Text(role.displayName)
-                                        .font(Typography.caption)
-                                        .fontWeight(isCurrentRole ? .semibold : .regular)
-                                        .foregroundStyle(isCurrentRole ? ColorTokens.textPrimary : ColorTokens.textSecondary)
-                                    
-                                    Spacer()
-                                }
-                                .padding(.vertical, 6)
-                                .padding(.horizontal, 10)
-                                .background(isCurrentRole ? ColorTokens.tailAdminBrandBg : Color.clear)
-                                .clipShape(RoundedRectangle(cornerRadius: 8))
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    
-                    // Group 4: Guidelines
+                    // Guidelines
                     menuGroup(title: "INSTITUTIONAL POLICY") {
                         Button {
                             HapticFeedback.light()
@@ -292,7 +262,9 @@ public struct TranslucentSideMenu: View {
         Button {
             HapticFeedback.medium()
             isOpen = false
-            authViewModel.logout()
+            Task {
+                await authViewModel.logout()
+            }
         } label: {
             HStack(spacing: 10) {
                 Image(systemName: "rectangle.portrait.and.arrow.right")
@@ -310,15 +282,4 @@ public struct TranslucentSideMenu: View {
         }
     }
     
-    private func switchRole(to newRole: UserRole) {
-        guard let currentUser = authViewModel.currentUser else { return }
-        let updatedUser = User(
-            userId: currentUser.userId,
-            email: currentUser.email,
-            role: newRole,
-            sessionToken: currentUser.sessionToken,
-            mfaRequired: currentUser.mfaRequired
-        )
-        authViewModel.currentUser = updatedUser
-    }
 }

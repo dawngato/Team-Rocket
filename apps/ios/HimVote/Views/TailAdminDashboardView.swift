@@ -83,6 +83,9 @@ public struct TailAdminDashboardView: View {
                 
                 // Turnout Analytics Chart Card
                 turnoutAnalyticsChartCard
+
+                // Sample duplicate and integrity signals
+                integritySignalCard
                 
                 // Recent Merkle Checkpoints Data Table
                 checkpointsDataTableCard
@@ -436,6 +439,70 @@ public struct TailAdminDashboardView: View {
             }
         }
         .glassCard(cornerRadius: 20, padding: 18)
+    }
+
+    private var integritySignalCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Ballot Integrity Signals")
+                    .font(Typography.cardHeader)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                Text("Illustrative monitoring data")
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textTertiary)
+            }
+
+            HStack(spacing: 10) {
+                integrityMetric(title: "Duplicates blocked", value: "17", color: ColorTokens.tailAdminWarning)
+                integrityMetric(title: "Flagged for review", value: "3", color: ColorTokens.tailAdminDanger)
+                integrityMetric(title: "Accepted ballots", value: "1,248", color: ColorTokens.tailAdminSuccess)
+            }
+
+            VStack(spacing: 9) {
+                integrityBar(title: "Duplicate submissions", value: "17", fraction: 0.72, color: ColorTokens.tailAdminWarning)
+                integrityBar(title: "Records flagged", value: "3", fraction: 0.18, color: ColorTokens.tailAdminDanger)
+            }
+
+            Text("These sample indicators show aggregate events only. Verify real ballots and published totals using independently retained evidence.")
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+        }
+        .glassCard(cornerRadius: 20, padding: 18)
+    }
+
+    private func integrityMetric(title: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+            Text(value)
+                .font(Typography.sectionHeader)
+                .foregroundStyle(color)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Color.white.opacity(0.5))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func integrityBar(title: String, value: String, fraction: CGFloat, color: Color) -> some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+                .frame(width: 145, alignment: .leading)
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.gray.opacity(0.14))
+                    Capsule().fill(color).frame(width: geometry.size.width * fraction)
+                }
+            }
+            .frame(height: 8)
+            Text(value)
+                .font(Typography.badgeText)
+                .foregroundStyle(ColorTokens.textSecondary)
+                .frame(width: 24, alignment: .trailing)
+        }
     }
     
     // MARK: - Checkpoints Data Table Card

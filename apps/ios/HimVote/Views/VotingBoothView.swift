@@ -16,6 +16,30 @@ public struct VotingBoothView: View {
         self.credential = credential
     }
     
+    public init(
+        electionId: String,
+        electionTitle: String,
+        credentialToken: String,
+        votingViewModel: VotingViewModel? = nil
+    ) {
+        self.electionSummary = ElectionSummary(
+            id: electionId,
+            title: electionTitle,
+            state: "open",
+            opensAtUtc: "",
+            closesAtUtc: ""
+        )
+        self.credential = Credential(
+            electionId: electionId,
+            blindSignatureResponse: credentialToken,
+            unblindedSignature: credentialToken,
+            status: .delivered
+        )
+        if let vm = votingViewModel {
+            self._votingViewModel = State(initialValue: vm)
+        }
+    }
+    
     public var body: some View {
         ScrollView {
             VStack(spacing: 24) {
