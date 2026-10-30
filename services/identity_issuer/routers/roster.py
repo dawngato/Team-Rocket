@@ -319,7 +319,7 @@ def create_roster_snapshot(
 @router.post("/roster/snapshots/{snapshot_id}/approve", status_code=status.HTTP_200_OK)
 def approve_roster_snapshot(
     snapshot_id: str,
-    current_user: User = Depends(require_roles(["roster_approver"])),
+    current_user: User = Depends(require_roles(["administrator", "roster_approver"])),
     db: Session = Depends(get_db),
 ):
     """
