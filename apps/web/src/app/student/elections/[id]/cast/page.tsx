@@ -112,7 +112,7 @@ export default function CastBallotPage() {
             type="button"
             disabled={!selectedCandidateId}
             onClick={() => setIsReviewOpen(true)}
-            className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-lg font-bold text-white bg-[#157E92] hover:bg-[#0E6273] shadow-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+            className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] shadow-sm transition-all duration-75 ease-out select-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
           >
             <span>Review and Confirm Selection</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -128,7 +128,7 @@ export default function CastBallotPage() {
         description="Please review your choice carefully before handing off to the cryptographic booth."
       >
         <div className="space-y-4">
-          <div className="p-4 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] space-y-2">
+          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] space-y-2">
             <span className="text-xs font-mono uppercase text-slate-500 block">Selected Option</span>
             <strong className="text-lg text-[#10233F] dark:text-white block">
               {selectedCandidate?.name}
@@ -138,7 +138,7 @@ export default function CastBallotPage() {
             </span>
           </div>
 
-          <div className="p-3 rounded-lg bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+          <div className="p-3.5 rounded-xl bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
             <AlertCircle className="w-4 h-4 text-[#AA6C0B] flex-shrink-0 mt-0.5" aria-hidden="true" />
             <p>
               Once accepted by the casting engine, a spent nullifier commitment is recorded. You cannot modify or re vote in this contest.
@@ -150,7 +150,7 @@ export default function CastBallotPage() {
               type="button"
               disabled={isSubmitting}
               onClick={() => setIsReviewOpen(false)}
-              className="flex-1 min-h-[44px] px-4 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-semibold transition-colors"
+              className="flex-1 min-h-[44px] px-4 py-2 rounded-xl border border-slate-300 dark:border-[#1E3352] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] text-sm font-semibold transition-all duration-75 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
             >
               Back to Ballot
             </button>
@@ -158,7 +158,7 @@ export default function CastBallotPage() {
               type="button"
               disabled={isSubmitting}
               onClick={handleConfirmVote}
-              className="flex-1 min-h-[44px] px-4 py-2 rounded-lg bg-[#15805D] hover:bg-[#10664A] text-white text-sm font-bold shadow-sm transition-colors flex items-center justify-center gap-2"
+              className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-[#15805D] hover:bg-[#10664A] active:scale-[0.98] text-white text-sm font-bold shadow-sm transition-all duration-75 ease-out select-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15805D] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
             >
               {isSubmitting ? (
                 <>

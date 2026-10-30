@@ -30,6 +30,7 @@ public class AuditExplorerViewModel : ViewModelBase
     private int _publishedTotalBallots;
     private int _computedTotalBallots;
     private bool _talliesMatch;
+    private bool _allowDevelopmentProfile;
 
     private AuditReport? _currentReport;
 
@@ -134,6 +135,12 @@ public class AuditExplorerViewModel : ViewModelBase
     {
         get => _statusMessage;
         set => SetProperty(ref _statusMessage, value);
+    }
+
+    public bool AllowDevelopmentProfile
+    {
+        get => _allowDevelopmentProfile;
+        set => SetProperty(ref _allowDevelopmentProfile, value);
     }
 
     public string PublishedRoot
@@ -261,7 +268,8 @@ public class AuditExplorerViewModel : ViewModelBase
                 VerifierPath = scriptPath,
                 ExpectedSha256Checksum = ExpectedVerifierChecksum,
                 ExportDirectory = EvidenceDirectoryPath,
-                TrustPinsFilePath = TrustPinsFilePath
+                TrustPinsFilePath = TrustPinsFilePath,
+                AllowDevelopmentProfile = AllowDevelopmentProfile
             };
 
             var result = await _verifierRunner.RunVerifierAsync(options);

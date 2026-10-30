@@ -38,7 +38,7 @@ export function SuperAdminNav() {
             <Link
               key={item.href}
               href={item.href}
-              className={`min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] ${
+              className={`min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-75 ease-out active:scale-[0.98] select-none flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135] ${
                 active
                   ? "bg-[#10233F] text-white dark:bg-[#157E92] shadow-sm"
                   : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"

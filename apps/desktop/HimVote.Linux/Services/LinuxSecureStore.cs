@@ -6,7 +6,7 @@ using HimVote.Core.Services;
 namespace HimVote.Linux.Services;
 
 /// <summary>
-/// SecureStore implementation for Linux using AES-256-GCM machine and user bound storage with DPAPI fallback.
+/// SecureStore implementation for Linux using AES 256 GCM machine and user bound storage with DPAPI fallback.
 /// </summary>
 public class LinuxSecureStore : ISecureStore
 {

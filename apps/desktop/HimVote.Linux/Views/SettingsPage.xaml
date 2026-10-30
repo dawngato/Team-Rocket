@@ -4,43 +4,58 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
              xmlns:converters="clr-namespace:HimVote.Linux.Converters"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
+             mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="750"
              x:DataType="vm:SettingsViewModel"
-             x:Class="HimVote.Linux.Views.SettingsPage">
+             x:Class="HimVote.Linux.Views.SettingsPage"
+             UseLayoutRounding="True">
 
-    <StackPanel Spacing="20" MaxWidth="720" HorizontalAlignment="Center">
+    <StackPanel Spacing="22" MaxWidth="760" HorizontalAlignment="Center">
         <!-- Header -->
         <Border Classes="card" Background="{StaticResource SurfaceBrush}">
-            <StackPanel Spacing="6">
+            <StackPanel Spacing="8">
                 <TextBlock Text="System Settings &amp; Verifier Diagnostics" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
                 <TextBlock Text="Configure identity origin API endpoints, inspect verifier checksums, and check for signed updates."
                            Foreground="#475569" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
 
-        <!-- Feedback Messages -->
-        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        <!-- Clean Error State Display -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="error_state">
+            <Grid ColumnDefinitions="36,*" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16" Background="#EF4444" VerticalAlignment="Top">
+                    <TextBlock Text="!" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Settings Configuration Error" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Red600Brush}" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#7F1D1D" FontSize="13" TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+        <!-- Status Message -->
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="info_state">
             <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
         </Border>
 
-        <!-- Network Endpoint Config -->
+        <!-- Network Endpoint Configuration -->
         <Border Classes="card">
             <StackPanel Spacing="16">
                 <TextBlock Text="Network Endpoint Configuration" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
 
-                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto" RowSpacing="12" ColumnSpacing="16">
+                <Grid ColumnDefinitions="170,*" RowDefinitions="Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="API Base URL:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ApiBaseUrl}" Watermark="http://localhost:8080" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ApiBaseUrl}"
+                             Watermark="http://localhost:8080"
+                             Classes="input_field" TabIndex="100" MinHeight="44"
+                             AutomationProperties.Name="API Base URL Input" />
                 </Grid>
 
                 <Button Content="Save Endpoint Settings" Command="{Binding SaveSettingsCommand}"
-                        Classes="primary-button" MinHeight="44" HorizontalAlignment="Left" />
+                        Classes="primary_button" MinHeight="44" TabIndex="101"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.Name="Save Endpoint Settings Action" />
             </StackPanel>
         </Border>
 
@@ -49,19 +64,21 @@
             <StackPanel Spacing="16">
                 <TextBlock Text="Software Version &amp; Channels" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
 
-                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="16">
+                <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Client Version:" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersion}" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding AppVersion}" FontWeight="SemiBold" FontSize="13" Foreground="#0F172A" />
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Verifier Version:" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VerifierVersion}" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding VerifierVersion}" FontWeight="SemiBold" FontSize="13" Foreground="#0F172A" />
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Distribution Channel:" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DistributionChannel}" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding DistributionChannel}" FontWeight="SemiBold" FontSize="13" Foreground="#0F172A" />
                 </Grid>
 
                 <Button Content="Check for Updates" Command="{Binding CheckUpdatesCommand}"
-                        Classes="secondary-button" MinHeight="44" HorizontalAlignment="Left" />
+                        Classes="secondary_button" MinHeight="44" TabIndex="102"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.Name="Check for Updates Action" />
             </StackPanel>
         </Border>
     </StackPanel>

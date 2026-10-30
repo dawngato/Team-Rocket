@@ -6,17 +6,15 @@ import {
   Vote,
   ShieldCheck,
   BadgeCheck,
-  Fingerprint,
   FileCheck2,
   LockKeyhole,
   ArrowRight,
   Sparkles,
   Search,
-  CheckCircle2,
   Calendar,
-  Users,
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
+import { EvidenceOrbit } from "../components/EvidenceOrbit";
 import { INITIAL_ELECTIONS } from "../lib/mock_data";
 
 export default function HomePage() {
@@ -72,64 +70,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Cryptographic Proof Card Hero Art */}
         <div className="lg:col-span-5">
-          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-xl relative overflow-hidden">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-[#1E3352]">
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-5 h-5 text-[#15805D]" aria-hidden="true" />
-                <span className="font-bold text-sm text-[#10233F] dark:text-white">
-                  Development Evidence Preview
-                </span>
-              </div>
-              <StateBadge state="PENDING_WITNESS" size="sm" />
-            </div>
-
-            <div className="py-5 space-y-4 font-mono text-xs">
-              <div>
-                <span className="text-slate-400 block text-[11px] uppercase tracking-wider font-sans">
-                  Final Checkpoint Digest
-                </span>
-                <span className="text-[#10233F] dark:text-white font-semibold break-all">
-                  8f2d 34ac 91e7 0258 b3c9 9a4e 27f6 7856
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 dark:border-[#1E3352]">
-                <div>
-                  <span className="text-slate-400 block text-[11px] font-sans">Sample Tree Size</span>
-                  <strong className="text-sm font-sans text-[#10233F] dark:text-white">
-                    3,120 leaves
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[11px] font-sans">Witness Configuration</span>
-                  <strong className="text-sm font-sans text-[#AA6C0B]">
-                    Local Fixture
-                  </strong>
-                </div>
-              </div>
-
-              <div className="space-y-2 font-sans text-xs">
-                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span>Checkpoint Signature</span>
-                  <span className="font-semibold text-[#AA6C0B]">Fixture Value</span>
-                </div>
-                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span>Chain Anchor</span>
-                  <span className="font-semibold text-[#AA6C0B]">Not Production Finality</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs text-slate-500">
-              <span className="flex items-center gap-1.5">
-                <Fingerprint className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                Opaque Sample Commitment
-              </span>
-              <span className="font-mono text-[#157E92]">HV 24F8 19C2</span>
-            </div>
-          </div>
+          <EvidenceOrbit />
         </div>
       </section>
 

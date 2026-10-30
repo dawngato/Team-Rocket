@@ -4,6 +4,10 @@ public struct CredentialIssueView: View {
     public let electionSummary: ElectionSummary
     @Bindable var authViewModel: AuthViewModel
     @State private var credentialViewModel = CredentialViewModel()
+    @State private var showSecuritySheet: Bool = false
+    
+    @ScaledMetric(relativeTo: .title) private var shieldIconSize: CGFloat = 50
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
     
     public init(electionSummary: ElectionSummary, authViewModel: AuthViewModel) {
         self.electionSummary = electionSummary
@@ -13,152 +17,39 @@ public struct CredentialIssueView: View {
     public var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                VStack(spacing: 8) {
-                    Image(systemName: "lock.shield.fill")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 50, height: 50)
-                        .foregroundStyle(ColorTokens.brandAccent)
-                    
-                    Text("Anonymous Voter Credential")
-                        .font(Typography.sectionHeader)
-                        .foregroundStyle(ColorTokens.institutionalNavy)
-                    
-                    Text("RFC 9474 Blind Signature Issuance")
-                        .font(Typography.callout)
-                        .foregroundStyle(ColorTokens.textSecondary)
-                }
-                .padding(.top, 20)
+                headerView
                 
-                VStack(alignment: .leading, spacing: 14) {
-                    Text("Cryptographic Security Guarantees")
-                        .font(Typography.cardHeader)
-                        .foregroundStyle(ColorTokens.textPrimary)
-                    
-                    VStack(alignment: .leading, spacing: 8) {
-                        SecurityBulletPoint(
-                            icon: "checkmark.circle.fill",
-                            title: "Hardware Enclave Sealing",
-                            description: "Your credential private secret never leaves your device and is stored with kSecAttrAccessibleWhenUnlockedThisDeviceOnly."
-                        )
-                        
-                        SecurityBulletPoint(
-                            icon: "eye.slash.fill",
-                            title: "Mathematical Unlinkability",
-                            description: "The identity issuer signs a blinded token. The issuer cannot correlate your identity to your cast ballot."
-                        )
-                        
-                        SecurityBulletPoint(
-                            icon: "1.circle.fill",
-                            title: "Single Cast Enforcement",
-                            description: "The casting origin verifies the signature without discovering which student submitted it."
-                        )
-                    }
-                }
-                .padding()
-                .background(ColorTokens.backgroundSecondary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                securityGuaranteesCard
                 
-                VStack(spacing: 12) {
-                    HStack {
-                        Text("Credential Status")
-                            .font(Typography.bodyBold)
-                        Spacer()
-                        CredentialStatusBadge(status: credentialViewModel.issuanceStatus)
-                    }
-                    
-                    if let stored = credentialViewModel.currentCredential, stored.status.isComplete {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Credential Secret Fingerprint")
-                                .font(Typography.captionBold)
-                                .foregroundStyle(ColorTokens.textSecondary)
-                            
-                            Text(stored.blindSignatureResponse?.prefix(32) ?? "Sealed in Keychain")
-                                .font(Typography.cryptographicDigest)
-                                .foregroundStyle(ColorTokens.textTertiary)
-                        }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 4)
-                    }
-                }
-                .padding()
-                .background(ColorTokens.backgroundSecondary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                credentialStatusCard
                 
-                if let error = credentialViewModel.errorMessage {
-                    Text(error)
-                        .font(Typography.caption)
-                        .foregroundStyle(ColorTokens.stateDanger)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(ColorTokens.stateDangerBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
+                feedbackBanners
                 
-                if let success = credentialViewModel.successMessage {
-                    Text(success)
-                        .font(Typography.captionBold)
-                        .foregroundStyle(ColorTokens.stateSuccess)
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(ColorTokens.stateSuccessBackground)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                }
-                
-                if credentialViewModel.currentCredential == nil || !credentialViewModel.issuanceStatus.isComplete {
-                    Button {
-                        Task {
-                            if let token = authViewModel.currentUser?.sessionToken {
-                                await credentialViewModel.requestBlindIssuance(
-                                    electionId: electionSummary.id,
-                                    sessionToken: token
-                                )
-                            }
-                        }
-                    } label: {
-                        HStack {
-                            if credentialViewModel.isRequesting {
-                                ProgressView()
-                                    .tint(.white)
-                                    .padding(.trailing, 8)
-                            }
-                            
-                            Text(credentialViewModel.isRequesting ? "Blinding and Requesting..." : "Generate Blind Credential")
-                                .font(Typography.cardHeader)
-                                .foregroundStyle(.white)
-                        }
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(ColorTokens.brandPrimary)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .disabled(credentialViewModel.isRequesting)
-                    .accessibilityLabel("Generate blind credential button")
-                } else {
-                    NavigationLink {
-                        VotingBoothView(
-                            electionSummary: electionSummary,
-                            credential: credentialViewModel.currentCredential!
-                        )
-                    } label: {
-                        HStack {
-                            Image(systemName: "envelope.badge.shield.half.filled")
-                            Text("Enter Secure Voting Booth")
-                        }
-                        .font(Typography.cardHeader)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(ColorTokens.stateSuccess)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .accessibilityLabel("Enter secure voting booth button")
-                }
+                actionButtons
             }
-            .padding()
+            .padding(16)
+            .animation(SpringTokens.fluid, value: credentialViewModel.issuanceStatus)
+            .animation(SpringTokens.fluid, value: credentialViewModel.errorMessage)
+            .animation(SpringTokens.fluid, value: credentialViewModel.successMessage)
         }
         .navigationTitle("Voter Credential")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    HapticFeedback.light()
+                    showSecuritySheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: navIconSize))
+                        .foregroundStyle(ColorTokens.brandAccent)
+                }
+                .accessibilityLabel("Voter Credential Security Architecture Details")
+            }
+        }
+        .sheet(isPresented: $showSecuritySheet) {
+            InstitutionalSecuritySheet()
+        }
         .onAppear {
             credentialViewModel.loadStoredCredential(electionId: electionSummary.id)
             if let token = authViewModel.currentUser?.sessionToken {
@@ -171,12 +62,197 @@ public struct CredentialIssueView: View {
             }
         }
     }
+    
+    private var headerView: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "lock.shield.fill")
+                .resizable()
+                .scaledToFit()
+                .frame(width: shieldIconSize, height: shieldIconSize)
+                .foregroundStyle(ColorTokens.brandAccent)
+            
+            Text("Anonymous Voter Credential")
+                .font(Typography.sectionHeader)
+                .foregroundStyle(ColorTokens.institutionalNavy)
+            
+            Text("RFC 9474 Blind Signature Issuance")
+                .font(Typography.callout)
+                .foregroundStyle(ColorTokens.textSecondary)
+        }
+        .padding(.top, 16)
+    }
+    
+    private var securityGuaranteesCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Cryptographic Security Guarantees")
+                .font(Typography.cardHeader)
+                .foregroundStyle(ColorTokens.textPrimary)
+            
+            VStack(alignment: .leading, spacing: 10) {
+                SecurityBulletPoint(
+                    icon: "checkmark.circle.fill",
+                    title: "Hardware Enclave Sealing",
+                    description: "Your credential private secret never leaves your device and is stored with kSecAttrAccessibleWhenUnlockedThisDeviceOnly."
+                )
+                
+                SecurityBulletPoint(
+                    icon: "eye.slash.fill",
+                    title: "Mathematical Unlinkability",
+                    description: "The identity issuer signs a blinded token. The issuer cannot correlate your identity to your cast ballot."
+                )
+                
+                SecurityBulletPoint(
+                    icon: "1.circle.fill",
+                    title: "Single Cast Enforcement",
+                    description: "The casting origin verifies the signature without discovering which student submitted it."
+                )
+            }
+        }
+        .padding(16)
+        .background(ColorTokens.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(ColorTokens.cardBorder, lineWidth: 1)
+        )
+    }
+    
+    private var credentialStatusCard: some View {
+        VStack(spacing: 12) {
+            HStack {
+                Text("Credential Status")
+                    .font(Typography.bodyBold)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                Spacer()
+                CredentialStatusBadge(status: credentialViewModel.issuanceStatus)
+            }
+            
+            if let stored = credentialViewModel.currentCredential, stored.status.isComplete {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Credential Secret Fingerprint")
+                        .font(Typography.captionBold)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                    
+                    Text(stored.blindSignatureResponse?.prefix(32) ?? "Sealed in Keychain")
+                        .font(Typography.cryptographicDigest)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
+            }
+        }
+        .padding(16)
+        .background(ColorTokens.backgroundSecondary)
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(ColorTokens.cardBorder, lineWidth: 1)
+        )
+    }
+    
+    @ViewBuilder
+    private var feedbackBanners: some View {
+        if let error = credentialViewModel.errorMessage {
+            Text(error)
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.stateDanger)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(ColorTokens.stateDangerBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(ColorTokens.stateDanger.opacity(0.3), lineWidth: 1)
+                )
+        }
+        
+        if let success = credentialViewModel.successMessage {
+            Text(success)
+                .font(Typography.captionBold)
+                .foregroundStyle(ColorTokens.stateSuccess)
+                .padding(14)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(ColorTokens.stateSuccessBackground)
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(ColorTokens.stateSuccess.opacity(0.3), lineWidth: 1)
+                )
+        }
+    }
+    
+    @ViewBuilder
+    private var actionButtons: some View {
+        if credentialViewModel.currentCredential == nil || !credentialViewModel.issuanceStatus.isComplete {
+            Button {
+                HapticFeedback.medium()
+                Task {
+                    if let token = authViewModel.currentUser?.sessionToken {
+                        await credentialViewModel.requestBlindIssuance(
+                            electionId: electionSummary.id,
+                            sessionToken: token
+                        )
+                        if credentialViewModel.errorMessage != nil {
+                            HapticFeedback.error()
+                        } else if credentialViewModel.issuanceStatus.isComplete {
+                            HapticFeedback.success()
+                        }
+                    }
+                }
+            } label: {
+                HStack(spacing: 8) {
+                    if credentialViewModel.isRequesting {
+                        ProgressView()
+                            .tint(.white)
+                            .padding(.trailing, 4)
+                    }
+                    
+                    Text(credentialViewModel.isRequesting ? "Blinding and Requesting..." : "Generate Blind Credential")
+                        .font(Typography.cardHeader)
+                        .foregroundStyle(.white)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(ColorTokens.brandPrimary)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: ColorTokens.brandPrimary.opacity(0.25), radius: 6, x: 0, y: 3)
+            }
+            .interactiveSpringButton()
+            .disabled(credentialViewModel.isRequesting)
+            .accessibilityLabel("Generate blind credential button")
+        } else {
+            NavigationLink {
+                VotingBoothView(
+                    electionSummary: electionSummary,
+                    credential: credentialViewModel.currentCredential!
+                )
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "envelope.badge.shield.half.filled")
+                    Text("Enter Secure Voting Booth")
+                }
+                .font(Typography.cardHeader)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
+                .background(ColorTokens.stateSuccess)
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .shadow(color: ColorTokens.stateSuccess.opacity(0.25), radius: 6, x: 0, y: 3)
+            }
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticFeedback.medium()
+            })
+            .accessibilityLabel("Enter secure voting booth button")
+        }
+    }
 }
 
 public struct SecurityBulletPoint: View {
     public let icon: String
     public let title: String
     public let description: String
+    
+    @ScaledMetric(relativeTo: .body) private var bulletIconSize: CGFloat = 16
     
     public init(icon: String, title: String, description: String) {
         self.icon = icon
@@ -188,7 +264,7 @@ public struct SecurityBulletPoint: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .foregroundStyle(ColorTokens.stateSuccess)
-                .font(.system(size: 16))
+                .font(.system(size: bulletIconSize))
                 .padding(.top, 2)
             
             VStack(alignment: .leading, spacing: 2) {
@@ -199,6 +275,7 @@ public struct SecurityBulletPoint: View {
                 Text(description)
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .accessibilityElement(children: .combine)

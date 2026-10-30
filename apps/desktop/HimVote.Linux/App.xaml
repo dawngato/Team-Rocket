@@ -17,7 +17,18 @@
             <Setter Property="BorderBrush" Value="#E2E8F0" />
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="16" />
+            <Setter Property="Padding" Value="18" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.2" />
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="Border.card_hover:pointerover">
+            <Setter Property="Background" Value="#FAFCFF" />
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
         </Style>
 
         <Style Selector="Border.sidebar">
@@ -32,42 +43,145 @@
             <Setter Property="BorderThickness" Value="0,0,0,1" />
         </Style>
 
-        <Style Selector="Button.primary-button">
+        <Style Selector="Border.badge">
+            <Setter Property="CornerRadius" Value="12" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style Selector="Border.error_state">
+            <Setter Property="Background" Value="#FEE2E2" />
+            <Setter Property="BorderBrush" Value="#EF4444" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+
+        <Style Selector="Border.info_state">
+            <Setter Property="Background" Value="#E0F2FE" />
+            <Setter Property="BorderBrush" Value="#0284C7" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+
+        <Style Selector="Border.success_state">
+            <Setter Property="Background" Value="#ECFDF5" />
+            <Setter Property="BorderBrush" Value="#10B981" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="14" />
+        </Style>
+
+        <Style Selector="Border.empty_state">
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="24" />
+        </Style>
+
+        <Style Selector="Button.primary_button, Button.primary-button">
             <Setter Property="Background" Value="#10233F" />
             <Setter Property="Foreground" Value="#FFFFFF" />
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Padding" Value="16,10" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                    <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+                </Transitions>
+            </Setter>
         </Style>
 
-        <Style Selector="Button.primary-button:pointerover">
+        <Style Selector="Button.primary_button:pointerover, Button.primary-button:pointerover">
             <Setter Property="Background" Value="#1E3A8A" />
         </Style>
 
-        <Style Selector="Button.secondary-button">
+        <Style Selector="Button.primary_button:focus-visible, Button.primary-button:focus-visible">
+            <Setter Property="BorderBrush" Value="#157E92" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <Style Selector="Button.secondary_button, Button.secondary-button">
             <Setter Property="Background" Value="#E2E8F0" />
             <Setter Property="Foreground" Value="#17233B" />
             <Setter Property="CornerRadius" Value="6" />
-            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="Padding" Value="16,10" />
+            <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.18" />
+                </Transitions>
+            </Setter>
         </Style>
 
-        <Style Selector="Button.nav-button">
+        <Style Selector="Button.secondary_button:pointerover, Button.secondary-button:pointerover">
+            <Setter Property="Background" Value="#CBD5E1" />
+        </Style>
+
+        <Style Selector="Button.secondary_button:focus-visible, Button.secondary-button:focus-visible">
+            <Setter Property="BorderBrush" Value="#157E92" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <Style Selector="Button.nav_button, Button.nav-button">
             <Setter Property="Background" Value="Transparent" />
             <Setter Property="Foreground" Value="#10233F" />
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="HorizontalContentAlignment" Value="Left" />
             <Setter Property="Padding" Value="12,10" />
             <Setter Property="FontWeight" Value="Medium" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="Background" Duration="0:0:0.15" />
+                    <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+                </Transitions>
+            </Setter>
         </Style>
 
-        <Style Selector="Button.nav-button:pointerover">
+        <Style Selector="Button.nav_button:pointerover, Button.nav-button:pointerover">
             <Setter Property="Background" Value="#E2E8F0" />
         </Style>
 
-        <Style Selector="TextBox.input-field">
+        <Style Selector="Button.nav_button:focus-visible, Button.nav-button:focus-visible">
+            <Setter Property="BorderBrush" Value="#157E92" />
+            <Setter Property="BorderThickness" Value="2" />
+        </Style>
+
+        <Style Selector="TextBox.input_field, TextBox.input-field">
             <Setter Property="CornerRadius" Value="6" />
             <Setter Property="BorderBrush" Value="#CBD5E1" />
-            <Setter Property="Padding" Value="10,8" />
+            <Setter Property="Padding" Value="12,8" />
+            <Setter Property="MinHeight" Value="44" />
+            <Setter Property="Transitions">
+                <Transitions>
+                    <BrushTransition Property="BorderBrush" Duration="0:0:0.2" />
+                </Transitions>
+            </Setter>
+        </Style>
+
+        <Style Selector="TextBox.input_field:focus, TextBox.input-field:focus">
+            <Setter Property="BorderBrush" Value="#157E92" />
+        </Style>
+
+        <Style Selector="TextBox.input_field:focus-visible, TextBox.input-field:focus-visible">
+            <Setter Property="BorderBrush" Value="#157E92" />
+        </Style>
+
+        <Style Selector="TextBlock.code_text">
+            <Setter Property="FontFamily" Value="monospace" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="#0F172A" />
+            <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </Application.Styles>
 
@@ -76,12 +190,22 @@
         <CornerRadius x:Key="ButtonCornerRadius">6</CornerRadius>
         <x:Double x:Key="TouchTargetMinHeight">44</x:Double>
         <x:Double x:Key="TouchTargetMinWidth">44</x:Double>
+
         <SolidColorBrush x:Key="Navy900Brush" Color="#10233F" />
+        <SolidColorBrush x:Key="Navy800Brush" Color="#1E293B" />
+        <SolidColorBrush x:Key="Navy700Brush" Color="#334155" />
         <SolidColorBrush x:Key="Teal600Brush" Color="#157E92" />
         <SolidColorBrush x:Key="Green600Brush" Color="#15805D" />
+        <SolidColorBrush x:Key="Green100Brush" Color="#DCFCE7" />
         <SolidColorBrush x:Key="Amber600Brush" Color="#AA6C0B" />
+        <SolidColorBrush x:Key="Amber100Brush" Color="#FEF3C7" />
         <SolidColorBrush x:Key="Red600Brush" Color="#C23C45" />
+        <SolidColorBrush x:Key="Red100Brush" Color="#FEE2E2" />
+        <SolidColorBrush x:Key="Blue600Brush" Color="#1E40AF" />
+        <SolidColorBrush x:Key="Blue100Brush" Color="#DBEAFE" />
         <SolidColorBrush x:Key="SurfaceBrush" Color="#F3F6FA" />
         <SolidColorBrush x:Key="TextBrush" Color="#17233B" />
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#64748B" />
+        <SolidColorBrush x:Key="BorderLightBrush" Color="#E2E8F0" />
     </Application.Resources>
 </Application>

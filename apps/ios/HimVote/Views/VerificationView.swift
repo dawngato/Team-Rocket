@@ -4,6 +4,11 @@ public struct VerificationView: View {
     public let electionId: String
     @Bindable var authViewModel: AuthViewModel
     @State private var auditorViewModel = AuditorViewModel()
+    @State private var selectedAuditCheck: AuditCheckItem? = nil
+    
+    @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 72
+    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 38
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
     
     public init(electionId: String, authViewModel: AuthViewModel) {
         self.electionId = electionId
@@ -17,10 +22,19 @@ public struct VerificationView: View {
                 
                 if auditorViewModel.isLoading {
                     loadingView
+                        .transition(.opacity)
                 } else if let error = auditorViewModel.errorMessage {
                     errorBanner(message: error)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                            removal: .opacity
+                        ))
                 } else {
                     verdictSummaryCard
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                            removal: .opacity
+                        ))
                     
                     securityChecksList
                     
@@ -28,21 +42,31 @@ public struct VerificationView: View {
                 }
             }
             .padding(16)
+            .animation(SpringTokens.fluid, value: auditorViewModel.isLoading)
+            .animation(SpringTokens.auditTransition, value: auditorViewModel.overallVerdict)
         }
         .navigationTitle("Audit Evidence")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    HapticFeedback.medium()
                     Task {
                         await runVerification()
                     }
                 } label: {
                     Image(systemName: "arrow.clockwise")
+                        .font(.system(size: navIconSize))
                         .foregroundStyle(ColorTokens.brandPrimary)
                 }
                 .accessibilityLabel("Reverify cryptographic evidence")
             }
+        }
+        .sheet(item: $selectedAuditCheck) { check in
+            MerkleAuditDetailSheet(
+                checkItem: check,
+                evidencePackage: auditorViewModel.evidencePackage
+            )
         }
         .task {
             await runVerification()
@@ -54,12 +78,12 @@ public struct VerificationView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.brandAccent.opacity(0.12))
-                    .frame(width: 72, height: 72)
+                    .frame(width: headerCircleSize, height: headerCircleSize)
                 
                 Image(systemName: "checkmark.shield.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 38, height: 38)
+                    .frame(width: headerIconSize, height: headerIconSize)
                     .foregroundStyle(ColorTokens.brandAccent)
             }
             .accessibilityHidden(true)
@@ -105,12 +129,14 @@ public struct VerificationView: View {
                     Text(message)
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.stateDanger)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
             }
             
             Button {
+                HapticFeedback.medium()
                 Task {
                     await runVerification()
                 }
@@ -123,6 +149,7 @@ public struct VerificationView: View {
                     .background(ColorTokens.stateDanger)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
+            .interactiveSpringButton()
         }
         .padding(16)
         .background(ColorTokens.stateDangerBackground)
@@ -191,37 +218,49 @@ public struct VerificationView: View {
                 .foregroundStyle(ColorTokens.textPrimary)
             
             ForEach(auditorViewModel.auditCheckItems) { check in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: check.verdict == .pass ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
+                Button {
+                    HapticFeedback.light()
+                    selectedAuditCheck = check
+                } label: {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: check.verdict == .pass ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
+                            
+                            Text(check.name)
+                                .font(Typography.bodyBold)
+                                .foregroundStyle(ColorTokens.textPrimary)
+                            
+                            Spacer()
+                            
+                            Text(check.verdict.rawValue)
+                                .font(Typography.badgeText)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
+                                .background(check.verdict == .pass ? ColorTokens.stateSuccessBackground : ColorTokens.stateDangerBackground)
+                                .clipShape(RoundedRectangle(cornerRadius: 6))
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundStyle(ColorTokens.textTertiary)
+                        }
                         
-                        Text(check.name)
-                            .font(Typography.bodyBold)
-                            .foregroundStyle(ColorTokens.textPrimary)
-                        
-                        Spacer()
-                        
-                        Text(check.verdict.rawValue)
-                            .font(Typography.badgeText)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
-                            .background(check.verdict == .pass ? ColorTokens.stateSuccessBackground : ColorTokens.stateDangerBackground)
-                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                        Text(check.detail)
+                            .font(Typography.caption)
+                            .foregroundStyle(ColorTokens.textSecondary)
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
-                    
-                    Text(check.detail)
-                        .font(Typography.caption)
-                        .foregroundStyle(ColorTokens.textSecondary)
+                    .padding(14)
+                    .background(ColorTokens.backgroundSecondary)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(ColorTokens.cardBorder, lineWidth: 1)
+                    )
                 }
-                .padding(14)
-                .background(ColorTokens.backgroundSecondary)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(ColorTokens.cardBorder, lineWidth: 1)
-                )
+                .interactiveCardButton()
             }
         }
     }
@@ -243,6 +282,9 @@ public struct VerificationView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: ColorTokens.brandPrimary.opacity(0.3), radius: 6, x: 0, y: 3)
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticFeedback.light()
+            })
             .accessibilityLabel("Download full election audit evidence bundle button")
         }
     }
@@ -250,6 +292,11 @@ public struct VerificationView: View {
     private func runVerification() async {
         if let token = authViewModel.currentUser?.sessionToken {
             await auditorViewModel.loadEvidenceAndVerify(electionId: electionId, sessionToken: token)
+            if auditorViewModel.overallVerdict == .pass {
+                HapticFeedback.success()
+            } else if auditorViewModel.overallVerdict == .fail {
+                HapticFeedback.error()
+            }
         }
     }
 }

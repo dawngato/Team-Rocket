@@ -37,4 +37,26 @@ object DesignTokens {
     val ButtonHeight = 48.dp
     val CardCornerRadius = 12.dp
     val BadgeCornerRadius = 6.dp
+
+    // Micro interaction animation timing constants in milliseconds
+    const val AnimationDurationShort = 150
+    const val AnimationDurationMedium = 300
+    const val AnimationDurationLong = 500
+
+    // Elevation levels for interactive Material 3 surfaces
+    val ElevationFlat = 0.dp
+    val ElevationDefault = 2.dp
+    val ElevationHovered = 4.dp
+    val ElevationPressed = 6.dp
+    val ElevationFocused = 8.dp
+
+    // Micro interaction scale factors
+    const val PressedScaleFactor = 0.98f
+    const val HoveredScaleFactor = 1.02f
+
+    // Visual alpha tokens for polished borders and surfaces
+    const val BorderAlphaSubtle = 0.25f
+    const val BackgroundAlphaSubtle = 0.10f
+    const val ShimmerAlphaHigh = 0.35f
+    const val ShimmerAlphaLow = 0.08f
 }

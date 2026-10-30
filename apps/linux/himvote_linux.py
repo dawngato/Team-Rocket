@@ -35,10 +35,81 @@ RED = "#C23C45"
 SURFACE = "#F3F6FA"
 WHITE = "#FFFFFF"
 TEXT = "#17233B"
-MUTED = "#60708A"
+MUTED = "#334155"
 LINE = "#D9E2EC"
 LIGHT_BG = "#E8F3F5"
 PROGRESS_BG = "#E2E8F0"
+
+CHIP_SUCCESS_BG = "#DCFCE7"
+CHIP_SUCCESS_FG = "#14532D"
+CHIP_SUCCESS_BORDER = "#86EFAC"
+
+CHIP_WARNING_BG = "#FEF3C7"
+CHIP_WARNING_FG = "#78350F"
+CHIP_WARNING_BORDER = "#FDE047"
+
+CHIP_DANGER_BG = "#FEE2E2"
+CHIP_DANGER_FG = "#7F1D1D"
+CHIP_DANGER_BORDER = "#FCA5A5"
+
+CHIP_INFO_BG = "#E0F2FE"
+CHIP_INFO_FG = "#0C4A6E"
+CHIP_INFO_BORDER = "#7DD3FC"
+
+CHIP_NEUTRAL_BG = "#F1F5F9"
+CHIP_NEUTRAL_FG = "#0F172A"
+CHIP_NEUTRAL_BORDER = "#CBD5E1"
+
+HC_BG = "#000000"
+HC_SURFACE = "#121212"
+HC_CARD = "#1A1A1A"
+HC_TEXT = "#FFFFFF"
+HC_MUTED = "#E2E8F0"
+HC_ACCENT = "#FEF08A"
+HC_LINE = "#FFFFFF"
+HC_SUCCESS = "#86EFAC"
+HC_WARNING = "#FDE047"
+HC_DANGER = "#FCA5A5"
+
+
+def relative_luminance(hex_code: str) -> float:
+    """Calculate relative luminance per WCAG 2.1 specifications."""
+    clean = hex_code.lstrip("#")
+    if len(clean) == 3:
+        clean = "".join(ch * 2 for ch in clean)
+    r = int(clean[0:2], 16) / 255.0
+    g = int(clean[2:4], 16) / 255.0
+    b = int(clean[4:6], 16) / 255.0
+
+    def adjust_channel(val: float) -> float:
+        if val <= 0.03928:
+            return val / 12.92
+        return ((val + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * adjust_channel(r) + 0.7152 * adjust_channel(g) + 0.0722 * adjust_channel(b)
+
+
+def calculate_contrast_ratio(hex_a: str, hex_b: str) -> float:
+    """Calculate WCAG contrast ratio between two hex colors."""
+    lum_a = relative_luminance(hex_a)
+    lum_b = relative_luminance(hex_b)
+    lighter = max(lum_a, lum_b)
+    darker = min(lum_a, lum_b)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def is_wcag_aa_compliant(hex_fg: str, hex_bg: str, is_large_text: bool = False) -> bool:
+    """Check whether contrast meets WCAG AA standards."""
+    ratio = calculate_contrast_ratio(hex_fg, hex_bg)
+    threshold = 3.0 if is_large_text else 4.5
+    return ratio >= threshold
+
+
+def is_wcag_aaa_compliant(hex_fg: str, hex_bg: str, is_large_text: bool = False) -> bool:
+    """Check whether contrast meets WCAG AAA standards."""
+    ratio = calculate_contrast_ratio(hex_fg, hex_bg)
+    threshold = 4.5 if is_large_text else 7.0
+    return ratio >= threshold
 
 MAX_ARCHIVE_SIZE_BYTES = 100 * 1024 * 1024
 MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024
@@ -82,6 +153,11 @@ class Receipt:
     status: str
     leaf_index: int | None = None
     witnessed_at: str | None = None
+    server_commitment: str | None = None
+    witness_checkpoint: str | None = None
+    ballot_hash: str | None = None
+    election_id: str | None = None
+    handle: str | None = None
 
 
 @dataclass(frozen=True)
@@ -713,7 +789,7 @@ class ElectionArchive:
             else:
                 errors.append("Manifest canonical digest does not match declared manifest_digest")
 
-        # Verify leaf sequence continuity (0 to N - 1)
+        # Verify leaf sequence continuity (0 to N minus 1)
         total_leaves = len(self.leaves)
         leaf_sequence_valid = True
         seen_indices: set[int] = set()
@@ -851,6 +927,784 @@ def status_colour(status: str) -> str:
     return TEAL
 
 
+def chip_variant_from_state(state: str) -> str:
+    """Map election or verification state to semantic chip variant."""
+    cleaned = state.strip().upper()
+    if cleaned in {
+        "ACTIVE",
+        "CONFIRMED",
+        "WITNESSED",
+        "PASS",
+        "MATCH",
+        "VALID",
+        "OPEN",
+        "ANCHOR_FINALIZED",
+        "AUDIT_PASSED",
+        "AUDITOR_ATTESTED",
+        "LEADING",
+    }:
+        return "success"
+    if cleaned in {
+        "PENDING",
+        "PENDING_WITNESS",
+        "STANDALONE",
+        "DRAFT",
+        "UPCOMING",
+        "ANCHOR_PENDING",
+        "REVIEW",
+    }:
+        return "warning"
+    if cleaned in {
+        "DISPUTED",
+        "FAIL",
+        "MISMATCH",
+        "REJECTED",
+        "ERROR",
+        "FAILED",
+        "INVALID",
+    }:
+        return "danger"
+    if cleaned in {"CONNECTED", "PROCESSING", "AUDITING", "INFO"}:
+        return "info"
+    return "neutral"
+
+
+class StatusChip(tk.Frame):
+    """Pill style status chip with high contrast glyph and text."""
+
+    GLYPHS = {
+        "success": "●",
+        "warning": "▲",
+        "danger": "✕",
+        "info": "●",
+        "neutral": "○",
+    }
+
+    PALETTES = {
+        "success": (CHIP_SUCCESS_BG, CHIP_SUCCESS_FG, CHIP_SUCCESS_BORDER),
+        "warning": (CHIP_WARNING_BG, CHIP_WARNING_FG, CHIP_WARNING_BORDER),
+        "danger": (CHIP_DANGER_BG, CHIP_DANGER_FG, CHIP_DANGER_BORDER),
+        "info": (CHIP_INFO_BG, CHIP_INFO_FG, CHIP_INFO_BORDER),
+        "neutral": (CHIP_NEUTRAL_BG, CHIP_NEUTRAL_FG, CHIP_NEUTRAL_BORDER),
+    }
+
+    def __init__(
+        self,
+        parent: Any,
+        text: str = "",
+        variant: str = "neutral",
+        font_size: int = 9,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, **kwargs)
+        self.text_value = text
+        self.variant = variant
+        self.font_size = font_size
+
+        self.label = tk.Label(
+            self,
+            font=("DejaVu Sans", font_size, "bold"),
+            padx=8,
+            pady=3,
+        )
+        self.label.pack(fill="both", expand=True)
+        self.set_status(text, variant)
+
+    def set_status(self, text: str, variant: str = "neutral") -> None:
+        """Update chip text and color styling."""
+        self.text_value = text
+        self.variant = variant if variant in self.PALETTES else "neutral"
+        bg_col, fg_col, border_col = self.PALETTES[self.variant]
+        glyph = self.GLYPHS.get(self.variant, "●")
+        display_str = f" {glyph}  {text.strip()} " if text.strip() else ""
+
+        self.configure(bg=border_col, bd=1, relief="solid")
+        self.label.configure(text=display_str, bg=bg_col, fg=fg_col)
+
+    def get_status(self) -> tuple[str, str]:
+        """Return tuple of current text and variant."""
+        return self.text_value, self.variant
+
+    def configure(self, cnf: Any = None, **kw: Any) -> Any:
+        """Support standard Tkinter configure calls for backward compatibility."""
+        if kw:
+            if "text" in kw:
+                new_text = str(kw.pop("text"))
+                style_str = kw.pop("style", None)
+                var = self.variant
+                if style_str:
+                    if "Green" in style_str:
+                        var = "success"
+                    elif "Red" in style_str:
+                        var = "danger"
+                    elif "Amber" in style_str or "Demo" in style_str:
+                        var = "warning"
+                    elif "Mode" in style_str:
+                        var = "info"
+                self.set_status(new_text, var)
+            if "style" in kw:
+                style_str = str(kw.pop("style"))
+                var = "neutral"
+                if "Green" in style_str:
+                    var = "success"
+                elif "Red" in style_str:
+                    var = "danger"
+                elif "Amber" in style_str or "Demo" in style_str:
+                    var = "warning"
+                elif "Mode" in style_str:
+                    var = "info"
+                self.set_status(self.text_value, var)
+        if kw or cnf:
+            return super().configure(cnf, **kw)
+        return None
+
+    def cget(self, key: str) -> Any:
+        if key == "text":
+            return self.text_value
+        return super().cget(key)
+
+
+class ReceiptInspectionModal(tk.Toplevel):
+    """Cryptographic receipt inspection modal dialog."""
+
+    def __init__(
+        self,
+        parent: Any,
+        receipt: Receipt | dict[str, Any],
+        current_archive: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, **kwargs)
+        self.parent = parent
+        self.receipt_data = receipt if isinstance(receipt, dict) else {
+            "status": receipt.status,
+            "leaf_index": receipt.leaf_index,
+            "witnessed_at": receipt.witnessed_at,
+            "server_commitment": getattr(receipt, "server_commitment", None),
+            "witness_checkpoint": getattr(receipt, "witness_checkpoint", None),
+            "ballot_hash": getattr(receipt, "ballot_hash", None),
+            "election_id": getattr(receipt, "election_id", None),
+            "handle": getattr(receipt, "handle", None),
+        }
+        self.current_archive = current_archive
+
+        self.title("Cryptographic Receipt Inspection")
+        self.geometry("700x640")
+        self.minsize(580, 520)
+        self.configure(bg=SURFACE)
+        self.transient(parent)
+
+        self._build_ui()
+        self.bind("<Escape>", lambda e: self.destroy())
+
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
+    def _build_ui(self) -> None:
+        header = ttk.Frame(self, style="Card.TFrame", padding=16)
+        header.pack(fill="x", padx=20, pady=(16, 10))
+
+        title_row = ttk.Frame(header, style="Card.TFrame")
+        title_row.pack(fill="x")
+
+        ttk.Label(
+            title_row,
+            text="Cryptographic Receipt Certificate",
+            style="Title.TLabel",
+        ).pack(side="left")
+
+        status_text = str(self.receipt_data.get("status") or "PENDING_WITNESS")
+        variant = chip_variant_from_state(status_text)
+        self.status_chip = StatusChip(title_row, text=status_text, variant=variant)
+        self.status_chip.pack(side="right")
+
+        ttk.Label(
+            header,
+            text="Independent cryptographic record verifying server commitment and witness inclusion.",
+            style="CardMuted.TLabel",
+        ).pack(anchor="w", pady=(4, 0))
+
+        grid_frame = ttk.Frame(self, style="App.TFrame")
+        grid_frame.pack(fill="x", padx=20, pady=4)
+
+        id_card = ttk.Frame(grid_frame, style="Card.TFrame", padding=14)
+        id_card.pack(side="left", fill="both", expand=True, padx=(0, 6))
+
+        ttk.Label(id_card, text="Receipt Identifiers", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 6))
+        elec_id = self.receipt_data.get("election_id") or "Unspecified election"
+        handle = self.receipt_data.get("handle") or self.receipt_data.get("receipt_handle") or "Unspecified handle"
+        leaf_idx = self.receipt_data.get("leaf_index")
+        leaf_str = str(leaf_idx) if leaf_idx is not None else "Pending leaf allocation"
+        wit_at = self.receipt_data.get("witnessed_at") or "Not yet witnessed"
+
+        ttk.Label(id_card, text=f"Election ID: {elec_id}", style="CardBody.TLabel").pack(anchor="w")
+        ttk.Label(id_card, text=f"Handle: {handle}", style="CardMuted.TLabel").pack(anchor="w", pady=2)
+        ttk.Label(id_card, text=f"Merkle Leaf Index: {leaf_str}", style="CardBody.TLabel").pack(anchor="w", pady=2)
+        ttk.Label(id_card, text=f"Witnessed At: {wit_at}", style="CardMuted.TLabel").pack(anchor="w")
+
+        crypto_card = ttk.Frame(grid_frame, style="Card.TFrame", padding=14)
+        crypto_card.pack(side="left", fill="both", expand=True, padx=(6, 0))
+
+        ttk.Label(crypto_card, text="Cryptographic Proofs", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 6))
+        ttk.Label(crypto_card, text="Engine: RFC 9162 Merkle + RFC 8785 JCS", style="CardMuted.TLabel").pack(anchor="w")
+
+        server_commit = self.receipt_data.get("server_commitment") or "sha256:7f83b165...pending"
+        wit_check = self.receipt_data.get("witness_checkpoint") or "sha256:3a7bd3e2...pending"
+
+        ttk.Label(crypto_card, text="Server Commitment Digest:", style="CardBody.TLabel").pack(anchor="w", pady=(4, 0))
+        commit_entry = ttk.Entry(crypto_card, font=("DejaVu Sans Mono", 8))
+        commit_entry.insert(0, str(server_commit))
+        commit_entry.configure(state="readonly")
+        commit_entry.pack(fill="x", pady=(1, 4))
+
+        ttk.Label(crypto_card, text="Witness Checkpoint Root:", style="CardBody.TLabel").pack(anchor="w")
+        wit_entry = ttk.Entry(crypto_card, font=("DejaVu Sans Mono", 8))
+        wit_entry.insert(0, str(wit_check))
+        wit_entry.configure(state="readonly")
+        wit_entry.pack(fill="x", pady=(1, 2))
+
+        json_card = ttk.Frame(self, style="Card.TFrame", padding=14)
+        json_card.pack(fill="both", expand=True, padx=20, pady=8)
+
+        json_header = ttk.Frame(json_card, style="Card.TFrame")
+        json_header.pack(fill="x", pady=(0, 6))
+
+        ttk.Label(json_header, text="Canonical Receipt JSON Payload", style="SubTitle.TLabel").pack(side="left")
+
+        self.copy_btn = ttk.Button(
+            json_header,
+            text="Copy JSON to Clipboard",
+            command=self._copy_json,
+            style="Secondary.TButton",
+        )
+        self.copy_btn.pack(side="right")
+
+        self.copy_status = ttk.Label(json_header, text="", style="CardMuted.TLabel")
+        self.copy_status.pack(side="right", padx=8)
+
+        self.json_text = tk.Text(
+            json_card,
+            wrap="none",
+            height=8,
+            font=("DejaVu Sans Mono", 9),
+            bg=WHITE,
+            fg=TEXT,
+            relief="solid",
+            bd=1,
+        )
+        self.json_text.pack(fill="both", expand=True)
+
+        try:
+            formatted_json = json.dumps(self.receipt_data, indent=2, sort_keys=True)
+        except Exception:
+            formatted_json = str(self.receipt_data)
+        self.json_text.insert("1.0", formatted_json)
+        self.json_text.configure(state="disabled")
+
+        bottom_bar = ttk.Frame(self, style="App.TFrame")
+        bottom_bar.pack(fill="x", padx=20, pady=(4, 16))
+
+        if self.current_archive:
+            ttk.Button(
+                bottom_bar,
+                text="Verify Against Loaded Archive",
+                command=self._verify_against_archive,
+                style="Action.TButton",
+            ).pack(side="left")
+
+        self.archive_verdict = ttk.Label(bottom_bar, text="", style="CardBody.TLabel")
+        self.archive_verdict.pack(side="left", padx=10)
+
+        ttk.Button(
+            bottom_bar,
+            text="Close [Esc]",
+            command=self.destroy,
+            style="Secondary.TButton",
+        ).pack(side="right")
+
+    def _copy_json(self) -> None:
+        try:
+            payload = json.dumps(self.receipt_data, indent=2, sort_keys=True)
+            self.clipboard_clear()
+            self.clipboard_append(payload)
+            self.copy_status.configure(text="Copied to clipboard!", foreground=GREEN)
+        except Exception as exc:
+            self.copy_status.configure(text=f"Copy failed: {exc}", foreground=RED)
+
+    def _verify_against_archive(self) -> None:
+        if not self.current_archive:
+            self.archive_verdict.configure(text="No archive loaded in application.", foreground=AMBER)
+            return
+        leaf_idx = self.receipt_data.get("leaf_index")
+        if leaf_idx is None or not isinstance(leaf_idx, int):
+            self.archive_verdict.configure(text="Receipt has no integer leaf index to verify.", foreground=RED)
+            return
+        try:
+            proof = self.current_archive.get_leaf_proof(leaf_idx)
+            if proof.verified:
+                self.archive_verdict.configure(
+                    text=f"MATCH: Leaf #{leaf_idx} inclusion verified against archive Merkle root!",
+                    foreground=GREEN,
+                )
+            else:
+                self.archive_verdict.configure(text="VERIFICATION FAILED: Proof root mismatch.", foreground=RED)
+        except Exception as exc:
+            self.archive_verdict.configure(text=f"Verification error: {exc}", foreground=RED)
+
+
+class KeyboardShortcutsModal(tk.Toplevel):
+    """Modal dialog displaying keyboard navigation shortcuts."""
+
+    SHORTCUTS = [
+        ("Ctrl + 1", "Switch to Elections view"),
+        ("Ctrl + 2", "Switch to Receipt verification view"),
+        ("Ctrl + 3", "Switch to Offline election audit view"),
+        ("Ctrl + O", "Open election archive file"),
+        ("Ctrl + D", "Load demo simulation archive"),
+        ("Ctrl + R / F5", "Refresh elections or recompute proofs"),
+        ("Ctrl + P", "Recompute leaf proof in audit view"),
+        ("Ctrl + H", "Toggle high contrast mode"),
+        ("Ctrl + K / F1", "Show this keyboard shortcuts guide"),
+        ("Escape", "Close active modal dialog"),
+    ]
+
+    def __init__(self, parent: Any, **kwargs: Any) -> None:
+        super().__init__(parent, **kwargs)
+        self.title("HimVote Keyboard Navigation Shortcuts")
+        self.geometry("540x480")
+        self.minsize(460, 400)
+        self.configure(bg=SURFACE)
+        self.transient(parent)
+
+        self._build_ui()
+        self.bind("<Escape>", lambda e: self.destroy())
+
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
+    def _build_ui(self) -> None:
+        header = ttk.Frame(self, style="Card.TFrame", padding=16)
+        header.pack(fill="x", padx=18, pady=(16, 10))
+
+        ttk.Label(header, text="Keyboard Shortcuts", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(
+            header,
+            text="HimVote Linux desktop client accessibility keyboard bindings.",
+            style="CardMuted.TLabel",
+        ).pack(anchor="w", pady=(2, 0))
+
+        content_card = ttk.Frame(self, style="Card.TFrame", padding=14)
+        content_card.pack(fill="both", expand=True, padx=18, pady=6)
+
+        table = ttk.Treeview(content_card, columns=("key", "action"), show="headings", height=10)
+        table.heading("key", text="Shortcut Key")
+        table.heading("action", text="Action Description")
+        table.column("key", width=140, anchor="w")
+        table.column("action", width=320, anchor="w")
+        table.pack(fill="both", expand=True)
+
+        for key_combo, desc in self.SHORTCUTS:
+            table.insert("", "end", values=(key_combo, desc))
+
+        bottom = ttk.Frame(self, style="App.TFrame")
+        bottom.pack(fill="x", padx=18, pady=(8, 16))
+        ttk.Button(bottom, text="Close [Esc]", command=self.destroy, style="Secondary.TButton").pack(side="right")
+
+
+class MerkleTreeVisualizer(ttk.Frame):
+    """Interactive visual Merkle tree canvas with animated audit path highlights."""
+
+    def __init__(self, parent: Any, **kwargs: Any) -> None:
+        super().__init__(parent, style="Card.TFrame", **kwargs)
+        self.current_proof: MerkleProofResult | None = None
+        self.animation_step: int = 0
+        self.animation_job: str | None = None
+        self.is_animating: bool = False
+        self.node_meta: dict[str, dict[str, str]] = {}
+        self.node_positions: dict[str, tuple[int, int, int, int]] = {}
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        self.toolbar = ttk.Frame(self, style="Card.TFrame")
+        self.toolbar.pack(fill="x", padx=10, pady=(8, 6))
+
+        ttk.Label(
+            self.toolbar,
+            text="Merkle Proof Path Graph",
+            style="SubTitle.TLabel",
+        ).pack(side="left", padx=(0, 12))
+
+        self.btn_animate = ttk.Button(
+            self.toolbar,
+            text="Animate Proof",
+            command=self.animate_proof,
+            style="Action.TButton",
+        )
+        self.btn_animate.pack(side="left", padx=4)
+
+        self.btn_step = ttk.Button(
+            self.toolbar,
+            text="Step Forward",
+            command=self.step_forward,
+            style="Secondary.TButton",
+        )
+        self.btn_step.pack(side="left", padx=4)
+
+        self.btn_reset = ttk.Button(
+            self.toolbar,
+            text="Reset",
+            command=self.reset_highlights,
+            style="Secondary.TButton",
+        )
+        self.btn_reset.pack(side="left", padx=4)
+
+        self.step_status_chip = StatusChip(self.toolbar, text="READY", variant="neutral")
+        self.step_status_chip.pack(side="right", padx=6)
+
+        self.step_label = ttk.Label(
+            self,
+            text="Select a leaf index and run recomputation to inspect the RFC 9162 proof path.",
+            style="CardBody.TLabel",
+        )
+        self.step_label.pack(anchor="w", padx=12, pady=(0, 6))
+
+        canvas_holder = ttk.Frame(self, style="Card.TFrame")
+        canvas_holder.pack(fill="both", expand=True, padx=8, pady=(0, 8))
+
+        self.canvas = tk.Canvas(
+            canvas_holder,
+            height=210,
+            bg="#0F172A",
+            highlightthickness=1,
+            highlightbackground="#334155",
+        )
+        self.h_scroll = ttk.Scrollbar(canvas_holder, orient="horizontal", command=self.canvas.xview)
+        self.canvas.configure(xscrollcommand=self.h_scroll.set)
+
+        self.canvas.pack(side="top", fill="both", expand=True)
+        self.h_scroll.pack(side="bottom", fill="x")
+
+        self.detail_label = ttk.Label(
+            self,
+            text="Click any node in the graph to view full canonical hash details.",
+            style="CardMuted.TLabel",
+        )
+        self.detail_label.pack(anchor="w", padx=12, pady=(0, 8))
+
+        self.canvas.bind("<Button-1>", self._on_canvas_click)
+
+    def draw_proof(self, proof: MerkleProofResult) -> None:
+        """Render the complete RFC 9162 proof path nodes and branches on canvas."""
+        self.cancel_animation()
+        self.current_proof = proof
+        self.animation_step = 0
+        self.node_meta.clear()
+        self.node_positions.clear()
+        self.canvas.delete("all")
+
+        depth = len(proof.siblings)
+        total_width = max(720, (depth + 1) * 170 + 120)
+        self.canvas.configure(scrollregion=(0, 0, total_width, 210))
+
+        y_center = 105
+        y_top = 45
+        y_bottom = 165
+        card_w = 130
+        card_h = 42
+
+        x_leaf = 80
+        self._draw_node_card(
+            x_leaf,
+            y_center,
+            card_w,
+            card_h,
+            "leaf",
+            f"Leaf #{proof.leaf_index}",
+            f"{proof.leaf_hash[:16]}...",
+            proof.leaf_hash,
+            "#1E293B",
+            "#0284C7",
+            "#F8FAFC",
+        )
+
+        prev_x = x_leaf
+        prev_y = y_center
+
+        for s, (side, sibling_hash) in enumerate(proof.siblings, start=1):
+            x_sibling = 80 + (s - 1) * 170 + 40
+            y_sibling = y_top if side == "left" else y_bottom
+            x_parent = 80 + s * 170
+            y_parent = y_center
+
+            self._draw_node_card(
+                x_sibling,
+                y_sibling,
+                card_w,
+                card_h,
+                f"sibling_{s}",
+                f"Sibling #{s} ({side.upper()})",
+                f"{sibling_hash[:16]}...",
+                sibling_hash,
+                "#1E293B",
+                "#D97706",
+                "#FDE68A",
+            )
+
+            self._draw_branch(prev_x + card_w // 2, prev_y, x_parent - card_w // 2, y_parent, f"branch_{s}_prev")
+            self._draw_branch(x_sibling + card_w // 2, y_sibling, x_parent - card_w // 2, y_parent, f"branch_{s}_sib")
+
+            if s < depth:
+                self._draw_node_card(
+                    x_parent,
+                    y_parent,
+                    card_w,
+                    card_h,
+                    f"combined_{s}",
+                    f"Parent Level {s}",
+                    "RFC 9162 hash",
+                    f"Intermediate parent hash at depth level {s}",
+                    "#1E293B",
+                    "#475569",
+                    "#94A3B8",
+                )
+            else:
+                root_color = "#059669" if proof.verified else "#DC2626"
+                root_fg = "#A7F3D0" if proof.verified else "#FCA5A5"
+                self._draw_node_card(
+                    x_parent,
+                    y_parent,
+                    card_w,
+                    card_h,
+                    "root",
+                    "Merkle Root",
+                    f"{proof.root_hex[:16]}...",
+                    proof.root_hex,
+                    "#1E293B",
+                    root_color,
+                    root_fg,
+                )
+
+            prev_x = x_parent
+            prev_y = y_parent
+
+        status_str = "VERIFIED INCLUSION" if proof.verified else "VERIFICATION FAILED"
+        variant = "success" if proof.verified else "danger"
+        self.step_status_chip.set_status(status_str, variant)
+        self.step_label.configure(
+            text=f"Loaded proof path: Depth {depth} siblings connecting Leaf #{proof.leaf_index} to Merkle Root."
+        )
+
+    def _draw_node_card(
+        self,
+        cx: int,
+        cy: int,
+        w: int,
+        h: int,
+        key: str,
+        title: str,
+        subtitle: str,
+        full_hash: str,
+        fill_color: str,
+        outline_color: str,
+        text_color: str,
+        width: int = 1,
+    ) -> None:
+        x1 = cx - w // 2
+        y1 = cy - h // 2
+        x2 = cx + w // 2
+        y2 = cy + h // 2
+
+        self.node_positions[key] = (x1, y1, x2, y2)
+        self.node_meta[key] = {"label": title, "subtext": subtitle, "full_hash": full_hash}
+
+        self.canvas.create_rectangle(
+            x1,
+            y1,
+            x2,
+            y2,
+            fill=fill_color,
+            outline=outline_color,
+            width=width,
+            tags=(f"card_{key}", key, "node_card"),
+        )
+        self.canvas.create_text(
+            cx,
+            cy - 8,
+            text=title,
+            fill=text_color,
+            font=("DejaVu Sans", 8, "bold"),
+            tags=(f"title_{key}", key, "node_text"),
+        )
+        self.canvas.create_text(
+            cx,
+            cy + 9,
+            text=subtitle,
+            fill="#CBD5E1",
+            font=("DejaVu Sans Mono", 7),
+            tags=(f"sub_{key}", key, "node_text"),
+        )
+
+    def _draw_branch(self, x1: int, y1: int, x2: int, y2: int, tag: str) -> None:
+        self.canvas.create_line(
+            x1,
+            y1,
+            x2,
+            y2,
+            fill="#334155",
+            width=2,
+            arrow=tk.LAST,
+            arrowshape=(8, 10, 3),
+            tags=(tag, "branch_line"),
+        )
+
+    def highlight_step(self, step_idx: int) -> None:
+        """Apply glowing animated highlight to the active node and branch lines."""
+        if not self.current_proof:
+            return
+        proof = self.current_proof
+        depth = len(proof.siblings)
+
+        if step_idx == 0:
+            self.canvas.itemconfig("card_leaf", fill="#064E3B", outline="#34D399", width=3)
+            self.canvas.itemconfig("title_leaf", fill="#A7F3D0")
+            self.step_status_chip.set_status("LEAF HIGHLIGHTED", "success")
+            self.step_label.configure(
+                text=f"Step 0: Starting at target leaf index {proof.leaf_index} (ballot {proof.leaf_id})."
+            )
+            self.animation_step = 0
+            return
+
+        if 1 <= step_idx <= depth:
+            side, sib_hash = proof.siblings[step_idx - 1]
+            sib_key = f"sibling_{step_idx}"
+            comb_key = f"combined_{step_idx}" if step_idx < depth else "root"
+            br_prev = f"branch_{step_idx}_prev"
+            br_sib = f"branch_{step_idx}_sib"
+
+            self.canvas.itemconfig(f"card_{sib_key}", fill="#78350F", outline="#FBBF24", width=3)
+            self.canvas.itemconfig(f"title_{sib_key}", fill="#FEF08A")
+
+            self.canvas.itemconfig(br_prev, fill="#38BDF8", width=3)
+            self.canvas.itemconfig(br_sib, fill="#38BDF8", width=3)
+
+            comb_outline = "#2DD4BF" if step_idx < depth else ("#4ADE80" if proof.verified else "#F87171")
+            comb_fill = "#0F766E" if step_idx < depth else ("#065F46" if proof.verified else "#7F1D1D")
+            self.canvas.itemconfig(f"card_{comb_key}", fill=comb_fill, outline=comb_outline, width=3)
+
+            self.step_status_chip.set_status(f"LEVEL {step_idx} OF {depth}", "info")
+            self.step_label.configure(
+                text=f"Step {step_idx}: Hash combined with {side.upper()} sibling -> Computed Parent {step_idx}."
+            )
+            self.animation_step = step_idx
+            return
+
+        if step_idx > depth:
+            root_outline = "#4ADE80" if proof.verified else "#F87171"
+            root_fill = "#065F46" if proof.verified else "#7F1D1D"
+            self.canvas.itemconfig("card_root", fill=root_fill, outline=root_outline, width=4)
+            self.canvas.itemconfig("title_root", fill="#A7F3D0" if proof.verified else "#FCA5A5")
+            res_str = "ROOT VERIFIED" if proof.verified else "ROOT MISMATCH"
+            var = "success" if proof.verified else "danger"
+            self.step_status_chip.set_status(res_str, var)
+            self.step_label.configure(
+                text="Final: Recomputed Merkle root cryptographically verified against expected tree root!"
+            )
+            self.animation_step = depth + 1
+
+    def animate_proof(self) -> None:
+        """Execute smooth animated multi frame traversal from leaf to root."""
+        if not self.current_proof:
+            return
+        self.cancel_animation()
+        self.is_animating = True
+        depth = len(self.current_proof.siblings)
+        total_steps = depth + 1
+
+        def run_frame(curr: int) -> None:
+            if not self.is_animating:
+                return
+            self.highlight_step(curr)
+            if curr < total_steps:
+                self.animation_job = self.after(220, run_frame, curr + 1)
+            else:
+                self.is_animating = False
+                self.animation_job = None
+
+        run_frame(0)
+
+    def cancel_animation(self) -> None:
+        """Halt active animation timer jobs."""
+        if self.animation_job is not None:
+            try:
+                self.after_cancel(self.animation_job)
+            except Exception:
+                pass
+            self.animation_job = None
+        self.is_animating = False
+
+    def step_forward(self) -> None:
+        """Step forward one highlight step in the audit path."""
+        if not self.current_proof:
+            return
+        self.cancel_animation()
+        depth = len(self.current_proof.siblings)
+        next_step = min(depth + 1, self.animation_step + 1)
+        self.highlight_step(next_step)
+
+    def reset_highlights(self) -> None:
+        """Reset visual node colors to standard base state."""
+        self.cancel_animation()
+        if self.current_proof:
+            self.draw_proof(self.current_proof)
+
+    def _on_canvas_click(self, event: Any) -> None:
+        canvas_x = self.canvas.canvasx(event.x)
+        canvas_y = self.canvas.canvasy(event.y)
+
+        for key, (x1, y1, x2, y2) in self.node_positions.items():
+            if x1 <= canvas_x <= x2 and y1 <= canvas_y <= y2:
+                meta = self.node_meta.get(key)
+                if meta:
+                    self.detail_label.configure(
+                        text=f"{meta['label']}: {meta['full_hash']}",
+                        foreground=NAVY,
+                    )
+                return
+
+
+def demo_receipts() -> list[dict[str, Any]]:
+    """Return realistic demo cryptographic receipts for testing and inspection."""
+    return [
+        {
+            "election_id": "demo_union_2026",
+            "receipt_handle": "RCPT_2026_A98F21B3",
+            "status": "WITNESSED",
+            "leaf_index": 42,
+            "witnessed_at": "30 Oct 2026 14:32 UTC",
+            "server_commitment": "sha256:7f83b1657ff1fc53b92dc18148a1d65dfc2d4b1fa3d677284addd200126d9069",
+            "witness_checkpoint": "sha256:3a7bd3e2360a3d29eea436fcfb7e44c735d117c42d1c1835420b6b9942dd4f1b",
+            "ballot_hash": "sha256:1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+            "protocol_engine": "RFC 9162 Merkle Tree plus RFC 8785 Canonical JSON",
+        },
+        {
+            "election_id": "demo_design_2026",
+            "receipt_handle": "RCPT_2026_B12C45D6",
+            "status": "PENDING_WITNESS",
+            "leaf_index": None,
+            "witnessed_at": None,
+            "server_commitment": "sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "witness_checkpoint": None,
+            "ballot_hash": "sha256:c234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+            "protocol_engine": "RFC 9162 Merkle Tree plus RFC 8785 Canonical JSON",
+        },
+    ]
+
+
 class HimVoteLinuxApp(tk.Tk):
     """Accessible desktop shell for Linux election and audit workflows."""
 
@@ -866,6 +1720,11 @@ class HimVoteLinuxApp(tk.Tk):
         self.elections: list[Election] = []
         self.current_archive: ElectionArchive | None = None
         self.current_inspection: ArchiveInspectionResult | None = None
+        self.high_contrast_mode: bool = False
+        self.current_view_name: str = "elections"
+        self.receipt_modal: ReceiptInspectionModal | None = None
+        self.shortcuts_modal: KeyboardShortcutsModal | None = None
+        self.last_looked_up_receipt: dict[str, Any] | None = None
 
         self.title("HimVote Linux")
         self.geometry("1160x760")
@@ -874,6 +1733,7 @@ class HimVoteLinuxApp(tk.Tk):
 
         self._configure_styles()
         self._build_shell()
+        self._setup_keyboard_shortcuts()
 
         if initial_archive and initial_archive.exists():
             self._load_archive_path(initial_archive)
@@ -881,6 +1741,20 @@ class HimVoteLinuxApp(tk.Tk):
             self._show_elections()
 
     def destroy(self) -> None:
+        if hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
+            self.merkle_visualizer.cancel_animation()
+        if self.receipt_modal:
+            try:
+                self.receipt_modal.destroy()
+            except Exception:
+                pass
+            self.receipt_modal = None
+        if self.shortcuts_modal:
+            try:
+                self.shortcuts_modal.destroy()
+            except Exception:
+                pass
+            self.shortcuts_modal = None
         if self.current_archive:
             self.current_archive.close()
             self.current_archive = None
@@ -893,29 +1767,56 @@ class HimVoteLinuxApp(tk.Tk):
         except Exception:
             pass
 
-        style.configure("App.TFrame", background=SURFACE)
-        style.configure("Nav.TFrame", background=NAVY)
-        style.configure("Card.TFrame", background=WHITE, relief="solid", borderwidth=1)
-        style.configure("Title.TLabel", background=SURFACE, foreground=NAVY, font=("DejaVu Sans", 22, "bold"))
-        style.configure("SubTitle.TLabel", background=WHITE, foreground=NAVY, font=("DejaVu Sans", 13, "bold"))
-        style.configure("Body.TLabel", background=SURFACE, foreground=TEXT, font=("DejaVu Sans", 10))
-        style.configure("Muted.TLabel", background=SURFACE, foreground=MUTED, font=("DejaVu Sans", 10))
-        style.configure("CardBody.TLabel", background=WHITE, foreground=TEXT, font=("DejaVu Sans", 10))
-        style.configure("CardMuted.TLabel", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9))
-        style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 18, "bold"))
-        style.configure("NavBody.TLabel", background=NAVY, foreground="#B7C8DC", font=("DejaVu Sans", 10))
-        style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
-        style.map("Action.TButton", background=[("active", NAVY_SOFT)])
-        style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
-        style.map("Secondary.TButton", background=[("active", "#CBD5E1")])
-        style.configure("Nav.TButton", background=NAVY, foreground=WHITE, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
-        style.map("Nav.TButton", background=[("active", NAVY_SOFT)])
-        style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
-        style.configure("Mode.TLabel", background=LIGHT_BG, foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
-        style.configure("DemoMode.TLabel", background="#FFF2D8", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
-        style.configure("BadgeGreen.TLabel", background="#DCFCE7", foreground=GREEN, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
-        style.configure("BadgeRed.TLabel", background="#FEE2E2", foreground=RED, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
-        style.configure("BadgeAmber.TLabel", background="#FEF3C7", foreground=AMBER, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+        if self.high_contrast_mode:
+            self.configure(bg=HC_BG)
+            style.configure("App.TFrame", background=HC_BG)
+            style.configure("Nav.TFrame", background="#111111")
+            style.configure("Card.TFrame", background=HC_CARD, relief="solid", borderwidth=2)
+            style.configure("Title.TLabel", background=HC_BG, foreground=HC_TEXT, font=("DejaVu Sans", 22, "bold"))
+            style.configure("SubTitle.TLabel", background=HC_CARD, foreground=HC_ACCENT, font=("DejaVu Sans", 13, "bold"))
+            style.configure("Body.TLabel", background=HC_BG, foreground=HC_TEXT, font=("DejaVu Sans", 10))
+            style.configure("Muted.TLabel", background=HC_BG, foreground=HC_MUTED, font=("DejaVu Sans", 10))
+            style.configure("CardBody.TLabel", background=HC_CARD, foreground=HC_TEXT, font=("DejaVu Sans", 10))
+            style.configure("CardMuted.TLabel", background=HC_CARD, foreground=HC_MUTED, font=("DejaVu Sans", 9))
+            style.configure("NavTitle.TLabel", background="#111111", foreground=HC_TEXT, font=("DejaVu Sans", 18, "bold"))
+            style.configure("NavBody.TLabel", background="#111111", foreground=HC_MUTED, font=("DejaVu Sans", 10))
+            style.configure("Action.TButton", background=HC_ACCENT, foreground="#000000", padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
+            style.map("Action.TButton", background=[("active", "#FFFFFF")])
+            style.configure("Secondary.TButton", background="#FFFFFF", foreground="#000000", padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
+            style.map("Secondary.TButton", background=[("active", "#E2E8F0")])
+            style.configure("Nav.TButton", background="#111111", foreground=HC_TEXT, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
+            style.map("Nav.TButton", background=[("active", "#222222")])
+            style.configure("Status.TLabel", background=HC_CARD, foreground=HC_ACCENT, font=("DejaVu Sans", 9, "bold"))
+            style.configure("Mode.TLabel", background="#1E293B", foreground=HC_ACCENT, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
+            style.configure("DemoMode.TLabel", background="#1E293B", foreground=HC_ACCENT, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeGreen.TLabel", background="#064E3B", foreground=HC_SUCCESS, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeRed.TLabel", background="#7F1D1D", foreground=HC_DANGER, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeAmber.TLabel", background="#78350F", foreground=HC_WARNING, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+        else:
+            self.configure(bg=SURFACE)
+            style.configure("App.TFrame", background=SURFACE)
+            style.configure("Nav.TFrame", background=NAVY)
+            style.configure("Card.TFrame", background=WHITE, relief="solid", borderwidth=1)
+            style.configure("Title.TLabel", background=SURFACE, foreground=NAVY, font=("DejaVu Sans", 22, "bold"))
+            style.configure("SubTitle.TLabel", background=WHITE, foreground=NAVY, font=("DejaVu Sans", 13, "bold"))
+            style.configure("Body.TLabel", background=SURFACE, foreground=TEXT, font=("DejaVu Sans", 10))
+            style.configure("Muted.TLabel", background=SURFACE, foreground=MUTED, font=("DejaVu Sans", 10))
+            style.configure("CardBody.TLabel", background=WHITE, foreground=TEXT, font=("DejaVu Sans", 10))
+            style.configure("CardMuted.TLabel", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9))
+            style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 18, "bold"))
+            style.configure("NavBody.TLabel", background=NAVY, foreground="#CBD5E1", font=("DejaVu Sans", 10))
+            style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
+            style.map("Action.TButton", background=[("active", NAVY_SOFT)])
+            style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
+            style.map("Secondary.TButton", background=[("active", "#CBD5E1")])
+            style.configure("Nav.TButton", background=NAVY, foreground=WHITE, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
+            style.map("Nav.TButton", background=[("active", NAVY_SOFT)])
+            style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
+            style.configure("Mode.TLabel", background=LIGHT_BG, foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
+            style.configure("DemoMode.TLabel", background="#FEF3C7", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeGreen.TLabel", background="#DCFCE7", foreground=GREEN, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeRed.TLabel", background="#FEE2E2", foreground=RED, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+            style.configure("BadgeAmber.TLabel", background="#FEF3C7", foreground=AMBER, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
 
     def _build_shell(self) -> None:
         root = ttk.Frame(self, style="App.TFrame")
@@ -928,9 +1829,11 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(navigation, text="HimVote", style="NavTitle.TLabel").pack(anchor="w", padx=22, pady=(28, 4))
         ttk.Label(navigation, text="Linux desktop client", style="NavBody.TLabel").pack(anchor="w", padx=22, pady=(0, 24))
 
-        self._nav_button(navigation, "Elections", self._show_elections)
-        self._nav_button(navigation, "Receipt status", self._show_receipt)
-        self._nav_button(navigation, "Offline audit", self._show_audit)
+        self._nav_button(navigation, "Elections [Ctrl+1]", self._show_elections)
+        self._nav_button(navigation, "Receipt status [Ctrl+2]", self._show_receipt)
+        self._nav_button(navigation, "Offline audit [Ctrl+3]", self._show_audit)
+        self._nav_button(navigation, "High Contrast [Ctrl+H]", self.toggle_high_contrast)
+        self._nav_button(navigation, "Shortcuts [Ctrl+K]", self.show_shortcuts_modal)
 
         ttk.Frame(navigation, style="Nav.TFrame").pack(fill="both", expand=True)
         self.mode_label = ttk.Label(navigation, text="", style="NavBody.TLabel", wraplength=185)
@@ -954,6 +1857,7 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(header, text=detail, style="Body.TLabel", wraplength=800).pack(anchor="w")
 
     def _show_elections(self) -> None:
+        self.current_view_name = "elections"
         self._clear_content()
         self._header(
             "Student view",
@@ -965,8 +1869,9 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Button(toolbar, text="Refresh elections", command=self._load_elections, style="Action.TButton").pack(side="left")
         self.election_status = ttk.Label(toolbar, text="", style="Muted.TLabel")
         self.election_status.pack(side="left", padx=14)
-        self.mode_badge = ttk.Label(toolbar, text="LOCAL DEMO MODE", style="DemoMode.TLabel")
-        self.mode_badge.pack(side="right")
+        self.mode_chip = StatusChip(toolbar, text="LOCAL DEMO MODE", variant="warning")
+        self.mode_chip.pack(side="right")
+        self.mode_badge = self.mode_chip
 
         self.election_list = ttk.Frame(self.content, style="App.TFrame")
         self.election_list.pack(fill="both", expand=True, padx=36, pady=(0, 24))
@@ -979,15 +1884,14 @@ class HimVoteLinuxApp(tk.Tk):
             self.elections = self.api_client.get_elections() if self.api_client else demo_elections()
             mode = "Connected to institutional API" if self.api_client else "Local demo mode. No ballots can be cast."
             self.mode_label.configure(text=mode)
-            self.mode_badge.configure(
-                text="CONNECTED API" if self.api_client else "LOCAL DEMO MODE",
-                style="Mode.TLabel" if self.api_client else "DemoMode.TLabel",
-            )
+            chip_var = "info" if self.api_client else "warning"
+            chip_text = "CONNECTED API" if self.api_client else "LOCAL DEMO MODE"
+            self.mode_chip.set_status(chip_text, chip_var)
             self.election_status.configure(text=f"{len(self.elections)} elections loaded")
         except ApiError as exc:
             self.elections = demo_elections()
             self.mode_label.configure(text="API unavailable. Showing local demo data only.")
-            self.mode_badge.configure(text="API UNAVAILABLE", style="DemoMode.TLabel")
+            self.mode_chip.set_status("API UNAVAILABLE", "danger")
             self.election_status.configure(text=str(exc))
 
         for child in self.election_list.winfo_children():
@@ -1001,7 +1905,7 @@ class HimVoteLinuxApp(tk.Tk):
         card.columnconfigure(0, weight=1)
         top = ttk.Frame(card, style="Card.TFrame")
         top.pack(fill="x")
-        status = ttk.Label(top, text=f"  {election.state}  ", style="Status.TLabel", foreground=status_colour(election.state))
+        status = StatusChip(top, text=election.state, variant=chip_variant_from_state(election.state))
         status.pack(side="left")
         ttk.Label(top, text=f"Closes {election.closes_at}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(side="right")
         ttk.Label(card, text=election.title, background=WHITE, foreground=NAVY, font=("DejaVu Sans", 14, "bold"), wraplength=380).pack(anchor="w", pady=(12, 4))
@@ -1009,6 +1913,7 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(card, text=f"Election ID  {election.election_id}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(anchor="w", pady=(3, 0))
 
     def _show_receipt(self) -> None:
+        self.current_view_name = "receipt"
         self._clear_content()
         self._header(
             "Receipt verification",
@@ -1024,26 +1929,66 @@ class HimVoteLinuxApp(tk.Tk):
         handle_entry = ttk.Entry(form, width=32)
         handle_entry.grid(row=1, column=1, sticky="ew", pady=8)
         form.columnconfigure(1, weight=1)
-        result = ttk.Label(form, text="", background=WHITE, foreground=TEXT, wraplength=620)
-        result.grid(row=3, column=0, columnspan=2, sticky="w", pady=(18, 0))
+
+        btn_row = ttk.Frame(form, style="Card.TFrame")
+        btn_row.grid(row=2, column=1, sticky="w", pady=(12, 0))
+
+        self.receipt_chip = StatusChip(form, text="READY", variant="neutral")
+        self.receipt_chip.grid(row=3, column=0, sticky="w", pady=(18, 0))
+
+        result = ttk.Label(form, text="Enter election ID and receipt handle to verify status.", background=WHITE, foreground=TEXT, wraplength=620)
+        result.grid(row=3, column=1, sticky="w", pady=(18, 0), padx=(10, 0))
 
         def lookup() -> None:
+            e_id = election_entry.get().strip()
+            h_id = handle_entry.get().strip()
             if not self.api_client:
-                result.configure(text="Local demo mode has no authoritative receipt service.", foreground=AMBER)
+                demos = demo_receipts()
+                match = next((d for d in demos if d.get("election_id") == e_id or d.get("receipt_handle") == h_id), demos[0])
+                self.last_looked_up_receipt = match
+                self.receipt_chip.set_status(match["status"], chip_variant_from_state(match["status"]))
+                result.configure(
+                    text=f"Demo Receipt State: {match['status']}\nLeaf index: {match['leaf_index']}\nWitnessed: {match['witnessed_at']}",
+                    foreground=TEXT,
+                )
                 return
             try:
-                receipt = self.api_client.get_receipt(election_entry.get().strip(), handle_entry.get().strip())
+                receipt = self.api_client.get_receipt(e_id, h_id)
+                self.last_looked_up_receipt = {
+                    "election_id": e_id,
+                    "receipt_handle": h_id,
+                    "status": receipt.status,
+                    "leaf_index": receipt.leaf_index,
+                    "witnessed_at": receipt.witnessed_at,
+                }
+                self.receipt_chip.set_status(receipt.status, chip_variant_from_state(receipt.status))
                 result.configure(
                     text=f"State: {receipt.status}\nLeaf index: {receipt.leaf_index}\nWitnessed at: {receipt.witnessed_at or 'Not yet witnessed'}",
                     foreground=status_colour(receipt.status),
                 )
             except ApiError as exc:
+                self.receipt_chip.set_status("ERROR", "danger")
                 result.configure(text=str(exc), foreground=RED)
 
-        ttk.Button(form, text="Check receipt", command=lookup, style="Action.TButton").grid(row=2, column=1, sticky="w", pady=(12, 0))
+        def open_modal() -> None:
+            rec_to_open = self.last_looked_up_receipt or demo_receipts()[0]
+            self._open_receipt_modal(rec_to_open)
+
+        def load_demo() -> None:
+            demo_item = demo_receipts()[0]
+            election_entry.delete(0, "end")
+            election_entry.insert(0, demo_item["election_id"])
+            handle_entry.delete(0, "end")
+            handle_entry.insert(0, demo_item["receipt_handle"])
+            lookup()
+
+        ttk.Button(btn_row, text="Check receipt", command=lookup, style="Action.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Inspect Receipt Modal", command=open_modal, style="Secondary.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Load Demo Receipt", command=load_demo, style="Secondary.TButton").pack(side="left")
 
     def _show_audit(self) -> None:
         """Render the comprehensive offline election audit view."""
+        self.current_view_name = "audit"
         self._clear_content()
         self._header(
             "Offline election audit",
@@ -1177,8 +2122,8 @@ class HimVoteLinuxApp(tk.Tk):
         status_card.pack(side="left", fill="both", expand=True, padx=(6, 0))
         ttk.Label(status_card, text="Integrity Verdict", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 8))
         verdict_text = "PASS ALL AUDITS" if insp.is_valid else "AUDIT ISSUES DETECTED"
-        verdict_style = "BadgeGreen.TLabel" if insp.is_valid else "BadgeRed.TLabel"
-        ttk.Label(status_card, text=f"  {verdict_text}  ", style=verdict_style).pack(anchor="w", pady=(0, 6))
+        verdict_variant = "success" if insp.is_valid else "danger"
+        StatusChip(status_card, text=verdict_text, variant=verdict_variant).pack(anchor="w", pady=(0, 6))
         manifest_status = "Manifest digest verified" if insp.manifest_digest_valid else "Manifest digest mismatch"
         ttk.Label(status_card, text=f"* {manifest_status}", style="CardMuted.TLabel").pack(anchor="w")
         seq_status = "Leaf sequence continuous" if insp.leaf_sequence_valid else "Leaf sequence gap or duplicate"
@@ -1260,12 +2205,16 @@ class HimVoteLinuxApp(tk.Tk):
         self.leaf_index_spin.set(0)
         self.leaf_index_spin.pack(side="left", padx=(0, 10))
 
-        ttk.Button(leaf_controls, text="Recompute Proof", command=self._inspect_leaf_proof, style="Action.TButton").pack(side="left")
+        ttk.Button(leaf_controls, text="Recompute Proof", command=self._inspect_leaf_proof, style="Action.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(leaf_controls, text="Animate Proof", command=self._animate_proof, style="Secondary.TButton").pack(side="left")
 
         self.proof_output = ttk.Label(proof_card, text="", style="CardBody.TLabel", justify="left")
         self.proof_output.pack(anchor="w", pady=(8, 4))
 
-        self.proof_treeview = ttk.Treeview(proof_card, columns=("step", "side", "hash"), show="headings", height=6)
+        self.merkle_visualizer = MerkleTreeVisualizer(proof_card)
+        self.merkle_visualizer.pack(fill="x", expand=False, pady=(4, 10))
+
+        self.proof_treeview = ttk.Treeview(proof_card, columns=("step", "side", "hash"), show="headings", height=5)
         self.proof_treeview.heading("step", text="Step")
         self.proof_treeview.heading("side", text="Position")
         self.proof_treeview.heading("hash", text="Sibling Hash")
@@ -1299,6 +2248,9 @@ class HimVoteLinuxApp(tk.Tk):
 
         for step, (side, sibling_hash) in enumerate(proof.siblings, start=1):
             self.proof_treeview.insert("", "end", values=(step, side.upper(), sibling_hash))
+
+        if hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
+            self.merkle_visualizer.draw_proof(proof)
 
     def _render_tally_tab(self) -> None:
         for child in self.tab_tally.winfo_children():
@@ -1351,7 +2303,7 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(header, text=f"({tally.candidate_id})", font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(side="left", padx=8)
 
         if tally.is_winner:
-            ttk.Label(header, text="  LEADING  ", style="BadgeGreen.TLabel").pack(side="left", padx=6)
+            StatusChip(header, text="LEADING", variant="success").pack(side="left", padx=6)
 
         # Votes and percentage
         count_str = f"{tally.vote_count} votes ({tally.percentage:.1f}%)"
@@ -1446,6 +2398,100 @@ class HimVoteLinuxApp(tk.Tk):
         except Exception as exc:
             self.verifier_log.delete("1.0", "end")
             self.verifier_log.insert("end", f"Execution failed: {exc}")
+
+
+    def _animate_proof(self) -> None:
+        if hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
+            self.merkle_visualizer.animate_proof()
+
+    def _open_receipt_modal(self, receipt_data: dict[str, Any]) -> None:
+        if self.receipt_modal:
+            try:
+                self.receipt_modal.destroy()
+            except Exception:
+                pass
+        self.receipt_modal = ReceiptInspectionModal(self, receipt_data, self.current_archive)
+
+    def show_shortcuts_modal(self) -> None:
+        """Open the keyboard navigation shortcuts modal dialog."""
+        if self.shortcuts_modal:
+            try:
+                self.shortcuts_modal.destroy()
+            except Exception:
+                pass
+        self.shortcuts_modal = KeyboardShortcutsModal(self)
+
+    def toggle_high_contrast(self) -> None:
+        """Toggle between standard contrast and high contrast accessibility theme."""
+        self.high_contrast_mode = not self.high_contrast_mode
+        self._configure_styles()
+        self._refresh_current_view()
+
+    def _refresh_current_view(self) -> None:
+        if self.current_view_name == "elections":
+            self._show_elections()
+        elif self.current_view_name == "receipt":
+            self._show_receipt()
+        elif self.current_view_name == "audit":
+            self._show_audit()
+
+    def _setup_keyboard_shortcuts(self) -> None:
+        """Register global keyboard navigation bindings."""
+        self.bind_all("<Control-Key-1>", lambda e: self._show_elections())
+        self.bind_all("<Alt-Key-1>", lambda e: self._show_elections())
+        self.bind_all("<Control-Key-2>", lambda e: self._show_receipt())
+        self.bind_all("<Alt-Key-2>", lambda e: self._show_receipt())
+        self.bind_all("<Control-Key-3>", lambda e: self._show_audit())
+        self.bind_all("<Alt-Key-3>", lambda e: self._show_audit())
+
+        self.bind_all("<Control-Key-o>", lambda e: self._open_archive_file())
+        self.bind_all("<Control-Key-O>", lambda e: self._open_archive_file())
+
+        self.bind_all("<Control-Key-d>", lambda e: self._load_demo_archive())
+        self.bind_all("<Control-Key-D>", lambda e: self._load_demo_archive())
+
+        self.bind_all("<Control-Key-r>", lambda e: self._handle_refresh_shortcut())
+        self.bind_all("<Control-Key-R>", lambda e: self._handle_refresh_shortcut())
+        self.bind_all("<F5>", lambda e: self._handle_refresh_shortcut())
+
+        self.bind_all("<Control-Key-p>", lambda e: self._handle_proof_shortcut())
+        self.bind_all("<Control-Key-P>", lambda e: self._handle_proof_shortcut())
+
+        self.bind_all("<Control-Key-h>", lambda e: self.toggle_high_contrast())
+        self.bind_all("<Control-Key-H>", lambda e: self.toggle_high_contrast())
+
+        self.bind_all("<Control-Key-k>", lambda e: self.show_shortcuts_modal())
+        self.bind_all("<Control-Key-K>", lambda e: self.show_shortcuts_modal())
+        self.bind_all("<F1>", lambda e: self.show_shortcuts_modal())
+
+        self.bind_all("<Escape>", lambda e: self._handle_escape_shortcut())
+
+    def _handle_refresh_shortcut(self) -> None:
+        if self.current_view_name == "elections":
+            self._load_elections()
+        elif self.current_view_name == "audit":
+            if hasattr(self, "leaf_index_spin"):
+                self._inspect_leaf_proof()
+
+    def _handle_proof_shortcut(self) -> None:
+        if self.current_view_name == "audit" and hasattr(self, "leaf_index_spin"):
+            self._inspect_leaf_proof()
+
+    def _handle_escape_shortcut(self) -> None:
+        if self.receipt_modal:
+            try:
+                self.receipt_modal.destroy()
+            except Exception:
+                pass
+            self.receipt_modal = None
+        elif self.shortcuts_modal:
+            try:
+                self.shortcuts_modal.destroy()
+            except Exception:
+                pass
+            self.shortcuts_modal = None
+        elif hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
+            self.merkle_visualizer.reset_highlights()
 
 
 def parse_args() -> argparse.Namespace:

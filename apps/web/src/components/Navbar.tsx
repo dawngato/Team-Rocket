@@ -91,7 +91,7 @@ export function Navbar() {
                 aria-expanded={roleMenuOpen}
                 aria-haspopup="true"
                 aria-label="Switch Role Workspace"
-                className="min-h-[44px] px-3 py-2 text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-[#1E3352] text-[#10233F] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                className="min-h-[44px] px-3.5 py-2 text-xs sm:text-sm font-medium rounded-lg border border-slate-300 dark:border-[#1E3352] text-[#10233F] dark:text-white hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] transition-all duration-75 ease-out flex items-center gap-1.5 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#10233F]"
               >
                 <span className="hidden sm:inline">Role:</span>
                 <span className="capitalize font-semibold text-[#157E92] dark:text-[#38BDF8]">
@@ -101,7 +101,7 @@ export function Navbar() {
 
               {roleMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] shadow-xl py-2 z-50 text-sm"
+                  className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] shadow-xl py-2 z-50 text-sm origin-top-right animate-popover-spring"
                   role="menu"
                 >
                   <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
@@ -117,7 +117,7 @@ export function Navbar() {
                           setCurrentRole(item.role as any);
                           setRoleMenuOpen(false);
                         }}
-                        className={`flex items-center gap-2.5 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
+                        className={`flex items-center gap-2.5 px-3 py-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] transition-all duration-75 ${
                           currentRole === item.role
                             ? "text-[#157E92] dark:text-[#38BDF8] font-bold bg-[#157E92]/10"
                             : "text-slate-700 dark:text-slate-300"
@@ -138,7 +138,7 @@ export function Navbar() {
               type="button"
               onClick={toggleTheme}
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] transition-all duration-75 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#10233F]"
             >
               {theme === "dark" ? (
                 <Sun className="w-5 h-5" aria-hidden="true" />
@@ -150,7 +150,7 @@ export function Navbar() {
             {/* Auth Sign In Link */}
             <Link
               href="/auth/login"
-              className="hidden lg:flex min-h-[44px] px-4 py-2 text-sm font-semibold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg items-center justify-center transition-colors shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+              className="hidden lg:flex min-h-[44px] px-4 py-2 text-sm font-semibold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] rounded-lg items-center justify-center transition-all duration-75 ease-out shadow-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#10233F]"
             >
               Portal Login
             </Link>
@@ -161,7 +161,7 @@ export function Navbar() {
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-expanded={mobileMenuOpen}
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
-              className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+              className="md:hidden min-h-[44px] min-w-[44px] flex items-center justify-center p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] transition-all duration-75 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#10233F]"
             >
               {mobileMenuOpen ? (
                 <X className="w-6 h-6" aria-hidden="true" />
@@ -208,7 +208,7 @@ export function Navbar() {
                 <Link
                   href="/auth/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full min-h-[44px] px-4 py-2 text-center text-sm font-semibold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg flex items-center justify-center transition-colors shadow-sm"
+                  className="w-full min-h-[44px] px-4 py-2 text-center text-sm font-semibold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] rounded-lg flex items-center justify-center transition-all duration-75 ease-out shadow-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92]"
                 >
                   Portal Login
                 </Link>

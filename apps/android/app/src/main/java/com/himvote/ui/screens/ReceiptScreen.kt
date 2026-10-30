@@ -3,33 +3,50 @@ package com.himvote.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.himvote.ui.components.BannerStyle
 import com.himvote.ui.components.HimVoteButton
 import com.himvote.ui.components.HimVoteTopBar
+import com.himvote.ui.components.MicroInteractions.animateCardElevation
+import com.himvote.ui.components.MicroInteractions.microPressScale
 import com.himvote.ui.components.StatusBanner
+import com.himvote.ui.components.StyledStatusBanner
+import com.himvote.util.AccessibilityHelpers.LargeFontScaleThreshold
+import com.himvote.util.AccessibilityHelpers.accessibleTouchTarget
 import com.himvote.util.AccessibilityHelpers.talkBackHeading
 import com.himvote.util.DesignTokens
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
+/**
+ * Receipt screen providing cryptographic receipt inspection,
+ * micro interaction copy feedback, elevation transitions, and accessible font scaling.
+ */
 @Composable
 fun ReceiptScreen(
     viewModel: ReceiptViewModel,
@@ -39,6 +56,16 @@ fun ReceiptScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val fontScale = LocalDensity.current.fontScale
+    val isLargeFont = fontScale >= LargeFontScaleThreshold
+
+    // Micro interaction states for copy buttons
+    var copiedHandle by remember { mutableStateOf(false) }
+    var copiedHash by remember { mutableStateOf(false) }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val elevation by animateCardElevation(interactionSource)
 
     Scaffold(
         topBar = {
@@ -89,10 +116,12 @@ fun ReceiptScreen(
 
             state.receipt?.let { receipt ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .microPressScale(interactionSource),
                     shape = RoundedCornerShape(DesignTokens.CardCornerRadius),
                     colors = CardDefaults.cardColors(containerColor = DesignTokens.CardWhite),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    elevation = CardDefaults.cardElevation(defaultElevation = elevation)
                 ) {
                     Column(
                         modifier = Modifier.padding(DesignTokens.SpacingMedium),
@@ -115,20 +144,41 @@ fun ReceiptScreen(
                                     val clip = ClipData.newPlainText("Receipt Handle", receipt.receiptHandle)
                                     clipboard.setPrimaryClip(clip)
                                     viewModel.markCopied()
-                                }
+                                    copiedHandle = true
+                                    coroutineScope.launch {
+                                        delay(2000)
+                                        copiedHandle = false
+                                    }
+                                },
+                                modifier = Modifier.accessibleTouchTarget()
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = "Copy receipt handle",
-                                    tint = DesignTokens.Teal600,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                AnimatedContent(
+                                    targetState = copiedHandle,
+                                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                    label = "copy_handle_icon"
+                                ) { copied ->
+                                    if (copied) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Handle copied",
+                                            tint = DesignTokens.Green600,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = "Copy receipt handle",
+                                            tint = DesignTokens.Teal600,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
 
                         Text(
                             text = receipt.receiptHandle,
-                            fontSize = 15.sp,
+                            fontSize = if (isLargeFont) 16.sp else 15.sp,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.Bold,
                             color = DesignTokens.Navy900
@@ -156,20 +206,41 @@ fun ReceiptScreen(
                                     val clip = ClipData.newPlainText("Ballot Hash", receipt.ballotHash)
                                     clipboard.setPrimaryClip(clip)
                                     viewModel.markCopied()
-                                }
+                                    copiedHash = true
+                                    coroutineScope.launch {
+                                        delay(2000)
+                                        copiedHash = false
+                                    }
+                                },
+                                modifier = Modifier.accessibleTouchTarget()
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.ContentCopy,
-                                    contentDescription = "Copy ballot hash",
-                                    tint = DesignTokens.Teal600,
-                                    modifier = Modifier.size(18.dp)
-                                )
+                                AnimatedContent(
+                                    targetState = copiedHash,
+                                    transitionSpec = { fadeIn() togetherWith fadeOut() },
+                                    label = "copy_hash_icon"
+                                ) { copied ->
+                                    if (copied) {
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = "Hash copied",
+                                            tint = DesignTokens.Green600,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    } else {
+                                        Icon(
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = "Copy ballot hash",
+                                            tint = DesignTokens.Teal600,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
                             }
                         }
 
                         Text(
                             text = receipt.ballotHash,
-                            fontSize = 13.sp,
+                            fontSize = if (isLargeFont) 13.sp else 12.sp,
                             fontFamily = FontFamily.Monospace,
                             color = DesignTokens.TextPrimary
                         )
@@ -220,21 +291,17 @@ fun ReceiptScreen(
                 }
 
                 if (state.isCopied) {
-                    StatusBanner(
+                    StyledStatusBanner(
+                        style = BannerStyle.SUCCESS,
                         title = "Copied to Clipboard",
-                        message = "Cryptographic handle has been copied to your system clipboard.",
-                        icon = Icons.Default.CheckCircle,
-                        tintColor = DesignTokens.Teal600,
-                        backgroundColor = DesignTokens.Teal600.copy(alpha = 0.1f)
+                        message = "Cryptographic handle has been copied to your system clipboard."
                     )
                 }
 
-                StatusBanner(
+                StyledStatusBanner(
+                    style = BannerStyle.VERIFIED,
                     title = "Cryptographic Verification Available",
-                    message = "You can mathematically confirm your ballot is part of the final audited tally without revealing your secret choice.",
-                    icon = Icons.Default.CheckCircle,
-                    tintColor = DesignTokens.Green600,
-                    backgroundColor = DesignTokens.Green600.copy(alpha = 0.1f)
+                    message = "You can mathematically confirm your ballot is part of the final audited tally without revealing your secret choice."
                 )
 
                 HimVoteButton(
@@ -251,11 +318,10 @@ fun ReceiptScreen(
                     isSecondary = true
                 )
             } ?: run {
-                StatusBanner(
+                StyledStatusBanner(
+                    style = BannerStyle.WARNING,
                     title = "No Receipt Located",
-                    message = "No receipt was found in the secure hardware store for this election identifier.",
-                    tintColor = DesignTokens.Amber600,
-                    backgroundColor = DesignTokens.Amber600.copy(alpha = 0.1f)
+                    message = "No receipt was found in the secure hardware store for this election identifier."
                 )
             }
         }

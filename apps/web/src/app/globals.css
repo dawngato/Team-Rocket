@@ -84,4 +84,103 @@ textarea:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+
+  .evidence-orbit-tilt {
+    transform: none !important;
+  }
+
+  .evidence-orbit-signal {
+    animation: none !important;
+  }
 }
+
+.evidence-orbit-grid {
+  background-image: linear-gradient(rgba(113, 163, 190, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(113, 163, 190, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+}
+
+.evidence-orbit-tilt {
+  transform-style: preserve-3d;
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.evidence-orbit-signal {
+  animation: evidence-signal 3.6s ease-in-out infinite;
+}
+
+@keyframes evidence-signal {
+  0%,
+  100% {
+    opacity: 0.24;
+  }
+  50% {
+    opacity: 0.86;
+  }
+}
+
+/* Subtle spring enter transitions for dialogs and popovers */
+@keyframes dialogSpringEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes popoverSpringEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes backdropFadeEnter {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-dialog-spring {
+  transform-origin: center;
+  animation: dialogSpringEnter 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-popover-spring {
+  transform-origin: top right;
+  animation: popoverSpringEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-popover-spring-bottom {
+  transform-origin: bottom center;
+  animation: popoverSpringEnter 180ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.animate-backdrop-fade {
+  animation: backdropFadeEnter 180ms ease-out forwards;
+  will-change: opacity;
+}
+
+/* Tactile button active scaling and instant feedback */
+.tactile-button {
+  transition: transform 75ms ease-out, background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
+}
+.tactile-button:active {
+  transform: scale(0.98);
+}
+

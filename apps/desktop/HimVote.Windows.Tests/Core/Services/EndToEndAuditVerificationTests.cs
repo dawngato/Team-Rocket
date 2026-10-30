@@ -138,6 +138,7 @@ print(f'DIGEST:{{manifest_digest}}')
             ExpectedSha256Checksum = expectedSha,
             ExportDirectory = extractDest,
             TrustPinsFilePath = trustPinsPath,
+            AllowDevelopmentProfile = true,
             Timeout = TimeSpan.FromSeconds(30)
         };
 
@@ -157,7 +158,8 @@ print(f'DIGEST:{{manifest_digest}}')
             EvidenceDirectoryPath = extractDest,
             TrustPinsFilePath = trustPinsPath,
             VerifierScriptPath = _verifierScriptPath,
-            ExpectedVerifierChecksum = expectedSha
+            ExpectedVerifierChecksum = expectedSha,
+            AllowDevelopmentProfile = true
         };
 
         await auditVm.RunVerificationAsync();

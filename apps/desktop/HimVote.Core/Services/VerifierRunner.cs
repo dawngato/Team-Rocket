@@ -95,6 +95,7 @@ public class VerifierRunner : IVerifierRunner
             if (!string.IsNullOrEmpty(rosterArg)) arguments += $" --roster \"{rosterArg}\"";
             if (!string.IsNullOrEmpty(issuanceArg)) arguments += $" --issuance \"{issuanceArg}\"";
             if (!string.IsNullOrEmpty(chainArg)) arguments += $" --chain \"{chainArg}\"";
+            if (options.AllowDevelopmentProfile) arguments += " --allow-development-profile";
 
             var startInfo = new ProcessStartInfo
             {

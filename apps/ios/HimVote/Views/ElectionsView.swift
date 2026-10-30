@@ -4,6 +4,9 @@ public struct ElectionsView: View {
     @Bindable var authViewModel: AuthViewModel
     @Bindable var electionsViewModel: ElectionsViewModel
     
+    @State private var showGuidelinesSheet: Bool = false
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
+    
     public init(authViewModel: AuthViewModel, electionsViewModel: ElectionsViewModel) {
         self.authViewModel = authViewModel
         self.electionsViewModel = electionsViewModel
@@ -21,12 +24,27 @@ public struct ElectionsView: View {
             .navigationTitle("HimVote Elections")
             .searchable(text: $electionsViewModel.searchQuery, prompt: "Search elections by title")
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        HapticFeedback.light()
+                        showGuidelinesSheet = true
+                    } label: {
+                        Image(systemName: "info.circle")
+                            .font(.system(size: navIconSize))
+                            .foregroundStyle(ColorTokens.brandAccent)
+                    }
+                    .accessibilityLabel("Voter Guidelines and Process")
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     logoutButton
                 }
             }
             .task {
                 await refreshData()
+            }
+            .sheet(isPresented: $showGuidelinesSheet) {
+                ElectionGuidelinesSheet()
             }
         }
     }
@@ -48,7 +66,7 @@ public struct ElectionsView: View {
             Spacer()
             
             Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 20))
+                .font(.system(size: navIconSize))
                 .foregroundStyle(ColorTokens.institutionalGold)
                 .accessibilityHidden(true)
         }
@@ -66,6 +84,9 @@ public struct ElectionsView: View {
         .pickerStyle(.segmented)
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+        .onChange(of: electionsViewModel.activeFilter) { _, _ in
+            HapticFeedback.selection()
+        }
     }
     
     @ViewBuilder
@@ -77,6 +98,7 @@ public struct ElectionsView: View {
             Spacer()
         } else if electionsViewModel.filteredElections.isEmpty {
             emptyStateView
+                .transition(.opacity)
         } else {
             List(electionsViewModel.filteredElections) { election in
                 NavigationLink {
@@ -90,9 +112,14 @@ public struct ElectionsView: View {
                 }
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .simultaneousGesture(TapGesture().onEnded {
+                    HapticFeedback.light()
+                })
             }
             .listStyle(.plain)
+            .animation(SpringTokens.fluid, value: electionsViewModel.filteredElections)
             .refreshable {
+                HapticFeedback.medium()
                 await refreshData()
             }
         }
@@ -122,8 +149,11 @@ public struct ElectionsView: View {
                 .multilineTextAlignment(.center)
             
             Button("Reset Filter") {
-                electionsViewModel.activeFilter = .all
-                electionsViewModel.searchQuery = ""
+                HapticFeedback.light()
+                withAnimation(SpringTokens.snappy) {
+                    electionsViewModel.activeFilter = .all
+                    electionsViewModel.searchQuery = ""
+                }
             }
             .font(Typography.captionBold)
             .foregroundStyle(ColorTokens.brandAccent)
@@ -136,6 +166,7 @@ public struct ElectionsView: View {
     
     private var logoutButton: some View {
         Button {
+            HapticFeedback.medium()
             Task {
                 await authViewModel.logout()
             }
@@ -160,6 +191,9 @@ public struct ElectionsView: View {
 public struct ElectionCardRow: View {
     public let election: ElectionSummary
     
+    @ScaledMetric(relativeTo: .caption) private var clockIconSize: CGFloat = 14
+    @ScaledMetric(relativeTo: .caption) private var activeDotSize: CGFloat = 8
+    
     public init(election: ElectionSummary) {
         self.election = election
     }
@@ -171,7 +205,7 @@ public struct ElectionCardRow: View {
                     Text(election.title)
                         .font(Typography.cardHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
-                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
@@ -184,7 +218,7 @@ public struct ElectionCardRow: View {
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
-                        .font(Typography.caption)
+                        .font(.system(size: clockIconSize))
                         .foregroundStyle(ColorTokens.textTertiary)
                     
                     Text("Closes: \(formattedDate(election.closesAtUtc))")
@@ -198,7 +232,8 @@ public struct ElectionCardRow: View {
                     HStack(spacing: 4) {
                         Circle()
                             .fill(ColorTokens.stateSuccess)
-                            .frame(width: 8, height: 8)
+                            .frame(width: activeDotSize, height: activeDotSize)
+                            .beaconPulse(color: ColorTokens.stateSuccess, isActive: true)
                         
                         Text("Active Now")
                             .font(Typography.badgeText)

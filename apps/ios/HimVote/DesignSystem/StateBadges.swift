@@ -3,6 +3,10 @@ import SwiftUI
 public struct ElectionStateBadge: View {
     public let state: ElectionState
     
+    @ScaledMetric(relativeTo: .caption2) private var horizontalPadding: CGFloat = 8
+    @ScaledMetric(relativeTo: .caption2) private var verticalPadding: CGFloat = 4
+    @ScaledMetric(relativeTo: .caption2) private var cornerRadius: CGFloat = 6
+    
     public init(state: ElectionState) {
         self.state = state
     }
@@ -44,15 +48,16 @@ public struct ElectionStateBadge: View {
     public var body: some View {
         Text(state.displayName.uppercased())
             .font(Typography.badgeText)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .foregroundStyle(foregroundColor)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(foregroundColor.opacity(0.3), lineWidth: 1)
             )
+            .animation(SpringTokens.snappy, value: state)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Election state: \(state.displayName)")
     }
@@ -60,6 +65,9 @@ public struct ElectionStateBadge: View {
 
 public struct ReceiptStatusBadge: View {
     public let status: ReceiptStatus
+    
+    @ScaledMetric(relativeTo: .caption2) private var horizontalPadding: CGFloat = 10
+    @ScaledMetric(relativeTo: .caption2) private var verticalPadding: CGFloat = 5
     
     public init(status: ReceiptStatus) {
         self.status = status
@@ -94,8 +102,8 @@ public struct ReceiptStatusBadge: View {
     public var body: some View {
         Text(status.displayName.uppercased())
             .font(Typography.badgeText)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .foregroundStyle(foregroundColor)
             .background(backgroundColor)
             .clipShape(Capsule())
@@ -103,6 +111,7 @@ public struct ReceiptStatusBadge: View {
                 Capsule()
                     .stroke(foregroundColor.opacity(0.4), lineWidth: 1)
             )
+            .animation(SpringTokens.snappy, value: status)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Receipt verification status: \(status.displayName)")
     }
@@ -110,6 +119,10 @@ public struct ReceiptStatusBadge: View {
 
 public struct CredentialStatusBadge: View {
     public let status: CredentialStatus
+    
+    @ScaledMetric(relativeTo: .caption2) private var horizontalPadding: CGFloat = 8
+    @ScaledMetric(relativeTo: .caption2) private var verticalPadding: CGFloat = 4
+    @ScaledMetric(relativeTo: .caption2) private var cornerRadius: CGFloat = 6
     
     public init(status: CredentialStatus) {
         self.status = status
@@ -144,15 +157,16 @@ public struct CredentialStatusBadge: View {
     public var body: some View {
         Text(status.displayName.uppercased())
             .font(Typography.badgeText)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
             .foregroundStyle(foregroundColor)
             .background(backgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
-                RoundedRectangle(cornerRadius: 6)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .stroke(foregroundColor.opacity(0.3), lineWidth: 1)
             )
+            .animation(SpringTokens.snappy, value: status)
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Voter credential status: \(status.displayName)")
     }

@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HimVote.Linux")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+37215bc26a9db09f1a1d64d216e3d86a49d82fa2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+247678585b611407bc0493e5ff7ed22ab036e4f6")]
 [assembly: System.Reflection.AssemblyProductAttribute("HimVote.Linux")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HimVote.Linux")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

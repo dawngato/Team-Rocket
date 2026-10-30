@@ -10,6 +10,10 @@ public struct ResultsView: View {
     @State private var errorMessage: String?
     @State private var digestCopied: Bool = false
     
+    @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 72
+    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 38
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
+    
     private let apiClient: ApiClientProtocol
     
     public init(
@@ -31,8 +35,13 @@ public struct ResultsView: View {
                 
                 if isLoading {
                     loadingView
+                        .transition(.opacity)
                 } else if let error = errorMessage {
                     errorBanner(message: error)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                            removal: .opacity
+                        ))
                 } else if let results = results {
                     summaryCard(results: results)
                     
@@ -44,17 +53,21 @@ public struct ResultsView: View {
                 }
             }
             .padding(16)
+            .animation(SpringTokens.fluid, value: results)
+            .animation(SpringTokens.fluid, value: isLoading)
         }
         .navigationTitle("Election Results")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    HapticFeedback.medium()
                     Task {
                         await loadResults()
                     }
                 } label: {
                     Image(systemName: "arrow.clockwise")
+                        .font(.system(size: navIconSize))
                         .foregroundStyle(ColorTokens.brandPrimary)
                 }
                 .accessibilityLabel("Refresh election results")
@@ -70,12 +83,12 @@ public struct ResultsView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.stateSuccess.opacity(0.12))
-                    .frame(width: 72, height: 72)
+                    .frame(width: headerCircleSize, height: headerCircleSize)
                 
                 Image(systemName: "chart.bar.doc.horizontal.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 38, height: 38)
+                    .frame(width: headerIconSize, height: headerIconSize)
                     .foregroundStyle(ColorTokens.stateSuccess)
             }
             .accessibilityHidden(true)
@@ -121,12 +134,14 @@ public struct ResultsView: View {
                     Text(message)
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.stateDanger)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 
                 Spacer()
             }
             
             Button {
+                HapticFeedback.medium()
                 Task {
                     await loadResults()
                 }
@@ -139,6 +154,7 @@ public struct ResultsView: View {
                     .background(ColorTokens.brandPrimary)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             }
+            .interactiveSpringButton()
         }
         .padding(16)
         .background(ColorTokens.stateDangerBackground)
@@ -180,7 +196,10 @@ public struct ResultsView: View {
                     Spacer()
                     
                     Button {
+                        #if canImport(UIKit)
                         UIPasteboard.general.string = results.manifestDigest
+                        #endif
+                        HapticFeedback.success()
                         digestCopied = true
                         Task {
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -267,6 +286,7 @@ public struct ResultsView: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .fill(index == 0 ? ColorTokens.brandAccent : ColorTokens.brandPrimaryLight)
                                 .frame(width: max(0, geometry.size.width * CGFloat(barFraction)), height: 10)
+                                .animation(SpringTokens.fluid, value: barFraction)
                         }
                     }
                     .frame(height: 10)
@@ -299,6 +319,7 @@ public struct ResultsView: View {
                 Text("Small electorate cohorts are subject to privacy limiting threshold protections to prevent individual voter identification.")
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .padding(14)
@@ -316,8 +337,10 @@ public struct ResultsView: View {
         errorMessage = nil
         do {
             self.results = try await apiClient.fetchResults(electionId: electionId, sessionToken: token)
+            HapticFeedback.success()
         } catch {
             self.errorMessage = error.localizedDescription
+            HapticFeedback.error()
         }
         isLoading = false
     }

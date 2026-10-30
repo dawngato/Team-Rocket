@@ -3,13 +3,13 @@
   "checkpoint_sequence": 1,
   "election_id": "elec_hptu_sc_2026",
   "issued_count": 100,
-  "last_leaf_digest": "sha256:3a90764366335f49d81ad153a53506f260c8a095ebb22407b0c677b82bbcfbb7",
+  "last_leaf_digest": "sha256:22b95bec20412d93afddb0024f3c6f5a8e87c8db4f09dc3e66032b16d17c5619",
   "last_leaf_index": 99,
   "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
-  "merkle_root": "sha256:3a784208fadbc9c70711c7e4cdc265afc41cc73a3cc72ccf39a34ebf8dedc847",
+  "merkle_root": "sha256:6c28db552561f414e1ce95c3505620ffcc5b49bb9fdc247499506494151dfda0",
   "previous_checkpoint_digest": null,
   "protocol_version": "himvote_2.0.0",
   "roster_commitment": "sha256:a6f7d081979e0155f77fd9a5cafdba5922820f8ae16ca355e20ce95af450cfd9",
   "tree_size": 100,
-  "signature": "xYJE4krURIfLi0cBMNfBtiWUt5HNw7elWpp6eQGAWBCpGurnxu4uIUWnqqIPpgLFc9Zi3rXyWB6Hy/KIJm1JBQ=="
+  "signature": "KNwPXflwkfZRQzeDGS3q1MxQJaXi3qUty9cskm0rCphtWa/1jwWpi7491HDISdQKlyiUBShuClfhglaYxrRUBg=="
 }

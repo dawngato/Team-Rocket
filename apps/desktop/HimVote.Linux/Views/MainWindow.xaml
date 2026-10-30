@@ -3,60 +3,150 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:HimVote.Linux.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="850"
         x:Class="HimVote.Linux.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="HimVote Institutional Election Platform"
-        MinWidth="900"
-        MinHeight="650"
-        WindowStartupLocation="CenterScreen">
+        MinWidth="1024"
+        MinHeight="720"
+        Width="1280"
+        Height="850"
+        WindowStartupLocation="CenterScreen"
+        UseLayoutRounding="True"
+        RenderOptions.BitmapInterpolationMode="HighQuality"
+        RenderOptions.EdgeMode="Antialias"
+        TextOptions.TextRenderingMode="Antialias"
+        KeyboardNavigation.TabNavigation="Cycle">
 
-    <Grid ColumnDefinitions="260,*" RowDefinitions="64,*">
-        <!-- Sidebar Navigation -->
+    <Grid ColumnDefinitions="270,*" RowDefinitions="64,*">
+        <!-- Sidebar Navigation Area -->
         <Border Grid.Row="0" Grid.RowSpan="2" Classes="sidebar">
-            <DockPanel Margin="16">
+            <DockPanel Margin="18">
+                <!-- Brand Header -->
                 <StackPanel DockPanel.Dock="Top" Spacing="6">
-                    <TextBlock Text="HimVote" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" Margin="8,8,8,20" />
+                    <Grid ColumnDefinitions="Auto,*" Margin="4,4,4,18">
+                        <Border Width="36" Height="36" CornerRadius="18" Background="{StaticResource Navy900Brush}" VerticalAlignment="Center">
+                            <TextBlock Text="HV" FontWeight="Bold" FontSize="14" Foreground="#FFFFFF"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0" VerticalAlignment="Center">
+                            <TextBlock Text="HimVote" FontSize="20" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                            <TextBlock Text="Institutional Platform" FontSize="11" Foreground="{StaticResource TextMutedBrush}" />
+                        </StackPanel>
+                    </Grid>
 
-                    <Button Content="Sign In" Command="{Binding NavigateToCommand}" CommandParameter="login"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Elections" Command="{Binding NavigateToCommand}" CommandParameter="elections"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Candidates" Command="{Binding NavigateToCommand}" CommandParameter="candidates"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Receipt Verification" Command="{Binding NavigateToCommand}" CommandParameter="receipt"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Evidence Import" Command="{Binding NavigateToCommand}" CommandParameter="evidence"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Audit Explorer" Command="{Binding NavigateToCommand}" CommandParameter="audit"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Admin Console" Command="{Binding NavigateToCommand}" CommandParameter="admin"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
-                    <Button Content="Settings" Command="{Binding NavigateToCommand}" CommandParameter="settings"
-                            Classes="nav-button" HorizontalAlignment="Stretch" MinHeight="44" />
+                    <!-- Navigation Action Buttons with Keyboard Accessibility -->
+                    <Button Content="Sign In"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="login"
+                            Classes="nav_button"
+                            TabIndex="1"
+                            HotKey="Alt+D1"
+                            AutomationProperties.Name="Navigate to Sign In"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Elections"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="elections"
+                            Classes="nav_button"
+                            TabIndex="2"
+                            HotKey="Alt+D2"
+                            AutomationProperties.Name="Navigate to Elections"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Candidates"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="candidates"
+                            Classes="nav_button"
+                            TabIndex="3"
+                            HotKey="Alt+D3"
+                            AutomationProperties.Name="Navigate to Candidates"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Receipt Verification"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="receipt"
+                            Classes="nav_button"
+                            TabIndex="4"
+                            HotKey="Alt+D4"
+                            AutomationProperties.Name="Navigate to Receipt Verification"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Evidence Import"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="evidence"
+                            Classes="nav_button"
+                            TabIndex="5"
+                            HotKey="Alt+D5"
+                            AutomationProperties.Name="Navigate to Evidence Import"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Audit Explorer"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="audit"
+                            Classes="nav_button"
+                            TabIndex="6"
+                            HotKey="Alt+D6"
+                            AutomationProperties.Name="Navigate to Audit Explorer"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Admin Console"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="admin"
+                            Classes="nav_button"
+                            TabIndex="7"
+                            HotKey="Alt+D7"
+                            AutomationProperties.Name="Navigate to Admin Console"
+                            HorizontalAlignment="Stretch" />
+
+                    <Button Content="Settings"
+                            Command="{Binding NavigateToCommand}"
+                            CommandParameter="settings"
+                            Classes="nav_button"
+                            TabIndex="8"
+                            HotKey="Alt+D8"
+                            AutomationProperties.Name="Navigate to Settings"
+                            HorizontalAlignment="Stretch" />
                 </StackPanel>
 
-                <StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Margin="8,0,8,8">
-                    <Separator Margin="0,0,0,12" Background="#CBD5E1" />
-                    <TextBlock Text="Institutional Edition v2.0" FontSize="11" Foreground="#64748B" />
-                    <TextBlock Text="Windows &amp; Linux Supported" FontSize="11" Foreground="#64748B" />
+                <!-- Sidebar Footer Status -->
+                <StackPanel DockPanel.Dock="Bottom" VerticalAlignment="Bottom" Margin="4,0,4,4" Spacing="6">
+                    <Separator Margin="0,0,0,8" Background="#CBD5E1" />
+                    <TextBlock Text="Institutional Edition v2.0" FontSize="11" FontWeight="SemiBold" Foreground="#475569" />
+                    <TextBlock Text="Avalonia .NET 8 Cross Platform" FontSize="11" Foreground="#64748B" />
+                    <TextBlock Text="Windows and Linux Native Engine" FontSize="10" Foreground="#94A3B8" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Top Title Bar -->
+        <!-- Top Navigation Bar -->
         <Border Grid.Row="0" Grid.Column="1" Classes="topbar">
             <Grid ColumnDefinitions="*,Auto" Margin="24,0">
-                <TextBlock Grid.Column="0" Text="{Binding Title}" FontSize="18" FontWeight="SemiBold"
-                           VerticalAlignment="Center" Foreground="{StaticResource Navy900Brush}" />
-                <TextBlock Grid.Column="1" Text="Offline Ready" FontSize="12" FontWeight="Medium"
-                           VerticalAlignment="Center" Foreground="{StaticResource Green600Brush}" />
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="SemiBold"
+                               VerticalAlignment="Center" Foreground="{StaticResource Navy900Brush}" />
+                </StackPanel>
+
+                <!-- Environmental Indicator Badges -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Classes="badge" Background="#F1F5F9" BorderBrush="#CBD5E1" BorderThickness="1">
+                        <TextBlock Text="Linux and Windows Unified" FontSize="11" FontWeight="SemiBold" Foreground="#475569" />
+                    </Border>
+                    <Border Classes="badge" Background="{StaticResource Green100Brush}" BorderBrush="#86EFAC" BorderThickness="1">
+                        <TextBlock Text="Offline Sandbox Ready" FontSize="11" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
+                    </Border>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Main Workspace -->
+        <!-- Main Workspace with Smooth View Transitions -->
         <ScrollViewer Grid.Row="1" Grid.Column="1" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
-            <ContentControl Content="{Binding CurrentViewModel}" Margin="24" />
+            <TransitioningContentControl Content="{Binding CurrentViewModel}" Margin="28">
+                <TransitioningContentControl.PageTransition>
+                    <CrossFade Duration="0:0:0.22" />
+                </TransitioningContentControl.PageTransition>
+            </TransitioningContentControl>
         </ScrollViewer>
     </Grid>
 </Window>

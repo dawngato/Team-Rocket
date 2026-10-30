@@ -4,75 +4,108 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
              xmlns:converters="clr-namespace:HimVote.Linux.Converters"
-             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="1000"
+             mc:Ignorable="d" d:DesignWidth="1050" d:DesignHeight="1200"
              x:DataType="vm:EvidenceImportViewModel"
-             x:Class="HimVote.Linux.Views.EvidenceImportPage">
+             x:Class="HimVote.Linux.Views.EvidenceImportPage"
+             UseLayoutRounding="True">
 
-    <StackPanel Spacing="20">
+    <StackPanel Spacing="22">
         <!-- Header -->
         <Border Classes="card" Background="{StaticResource SurfaceBrush}">
-            <StackPanel Spacing="6">
+            <StackPanel Spacing="8">
                 <TextBlock Text="Offline Evidence Archive Extraction &amp; Trust Pin Ingestion" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
                 <TextBlock Text="Safely import election evidence packages with defense in depth controls against path traversal, symlink spoofing, and decompression bombs."
                            Foreground="#475569" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
 
-        <!-- Feedback Alert Cards -->
-        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        <!-- Clean Error State -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="error_state">
+            <Grid ColumnDefinitions="36,*" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16" Background="#EF4444" VerticalAlignment="Top">
+                    <TextBlock Text="!" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Evidence Extraction or Validation Error" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Red600Brush}" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#7F1D1D" FontSize="13" TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+        <!-- Status Message -->
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="info_state">
             <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
         </Border>
 
         <!-- Step 1: Safe Archive Extraction -->
         <Border Classes="card">
             <StackPanel Spacing="16">
-                <TextBlock Text="Step 1: Safe Archive Extraction" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
-                <TextBlock Text="Decompresses election evidence ZIP archives while strictly checking canonical path boundaries, disallowing relative traversal sequences (..), and blocking symlink creation."
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Step 1: Safe Archive Extraction" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                    <Border Grid.Column="1" Classes="badge"
+                            Background="{Binding ExtractionCompleted, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#DCFCE7|#F1F5F9'}"
+                            BorderBrush="{Binding ExtractionCompleted, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#86EFAC|#CBD5E1'}"
+                            BorderThickness="1">
+                        <TextBlock Text="{Binding ExtractionCompleted, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='EXTRACTED|PENDING'}"
+                                   Foreground="{Binding ExtractionCompleted, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#64748B'}"
+                                   FontWeight="Bold" FontSize="11" />
+                    </Border>
+                </Grid>
+
+                <TextBlock Text="Decompresses election evidence ZIP archives while strictly checking canonical path boundaries, disallowing relative traversal sequences, and blocking symlink creation."
                            Foreground="#64748B" FontSize="13" TextWrapping="Wrap" />
 
-                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="16">
+                <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Evidence ZIP Archive:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ZipFilePath}" Watermark="/path/to/election_evidence.zip" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ZipFilePath}"
+                             Watermark="Path to election evidence zip package"
+                             Classes="input_field" TabIndex="30" MinHeight="44"
+                             AutomationProperties.Name="Evidence ZIP File Path Input" />
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Extraction Destination:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DestinationDirectory}" Watermark="Destination directory path" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DestinationDirectory}"
+                             Watermark="Path to destination directory for extracted evidence"
+                             Classes="input_field" TabIndex="31" MinHeight="44"
+                             AutomationProperties.Name="Extraction Destination Directory Input" />
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Button Content="Safely Extract Archive"
                             Command="{Binding ExtractArchiveCommand}"
-                            Classes="primary-button"
-                            MinHeight="44" />
-                    <Button Content="Reset All"
+                            Classes="primary_button"
+                            TabIndex="32"
+                            MinHeight="44"
+                            AutomationProperties.Name="Extract Archive Action" />
+                    <Button Content="Reset Extraction"
                             Command="{Binding ResetCommand}"
-                            Classes="secondary-button"
-                            MinHeight="44" />
+                            Classes="secondary_button"
+                            TabIndex="33"
+                            MinHeight="44"
+                            AutomationProperties.Name="Reset Extraction Action" />
                 </StackPanel>
 
-                <!-- Extraction Summary -->
-                <Border IsVisible="{Binding ExtractionCompleted}" Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1" CornerRadius="6" Padding="12">
+                <!-- Extraction Summary Banner -->
+                <Border IsVisible="{Binding ExtractionCompleted}" Classes="success_state">
                     <StackPanel Spacing="6">
                         <TextBlock Text="Extraction Completed Successfully" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
-                        <TextBlock Text="{Binding ExtractedCount, StringFormat='Total Extracted Files: {0}'}" FontSize="13" Foreground="#1E293B" />
-                        <TextBlock Text="{Binding TotalBytesExtracted, StringFormat='Total Uncompressed Bytes: {0:N0} bytes'}" FontSize="13" Foreground="#1E293B" />
+                        <TextBlock Text="{Binding ExtractedCount, StringFormat='Total Extracted Files: {0}'}" FontSize="13" Foreground="#065F46" />
+                        <TextBlock Text="{Binding TotalBytesExtracted, StringFormat='Total Uncompressed Bytes: {0:N0} bytes'}" FontSize="13" Foreground="#065F46" />
                     </StackPanel>
                 </Border>
 
                 <!-- Extracted Files List -->
                 <Expander Header="View Extracted File Manifest" IsVisible="{Binding ExtractionCompleted}">
-                    <ItemsControl ItemsSource="{Binding ExtractedFiles}" MaxHeight="250">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding}" FontFamily="monospace" FontSize="12" Margin="0,4" Foreground="#334155" />
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                    <Border BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="12" Background="#FAFAFA">
+                        <ItemsControl ItemsSource="{Binding ExtractedFiles}" MaxHeight="260">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Classes="code_text" Margin="0,3" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Border>
                 </Expander>
             </StackPanel>
         </Border>
@@ -80,36 +113,52 @@
         <!-- Step 2: Isolated External Trust Pins -->
         <Border Classes="card">
             <StackPanel Spacing="16">
-                <TextBlock Text="Step 2: External Trust Pin Ingestion" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Step 2: External Trust Pin Ingestion" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                    <Border Grid.Column="1" Classes="badge"
+                            Background="{Binding TrustPinsLoaded, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#DCFCE7|#F1F5F9'}"
+                            BorderBrush="{Binding TrustPinsLoaded, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#86EFAC|#CBD5E1'}"
+                            BorderThickness="1">
+                        <TextBlock Text="{Binding TrustPinsLoaded, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='LOADED|PENDING'}"
+                                   Foreground="{Binding TrustPinsLoaded, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#64748B'}"
+                                   FontWeight="Bold" FontSize="11" />
+                    </Border>
+                </Grid>
+
                 <TextBlock Text="Trust pins contain the root of trust: expected manifest digest, registrar authority key, and independent witness public keys. They must be loaded externally to prevent attacker tampered roots."
                            Foreground="#64748B" FontSize="13" TextWrapping="Wrap" />
 
-                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto" RowSpacing="12" ColumnSpacing="16">
+                <Grid ColumnDefinitions="190,*" RowDefinitions="Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="External Trust Pins File:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TrustPinsFilePath}" Watermark="/path/to/pinned_trust.json" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TrustPinsFilePath}"
+                             Watermark="Path to external trust pins JSON file"
+                             Classes="input_field" TabIndex="40" MinHeight="44"
+                             AutomationProperties.Name="External Trust Pins File Input" />
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Button Content="Validate &amp; Ingest Trust Pins"
                             Command="{Binding ImportTrustPinsCommand}"
-                            Classes="primary-button"
-                            MinHeight="44" />
+                            Classes="primary_button"
+                            TabIndex="41"
+                            MinHeight="44"
+                            AutomationProperties.Name="Validate and Ingest Trust Pins Action" />
                 </StackPanel>
 
                 <!-- Ingested Trust Pins Display -->
-                <Border IsVisible="{Binding TrustPinsLoaded}" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="12">
+                <Border IsVisible="{Binding TrustPinsLoaded}" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="14">
                     <StackPanel Spacing="6">
                         <TextBlock Text="Trust Pins Ingested" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-                        <TextBlock Text="{Binding CurrentTrustPins.ManifestDigest, StringFormat='Manifest Digest: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
-                        <TextBlock Text="{Binding CurrentTrustPins.WitnessPublicKey, StringFormat='Witness Key: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
-                        <TextBlock Text="{Binding CurrentTrustPins.AuthorityPublicKey, StringFormat='Authority Key: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
+                        <TextBlock Text="{Binding CurrentTrustPins.ManifestDigest, StringFormat='Manifest Digest: {0}'}" Classes="code_text" />
+                        <TextBlock Text="{Binding CurrentTrustPins.WitnessPublicKey, StringFormat='Witness Key: {0}'}" Classes="code_text" />
+                        <TextBlock Text="{Binding CurrentTrustPins.AuthorityPublicKey, StringFormat='Authority Key: {0}'}" Classes="code_text" />
                     </StackPanel>
                 </Border>
             </StackPanel>
         </Border>
 
         <!-- Ready for Audit Prompt -->
-        <Border IsVisible="{Binding IsReadyForAudit}" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="16">
+        <Border IsVisible="{Binding IsReadyForAudit}" Classes="success_state">
             <StackPanel Spacing="8">
                 <TextBlock Text="Evidence &amp; Trust Pins Ready For Cryptographic Audit" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
                 <TextBlock Text="Both the evidence archive and external trust pins have passed integrity and isolation checks. Navigate to the Offline Audit Explorer to execute the independent verifier."

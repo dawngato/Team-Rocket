@@ -4,16 +4,17 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
              xmlns:converters="clr-namespace:HimVote.Linux.Converters"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="800"
+             mc:Ignorable="d" d:DesignWidth="850" d:DesignHeight="850"
              x:DataType="vm:ReceiptViewModel"
-             x:Class="HimVote.Linux.Views.ReceiptPage">
+             x:Class="HimVote.Linux.Views.ReceiptPage"
+             UseLayoutRounding="True">
 
-    <StackPanel Spacing="20" MaxWidth="720" HorizontalAlignment="Center">
+    <StackPanel Spacing="22" MaxWidth="760" HorizontalAlignment="Center">
         <!-- Header -->
         <Border Classes="card" Background="{StaticResource SurfaceBrush}">
-            <StackPanel Spacing="6">
+            <StackPanel Spacing="8">
                 <TextBlock Text="Receipt Verification &amp; Witness Inclusion" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-                <TextBlock Text="Track your ballot receipt handle against the append only witness ledger to verify your vote was incorporated into the Merkle tree."
+                <TextBlock Text="Track your ballot receipt handle against the append only witness ledger to verify your vote was incorporated into the election Merkle tree."
                            Foreground="#475569" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
@@ -25,50 +26,82 @@
 
                 <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Election ID:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ElectionId}" Watermark="e.g. elec_2026_fall" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ElectionId}"
+                             Watermark="Election identifier such as elec_2026_fall"
+                             Classes="input_field" TabIndex="50" MinHeight="44"
+                             AutomationProperties.Name="Election ID Input" />
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Receipt Handle:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ReceiptHandle}" Watermark="Paste your secure ballot receipt handle" Classes="input-field" MinHeight="44" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding ReceiptHandle}"
+                             Watermark="Paste your confidential ballot receipt handle"
+                             Classes="input_field" TabIndex="51" MinHeight="44"
+                             AutomationProperties.Name="Receipt Handle Input" />
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Button Content="Verify Receipt Inclusion"
                             Command="{Binding TrackReceiptCommand}"
-                            Classes="primary-button"
-                            MinHeight="44" />
+                            Classes="primary_button"
+                            TabIndex="52"
+                            MinHeight="44"
+                            AutomationProperties.Name="Verify Receipt Inclusion Action" />
                     <Button Content="Clear"
                             Command="{Binding ResetCommand}"
-                            Classes="secondary-button"
-                            MinHeight="44" />
+                            Classes="secondary_button"
+                            TabIndex="53"
+                            MinHeight="44"
+                            AutomationProperties.Name="Clear Receipt Form Action" />
                 </StackPanel>
 
-                <!-- Feedback Messages -->
-                <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                        Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+                <!-- Clean Error State -->
+                <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                        Classes="error_state">
+                    <Grid ColumnDefinitions="36,*" ColumnSpacing="12">
+                        <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16" Background="#EF4444" VerticalAlignment="Top">
+                            <TextBlock Text="!" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock Text="Receipt Verification Lookup Failed" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Red600Brush}" />
+                            <TextBlock Text="{Binding ErrorMessage}" Foreground="#7F1D1D" FontSize="13" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </StackPanel>
         </Border>
 
+        <!-- Initial Guidance Empty State (When receipt not yet queried) -->
+        <Border Classes="empty_state" IsVisible="{Binding !IsFound}">
+            <Grid ColumnDefinitions="48,*" ColumnSpacing="16">
+                <Border Grid.Column="0" Width="40" Height="40" CornerRadius="20" Background="#EEF2FF" VerticalAlignment="Top">
+                    <TextBlock Text="ℹ" FontSize="18" FontWeight="Bold" Foreground="#4F46E5" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="6">
+                    <TextBlock Text="Non Choice Revealing Inclusion Tracker" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                    <TextBlock Text="Your ballot receipt handle does not reveal which candidate you voted for. It provides cryptographic proof that your ballot was accepted and permanently sequenced by the independent witness."
+                               FontSize="13" Foreground="#475569" TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- Receipt Status Result Card -->
         <Border IsVisible="{Binding IsFound}" Classes="card" Background="#F8FAFC">
-            <StackPanel Spacing="14">
+            <StackPanel Spacing="16">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Grid.Column="0" Text="Witness Ledger Inclusion Record" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
-                    <Border Grid.Column="1" CornerRadius="4" Padding="8,4" Background="#DCFCE7">
-                        <TextBlock Text="{Binding Status}" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" FontSize="12" />
+                    <Border Grid.Column="1" Classes="badge" Background="{StaticResource Green100Brush}" BorderBrush="#86EFAC" BorderThickness="1">
+                        <TextBlock Text="{Binding Status, StringFormat='✓ {0}'}" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" FontSize="12" />
                     </Border>
                 </Grid>
 
-                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="12">
+                <Grid ColumnDefinitions="170,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Receipt Handle:" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ReceiptHandle}" FontFamily="monospace" FontWeight="Bold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ReceiptHandle}" Classes="code_text" FontWeight="Bold" />
 
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Tree Leaf Index:" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LeafIndex}" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LeafIndex}" FontWeight="SemiBold" FontSize="14" Foreground="#0F172A" />
 
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Witnessed At (UTC):" FontWeight="Medium" Foreground="#64748B" />
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WitnessedAtUtc, StringFormat='{}{0:u}'}" FontWeight="SemiBold" Foreground="#0F172A" />
+                    <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding WitnessedAtUtc, StringFormat='{}{0:u}'}" FontWeight="SemiBold" FontSize="13" Foreground="#0F172A" />
                 </Grid>
 
                 <Separator Background="#E2E8F0" Margin="0,4" />

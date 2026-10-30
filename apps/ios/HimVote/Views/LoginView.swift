@@ -7,7 +7,12 @@ public struct LoginView: View {
     @State private var password: String = ""
     @State private var mfaToken: String = ""
     @State private var showPassword: Bool = false
+    @State private var showSecuritySheet: Bool = false
     @FocusState private var focusedField: Field?
+    
+    @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 88
+    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 52
+    @ScaledMetric(relativeTo: .body) private var inputIconSize: CGFloat = 20
     
     private enum Field: Hashable {
         case email
@@ -26,21 +31,30 @@ public struct LoginView: View {
                 
                 if let error = authViewModel.errorMessage {
                     errorBanner(message: error)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                            removal: .opacity
+                        ))
                 }
                 
                 credentialsCard
                 
                 signInButton
                 
-                securityFooter
+                securityFooterButton
                 
                 Spacer(minLength: 32)
             }
             .padding(.horizontal, 20)
+            .animation(SpringTokens.fluid, value: authViewModel.errorMessage)
+            .animation(SpringTokens.fluid, value: authViewModel.mfaRequired)
         }
         .background(ColorTokens.backgroundPrimary)
         .onTapGesture {
             focusedField = nil
+        }
+        .sheet(isPresented: $showSecuritySheet) {
+            InstitutionalSecuritySheet()
         }
     }
     
@@ -49,12 +63,12 @@ public struct LoginView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.brandPrimary.opacity(0.1))
-                    .frame(width: 88, height: 88)
+                    .frame(width: headerCircleSize, height: headerCircleSize)
                 
                 Image(systemName: "checkmark.seal.fill")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 52, height: 52)
+                    .frame(width: headerIconSize, height: headerIconSize)
                     .foregroundStyle(ColorTokens.brandAccent)
             }
             .accessibilityHidden(true)
@@ -75,7 +89,7 @@ public struct LoginView: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(ColorTokens.stateDanger)
-                .font(.system(size: 18))
+                .font(.system(size: inputIconSize))
                 .padding(.top, 2)
             
             VStack(alignment: .leading, spacing: 4) {
@@ -86,11 +100,13 @@ public struct LoginView: View {
                 Text(message)
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.stateDanger)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()
             
             Button {
+                HapticFeedback.light()
                 authViewModel.clearError()
             } label: {
                 Image(systemName: "xmark")
@@ -120,7 +136,7 @@ public struct LoginView: View {
                 HStack {
                     Image(systemName: "envelope.fill")
                         .foregroundStyle(ColorTokens.textTertiary)
-                        .frame(width: 20)
+                        .frame(width: inputIconSize)
                     
                     TextField("student@example.in", text: $email)
                         .textContentType(.emailAddress)
@@ -151,7 +167,7 @@ public struct LoginView: View {
                 HStack {
                     Image(systemName: "lock.fill")
                         .foregroundStyle(ColorTokens.textTertiary)
-                        .frame(width: 20)
+                        .frame(width: inputIconSize)
                     
                     if showPassword {
                         TextField("Enter password", text: $password)
@@ -165,6 +181,7 @@ public struct LoginView: View {
                     }
                     
                     Button {
+                        HapticFeedback.selection()
                         showPassword.toggle()
                     } label: {
                         Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
@@ -199,7 +216,7 @@ public struct LoginView: View {
                     HStack {
                         Image(systemName: "shield.lefthalf.filled")
                             .foregroundStyle(ColorTokens.brandAccent)
-                            .frame(width: 20)
+                            .frame(width: inputIconSize)
                         
                         TextField("Enter 6 digit authentication token", text: $mfaToken)
                             .keyboardType(.numberPad)
@@ -214,6 +231,10 @@ public struct LoginView: View {
                     )
                     .accessibilityLabel("Multi Factor Authentication Code Input")
                 }
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                    removal: .opacity
+                ))
             }
         }
         .padding(20)
@@ -228,12 +249,18 @@ public struct LoginView: View {
     private var signInButton: some View {
         Button {
             focusedField = nil
+            HapticFeedback.medium()
             Task {
                 await authViewModel.login(
                     email: email,
                     password: password,
                     mfaToken: authViewModel.mfaRequired ? mfaToken : nil
                 )
+                if authViewModel.errorMessage != nil {
+                    HapticFeedback.error()
+                } else if authViewModel.isAuthenticated {
+                    HapticFeedback.success()
+                }
             }
         } label: {
             HStack(spacing: 10) {
@@ -252,28 +279,41 @@ public struct LoginView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: ColorTokens.brandPrimary.opacity(0.25), radius: 6, x: 0, y: 3)
         }
+        .interactiveSpringButton()
         .disabled(authViewModel.isLoading || email.isEmpty || password.isEmpty)
         .opacity((email.isEmpty || password.isEmpty) ? 0.6 : 1.0)
         .accessibilityLabel(authViewModel.mfaRequired ? "Verify Multi Factor Code button" : "Sign in button")
     }
     
-    private var securityFooter: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: "lock.shield")
-                    .font(.system(size: 14))
-                    .foregroundStyle(ColorTokens.brandAccent)
+    private var securityFooterButton: some View {
+        Button {
+            HapticFeedback.light()
+            showSecuritySheet = true
+        } label: {
+            VStack(spacing: 8) {
+                HStack(spacing: 6) {
+                    Image(systemName: "lock.shield")
+                        .font(.system(size: 14))
+                        .foregroundStyle(ColorTokens.brandAccent)
+                    
+                    Text("Secured by hardware backed RFC 9474 blind credentials")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
                 
-                Text("Secured by hardware backed RFC 9474 blind credentials")
-                    .font(Typography.caption)
-                    .foregroundStyle(ColorTokens.textTertiary)
+                HStack(spacing: 4) {
+                    Text("Audited verifiable zero knowledge architecture")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textTertiary)
+                    
+                    Image(systemName: "info.circle")
+                        .font(.system(size: 11))
+                        .foregroundStyle(ColorTokens.brandAccent)
+                }
             }
-            
-            Text("Audited end to end verifiable zero knowledge ballot architecture")
-                .font(Typography.caption)
-                .foregroundStyle(ColorTokens.textTertiary)
+            .multilineTextAlignment(.center)
+            .padding(.top, 12)
         }
-        .multilineTextAlignment(.center)
-        .padding(.top, 12)
+        .accessibilityLabel("View institutional security architecture details")
     }
 }

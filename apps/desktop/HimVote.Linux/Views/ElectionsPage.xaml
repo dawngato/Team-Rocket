@@ -5,14 +5,15 @@
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
              xmlns:models="clr-namespace:HimVote.Core.Models;assembly=HimVote.Core"
              xmlns:converters="clr-namespace:HimVote.Linux.Converters"
-             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="800"
+             mc:Ignorable="d" d:DesignWidth="950" d:DesignHeight="850"
              x:DataType="vm:ElectionsViewModel"
-             x:Class="HimVote.Linux.Views.ElectionsPage">
+             x:Class="HimVote.Linux.Views.ElectionsPage"
+             UseLayoutRounding="True">
 
-    <StackPanel Spacing="20">
+    <StackPanel Spacing="22">
         <!-- Header -->
         <Border Classes="card" Background="{StaticResource SurfaceBrush}">
-            <StackPanel Spacing="6">
+            <StackPanel Spacing="8">
                 <TextBlock Text="Institutional Elections &amp; Voting Booth" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
                 <TextBlock Text="Browse active and scheduled university elections, check your voting eligibility, and launch the authenticated ballot booth."
                            Foreground="#475569" TextWrapping="Wrap" />
@@ -22,9 +23,10 @@
         <!-- Controls Toolbar -->
         <Border Classes="card">
             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
-                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
                     <TextBlock Text="Filter by State:" VerticalAlignment="Center" FontWeight="Medium" />
-                    <ComboBox SelectedItem="{Binding FilterState}" MinWidth="160">
+                    <ComboBox SelectedItem="{Binding FilterState}" MinWidth="180" TabIndex="70"
+                              AutomationProperties.Name="Filter Elections by State">
                         <x:String>ALL</x:String>
                         <x:String>OPEN</x:String>
                         <x:String>DRAFT</x:String>
@@ -35,44 +37,68 @@
                 </StackPanel>
 
                 <Button Grid.Column="2" Content="Refresh Elections" Command="{Binding LoadElectionsCommand}"
-                        Classes="primary-button" MinHeight="44" />
+                        Classes="primary_button" MinHeight="44" TabIndex="71"
+                        AutomationProperties.Name="Refresh Elections Action" />
             </Grid>
         </Border>
 
-        <!-- Messages -->
-        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
-            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        <!-- Clean Error State Display -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="error_state">
+            <Grid ColumnDefinitions="36,*" ColumnSpacing="12">
+                <Border Grid.Column="0" Width="32" Height="32" CornerRadius="16" Background="#EF4444" VerticalAlignment="Top">
+                    <TextBlock Text="!" FontSize="16" FontWeight="Bold" Foreground="#FFFFFF" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Grid.Column="1" Spacing="4">
+                    <TextBlock Text="Failed to Load Elections" FontWeight="Bold" FontSize="14" Foreground="{StaticResource Red600Brush}" />
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="#7F1D1D" FontSize="13" TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
         </Border>
 
-        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
-                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+        <!-- Status Message -->
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:NullOrEmptyToBoolConverter.NotEmpty}}"
+                Classes="info_state">
             <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Empty State Display -->
+        <Border Classes="empty_state" IsVisible="{Binding FilteredElections, Converter={x:Static converters:NullOrEmptyToBoolConverter.Empty}}">
+            <StackPanel Spacing="8" HorizontalAlignment="Center">
+                <TextBlock Text="No Elections Found" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" HorizontalAlignment="Center" />
+                <TextBlock Text="There are no institutional elections matching the selected filter state." FontSize="13" Foreground="#64748B" HorizontalAlignment="Center" />
+            </StackPanel>
         </Border>
 
         <!-- Elections Cards List -->
         <ItemsControl ItemsSource="{Binding FilteredElections}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate x:DataType="models:ElectionSummary">
-                    <Border Classes="card" Margin="0,0,0,16" Background="#FFFFFF">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                    <Border Classes="card card_hover" Margin="0,0,0,16" Background="#FFFFFF">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="10">
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
 
-                            <Border Grid.Row="0" Grid.Column="1" CornerRadius="4" Padding="8,4" Background="#F1F5F9">
-                                <TextBlock Text="{Binding State}" FontWeight="Bold" FontSize="11" Foreground="#334155" />
+                            <!-- Election State Badge -->
+                            <Border Grid.Row="0" Grid.Column="1" Classes="badge"
+                                    Background="{Binding State, Converter={x:Static converters:StatusToBrushConverter.Instance}, ConverterParameter=background}"
+                                    BorderBrush="{Binding State, Converter={x:Static converters:StatusToBrushConverter.Instance}, ConverterParameter=border}"
+                                    BorderThickness="1">
+                                <TextBlock Text="{Binding State}" FontWeight="Bold" FontSize="11"
+                                           Foreground="{Binding State, Converter={x:Static converters:StatusToBrushConverter.Instance}, ConverterParameter=foreground}" />
                             </Border>
 
-                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Id, StringFormat='ID: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#64748B" />
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Id, StringFormat='Contest ID: {0}'}" Classes="code_text" Foreground="#64748B" />
 
-                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="16">
-                                <TextBlock Text="{Binding OpensAtUtc, StringFormat='Opens: {0:g}'}" FontSize="12" Foreground="#475569" />
-                                <TextBlock Text="{Binding ClosesAtUtc, StringFormat='Closes: {0:g}'}" FontSize="12" Foreground="#475569" />
+                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding OpensAtUtc, StringFormat='Opens: {0:g} UTC'}" FontSize="12" Foreground="#475569" />
+                                <TextBlock Text="{Binding ClosesAtUtc, StringFormat='Closes: {0:g} UTC'}" FontSize="12" Foreground="#475569" />
                             </StackPanel>
 
                             <Button Grid.Row="2" Grid.Column="1" Content="Launch Ballot Booth"
                                     Command="{Binding $parent[UserControl].((vm:ElectionsViewModel)DataContext).OpenBoothCommand}"
                                     CommandParameter="{Binding}"
-                                    Classes="primary-button" MinHeight="44" />
+                                    Classes="primary_button" MinHeight="44"
+                                    AutomationProperties.Name="{Binding Title, StringFormat='Launch Ballot Booth for {0}'}" />
                         </Grid>
                     </Border>
                 </DataTemplate>

@@ -6,6 +6,8 @@ public struct CandidateListView: View {
     @Bindable var electionsViewModel: ElectionsViewModel
     
     @State private var digestCopied: Bool = false
+    @State private var selectedCandidateForSheet: Candidate? = nil
+    @State private var showManifestSheet: Bool = false
     
     public init(
         electionSummary: ElectionSummary,
@@ -33,6 +35,18 @@ public struct CandidateListView: View {
         .task {
             if let token = authViewModel.currentUser?.sessionToken {
                 await electionsViewModel.loadElectionDetail(id: electionSummary.id, sessionToken: token)
+            }
+        }
+        .sheet(item: $selectedCandidateForSheet) { candidate in
+            CandidateDetailSheet(
+                candidate: candidate,
+                contest: electionsViewModel.selectedElection?.contest,
+                electionTitle: electionSummary.title
+            )
+        }
+        .sheet(isPresented: $showManifestSheet) {
+            if let detail = electionsViewModel.selectedElection {
+                ManifestInspectorSheet(election: detail)
             }
         }
     }
@@ -69,7 +83,23 @@ public struct CandidateListView: View {
                         Spacer()
                         
                         Button {
+                            HapticFeedback.light()
+                            showManifestSheet = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "info.circle")
+                                Text("Inspect")
+                            }
+                            .font(Typography.badgeText)
+                            .foregroundStyle(ColorTokens.brandAccent)
+                        }
+                        .padding(.trailing, 8)
+                        
+                        Button {
+                            #if canImport(UIKit)
                             UIPasteboard.general.string = detail.manifestDigest
+                            #endif
+                            HapticFeedback.success()
                             digestCopied = true
                             Task {
                                 try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -133,6 +163,10 @@ public struct CandidateListView: View {
                let candidates = detail.candidates, !candidates.isEmpty {
                 ForEach(Array(candidates.enumerated()), id: \.element.id) { index, candidate in
                     CandidateRowView(candidate: candidate, index: index + 1)
+                        .onTapGesture {
+                            HapticFeedback.light()
+                            selectedCandidateForSheet = candidate
+                        }
                 }
             } else if electionsViewModel.isLoading {
                 HStack {
@@ -182,6 +216,9 @@ public struct CandidateListView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: ColorTokens.brandAccent.opacity(0.3), radius: 6, x: 0, y: 3)
                 }
+                .simultaneousGesture(TapGesture().onEnded {
+                    HapticFeedback.medium()
+                })
                 .accessibilityLabel("Obtain Anonymous Voter Credential button")
             }
             
@@ -205,6 +242,9 @@ public struct CandidateListView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: ColorTokens.stateSuccess.opacity(0.3), radius: 6, x: 0, y: 3)
                 }
+                .simultaneousGesture(TapGesture().onEnded {
+                    HapticFeedback.medium()
+                })
                 .accessibilityLabel("Inspect official election results button")
             }
             
@@ -229,6 +269,9 @@ public struct CandidateListView: View {
                         .stroke(ColorTokens.brandPrimary, lineWidth: 1.5)
                 )
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticFeedback.light()
+            })
             .accessibilityLabel("Verify election cryptographic evidence button")
         }
         .padding(.top, 10)
@@ -238,6 +281,9 @@ public struct CandidateListView: View {
 public struct CandidateRowView: View {
     public let candidate: Candidate
     public let index: Int
+    
+    @ScaledMetric(relativeTo: .headline) private var badgeSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 18
     
     public init(candidate: Candidate, index: Int = 1) {
         self.candidate = candidate
@@ -249,7 +295,7 @@ public struct CandidateRowView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.brandPrimary.opacity(0.12))
-                    .frame(width: 44, height: 44)
+                    .frame(width: badgeSize, height: badgeSize)
                 
                 Text("\(index)")
                     .font(Typography.cardHeader)
@@ -268,9 +314,15 @@ public struct CandidateRowView: View {
             
             Spacer()
             
-            Image(systemName: "person.badge.shield.checkmark")
-                .font(.system(size: 18))
-                .foregroundStyle(ColorTokens.textTertiary)
+            HStack(spacing: 6) {
+                Image(systemName: "person.badge.shield.checkmark")
+                    .font(.system(size: iconSize))
+                    .foregroundStyle(ColorTokens.textTertiary)
+                
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(ColorTokens.textTertiary)
+            }
         }
         .padding(14)
         .background(ColorTokens.backgroundSecondary)

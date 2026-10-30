@@ -5,6 +5,11 @@ public struct VotingBoothView: View {
     public let credential: Credential
     @State private var votingViewModel = VotingViewModel()
     @State private var handleCopied: Bool = false
+    @State private var showSecuritySheet: Bool = false
+    
+    @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 80
+    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 44
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
     
     public init(electionSummary: ElectionSummary, credential: Credential) {
         self.electionSummary = electionSummary
@@ -22,18 +27,44 @@ public struct VotingBoothView: View {
                 
                 if let error = votingViewModel.errorMessage {
                     errorBanner(message: error)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.96)),
+                            removal: .opacity
+                        ))
                 }
                 
                 if let handle = votingViewModel.successReceiptHandle {
                     successReceiptCard(handle: handle)
+                        .transition(.asymmetric(
+                            insertion: .opacity.combined(with: .scale(scale: 0.95)),
+                            removal: .opacity
+                        ))
                 } else {
                     launchBoothActionCard
                 }
             }
             .padding(16)
+            .animation(SpringTokens.fluid, value: votingViewModel.successReceiptHandle)
+            .animation(SpringTokens.fluid, value: votingViewModel.errorMessage)
         }
         .navigationTitle("Voting Booth")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    HapticFeedback.light()
+                    showSecuritySheet = true
+                } label: {
+                    Image(systemName: "info.circle")
+                        .font(.system(size: navIconSize))
+                        .foregroundStyle(ColorTokens.brandAccent)
+                }
+                .accessibilityLabel("Isolated Voting Booth Architecture Details")
+            }
+        }
+        .sheet(isPresented: $showSecuritySheet) {
+            InstitutionalSecuritySheet()
+        }
     }
     
     private var headerView: some View {
@@ -41,12 +72,12 @@ public struct VotingBoothView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.brandAccent.opacity(0.12))
-                    .frame(width: 80, height: 80)
+                    .frame(width: headerCircleSize, height: headerCircleSize)
                 
                 Image(systemName: "shield.lefthalf.filled.badge.checkmark")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 44, height: 44)
+                    .frame(width: headerIconSize, height: headerIconSize)
                     .foregroundStyle(ColorTokens.brandAccent)
             }
             .accessibilityHidden(true)
@@ -63,28 +94,41 @@ public struct VotingBoothView: View {
     }
     
     private var securityGuaranteeCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 8) {
-                Image(systemName: "lock.shield.fill")
-                    .foregroundStyle(ColorTokens.brandAccent)
+        Button {
+            HapticFeedback.light()
+            showSecuritySheet = true
+        } label: {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill")
+                        .foregroundStyle(ColorTokens.brandAccent)
+                    
+                    Text("Zero Plaintext Ballot Visibility")
+                        .font(Typography.cardHeader)
+                        .foregroundStyle(ColorTokens.textPrimary)
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
                 
-                Text("Zero Plaintext Ballot Visibility")
-                    .font(Typography.cardHeader)
-                    .foregroundStyle(ColorTokens.textPrimary)
+                Text("Your ballot choices are encrypted client side inside an isolated ASWebAuthenticationSession booth. The mobile application runtime never accesses plaintext ballot selections, adhering strictly to Section 0.1 Rule 3.")
+                    .font(Typography.callout)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            
-            Text("Your ballot choices are encrypted client side inside an isolated ASWebAuthenticationSession booth. The mobile application runtime never accesses plaintext ballot selections, adhering strictly to Section 0.1 Rule 3.")
-                .font(Typography.callout)
-                .foregroundStyle(ColorTokens.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            .padding(16)
+            .background(ColorTokens.backgroundSecondary)
+            .clipShape(RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(ColorTokens.cardBorder, lineWidth: 1)
+            )
         }
-        .padding(16)
-        .background(ColorTokens.backgroundSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(ColorTokens.cardBorder, lineWidth: 1)
-        )
+        .interactiveCardButton()
     }
     
     private var credentialVerificationCard: some View {
@@ -129,6 +173,7 @@ public struct VotingBoothView: View {
                 Text(message)
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.stateDanger)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             
             Spacer()
@@ -152,6 +197,7 @@ public struct VotingBoothView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 44))
                     .foregroundStyle(ColorTokens.stateSuccess)
+                    .beaconPulse(color: ColorTokens.stateSuccess, isActive: true)
             }
             
             VStack(spacing: 6) {
@@ -174,7 +220,10 @@ public struct VotingBoothView: View {
                     Spacer()
                     
                     Button {
+                        #if canImport(UIKit)
                         UIPasteboard.general.string = handle
+                        #endif
+                        HapticFeedback.success()
                         handleCopied = true
                         Task {
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -217,6 +266,9 @@ public struct VotingBoothView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .shadow(color: ColorTokens.brandPrimary.opacity(0.3), radius: 6, x: 0, y: 3)
             }
+            .simultaneousGesture(TapGesture().onEnded {
+                HapticFeedback.medium()
+            })
             .accessibilityLabel("Inspect Verification Receipt button")
         }
         .padding(20)
@@ -230,6 +282,7 @@ public struct VotingBoothView: View {
     
     private var launchBoothActionCard: some View {
         Button {
+            HapticFeedback.medium()
             Task {
                 let boothUrl = URL(string: "http://localhost:8080/booth")!
                 let election = Election(
@@ -246,6 +299,11 @@ public struct VotingBoothView: View {
                     election: election,
                     credential: credential
                 )
+                if votingViewModel.errorMessage != nil {
+                    HapticFeedback.error()
+                } else if votingViewModel.successReceiptHandle != nil {
+                    HapticFeedback.success()
+                }
             }
         } label: {
             HStack(spacing: 10) {
@@ -274,6 +332,7 @@ public struct VotingBoothView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
             .shadow(color: ColorTokens.brandAccent.opacity(0.3), radius: 6, x: 0, y: 3)
         }
+        .interactiveSpringButton()
         .disabled(votingViewModel.isLaunchingBooth || votingViewModel.isCasting)
         .accessibilityLabel("Launch isolated voting booth button")
     }

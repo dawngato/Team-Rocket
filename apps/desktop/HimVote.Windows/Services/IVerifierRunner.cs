@@ -11,6 +11,7 @@ public sealed class VerifierExecutionOptions
     public string? OutputReportPath { get; set; }
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(60);
     public string PythonExecutable { get; set; } = "python3";
+    public bool AllowDevelopmentProfile { get; set; }
 }
 
 public sealed class VerifierExecutionResult

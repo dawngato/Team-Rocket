@@ -81,6 +81,7 @@ public class VerifierRunner : IVerifierRunner
             var scriptArg = isPythonScript ? $"\"{options.VerifierPath}\" " : string.Empty;
 
             var arguments = $"{scriptArg}audit-evidence --export \"{options.ExportDirectory}\" --trust \"{options.TrustPinsFilePath}\" --report \"{reportPath}\"";
+            if (options.AllowDevelopmentProfile) arguments += " --allow-development-profile";
 
             var startInfo = new ProcessStartInfo
             {

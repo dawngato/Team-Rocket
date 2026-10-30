@@ -1,5 +1,5 @@
 {
-  "auditor_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAaSuqFRy+2vuzR7E79wV5PswBps2jEC4NTlOZSqLHxu4=\n-----END PUBLIC KEY-----\n",
+  "auditor_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAm/IviEV9JMu0ZAc86TxiVApbY8HWslcwq9CcTxovDOU=\n-----END PUBLIC KEY-----\n",
   "chain": {
     "chain_id": 31337,
     "code_hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
@@ -7,10 +7,10 @@
     "min_confirmations": 1
   },
   "election_id": "elec_hptu_sc_2026",
-  "issuer_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAr3nbetgkszX4Ub2hATgucWH5NIn1bk7Rc+U1jYnUyfE=\n-----END PUBLIC KEY-----\n",
-  "roster_approver_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEASDz0XpyHZV08Wi+spnHUvM1Su74+8xHZKzfyO41j9D4=\n-----END PUBLIC KEY-----\n",
+  "issuer_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAKhgKbQzDH/pdssh+obQUMa5BVYUjR9nlhoIrUXhguoU=\n-----END PUBLIC KEY-----\n",
+  "roster_approver_key": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAqHy9bkRq1dn4U49DjZzH8mp8C2+oylVDOck4oVO2PIE=\n-----END PUBLIC KEY-----\n",
   "schema": "himvote.trust_pins.v1",
   "witness_keys": [
-    "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEArrgQUFdZgZVTDFewLSL1YQBlgHEcAO5QPoVMw6yueLE=\n-----END PUBLIC KEY-----\n"
+    "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAs09g7lXox0tXttYl2J0exoKIcYWknYEcbtRbFjtHVYU=\n-----END PUBLIC KEY-----\n"
   ]
 }

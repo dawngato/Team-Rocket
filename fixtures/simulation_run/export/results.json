@@ -8,7 +8,7 @@
   "election_id": "elec_hptu_sc_2026",
   "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
   "privacy_limited": false,
-  "published_at": "2026-10-30T16:06:22.326337+00:00",
+  "published_at": "2026-10-30T16:41:50.938707+00:00",
   "schema": "himvote.results.v1",
   "total_ballots": 100
 }

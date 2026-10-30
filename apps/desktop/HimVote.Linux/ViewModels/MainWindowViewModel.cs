@@ -41,7 +41,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SettingsVm = settingsVm;
 
         _currentViewModel = loginVm;
-        Title = "Sign in - HimVote";
+        Title = "Sign in | HimVote";
     }
 
     [RelayCommand]
@@ -62,14 +62,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
         Title = page switch
         {
-            "elections" => "Elections - HimVote",
-            "candidates" => "Candidate Nominations - HimVote",
-            "receipt" => "Receipt Verification - HimVote",
-            "evidence" => "Offline Evidence Import - HimVote",
-            "audit" => "Offline Audit Explorer - HimVote",
-            "admin" => "Administrative Console - HimVote",
-            "settings" => "System Settings - HimVote",
-            _ => "Sign in - HimVote"
+            "elections" => "Elections | HimVote",
+            "candidates" => "Candidate Nominations | HimVote",
+            "receipt" => "Receipt Verification | HimVote",
+            "evidence" => "Offline Evidence Import | HimVote",
+            "audit" => "Offline Audit Explorer | HimVote",
+            "admin" => "Administrative Console | HimVote",
+            "settings" => "System Settings | HimVote",
+            _ => "Sign in | HimVote"
         };
     }
 }

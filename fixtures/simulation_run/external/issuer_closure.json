@@ -1,9 +1,9 @@
 {
-  "closed_at": "2026-10-30T16:06:22.326337+00:00",
+  "closed_at": "2026-10-30T16:41:50.938707+00:00",
   "delivered_count": 100,
   "election_id": "elec_hptu_sc_2026",
   "issuance_ledger_digest": "sha256:e39a515bfe4fbbde11b83e5fc0e1667d803f4aaa303900fbbb00e70668aedeb8",
   "issued_count": 100,
   "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
-  "signature": "pbV44gAnFhr5TZqAPqsSpM/4OXvBvxqQ6I/g518DnLiLPMdLsL6SNWEF6a/Dbohn4gz8Qndy22sLdxDwCSWDDw=="
+  "signature": "vu+x4zi1Zgtc9OnvioDgcQk3FwFe2n/RNnN8iJq6pw4ute4aN7aTzJQOnoiHHcgsrjS5TNN26fcBg7aBDomHDQ=="
 }

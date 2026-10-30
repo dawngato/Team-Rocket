@@ -5,6 +5,11 @@ public struct ReceiptView: View {
     public let receiptHandle: String
     @State private var receiptViewModel = ReceiptViewModel()
     @State private var handleCopied: Bool = false
+    @State private var showProofSheet: Bool = false
+    
+    @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 72
+    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 38
+    @ScaledMetric(relativeTo: .body) private var navIconSize: CGFloat = 20
     
     public init(electionId: String, receiptHandle: String) {
         self.electionId = electionId
@@ -18,6 +23,8 @@ public struct ReceiptView: View {
                 
                 receiptDetailsCard
                 
+                merkleAuditSection
+                
                 lifecycleTrackerCard
                 
                 pollingStatusSection
@@ -25,18 +32,26 @@ public struct ReceiptView: View {
                 exportActionsSection
             }
             .padding(16)
+            .animation(SpringTokens.fluid, value: receiptViewModel.receipt?.status)
         }
         .navigationTitle("Receipt")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
+                    HapticFeedback.medium()
                     receiptViewModel.startPollingReceiptStatus(electionId: electionId, handle: receiptHandle)
                 } label: {
                     Image(systemName: "arrow.clockwise")
+                        .font(.system(size: navIconSize))
                         .foregroundStyle(ColorTokens.brandPrimary)
                 }
                 .accessibilityLabel("Refresh receipt status")
+            }
+        }
+        .sheet(isPresented: $showProofSheet) {
+            if let receipt = receiptViewModel.receipt {
+                MerkleProofSheet(receipt: receipt, formattedJson: receiptViewModel.formatReceiptJson())
             }
         }
         .onAppear {
@@ -53,12 +68,12 @@ public struct ReceiptView: View {
             ZStack {
                 Circle()
                     .fill(ColorTokens.brandPrimary.opacity(0.12))
-                    .frame(width: 72, height: 72)
+                    .frame(width: headerCircleSize, height: headerCircleSize)
                 
                 Image(systemName: "doc.text.magnifyingglass")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 38, height: 38)
+                    .frame(width: headerIconSize, height: headerIconSize)
                     .foregroundStyle(ColorTokens.brandPrimary)
             }
             .accessibilityHidden(true)
@@ -101,7 +116,10 @@ public struct ReceiptView: View {
                     Spacer()
                     
                     Button {
+                        #if canImport(UIKit)
                         UIPasteboard.general.string = receiptHandle
+                        #endif
+                        HapticFeedback.success()
                         handleCopied = true
                         Task {
                             try? await Task.sleep(nanoseconds: 2_000_000_000)
@@ -173,6 +191,23 @@ public struct ReceiptView: View {
         )
     }
     
+    private var merkleAuditSection: some View {
+        Group {
+            if let receipt = receiptViewModel.receipt {
+                MerkleAuditTreeCard(
+                    electionId: electionId,
+                    leafIndex: receipt.leafIndex,
+                    leafHash: receipt.leafHash,
+                    nullifierCommitment: receipt.nullifierCommitment,
+                    status: receipt.status
+                ) {
+                    HapticFeedback.light()
+                    showProofSheet = true
+                }
+            }
+        }
+    }
+    
     private var lifecycleTrackerCard: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Receipt Lifecycle Progression")
@@ -227,6 +262,7 @@ public struct ReceiptView: View {
             .frame(maxWidth: .infinity)
             .background(ColorTokens.backgroundSecondary.opacity(0.5))
             .clipShape(RoundedRectangle(cornerRadius: 10))
+            .transition(.opacity)
         }
     }
     
@@ -247,6 +283,9 @@ public struct ReceiptView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     .shadow(color: ColorTokens.brandPrimary.opacity(0.3), radius: 6, x: 0, y: 3)
                 }
+                .simultaneousGesture(TapGesture().onEnded {
+                    HapticFeedback.light()
+                })
                 .accessibilityLabel("Export cryptographic receipt JSON button")
             }
         }
@@ -258,6 +297,9 @@ public struct LifecycleStepRow: View {
     public let title: String
     public let subtitle: String
     public let isCompleted: Bool
+    
+    @ScaledMetric(relativeTo: .body) private var circleSize: CGFloat = 30
+    @ScaledMetric(relativeTo: .caption) private var checkIconSize: CGFloat = 14
     
     public init(stepNumber: String, title: String, subtitle: String, isCompleted: Bool) {
         self.stepNumber = stepNumber
@@ -271,11 +313,12 @@ public struct LifecycleStepRow: View {
             ZStack {
                 Circle()
                     .fill(isCompleted ? ColorTokens.stateSuccess : ColorTokens.stateNeutral.opacity(0.25))
-                    .frame(width: 30, height: 30)
+                    .frame(width: circleSize, height: circleSize)
+                    .beaconPulse(color: ColorTokens.stateSuccess, isActive: isCompleted)
                 
                 if isCompleted {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.system(size: checkIconSize, weight: .bold))
                         .foregroundStyle(.white)
                 } else {
                     Text(stepNumber)
