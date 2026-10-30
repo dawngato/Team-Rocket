@@ -143,6 +143,7 @@ export default function HomePage() {
                   type="text"
                   value={receiptQuery}
                   onChange={(e) => setReceiptQuery(e.target.value)}
+                  suppressHydrationWarning
                   placeholder="Receipt handle"
                   aria-label="Receipt handle"
                   className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
@@ -152,6 +153,7 @@ export default function HomePage() {
                 type="text"
                 value={electionQuery}
                 onChange={(e) => setElectionQuery(e.target.value)}
+                suppressHydrationWarning
                 placeholder="Election ID"
                 aria-label="Election ID"
                 className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] sm:w-52"
