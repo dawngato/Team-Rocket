@@ -29,6 +29,9 @@ def goto_ready(page: Page, path: str) -> None:
             page.wait_for_timeout(1_000)
     assert response is not None and response.ok, f"Route failed: {path} ({response})"
     page.locator("main#main-content").wait_for(state="visible")
+    # Use a DOM wait instead of string-evaluated JavaScript so the smoke test
+    # also works against the production CSP, which correctly blocks eval.
+    page.locator("head link[rel='stylesheet'], head style").first.wait_for(state="attached")
 
 
 def assert_no_horizontal_overflow(page: Page) -> None:
@@ -66,7 +69,33 @@ def run_smoke() -> None:
             "heading", name="See how a record moves toward review"
         ).is_visible()
         assert page.get_by_text("Evidence observatory").is_visible()
+        assert page.get_by_test_id("ballot-box-hero").is_visible()
+        assert page.get_by_text("Decorative only.").is_visible()
+        workspace_preview = page.locator(
+            'button[aria-label="Open navigation only workspace preview"]'
+        )
+        page.wait_for_timeout(500)
+        workspace_preview.dispatch_event("click")
+        preview_menu = page.locator('[role="menu"]')
+        preview_menu.wait_for(state="visible")
+        assert preview_menu.get_by_text("Navigation preview only").is_visible()
+        assert preview_menu.get_by_text(
+            "This menu changes navigation only. Server authentication and permissions still control every protected action."
+        ).is_visible()
+        workspace_preview.dispatch_event("click")
         assert_no_horizontal_overflow(page)
+
+        reduced_motion_page = browser.new_page(viewport={"width": 1440, "height": 900})
+        reduced_motion_page.emulate_media(reduced_motion="reduce")
+        goto_ready(reduced_motion_page, "/")
+        reduced_motion_page.locator(".ballot-box-paper").wait_for(state="visible")
+        assert reduced_motion_page.locator(".ballot-box-paper").evaluate(
+            "node => getComputedStyle(node).animationName === 'none'"
+        )
+        assert reduced_motion_page.locator(".ballot-box-scene").evaluate(
+            "node => getComputedStyle(node).transform === 'none'"
+        )
+        reduced_motion_page.close()
 
         # Mobile navigation remains reachable without leaving the already compiled route.
         page.set_viewport_size({"width": 390, "height": 844})
@@ -86,9 +115,9 @@ def run_smoke() -> None:
 
         # Casting stays fail-closed when the authoritative election service is not configured.
         goto_ready(page, "/student/elections/elec_su_2026/cast")
-        assert page.get_by_role("alert").filter(
-            has_text="authoritative election service is not configured"
-        ).is_visible()
+        page.get_by_text(
+            "The authoritative election service is not configured.", exact=True
+        ).wait_for(state="visible")
 
         # Inclusion must fail closed until the casting origin returns authenticated proof inputs.
         goto_ready(page, "/student/receipts/HV_24F8_19C2/inclusion")

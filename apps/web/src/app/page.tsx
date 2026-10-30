@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
 import { EvidenceOrbit } from "../components/EvidenceOrbit";
+import { BallotBoxHero } from "../components/BallotBoxHero";
 import { electionClient } from "../lib/election_client";
 import type { Election } from "../lib/types";
 
@@ -100,7 +101,10 @@ export default function HomePage() {
         </div>
 
         <div className="lg:col-span-5">
-          <EvidenceOrbit />
+          <BallotBoxHero />
+          <div className="mt-8">
+            <EvidenceOrbit />
+          </div>
         </div>
       </section>
 

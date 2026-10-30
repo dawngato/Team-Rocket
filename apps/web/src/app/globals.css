@@ -90,6 +90,16 @@ textarea:focus-visible {
   .evidence-orbit-signal {
     animation: none !important;
   }
+
+  .ballot-box-scene {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .ballot-box-paper {
+    animation: none !important;
+    transform: translateX(-50%) rotate(8deg) !important;
+  }
 }
 
 .evidence-orbit-grid {
@@ -107,6 +117,34 @@ textarea:focus-visible {
 
 .evidence-orbit-signal {
   animation: evidence-signal 3.6s ease-in-out infinite;
+}
+
+/* Decorative public hero. It never carries a security state or ballot choice. */
+.ballot-box-scene {
+  transform-style: preserve-3d;
+  transition: transform 180ms ease-out;
+  will-change: transform;
+}
+
+.ballot-box-body,
+.ballot-box-lid,
+.ballot-box-slot,
+.ballot-box-paper {
+  transform-style: preserve-3d;
+}
+
+.ballot-box-paper {
+  animation: ballot-paper-settle 4.8s ease-in-out infinite;
+}
+
+@keyframes ballot-paper-settle {
+  0%,
+  100% {
+    transform: translateX(-50%) rotate(8deg) translateY(0);
+  }
+  50% {
+    transform: translateX(-50%) rotate(8deg) translateY(-3px);
+  }
 }
 
 @keyframes evidence-signal {
