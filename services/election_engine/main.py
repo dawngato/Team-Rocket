@@ -12,15 +12,26 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, status
 from pydantic import BaseModel
 
-from .adapter import (
-    BallotValidationError,
-    CredentialValidationError,
-    DuplicateNullifierError,
-    InclusionVerificationError,
-    TallyVerificationError,
-    VotingEngineAdapter,
-)
-from .constants import PROTOCOL_VERSION
+try:
+    from .adapter import (
+        BallotValidationError,
+        CredentialValidationError,
+        DuplicateNullifierError,
+        InclusionVerificationError,
+        TallyVerificationError,
+        VotingEngineAdapter,
+    )
+    from .constants import PROTOCOL_VERSION
+except (ImportError, ValueError):
+    from adapter import (
+        BallotValidationError,
+        CredentialValidationError,
+        DuplicateNullifierError,
+        InclusionVerificationError,
+        TallyVerificationError,
+        VotingEngineAdapter,
+    )
+    from constants import PROTOCOL_VERSION
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "info"))
 logger = logging.getLogger("election_engine")
