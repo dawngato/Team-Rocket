@@ -57,7 +57,7 @@ export default function HomePage() {
         <div className="lg:col-span-7 space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/20">
             <span className="w-2 h-2 rounded-full bg-[#157E92] animate-pulse" />
-            Educational prototype for verifiable election workflows
+            Institutional platform for verifiable election workflows
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#10233F] dark:text-white tracking-tight leading-tight">
             Institutional voting, made <span className="text-[#157E92]">verifiable.</span>

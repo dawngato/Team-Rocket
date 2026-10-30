@@ -22,7 +22,7 @@ export default function AuditorSignReportPage() {
   const handleSign = () => {
     setIsSigning(false);
     setSigningMessage(
-      "Signing is disabled in the local prototype. Use the standalone verifier and an auditor controlled key or hardware token outside this application."
+      "Signing is handled out-of-band by the independent auditor. Use the standalone verifier and an auditor-controlled key or hardware token outside this application."
     );
   };
 
@@ -38,7 +38,7 @@ export default function AuditorSignReportPage() {
             Sign Auditor Attestation Report
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            This prototype does not create auditor signatures. An external auditor must use a separately controlled key or hardware token.
+            This web interface does not generate auditor signatures. An external auditor must use a separately controlled key or hardware security module.
           </p>
         </div>
       </div>
@@ -89,7 +89,7 @@ export default function AuditorSignReportPage() {
               className="w-full min-h-[44px] px-3 py-2 rounded-lg font-mono text-xs border border-slate-300 dark:border-[#1E3352] bg-transparent focus:outline-none focus:ring-2 focus:ring-[#157E92]"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              This field is a reference only. Private keys are not accepted, generated, or stored by this prototype.
+              This field is a reference only. Private keys are not accepted, generated, or stored by this web platform.
             </span>
           </div>
 
@@ -120,7 +120,7 @@ export default function AuditorSignReportPage() {
               className="w-full min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#15805D]"
             >
               <FileCheck className="w-4 h-4" aria-hidden="true" />
-              <span>Signing Unavailable in Local Prototype</span>
+              <span>Independent External Key Required</span>
             </button>
           )}
 

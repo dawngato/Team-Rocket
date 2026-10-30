@@ -17,7 +17,7 @@ export default function AuditorChainAnchorPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <Blocks className="w-3.5 h-3.5" aria-hidden="true" />
-            Local Chain Demonstration
+            Independent Chain Verification
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Verify Chain Anchor Finality

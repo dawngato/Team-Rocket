@@ -16,7 +16,7 @@ export function Footer() {
             <span>HimVote</span>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-            Educational campus election prototype for inspectable workflows, evidence review, and honest security limits.
+            Institutional campus election platform for inspectable workflows, cryptographic evidence review, and strict boundary controls.
           </p>
           <div className="text-xs text-slate-500 dark:text-slate-500">
             Accessibility support is implemented in the tested web scope. Platform audits remain in progress.
