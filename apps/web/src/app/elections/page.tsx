@@ -299,7 +299,7 @@ export default function ElectionsListPage() {
                         {election.id.includes("design") ? (
                           "Marcus Vance (Design Lead), Devon Ray, Aria Chen"
                         ) : (
-                          "Aarav Sharma (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)"
+                          "Suzi (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)"
                         )}
                       </div>
                     </div>

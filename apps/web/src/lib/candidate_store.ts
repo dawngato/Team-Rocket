@@ -13,17 +13,17 @@ export interface RichCandidate extends Candidate {
   status?: "VERIFIED" | "NOMINATED" | "PENDING";
 }
 
-const STORAGE_KEY = "himvote_admin_candidates";
+const STORAGE_KEY = "himvote_admin_candidates_v2";
 
 export const DEFAULT_CANDIDATES: RichCandidate[] = [
   {
-    id: "cand_aarav_sharma",
+    id: "cand_suzi",
     election_id: "demo_union_2026",
-    name: "Aarav Sharma",
+    name: "Suzi",
     contest: "Student Union Council 2026",
     position: "Student Union President",
     department: "Computer Science & Engineering (4th Year)",
-    roll_number: "2023CSE1042",
+    roll_number: "2023CSE1001",
     slate: "Tech & Academic Innovation",
     status: "VERIFIED",
     statement: "Championing 24/7 library & AI GPU access, real-time campus shuttle tracking, and 100% transparent student council ledger.",
@@ -32,14 +32,14 @@ export const DEFAULT_CANDIDATES: RichCandidate[] = [
       "Automated real-time campus shuttle tracking and night-time electric scooter network",
       "100% budget transparency with open student council ledger"
     ],
-    avatar_url: "/avatars/aarav.svg",
+    avatar_url: "/avatars/suzi.svg",
     avatar_svg: `<svg viewBox="0 0 100 100" width="100" height="100" xmlns="http://www.w3.org/2000/svg">
       <circle cx="50" cy="50" r="50" fill="#E0F2FE"/>
       <circle cx="50" cy="38" r="20" fill="#0D9488"/>
       <circle cx="43" cy="36" r="3" fill="#FFFFFF"/>
       <circle cx="57" cy="36" r="3" fill="#FFFFFF"/>
       <path d="M 40 46 Q 50 52 60 46" stroke="#FFFFFF" stroke-width="2" fill="none"/>
-      <path d="M 38 33 L 48 33 M 52 33 L 62 33" stroke="#0F172A" stroke-width="2.5"/>
+      <path d="M 32 30 C 35 18 65 18 68 30 C 70 38 68 46 68 46 C 65 34 35 34 32 46 Z" fill="#0F172A"/>
       <path d="M 22 88 C 22 66 35 62 50 62 C 65 62 78 66 78 88 Z" fill="#0F172A"/>
       <polygon points="46,62 54,62 52,78 48,78" fill="#38BDF8"/>
     </svg>`
