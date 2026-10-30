@@ -47,7 +47,7 @@ python3 -m pytest tests/unit/test_source_audit.py tests/unit/test_verify_integra
 6 passed
 
 python3 -m pytest verifier/test_verifier.py tests/test_verifier.py -q
-36 passed
+37 passed and 1 warning from the intentional duplicate ZIP entry fixture
 
 python3 -m pytest services/admin_api/tests -q
 21 passed

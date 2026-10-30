@@ -1,71 +1,84 @@
-# Judge Demonstration and Audit Guide
+# HimVote judge demonstration
 
-Document Date: 30 October 2026
-System: SecureVote / HimVote
-Classification: Independent Evaluator Verification Script
+Document date: 30 October 2026
 
-## Step by Step Demonstration Walkthrough
+This is a synthetic data demonstration of the HimVote educational prototype. The local witness, local chain and Profile VEEM adapter are development components. They do not provide an independent production operator or a vetted secret ballot engine.
 
-Follow these steps to independently verify the core security claims of the platform:
+## 1. Run the verified Python suites
 
-### Step 1 Run Full Test Suite
-Execute the unified test runner to verify all 271 cryptographic, service, and protocol tests:
 ```bash
 python3 tools/run_all_tests.py
+python3 tools/verify_integrations.py
 ```
-Expected output: All 11 suites pass with 271 passed tests and exit code 0.
 
-### Step 2 Execute Institutional Election Simulation
-Run the complete 10 stage synthetic election lifecycle:
+The recorded baseline is 273 passed and 1 skipped in the unified runner, followed by 79 integration checks. The exact output from the current run is recorded in `docs/TEST_EVIDENCE.md`.
+
+## 2. Run the development election fixture
+
 ```bash
 python3 fixtures/simulate_election.py
 ```
-Expected output:
-* Stages 1 through 10 succeed.
-* Audit report confirms PASS across all eleven properties.
-* Evidence archive exported to `fixtures/simulation_run/export/`.
 
-### Step 3 Execute Standalone Offline Verifier
-Simulate an airgapped audit of the exported election package with servers offline:
+This command uses `--allow-development-profile` internally because the fixture is designed to exercise identity separation, acceptance, Merkle evidence, witness handling and mutation detection without a third party engine. Its report must not be presented as proof of an encrypted tally.
+
+## 3. Run the strict standalone verifier
+
+```bash
+python3 -m verifier verify \
+  --archive <evidence archive or directory> \
+  --trust <external trust pins> \
+  --final <independently obtained final checkpoint> \
+  --roster <roster approval> \
+  --issuance <issuer closure> \
+  --chain <independently obtained chain record> \
+  --report <output report>
+```
+
+The strict command returns exit code 3 for the current plaintext development profile. It returns exit code 0 only after a vetted engine supplies native ballot and tally evidence and all mandatory external checks pass.
+
+For local fixture testing only, use the explicit opt in:
+
 ```bash
 python3 verifier/verify.py audit_evidence \
-  --export-dir fixtures/simulation_run/export \
-  --external-dir fixtures/simulation_run/external \
-  --trust-pins fixtures/simulation_run/external/trust_pins.json \
-  --output report_audit.json
+  --export fixtures/simulation_run/export \
+  --trust fixtures/simulation_run/external/trust_pins.json \
+  --final fixtures/simulation_run/external/witness_final.json \
+  --roster fixtures/simulation_run/external/roster_approval.json \
+  --issuance fixtures/simulation_run/external/issuer_closure.json \
+  --chain fixtures/simulation_run/external/chain_pins.json \
+  --report fixtures/simulation_run/report.json \
+  --allow-development-profile
 ```
-Expected output: Return code 0, overall status PASS.
 
-### Step 4 Verify Student Receipt Inclusion
-Verify a student receipt inclusion proof against the witnessed Merkle root:
-```bash
-python3 verifier/verify.py verify_inclusion \
-  --receipt-handle rcpt_0000000000000001 \
-  --export-dir fixtures/simulation_run/export \
-  --external-dir fixtures/simulation_run/external \
-  --trust-pins fixtures/simulation_run/external/trust_pins.json
-```
-Expected output: Inclusion verified against witnessed Merkle root.
+## 4. Verify a receipt inclusion proof
 
-### Step 5 Verify Adversarial Attack Rejections
-Execute the automated Question 07 adversarial test suite:
 ```bash
-python3 tests/run_tests.py
+python3 -m verifier verify \
+  --archive <evidence archive or directory> \
+  --trust <external trust pins> \
+  --final <independently obtained final checkpoint> \
+  --verify-inclusion <tracker JSON> \
+  --report <output report>
 ```
-Expected output:
-* Duplicate cast rejected (Q7.1 PASS)
-* Inserted ballot rejected (Q7.2 PASS)
-* Deleted ballot detected (Q7.3 PASS)
-* Modified ballot detected (Q7.4 PASS)
-* Tally tampering detected (Q7.5 PASS)
 
-### Step 6 Web Application and Native Platforms Inspection
-Inspect the web application production build and test suites:
+Inclusion proves that a non choice revealing record is present under the supplied final root. It does not prove that a compromised endpoint captured the intended selection.
+
+## 5. Run the web and Linux checks
+
 ```bash
-cd apps/web && npm test && npm run build
+cd apps/web
+npm test -- --run
+npm run build
+cd ../..
+xvfb-run -a python3 -m pytest apps/linux/tests -q
 ```
-Inspect the native Linux inspector test suite:
-```bash
-pytest apps/linux/tests
-```
-Expected output: 42 web tests pass; 48 web routes compile cleanly; 55 Linux native tests pass.
+
+The current environment has the web and Linux checks available. Android unit tests are available through Gradle. iOS requires macOS and Xcode. The Avalonia and Windows builds require a .NET SDK, which is not installed in the current environment.
+
+## 6. Mutation evidence
+
+The five Question 07 mutation reports are under `tests/security/reports`. They cover duplicate submission, forged insertion, deletion, modification and tally manipulation. Each report must be read together with the verifier test and the limitations in `docs/security/CLAIMS_AND_LIMITATIONS.md`.
+
+## 7. Honest trust boundary
+
+The local witness and Anvil chain run under the same developer controlled environment. They are useful for repeatable tests, but they are not independent authorities. A production deployment would require a separately operated witness, separate key custody, a vetted election engine, an independent auditor and external reviews before any live election.
