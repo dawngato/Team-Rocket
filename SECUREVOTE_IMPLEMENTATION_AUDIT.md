@@ -68,13 +68,13 @@ it is presentation only and is not used inside voting or proof controls.
 | `python3 tests/run_tests.py` | PASS, 54 tests, 1 warning |
 | `python3 -m pytest services/casting/tests/test_receipt.py services/casting/tests/test_security.py services/casting/tests/test_idempotency_and_duplicates.py -q` | PASS, 14 tests |
 | `python3 -m pytest verifier/test_verifier.py verifier/test_security_hardening.py tests/test_verifier.py -q` | PASS, 42 tests, 1 warning |
-| `python3 tools/run_all_tests.py` | FAIL, 299 passed and 1 pre-existing identity roster assertion failed |
+| `python3 tools/run_all_tests.py` | Earlier baseline: 299 passed and 1 pre-existing identity roster assertion failed; superseded by the latest 302 pass recorded below |
 | `swift test` from `apps/ios` | BLOCKED before compilation: `swift` is not installed in this environment |
 
 ## Claims not made
 
-No claim is made that the whole Q7 system is complete, that the Android suite
-passed, that the local witness is independent, or that the local engine proves
+No claim is made that the whole Q7 system is complete, that the Android device
+or release build passed, that the local witness is independent, or that the local engine proves
 privacy, cast-as-intended, coercion resistance, or tally correctness.
 
 ## Additional execution evidence from this implementation iteration
