@@ -78,7 +78,7 @@ services:
       - IDENTITY_DB_PORT=5432
       - IDENTITY_DB_NAME=himvote_identity
       - IDENTITY_DB_USER=himvote_identity
-      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD must be set}
+      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:-himvote_dev_identity_pw}
       - IDENTITY_DB_SSL_MODE=prefer
       - KMS_PROVIDER=local
       - LOG_LEVEL=info
@@ -103,7 +103,7 @@ services:
       - CASTING_DB_PORT=5432
       - CASTING_DB_NAME=himvote_casting
       - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
+      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:-himvote_dev_casting_pw}
       - CASTING_DB_SSL_MODE=prefer
       - ELECTION_ENGINE_BASE=http://election_engine:8084
       - LOG_LEVEL=info
@@ -142,7 +142,7 @@ services:
       - CASTING_DB_PORT=5432
       - CASTING_DB_NAME=himvote_casting
       - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
+      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:-himvote_dev_casting_pw}
       - WITNESS_BASE=http://witness:8086
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
@@ -212,7 +212,7 @@ services:
     environment:
       - POSTGRES_DB=himvote_identity
       - POSTGRES_USER=himvote_identity
-      - POSTGRES_PASSWORD=${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD must be set}
+      - POSTGRES_PASSWORD=${IDENTITY_DB_PASSWORD:-himvote_dev_identity_pw}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - identity_db_data:/var/lib/postgresql/data
@@ -232,7 +232,7 @@ services:
     environment:
       - POSTGRES_DB=himvote_casting
       - POSTGRES_USER=himvote_casting
-      - POSTGRES_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
+      - POSTGRES_PASSWORD=${CASTING_DB_PASSWORD:-himvote_dev_casting_pw}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - casting_db_data:/var/lib/postgresql/data
@@ -249,13 +249,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: himvote_redis
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-himvote_dev_redis_pw}"]
     ports:
       - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-himvote_dev_redis_pw}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

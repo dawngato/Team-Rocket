@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type PointerEvent } from "react";
+import { useState, useEffect, useRef, type PointerEvent } from "react";
 import {
   Activity,
   Fingerprint,
@@ -79,8 +79,57 @@ interface EvidenceOrbitProps {
 }
 
 export function EvidenceOrbit({ manifestDigest, leafCount, anchorTxHash }: EvidenceOrbitProps = {}) {
+  const containerRef = useRef<HTMLElement>(null);
   const [activeStage, setActiveStage] = useState<EvidenceStage>("witness");
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [isVisible, setIsVisible] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(motionQuery.matches);
+
+    const onMotionChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+    motionQuery.addEventListener("change", onMotionChange);
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        setIsVisible(false);
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    if (!("IntersectionObserver" in window)) {
+      return () => {
+        motionQuery.removeEventListener("change", onMotionChange);
+        document.removeEventListener("visibilitychange", onVisibilityChange);
+      };
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        setIsVisible(Boolean(entry?.isIntersecting) && !document.hidden);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => {
+      observer.disconnect();
+      motionQuery.removeEventListener("change", onMotionChange);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, []);
+
+  const shouldAnimate = isVisible && !prefersReducedMotion;
 
   const stages: StageDefinition[] = [
     {
@@ -117,7 +166,7 @@ export function EvidenceOrbit({ manifestDigest, leafCount, anchorTxHash }: Evide
   const activeTone = toneClasses[active.tone];
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (event.pointerType === "touch") return;
+    if (!shouldAnimate || event.pointerType === "touch") return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - bounds.left) / bounds.width - 0.5;
     const y = (event.clientY - bounds.top) / bounds.height - 0.5;
@@ -126,11 +175,13 @@ export function EvidenceOrbit({ manifestDigest, leafCount, anchorTxHash }: Evide
 
   return (
     <section
+      ref={containerRef}
       aria-labelledby="evidence-orbit-title"
       className="relative mx-auto w-full max-w-[560px]"
     >
       <div
         className="evidence-orbit-stage relative min-h-[470px] overflow-hidden rounded-[2rem] border border-[#2D5577] bg-[#091827] px-5 pb-5 pt-6 text-white shadow-[0_28px_80px_rgba(16,35,63,0.28)] sm:px-7"
+        data-animating={shouldAnimate}
         onPointerMove={handlePointerMove}
         onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       >
@@ -155,14 +206,20 @@ export function EvidenceOrbit({ manifestDigest, leafCount, anchorTxHash }: Evide
         <div
           className="evidence-orbit-tilt relative z-10 mt-4 min-h-[278px] [perspective:1200px]"
           style={{
-            transform: `rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)`,
+            transform: shouldAnimate ? `rotateX(${tilt.y}deg) rotateY(${tilt.x}deg)` : "none",
           }}
           aria-label="Three dimensional development evidence diagram"
         >
           <div className="absolute left-[8%] right-[8%] top-12 h-[218px] rounded-[1.75rem] border border-[#2D5577] bg-[#0D243A]/95 shadow-[0_24px_45px_rgba(0,0,0,0.3)] [transform:rotateX(58deg)_rotateZ(-8deg)_translateZ(-32px)] [transform-style:preserve-3d]" />
           <div className="absolute left-[15%] right-[15%] top-[68px] h-[160px] rounded-[1.35rem] border border-[#3C6D8B]/70 bg-[#102D47]/90 [transform:rotateX(58deg)_rotateZ(-8deg)_translateZ(-8px)] [transform-style:preserve-3d]">
-            <div className="evidence-orbit-signal absolute left-[18%] right-[18%] top-1/2 h-px bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent" />
-            <div className="evidence-orbit-signal absolute left-1/2 top-[22%] h-[56%] w-px bg-gradient-to-b from-transparent via-[#34D399] to-transparent" />
+            <div
+              className="evidence-orbit-signal absolute left-[18%] right-[18%] top-1/2 h-px bg-gradient-to-r from-transparent via-[#38BDF8] to-transparent"
+              style={{ animationPlayState: shouldAnimate ? "running" : "paused" }}
+            />
+            <div
+              className="evidence-orbit-signal absolute left-1/2 top-[22%] h-[56%] w-px bg-gradient-to-b from-transparent via-[#34D399] to-transparent"
+              style={{ animationPlayState: shouldAnimate ? "running" : "paused" }}
+            />
           </div>
 
           <div className="absolute left-1/2 top-[104px] flex h-[112px] w-[112px] -translate-x-1/2 items-center justify-center rounded-full border border-[#34D399]/70 bg-[#0A2134]/95 shadow-[0_0_0_14px_rgba(21,126,146,0.08),0_0_55px_rgba(52,211,153,0.22)] [transform:translateZ(42px)] [transform-style:preserve-3d]">

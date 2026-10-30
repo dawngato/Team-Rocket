@@ -55,10 +55,10 @@ def validate_environment(env: Optional[Dict[str, str]] = None) -> List[ConfigVal
     app_env = env.get("APP_ENV", env.get("ENVIRONMENT", "development")).lower().strip()
     is_production = app_env in {"production", "staging", "prod"}
 
-    # Required variables across all environments
-    required_always = [
-        "LOG_LEVEL",
-    ]
+    # Validate LOG_LEVEL if set
+    log_level = env.get("LOG_LEVEL", "info").strip().lower()
+    if log_level not in {"debug", "info", "warning", "error", "critical"}:
+        errors.append(ConfigValidationError("LOG_LEVEL", "Must be one of debug, info, warning, error, critical"))
 
     # Required variables in production
     required_production = [
@@ -68,10 +68,6 @@ def validate_environment(env: Optional[Dict[str, str]] = None) -> List[ConfigVal
         "AUDITOR_PUBLIC_KEY_FINGERPRINT",
         "WITNESS_KEY_ID",
     ]
-
-    for var in required_always:
-        if not env.get(var):
-            errors.append(ConfigValidationError(var, "Variable is required and must not be empty"))
 
     if is_production:
         for var in required_production:
