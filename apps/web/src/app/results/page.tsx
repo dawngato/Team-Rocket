@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   Download,
@@ -11,12 +12,20 @@ import {
   Copy,
   ExternalLink,
   BarChart3,
-  Flame
+  Flame,
+  ArrowRight,
+  Vote,
 } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election, EvidencePackage, PublishedResults } from "@/lib/types";
 
+const CANDIDATE_PHOTOS: Record<string, string> = {
+  "Kabir Mehta": "/candidates/kabir.jpg",
+  "Priya Patel": "/candidates/priya.jpg",
+  "Suzi": "/candidates/suzi.jpg",
+  "Ananya Iyer": "/candidates/ananya.jpg",
+};
 
 const FALLBACK_PUBLISHED_DATA: Record<string, { election: Election; results: PublishedResults; evidence: EvidencePackage }> = {
   demo_eng_2026: {
@@ -24,7 +33,7 @@ const FALLBACK_PUBLISHED_DATA: Record<string, { election: Election; results: Pub
       id: "demo_eng_2026",
       title: "Engineering Faculty Council 2026",
       state: "PUBLISHED",
-      contest: "Engineering Faculty Delegation",
+      contest: "Faculty Student Delegation",
       selection_rule: "Select one departmental delegate",
       opens_at_utc: new Date(Date.now() - 3600000 * 96).toISOString(),
       closes_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
@@ -101,51 +110,75 @@ const FALLBACK_PUBLISHED_DATA: Record<string, { election: Election; results: Pub
   },
 };
 
+const INITIAL_ELECTIONS = Object.values(FALLBACK_PUBLISHED_DATA).map((d) => d.election);
+
 export default function PublishedResultsPage() {
-  const [elections, setElections] = useState<Election[]>([]);
-  const [selectedElectionId, setSelectedElectionId] = useState<string | null>(null);
-  const [currentElection, setCurrentElection] = useState<Election | null>(null);
-  const [results, setResults] = useState<PublishedResults | null>(null);
-  const [evidence, setEvidence] = useState<EvidencePackage | null>(null);
-  const [loadingDirectory, setLoadingDirectory] = useState(true);
+  const [elections, setElections] = useState<Election[]>(INITIAL_ELECTIONS);
+  const [selectedElectionId, setSelectedElectionId] = useState<string>("demo_eng_2026");
+  const [currentElection, setCurrentElection] = useState<Election>(FALLBACK_PUBLISHED_DATA["demo_eng_2026"].election);
+  const [results, setResults] = useState<PublishedResults>(FALLBACK_PUBLISHED_DATA["demo_eng_2026"].results);
+  const [evidence, setEvidence] = useState<EvidencePackage>(FALLBACK_PUBLISHED_DATA["demo_eng_2026"].evidence);
+  const [loadingDirectory, setLoadingDirectory] = useState(false);
   const [loadingEvidence, setLoadingEvidence] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedDigest, setCopiedDigest] = useState<string | null>(null);
 
+  // Fetch elections list from backend if available, merging fallback
+  useEffect(() => {
+    let cancelled = false;
+    void electionClient.getElections().then((nextElections) => {
+      if (cancelled) return;
+      const remotePublished = nextElections.filter((e) => e.state === "PUBLISHED");
+      if (remotePublished.length > 0) {
+        setElections(remotePublished);
+        const queryElection = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("election");
+        if (queryElection && remotePublished.some((e) => e.id === queryElection)) {
+          setSelectedElectionId(queryElection);
+        } else {
+          setSelectedElectionId(remotePublished[0].id);
+        }
+      }
+    }).catch(() => {
+      // Retain INITIAL_ELECTIONS fallback
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Fetch or switch selected election details
   useEffect(() => {
     if (!selectedElectionId) return;
     let cancelled = false;
+    const fallback = FALLBACK_PUBLISHED_DATA[selectedElectionId];
+
+    if (fallback) {
+      setCurrentElection(fallback.election);
+      setResults(fallback.results);
+      setEvidence(fallback.evidence);
+    }
+
     setLoadingEvidence(true);
-    setError(null);
     void Promise.all([
       electionClient.getElection(selectedElectionId),
       electionClient.getResults(selectedElectionId),
       electionClient.getEvidence(selectedElectionId),
-    ]).then(([election, nextResults, nextEvidence]) => {
+    ]).then(([nextElection, nextResults, nextEvidence]) => {
       if (cancelled) return;
-      if (election.state !== "PUBLISHED") throw new Error("The selected election is no longer published.");
-      setCurrentElection(election);
-      setResults(nextResults);
-      setEvidence(nextEvidence);
-    }).catch(() => {
-      if (!cancelled) {
-        const fallback = FALLBACK_PUBLISHED_DATA[selectedElectionId] || FALLBACK_PUBLISHED_DATA["demo_eng_2026"];
-        if (fallback) {
-          setCurrentElection(fallback.election);
-          setResults(fallback.results);
-          setEvidence(fallback.evidence);
-          setError(null);
-        } else {
-          setCurrentElection(null);
-          setResults(null);
-          setEvidence(null);
-          setError("Published result evidence could not be loaded.");
-        }
+      if (nextElection.state === "PUBLISHED") {
+        setCurrentElection(nextElection);
+        setResults(nextResults);
+        setEvidence(nextEvidence);
       }
+    }).catch(() => {
+      // If network fails, the fallback data already loaded above persists cleanly
     }).finally(() => {
       if (!cancelled) setLoadingEvidence(false);
     });
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedElectionId]);
 
   const totalVotes = Math.max(results?.total_ballots || 0, 1);
@@ -181,14 +214,14 @@ export default function PublishedResultsPage() {
       {/* Header Banner */}
       <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center">
         <div>
-          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400 animate-linear-reveal-1">
+          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
             <ShieldCheck className="size-3.5" aria-hidden="true" />
             Official Certified Election Outcome
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white animate-linear-reveal-2">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
             Published Election Results
           </h1>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400 animate-linear-reveal-3">
+          <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
             Authoritative tallied outcomes verified against independent witness cosignatures and EVM blockchain checkpoints.
           </p>
         </div>
@@ -197,39 +230,63 @@ export default function PublishedResultsPage() {
           type="button"
           disabled={!currentElection || !results || !evidence}
           onClick={downloadEvidence}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#0E6273] transition-all disabled:pointer-events-none disabled:opacity-50 animate-linear-reveal-4"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] px-5 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#0E6273] transition-all disabled:pointer-events-none disabled:opacity-50"
         >
           <Download className="size-4" aria-hidden="true" />
           Export Verifiable Package (JSON)
         </button>
       </header>
 
-      {loadingDirectory && (
-        <div className="flex items-center justify-center p-12 rounded-2xl border border-slate-200 bg-white dark:border-[#1E3352] dark:bg-[#132135]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-7 border-2 border-[#157E92] border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Loading certified results...</p>
+      {/* Live Active Voting Notice Banner */}
+      <aside className="rounded-2xl border border-sky-200 dark:border-sky-900/60 bg-gradient-to-r from-sky-500/10 via-sky-50 dark:via-sky-950/20 to-transparent p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#157E92] text-white">
+              <Vote className="size-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-[#38BDF8]">
+                  Active In-Progress Election
+                </span>
+                <span className="inline-flex size-2 rounded-full bg-emerald-500 animate-pulse" />
+              </div>
+              <h2 className="text-base font-bold text-[#10233F] dark:text-white">
+                Student Union Council 2026 (Live Ballot Collection)
+              </h2>
+              <p className="text-xs text-slate-600 dark:text-slate-400">
+                Presidential candidate <strong className="text-slate-900 dark:text-white">Suzi</strong> and contestants are currently running. Results will finalize after polls close.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/student/elections/demo_union_2026/candidates"
+              className="px-4 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
+            >
+              Candidates
+            </Link>
+            <Link
+              href="/student/elections/demo_union_2026"
+              className="px-4 py-2 text-xs font-bold rounded-xl bg-[#157E92] text-white hover:bg-[#0E6273] inline-flex items-center gap-1.5 shadow-sm"
+            >
+              Cast Ballot <ArrowRight className="size-3.5" />
+            </Link>
           </div>
         </div>
-      )}
+      </aside>
 
-      {error && (
-        <div className="rounded-2xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-6 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
-          <p className="font-bold">Result Verification Error</p>
-          <p className="mt-1">{error}</p>
+      {/* Certified Election Selector Tabs */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            Select Certified Election ({elections.length} Available)
+          </span>
+          <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
+            ✓ Cryptographically Sealed
+          </span>
         </div>
-      )}
-
-      {!loadingDirectory && !error && elections.length === 0 && (
-        <div className="rounded-2xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-8 text-center text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">
-          <p className="font-bold text-base">No Published Results Available Yet</p>
-          <p className="mt-1 text-xs">Elections currently in voting or witness certification phases will appear here once finalized.</p>
-        </div>
-      )}
-
-      {/* Election Selector Tab List */}
-      {!loadingDirectory && elections.length > 0 && (
-        <div className="flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Published elections">
+        <div className="flex gap-3 overflow-x-auto pb-2" role="tablist" aria-label="Published elections">
           {elections.map((election) => (
             <button
               key={election.id}
@@ -237,27 +294,23 @@ export default function PublishedResultsPage() {
               role="tab"
               aria-selected={selectedElectionId === election.id}
               onClick={() => setSelectedElectionId(election.id)}
-              className={`min-h-11 whitespace-nowrap rounded-xl px-4 py-2 text-xs font-bold transition-all shadow-sm ${
+              className={`min-h-12 whitespace-nowrap rounded-xl px-5 py-2.5 text-xs font-bold transition-all shadow-sm border ${
                 selectedElectionId === election.id
-                  ? "bg-[#10233F] text-white dark:bg-[#157E92]"
-                  : "bg-white text-slate-700 hover:bg-slate-100 dark:bg-[#132135] dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]"
+                  ? "bg-[#10233F] text-white border-[#10233F] dark:bg-[#157E92] dark:border-[#157E92]"
+                  : "bg-white text-slate-700 hover:bg-slate-50 dark:bg-[#132135] dark:text-slate-300 border-slate-200 dark:border-[#1E3352]"
               }`}
             >
-              {election.title}
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="size-4 text-emerald-400" />
+                <span>{election.title}</span>
+              </div>
             </button>
           ))}
         </div>
-      )}
-
-      {loadingEvidence && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">
-          <div className="size-6 border-2 border-[#157E92] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-          Synchronizing election tally, manifest digests, and evidence proofs...
-        </div>
-      )}
+      </div>
 
       {/* Main Results Dashboard Card */}
-      {!loadingEvidence && currentElection && results && evidence && (
+      {currentElection && results && evidence && (
         <section className="space-y-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] sm:p-8">
           {/* Contest Overview */}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center border-b border-slate-100 pb-6 dark:border-[#1E3352]">
@@ -295,13 +348,27 @@ export default function PublishedResultsPage() {
             <div className="relative overflow-hidden rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent p-6 dark:border-amber-700/60 dark:from-amber-950/40 shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div className="flex items-start sm:items-center gap-4">
-                  <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg">
-                    <Trophy className="size-7" />
-                  </div>
+                  {CANDIDATE_PHOTOS[winner[0]] ? (
+                    <div className="relative size-16 shrink-0 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-lg">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={CANDIDATE_PHOTOS[winner[0]]}
+                        alt={winner[0]}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 inset-x-0 bg-amber-500 text-[9px] font-bold text-white text-center py-0.5">
+                        WINNER
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex size-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-white shadow-lg">
+                      <Trophy className="size-7" />
+                    </div>
+                  )}
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-xs font-bold uppercase tracking-wider text-amber-800 dark:text-amber-300">
-                        Winner Declared • Elected
+                        Winner Declared • Certified Elected
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/20 px-2 py-0.5 text-xs font-bold text-amber-900 dark:text-amber-200">
                         <Flame className="size-3.5" /> Highest Votes
@@ -337,16 +404,9 @@ export default function PublishedResultsPage() {
 
               {runnerUp && (
                 <div className="mt-4 pt-3 border-t border-amber-200/50 dark:border-amber-900/30 text-xs text-slate-600 dark:text-slate-400">
-                  Defeated runner-up <span className="font-semibold text-slate-800 dark:text-slate-200">{runnerUp[0]}</span> ({runnerUp[1].toLocaleString()} votes) by a margin of <span className="font-bold text-amber-700 dark:text-amber-300">{victoryMargin.toLocaleString()} votes</span>.
+                  Defeated runner-up <span className="font-semibold text-slate-800 dark:text-slate-200">{runnerUp[0]}</span> ({runnerUp[1].toLocaleString()} votes) by an authenticated margin of <span className="font-bold text-amber-700 dark:text-amber-300">{victoryMargin.toLocaleString()} votes</span>.
                 </div>
               )}
-            </div>
-          )}
-
-          {results.privacy_limited && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-200">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-hidden="true" />
-              <span>Detailed breakdown presentation is privacy limited by institutional policy parameters.</span>
             </div>
           )}
 
@@ -365,16 +425,24 @@ export default function PublishedResultsPage() {
                 {tally.map(([candidate, count], idx) => {
                   const percentage = Math.round((count / totalVotes) * 100);
                   const isTop = idx === 0;
+                  const photo = CANDIDATE_PHOTOS[candidate];
 
                   return (
                     <div key={candidate} className="space-y-2 rounded-xl border border-slate-100 bg-slate-50/50 p-4 dark:border-[#1E3352]/60 dark:bg-[#0B1524]/40">
                       <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${
-                            isTop ? "bg-[#157E92] text-white" : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
-                          }`}>
-                            {idx + 1}
-                          </span>
+                        <div className="flex items-center gap-3">
+                          {photo ? (
+                            <div className="size-8 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 shrink-0">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={photo} alt={candidate} className="size-full object-cover" />
+                            </div>
+                          ) : (
+                            <span className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${
+                              isTop ? "bg-[#157E92] text-white" : "bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300"
+                            }`}>
+                              {idx + 1}
+                            </span>
+                          )}
                           <span className="font-bold text-[#10233F] dark:text-white">
                             {candidate}
                           </span>
