@@ -50,12 +50,19 @@ export function Navbar() {
           {/* Brand */}
           <Link
             href="/"
-            className="apple-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3] rounded-md px-1 py-1"
+            className="apple-brand focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3] rounded-md px-1 py-1 flex items-center gap-3"
           >
-            <span className="apple-brand-mark">
-              <Vote className="w-4 h-4" aria-hidden="true" />
+            <span className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl overflow-hidden flex items-center justify-center bg-[#07111E] border border-cyan-500/40 shadow-sm shrink-0 p-0.5 hover:border-cyan-400 transition-colors">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/himvote-logo.svg"
+                alt="HimVote Logo"
+                className="w-full h-full object-contain"
+                width={44}
+                height={44}
+              />
             </span>
-            <span>HimVote</span>
+            <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#10233F] dark:text-white">HimVote</span>
           </Link>
 
           {/* Desktop Nav */}

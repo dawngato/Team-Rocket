@@ -730,6 +730,61 @@ textarea:focus-visible {
   will-change: opacity;
 }
 
+/* Linear-Inspired Text Reveal Animations (Extra Slow, Cinematic & Luxurious Pace)
+   Smooth vertical translation (24px), opacity 0 -> 1,
+   cubic-bezier(0.16, 1, 0.3, 1) easing, 1400ms duration, and 240ms staggered delays. */
+@keyframes linearReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-linear-reveal-1 {
+  animation: linearReveal 1350ms cubic-bezier(0.16, 1, 0.3, 1) 0ms forwards;
+  will-change: transform, opacity;
+}
+
+.animate-linear-reveal-2 {
+  opacity: 0;
+  animation: linearReveal 1400ms cubic-bezier(0.16, 1, 0.3, 1) 240ms forwards;
+  will-change: transform, opacity;
+}
+
+.animate-linear-reveal-3 {
+  opacity: 0;
+  animation: linearReveal 1400ms cubic-bezier(0.16, 1, 0.3, 1) 480ms forwards;
+  will-change: transform, opacity;
+}
+
+.animate-linear-reveal-4 {
+  opacity: 0;
+  animation: linearReveal 1450ms cubic-bezier(0.16, 1, 0.3, 1) 720ms forwards;
+  will-change: transform, opacity;
+}
+
+.animate-linear-reveal-5 {
+  opacity: 0;
+  animation: linearReveal 1450ms cubic-bezier(0.16, 1, 0.3, 1) 960ms forwards;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-linear-reveal-1,
+  .animate-linear-reveal-2,
+  .animate-linear-reveal-3,
+  .animate-linear-reveal-4,
+  .animate-linear-reveal-5 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
 /* Tactile button active scaling and instant feedback */
 .tactile-button {
   transition: transform 75ms ease-out, background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease;
