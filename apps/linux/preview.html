@@ -651,7 +651,7 @@
               <div class="elec-card-title">Student Union Council 2026</div>
               <div class="elec-card-desc">Annual executive elections for the Student Union Council representing all undergraduate and postgraduate bodies across campus.</div>
               <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">4 candidates registered</div>
-              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Aarav Sharma (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Suzi (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)</div>
               <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
                 <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_union_2026</span>
                 <button class="btn btn-secondary" onclick="openElectionCandidates('demo_union_2026')">View Candidates &amp; Profile</button>
@@ -683,7 +683,7 @@
               <div class="elec-card-title">Engineering Faculty Council</div>
               <div class="elec-card-desc">Faculty governance vote covering laboratory allocation, academic scheduling, and capstone funding.</div>
               <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">4 candidates registered</div>
-              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Priya Patel, Aarav Sharma, Rohan Verma +1 more</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Priya Patel, Suzi, Rohan Verma +1 more</div>
               <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
                 <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_eng_2026</span>
                 <button class="btn btn-secondary" onclick="openElectionCandidates('demo_union_2026')">View Candidates</button>
@@ -829,7 +829,7 @@
               <div style="font-size: 10px; font-weight: 700; color: #0284C7;">TIER 02: BALLOT ENCRYPTION &amp; ZERO KNOWLEDGE</div>
               <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">Exponential ElGamal + CDS 1-out-of-k Proofs</div>
               <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
-                When a student selects a candidate (e.g., Aarav Sharma or Priya Patel), the browser client encrypts the selection using the election public key into ciphertext (c1, c2). A Chaum-Pedersen / CDS zero-knowledge proof proves mathematically that the ballot is a valid vote (0 or 1) without disclosing the choice.
+                When a student selects a candidate (e.g., Suzi or Priya Patel), the browser client encrypts the selection using the election public key into ciphertext (c1, c2). A Chaum-Pedersen / CDS zero-knowledge proof proves mathematically that the ballot is a valid vote (0 or 1) without disclosing the choice.
               </div>
             </div>
 
@@ -865,14 +865,14 @@
               <div>
                 <label style="font-size: 10px; font-weight: 700; color: var(--navy); display: block; margin-bottom: 6px;">SELECT MEMBER / CANDIDATE:</label>
                 <select id="sim-cand-select" style="width: 100%; padding: 8px; font-size: 11px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid var(--line); background: #FFFFFF; color: var(--navy); margin-bottom: 12px;" onchange="onSimCandidateChange()">
-                  <option value="cand_aarav">Aarav Sharma — Student Union President (CSE)</option>
+                  <option value="cand_suzi">Suzi — Student Union President (CSE)</option>
                   <option value="cand_priya">Priya Patel — Vice-President (IT)</option>
                   <option value="cand_kabir">Kabir Mehta — General Secretary (ECE)</option>
                   <option value="cand_ananya">Ananya Iyer — Cultural Secretary (Civil)</option>
                 </select>
 
                 <div id="sim-cand-preview" style="background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; font-size: 10px;">
-                  <div style="font-weight: 700; color: var(--teal);" id="sim-preview-name">Aarav Sharma</div>
+                  <div style="font-weight: 700; color: var(--teal);" id="sim-preview-name">Suzi</div>
                   <div style="color: var(--muted); margin: 2px 0 6px;" id="sim-preview-role">President Candidate • Computer Science (4th Year)</div>
                   <div style="color: var(--text); line-height: 1.4;" id="sim-preview-manifesto">"24/7 Library &amp; AI compute access, automated shuttle tracking, open-ledger student council budget."</div>
                 </div>
@@ -1067,10 +1067,10 @@
             <div id="cand-avatar-container" style="width: 100px; height: 100px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 3px solid var(--teal); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
               <!-- Inline SVG Avatar -->
             </div>
-            <div id="cand-name-header" style="font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 2px;">Aarav Sharma</div>
+            <div id="cand-name-header" style="font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 2px;">Suzi</div>
             <span class="status-chip chip-success" id="cand-position-badge" style="margin-bottom: 6px; font-size: 9px;">President Candidate</span>
             <div id="cand-dept-label" style="font-size: 10px; color: var(--muted); font-weight: 600;">Computer Science &amp; Engg</div>
-            <div id="cand-roll-label" style="font-size: 9px; font-family: monospace; color: var(--muted); margin-top: 2px;">Roll: 2023CSE1042</div>
+            <div id="cand-roll-label" style="font-size: 9px; font-family: monospace; color: var(--muted); margin-top: 2px;">Roll: 2023CSE1001</div>
             <div id="cand-slate-label" style="font-size: 9px; font-weight: 700; color: var(--teal); margin-top: 6px;">Tech &amp; Innovation Slate</div>
           </div>
 
@@ -1122,7 +1122,7 @@
           </thead>
           <tbody>
             <tr>
-              <td><strong>Aarav Sharma</strong></td>
+              <td><strong>Suzi</strong></td>
               <td>100</td>
               <td>100</td>
               <td><span class="status-chip chip-success">0 DELTA (MATCH)</span></td>
@@ -1427,11 +1427,11 @@
     const REAL_CANDIDATES = {
       demo_union_2026: [
         {
-          id: "cand_aarav",
-          name: "Aarav Sharma",
+          id: "cand_suzi",
+          name: "Suzi",
           position: "President Candidate",
           department: "Computer Science & Engineering (4th Year)",
-          rollNo: "2023CSE1042",
+          rollNo: "2023CSE1001",
           slate: "Tech & Academic Innovation",
           color: "#0D9488",
           initials: "AS",
@@ -1557,7 +1557,7 @@
     };
 
     let activeElectionId = "demo_union_2026";
-    let activeCandidateId = "cand_aarav";
+    let activeCandidateId = "cand_suzi";
 
     function openElectionCandidates(electionId) {
       activeElectionId = electionId || "demo_union_2026";

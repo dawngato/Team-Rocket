@@ -378,12 +378,12 @@ export default function AdminOverviewPage() {
               </div>
               <div>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">PRESIDENT</span>
-                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Aarav Sharma</h3>
+                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Suzi</h3>
                 <p className="text-[10px] text-slate-500">CSE • 4th Year</p>
               </div>
             </div>
             <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"24/7 Library &amp; AI compute access, automated shuttle tracking."</p>
-            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023CSE1042</div>
+            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023CSE1001</div>
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">

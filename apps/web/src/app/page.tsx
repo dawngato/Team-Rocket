@@ -76,14 +76,14 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-3">
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-[#10233F] dark:text-white leading-[1.1] animate-linear-reveal-2">
-                Every Student’s Voice. <br />
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white leading-snug animate-linear-reveal-2">
+                Na darr kisi ka, na kisi ka zor — <br />
                 <span className="bg-gradient-to-r from-[#0284C7] via-[#00D2FF] to-emerald-500 bg-clip-text text-transparent">
-                  100% Secret. 100% Proven.
+                  Vote tumhara, campus ka daur.
                 </span>
               </h1>
-              <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl animate-linear-reveal-3">
-                Built for our university community. Vote for your student council without fear of intimidation or leaked preferences — protected by mathematical zero-knowledge proofs and public witness verification.
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl animate-linear-reveal-3">
+                Built for our campus democracy. Vote for your student council without fear of teacher bias, senior intimidation, or leaked preferences — protected by verified cryptographic privacy.
               </p>
             </div>
 

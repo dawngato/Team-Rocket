@@ -22,7 +22,8 @@ import { useApp } from "../lib/query_provider";
 
 export function Navbar() {
   const pathname = usePathname();
-  const { theme, toggleTheme, currentRole, setCurrentRole } = useApp();
+  const { theme, toggleTheme } = useApp();
+  const [currentRole, setCurrentRole] = useState("public");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [roleMenuOpen, setRoleMenuOpen] = useState(false);
 
