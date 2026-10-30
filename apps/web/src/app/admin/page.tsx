@@ -78,6 +78,14 @@ export default function AdminOverviewPage() {
 
   const quickLinks = [
     {
+      kicker: "Nomination Registry",
+      title: "Election Candidates",
+      href: "/admin/candidates",
+      count: "Verified Contestants",
+      icon: Award,
+      desc: "Manage candidate profiles, photos, departments, positions, and manifestos.",
+    },
+    {
       kicker: "Voter Registry",
       title: "Manage Students",
       href: "/admin/students",
@@ -334,6 +342,94 @@ export default function AdminOverviewPage() {
               </Link>
             );
           })}
+        </div>
+      </div>
+
+      {/* Contesting Candidates Showcase in Admin */}
+      <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 dark:border-[#1E3352] gap-2">
+          <div>
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#157E92] dark:text-[#38BDF8] mb-1">
+              <Award className="w-4 h-4" />
+              <span>Contesting Candidates &amp; Nominees</span>
+            </div>
+            <h2 className="text-base font-bold text-[#10233F] dark:text-white">
+              Official Election Contestants (Student Union Council 2026)
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Profiles with photos, departments, roll numbers, and verified manifestos.
+            </p>
+          </div>
+          <Link
+            href="/admin/candidates"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#157E92] hover:bg-[#0E6273] text-white text-xs font-bold shadow-sm transition-all whitespace-nowrap self-start sm:self-auto"
+          >
+            <span>+ Add / Manage Candidates</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {/* Candidate Mini Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-teal-500 shrink-0">
+                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#E0F2FE"/><circle cx="50" cy="38" r="20" fill="#0D9488"/><circle cx="43" cy="36" r="3" fill="#FFF"/><circle cx="57" cy="36" r="3" fill="#FFF"/><path d="M40 46 Q50 52 60 46" stroke="#FFF" stroke-width="2" fill="none"/><path d="M22 88 C22 66 35 62 50 62 C65 62 78 66 78 88 Z" fill="#0F172A"/></svg>
+              </div>
+              <div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">PRESIDENT</span>
+                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Aarav Sharma</h3>
+                <p className="text-[10px] text-slate-500">CSE • 4th Year</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"24/7 Library &amp; AI compute access, automated shuttle tracking."</p>
+            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023CSE1042</div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-500 shrink-0">
+                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#FEE2E2"/><circle cx="50" cy="38" r="20" fill="#E11D48"/><circle cx="44" cy="36" r="2.5" fill="#FFF"/><circle cx="56" cy="36" r="2.5" fill="#FFF"/><path d="M42 45 Q50 50 58 45" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#4C1D95"/></svg>
+              </div>
+              <div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 text-rose-600">VICE-PRESIDENT</span>
+                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Priya Patel</h3>
+                <p className="text-[10px] text-slate-500">IT • 3rd Year</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"Hostel mess committee revamp, 24/7 mental wellness clinic."</p>
+            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2024IT2088</div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 shrink-0">
+                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#FEF3C7"/><circle cx="50" cy="38" r="20" fill="#D97706"/><circle cx="44" cy="36" r="3" fill="#FFF"/><circle cx="56" cy="36" r="3" fill="#FFF"/><path d="M42 46 Q50 50 58 46" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#1E293B"/></svg>
+              </div>
+              <div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600">GEN SECRETARY</span>
+                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Kabir Mehta</h3>
+                <p className="text-[10px] text-slate-500">ECE • 4th Year</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"Annual tech/cultural fest budget auditing, sports arena upgrade."</p>
+            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023ECE1015</div>
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-500 shrink-0">
+                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#DCFCE7"/><circle cx="50" cy="38" r="20" fill="#15803D"/><circle cx="44" cy="36" r="2.5" fill="#FFF"/><circle cx="56" cy="36" r="2.5" fill="#FFF"/><path d="M42 45 Q50 50 58 45" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#064E3B"/></svg>
+              </div>
+              <div>
+                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">CULT SECRETARY</span>
+                <h3 className="font-bold text-xs text-[#10233F] dark:text-white mt-0.5">Ananya Iyer</h3>
+                <p className="text-[10px] text-slate-500">Civil • 3rd Year</p>
+              </div>
+            </div>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"Zero-waste campus initiative, inter-college arts exchange."</p>
+            <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2024CIV1033</div>
+          </div>
         </div>
       </div>
 
