@@ -145,8 +145,6 @@ async def test_duplicate_cast():
         # Q7 privacy/tally claim, so opt into the explicitly limited test mode.
         settings.ENGINE_VALIDATION_MODE = "syntax_only"
         settings.APP_ENV = "test"
-        if sys.version_info >= (3, 14):
-            pytest.skip("The pinned aiosqlite test dependency is not compatible with this Python runtime")
         engine = create_async_engine(
             "sqlite+aiosqlite:///:memory:",
             echo=False,

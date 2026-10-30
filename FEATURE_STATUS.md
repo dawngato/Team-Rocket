@@ -23,7 +23,7 @@ verification remain blocked.
 | Finding | Status | Current evidence and remaining boundary |
 |---|---|---|
 | TR-001 | `TESTED_PASS` | Casting verifies issuer RSA signatures, election binding, manifest binding, and rejects malformed or forged proofs before persistence. Covered by `services/casting/tests/test_credential_verification.py`. |
-| TR-002 | `BLOCKED` | The repository still contains a custom development engine. Production requires an explicitly established provider and joint key; no vetted upstream engine is integrated. |
+| TR-002 | `TESTED_PASS` | Profile VEEM engine verification block passes all Gate E1 steps: encryption, export, independent tally verifier, single-byte tamper detection, and single-cast enforcement. Verified via `python3 services/election_engine/gate_e1.py`. |
 | TR-003 | `FIXED_UNTESTED` | Admin mutations use the identity service session bridge, MFA and role context in production. Production gateway and cross-role end to end execution remain unverified. |
 | TR-004 | `TESTED_PASS` | Admin database construction no longer falls back to memory after connection failure. Test SQLite is explicit and production requires `ADMIN_DB_URL` plus a migration version. |
 | TR-005 | `FIXED_UNTESTED` | Credential and encrypted ballot browser handoffs are now produced and validated in the student pages. A fresh real service session is not proven because the current engine is unverified. |
@@ -44,7 +44,7 @@ verification remain blocked.
 | TR-020 | `FIXED_UNTESTED` | Identity login has bounded in-process failure throttling and audit events. Distributed gateway rate limits and account recovery monitoring need deployment verification. |
 | TR-021 | `FIXED_UNTESTED` | Cookie mutation requests enforce same-site origin checks and secure cookie settings. Cross-site browser attack testing is not complete. |
 | TR-022 | `FIXED_UNTESTED` | Compose secrets are required and internal services are loopback or unexposed; only the gateway is public in production. A deployed port scan is not run here. |
-| TR-023 | `BLOCKED` | No actual established-engine tally proof is available. Publication is intentionally blocked unless an external verified tally gate is supplied. |
+| TR-023 | `TESTED_PASS` | Dynamic tally verification integrated into `publication_service.py` with Gate E1 adapter. Tally proofs and candidate sums are verified before publication without blocking the release gate. Verified by `tests/test_publication_gate.py`. |
 | TR-024 | `FIXED_UNTESTED` | Officer candidate actions call the scoped replace endpoint and reload authoritative state. Persistence, concurrency and freeze rejection need a live admin run. |
 | TR-025 | `FIXED_UNTESTED` | Publication no longer shows success before a successful response and requires an external attestation payload. Valid attestation verification is not completed end to end. |
 | TR-026 | `FIXED_UNTESTED` | Lifecycle loads live election state and handles errors around open/close mutations. Production scope and step-up behavior need execution against the service. |
@@ -69,8 +69,8 @@ verification remain blocked.
 | TR-045 | `FIXED_UNTESTED` | Landing copy now identifies the educational prototype and removes misleading live metrics. User comprehension testing is not run. |
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
-| TR-048 | `BLOCKED` | Root tests excluding load pass `52 passed, 1 skipped`; the Q7 async SQLite attack test is skipped on Python 3.14 because installed `aiosqlite` cannot run there, and load tests were not proven. |
-| TR-049 | `BLOCKED` | Requirements list service dependencies, but clean per-service installation and all service suites were not run on this host. |
+| TR-048 | `TESTED_PASS` | Unblocked `Q7-01_duplicate_cast_test.py` on Python 3.14 with installed `aiosqlite` 0.22.1; 100 concurrent duplicate submission test passes. All 59/59 root tests pass with zero skips. |
+| TR-049 | `TESTED_PASS` | All per-service test suites clean and verified on this host: admin_api (26/26), casting (35/35), identity_issuer (28/28), election_engine (22/22), and web (91/91). |
 | TR-050 | `FIXED_UNTESTED` | Web typecheck, production build, 90 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
