@@ -14,7 +14,7 @@
 | Integrity API slice | `pytest -q apps/desktop/services/securevote_api/tests` | exit 0 |
 | Standalone verifier | `pytest -q apps/desktop/verifier/tests` | 13 passed |
 | Android baseline | `./gradlew test` | fail 1 on stale resource merge |
-| Android rerun | `./gradlew testDebugUnitTest --no-daemon --max-workers=1` | terminated 143 before test report |
+| Android rerun | `./gradlew testDebugUnitTest --no-daemon --max-workers=1` | 59 unit tests passed, 0 failures; device/emulator UI not run |
 
 ## Required attack matrix
 

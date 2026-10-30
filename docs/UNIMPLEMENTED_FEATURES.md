@@ -44,9 +44,9 @@ it must have an executable implementation and an observed test result.
 - Web Vitest suite: 78 passed; Next production build, typecheck, and browser
   smoke test pass on this host.
 - Desktop .NET suite: 101 passed; Linux client tests: 84 passed.
-- Android and iOS native builds are not claimed from this host. Android source
-  checks are present, but the Gradle compile process was terminated by the local
-  runner during KAPT before a complete build result was produced.
+- Android unit tests: 59 passed with `testDebugUnitTest`; device/emulator UI and
+  release APK validation remain unexecuted. iOS native builds are not claimed
+  from this host.
 
 This register does not authorize real elections. The prototype remains
 synthetic-data-only and requires independent security, privacy, protocol, and

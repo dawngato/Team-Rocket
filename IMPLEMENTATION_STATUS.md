@@ -22,7 +22,7 @@ The local test suites exercise the five adversarial integrity mutations, but thi
 | Canonical evidence and Merkle/checkpoint code | **TESTED** | RFC 8785 canonical JCS leaves, RFC 9162 Merkle tree hash chaining, and independent witness checkpoints verified across Python and TypeScript test vectors. |
 | Standalone verifier CLI | **TESTED** | The isolated verifier suite passed 12 tests in the latest unified run. It audits exported evidence against external out-of-band trust pins with zero backend connection; native engine tally remains not checked. |
 | Web application Next.js | **TESTED** | `apps/web` passed 78 Vitest tests across 12 files and `npm run typecheck`. Browser-side fixture verifier and fake account verification paths were removed or made fail-closed. |
-| Android Native Client | **FAILED CURRENT RUN** | `testDebugUnitTest` was terminated with exit 137 during KAPT/resource-constrained compilation; no passing Android build claim is made. |
+| Android Native Client | **TESTED_LIMITED** | `./gradlew testDebugUnitTest --no-daemon --max-workers=1` completed successfully with 59 unit tests and 0 failures. No emulator/device UI or release APK validation is claimed. |
 | Desktop Avalonia Client (.NET 8) | **TESTED** | `/home/Kali/.dotnet/dotnet test HimVote.Windows.sln` passed all **101 tests** across `HimVote.Core`, `HimVote.Linux`, and `HimVote.Windows.Tests`. |
 | Auxiliary Python Linux GUI | **TESTED** | `pytest apps/linux/tests` passed all **84 tests**. Standalone offline Merkle tree visualizer and audit explorer verified. |
 | Solidity / Foundry Smart Contracts | **BLOCKED / NOT EXECUTED** | `forge --version` is unavailable in this environment; no Foundry contract test result is claimed. |
