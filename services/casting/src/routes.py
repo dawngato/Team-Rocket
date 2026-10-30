@@ -6,6 +6,7 @@ Implements POST /v1/cast/{election_id}/ballots and GET /v1/cast/{election_id}/re
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.config import settings
 from src.database import get_db
 from src.schemas import (
     CastBallotRequest,
@@ -114,5 +115,11 @@ async def health_check() -> dict:
     return {
         "status": "healthy",
         "service": "himvote_casting",
-        "version": "2.0.0"
+        "version": "2.0.0",
+        "engine_validation_mode": settings.ENGINE_VALIDATION_MODE,
+        "security_profile": (
+            "integrity_only_development"
+            if settings.ENGINE_VALIDATION_MODE.strip().lower() == "syntax_only"
+            else "engine_delegated_validation"
+        ),
     }

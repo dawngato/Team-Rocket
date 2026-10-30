@@ -1,0 +1,304 @@
+import type { Candidate, Election, ElectionState } from "./types";
+
+export interface ElectionClientOptions {
+  baseUrl?: string;
+  fetchImpl?: typeof fetch;
+}
+
+export class ElectionApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly retryable: boolean;
+
+  constructor(options: { code: string; message: string; status: number; retryable?: boolean }) {
+    super(options.message);
+    this.name = "ElectionApiError";
+    this.code = options.code;
+    this.status = options.status;
+    this.retryable = options.retryable ?? (options.status >= 500 || options.status === 429);
+  }
+}
+
+const electionStates = new Set<ElectionState>([
+  "DRAFT",
+  "REVIEW",
+  "APPROVED",
+  "FROZEN",
+  "SCHEDULED",
+  "OPEN",
+  "PAUSED",
+  "CLOSING",
+  "CLOSED",
+  "FINAL_WITNESSED",
+  "AUDIT_PENDING",
+  "AUDITED",
+  "AUDIT_FAILED",
+  "CANCELLED",
+  "PENDING_WITNESS",
+  "WITNESSED",
+  "ANCHOR_PENDING",
+  "ANCHOR_FINALIZED",
+  "AUDIT_PASSED",
+  "AUDITOR_ATTESTED",
+  "PUBLISHED",
+  "FAILED",
+  "DISPUTED",
+]);
+
+function configuredBaseUrl(): string {
+  return (process.env.NEXT_PUBLIC_ADMIN_API_BASE || process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/$/, "");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function electionState(value: unknown): ElectionState {
+  if (typeof value === "string" && electionStates.has(value as ElectionState)) {
+    return value as ElectionState;
+  }
+  throw new ElectionApiError({
+    code: "ELECTION_RESPONSE_INVALID",
+    message: "The election service returned an unknown lifecycle state.",
+    status: 502,
+    retryable: false,
+  });
+}
+
+function timestamp(value: unknown): string {
+  if (typeof value !== "string" || !value || Number.isNaN(Date.parse(value))) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned an invalid timestamp.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  return value;
+}
+
+function candidate(value: unknown): Candidate | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== "string" ||
+    value.id.trim().length === 0 ||
+    typeof value.name !== "string" ||
+    value.name.trim().length === 0 ||
+    typeof value.contest !== "string" ||
+    value.contest.trim().length === 0
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    contest: value.contest,
+    ...(typeof value.statement === "string" ? { statement: value.statement } : {}),
+    ...(typeof value.avatar_url === "string" ? { avatar_url: value.avatar_url } : {}),
+  };
+}
+
+function toElectionSummary(value: unknown): Election {
+  if (!isRecord(value) || typeof value.id !== "string" || value.id.trim().length === 0 ||
+      typeof value.title !== "string" || value.title.trim().length === 0) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned an invalid election summary.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  return {
+    id: value.id,
+    title: value.title,
+    state: electionState(value.state),
+    opens_at_utc: timestamp(value.opens_at_utc),
+    closes_at_utc: timestamp(value.closes_at_utc),
+    manifest_digest: "",
+    issuance_cutoff_utc: "",
+    candidates: [],
+  };
+}
+
+function toElection(value: unknown, expectedId?: string): Election {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.title !== "string") {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned an invalid election record.",
+      status: 502,
+      retryable: false,
+    });
+  }
+
+  if (expectedId !== undefined && value.id !== expectedId) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned a manifest for a different election.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  if (typeof value.manifest_digest !== "string" || typeof value.issuance_cutoff_utc !== "string") {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned an incomplete election manifest.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  if (value.candidates !== undefined && value.candidates !== null && !Array.isArray(value.candidates)) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned invalid candidate data.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  const parsedCandidates = Array.isArray(value.candidates) ? value.candidates.map(candidate) : [];
+  if (parsedCandidates.some((item) => item === null)) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned invalid candidate data.",
+      status: 502,
+      retryable: false,
+    });
+  }
+  const candidates = parsedCandidates as Candidate[];
+
+  if (value.eligible_count !== undefined && value.eligible_count !== null &&
+      (typeof value.eligible_count !== "number" || !Number.isSafeInteger(value.eligible_count) || value.eligible_count < 0)) {
+    throw new ElectionApiError({
+      code: "ELECTION_RESPONSE_INVALID",
+      message: "The election service returned an invalid eligibility count.",
+      status: 502,
+      retryable: false,
+    });
+  }
+
+  return {
+    id: value.id,
+    title: value.title,
+    state: electionState(value.state),
+    opens_at_utc: timestamp(value.opens_at_utc),
+    closes_at_utc: timestamp(value.closes_at_utc),
+    manifest_digest: value.manifest_digest,
+    issuance_cutoff_utc: value.issuance_cutoff_utc,
+    candidates,
+    ...(typeof value.eligible_count === "number" ? { eligible_count: value.eligible_count } : {}),
+    ...(typeof value.contest === "string" ? { contest: value.contest } : {}),
+    ...(typeof value.selection_rule === "string" ? { selection_rule: value.selection_rule } : {}),
+    ...(typeof value.min_anonymous_turnout === "number" ? { min_anonymous_turnout: value.min_anonymous_turnout } : {}),
+    ...(typeof value.description === "string" ? { description: value.description } : {}),
+  };
+}
+
+function normalizeBaseUrl(value: string): string | null {
+  if (!value.trim()) return "";
+  try {
+    const url = new URL(value);
+    if (!/^https?:$/.test(url.protocol) || url.username || url.password || url.search || url.hash) return null;
+    return url.toString().replace(/\/$/, "");
+  } catch {
+    return null;
+  }
+}
+
+async function bodyOf(response: Response): Promise<unknown> {
+  const text = await response.text().catch(() => "");
+  if (!text) return {};
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return text;
+  }
+}
+
+function serverError(status: number, body: unknown): ElectionApiError {
+  const record = isRecord(body) ? body : {};
+  const detail = isRecord(record.detail) ? record.detail : {};
+  const code = [record.error_code, record.code, detail.error_code, detail.code].find(
+    (item): item is string => typeof item === "string" && item.length > 0,
+  ) || (status === 401 ? "AUTH_REQUIRED" : "ELECTION_REQUEST_FAILED");
+  const message = [record.message, detail.message, record.detail].find(
+    (item): item is string => typeof item === "string" && item.length > 0,
+  ) || "The election service request failed.";
+  return new ElectionApiError({ code, message, status });
+}
+
+export function createElectionClient(options: ElectionClientOptions = {}) {
+  const baseUrl = normalizeBaseUrl(options.baseUrl ?? configuredBaseUrl());
+  const fetchImpl = options.fetchImpl ?? fetch;
+
+  async function request(path: string): Promise<unknown> {
+    if (baseUrl === null) {
+      throw new ElectionApiError({
+        code: "ELECTION_API_CONFIG_INVALID",
+        message: "The election service URL is invalid.",
+        status: 503,
+        retryable: false,
+      });
+    }
+    if (!baseUrl) {
+      throw new ElectionApiError({
+        code: "ELECTION_API_NOT_CONFIGURED",
+        message: "The authoritative election service is not configured.",
+        status: 503,
+        retryable: false,
+      });
+    }
+
+    let response: Response;
+    try {
+      response = await fetchImpl(`${baseUrl}${path}`, {
+        headers: { Accept: "application/json" },
+        credentials: "include",
+        redirect: "error",
+        referrerPolicy: "no-referrer",
+      });
+    } catch {
+      throw new ElectionApiError({
+        code: "ELECTION_NETWORK_ERROR",
+        message: "The authoritative election service could not be reached.",
+        status: 503,
+      });
+    }
+
+    const body = await bodyOf(response);
+    if (!response.ok) throw serverError(response.status, body);
+    return body;
+  }
+
+  return {
+    async getElections(): Promise<Election[]> {
+      const body = await request("/v1/elections");
+      const values = Array.isArray(body) ? body : isRecord(body) && Array.isArray(body.elections) ? body.elections : null;
+      if (!values) {
+        throw new ElectionApiError({
+          code: "ELECTION_RESPONSE_INVALID",
+          message: "The election service returned an invalid election list.",
+          status: 502,
+          retryable: false,
+        });
+      }
+      return values.map((value) => toElectionSummary(value));
+    },
+
+    async getElection(electionId: string): Promise<Election> {
+      if (!/^[A-Za-z0-9][A-Za-z0-9._~:-]{0,255}$/.test(electionId)) {
+        throw new ElectionApiError({
+          code: "ELECTION_ID_INVALID",
+          message: "The election identifier is invalid.",
+          status: 422,
+          retryable: false,
+        });
+      }
+      return toElection(await request(`/v1/elections/${encodeURIComponent(electionId)}`), electionId);
+    },
+  };
+}
+
+export const electionClient = createElectionClient();

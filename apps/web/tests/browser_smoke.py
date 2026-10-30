@@ -1,26 +1,109 @@
+"""Browser smoke checks for public and student-safe verification paths.
+
+Run with the repository's server wrapper:
+
+    python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py \
+      --server "npm run dev" --port 3000 -- python tests/browser_smoke.py
+
+The smoke test never submits a ballot and does not treat UI status copy as
+proof of an election security property.
+"""
+
 import os
+from pathlib import Path
 
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import Page, sync_playwright
 
 
-with sync_playwright() as playwright:
-    browser = playwright.chromium.launch(headless=True)
-    page = browser.new_page(viewport={"width": 1440, "height": 900})
-    page.goto(os.environ.get("HIMVOTE_WEB_URL", "http://127.0.0.1:3000"), wait_until="networkidle")
-    page.screenshot(path="/tmp/himvote-home.png", full_page=True)
+BASE_URL = os.environ.get("HIMVOTE_WEB_URL", "http://127.0.0.1:3000").rstrip("/")
+SCREENSHOT_PATH = os.environ.get("HIMVOTE_SCREENSHOT", "/tmp/himvote-home.png")
 
-    assert page.get_by_text("Educational prototype.", exact=True).is_visible()
-    assert page.get_by_role("heading", name="Institutional voting, made verifiable.", exact=False).is_visible()
-    assert page.get_by_text("Voter Inclusion Check").is_visible()
-    assert page.get_by_role("heading", name="Institutional Elections").is_visible()
-    assert page.get_by_role("heading", name="See how a record moves toward review").is_visible()
-    assert page.get_by_text("Evidence observatory").is_visible()
+
+def goto_ready(page: Page, path: str) -> None:
+    response = None
+    for attempt in range(3):
+        response = page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded", timeout=60_000)
+        if response is not None and response.ok:
+            break
+        if attempt < 2:
+            page.wait_for_timeout(1_000)
+    assert response is not None and response.ok, f"Route failed: {path} ({response})"
+    page.locator("main#main-content").wait_for(state="visible")
+
+
+def assert_no_horizontal_overflow(page: Page) -> None:
     assert page.evaluate("document.body.scrollWidth <= window.innerWidth + 1")
 
-    page.set_viewport_size({"width": 390, "height": 844})
-    page.get_by_role("button", name="Open navigation menu").click()
-    mobile_security_link = page.locator("a[href='/security-limits']").last
-    assert mobile_security_link.is_visible()
-    assert page.get_by_text("Evidence observatory").is_visible()
-    assert page.evaluate("document.body.scrollWidth <= window.innerWidth + 1")
-    browser.close()
+
+def run_smoke() -> None:
+    browser_errors: list[str] = []
+
+    with sync_playwright() as playwright:
+        browser = playwright.chromium.launch(headless=True)
+        page = browser.new_page(viewport={"width": 1440, "height": 900})
+        # Cold Next.js development builds can compile a route on first request.
+        page.set_default_timeout(30_000)
+        page.on(
+            "console",
+            lambda message: browser_errors.append(
+                f"console {message.type}: {message.text}"
+            )
+            if message.type == "error"
+            else None,
+        )
+        page.on("pageerror", lambda error: browser_errors.append(f"pageerror: {error}"))
+
+        goto_ready(page, "/")
+        Path(SCREENSHOT_PATH).parent.mkdir(parents=True, exist_ok=True)
+        page.screenshot(path=SCREENSHOT_PATH, full_page=True)
+        assert page.get_by_text("Educational prototype.", exact=True).is_visible()
+        assert page.get_by_role(
+            "heading", name="Institutional voting, made verifiable.", exact=False
+        ).is_visible()
+        assert page.get_by_text("Voter Inclusion Check").is_visible()
+        assert page.get_by_role("heading", name="Institutional Elections").is_visible()
+        assert page.get_by_role(
+            "heading", name="See how a record moves toward review"
+        ).is_visible()
+        assert page.get_by_text("Evidence observatory").is_visible()
+        assert_no_horizontal_overflow(page)
+
+        # Mobile navigation remains reachable without leaving the already compiled route.
+        page.set_viewport_size({"width": 390, "height": 844})
+        page.get_by_role("button", name="Open navigation menu").click()
+        assert page.locator("a[href='/security-limits']").last.is_visible()
+        assert page.get_by_text("Evidence observatory").is_visible()
+        assert_no_horizontal_overflow(page)
+        page.set_viewport_size({"width": 1440, "height": 900})
+
+        goto_ready(page, "/how-it-works")
+        assert page.get_by_role("heading", name="How HimVote Verification Works").is_visible()
+        page.get_by_role("button", name="Stage 3", exact=False).click()
+        page.get_by_role(
+            "heading", name="Witnessed Merkle Tree Checkpoints"
+        ).wait_for(state="visible")
+        page.get_by_text("Independent witness operation is not present locally.").wait_for(state="visible")
+
+        # Casting stays fail-closed when the authoritative election service is not configured.
+        goto_ready(page, "/student/elections/elec_su_2026/cast")
+        assert page.get_by_role("alert").filter(
+            has_text="authoritative election service is not configured"
+        ).is_visible()
+
+        # Inclusion must fail closed until the casting origin returns authenticated proof inputs.
+        goto_ready(page, "/student/receipts/HV_24F8_19C2/inclusion")
+        assert page.get_by_role(
+            "heading", name="Cryptographic inclusion verifier"
+        ).is_visible()
+        assert page.get_by_text(
+            "This verifier needs both an opaque receipt handle and its election context."
+        ).is_visible()
+        assert page.get_by_role("button", name="Verify Merkle path").count() == 0
+
+        browser.close()
+
+    assert not browser_errors, "Browser reported errors:\n" + "\n".join(browser_errors)
+
+
+if __name__ == "__main__":
+    run_smoke()

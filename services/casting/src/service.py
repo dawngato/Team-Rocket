@@ -16,10 +16,12 @@ from src.crypto import (
     compute_leaf_digest,
     compute_nullifier_commitment,
     compute_request_digest,
-    validate_engine_ballot,
+    inclusion_proof_from_leaf_digests,
+    merkle_root_from_leaf_digests,
     verify_credential_proof,
 )
 from src.database import get_election_lock
+from src.engine_client import EngineValidationUnavailable, validate_ballot_with_engine
 from src.models import (
     AcceptedEncryptedBallot,
     CheckpointOutbox,
@@ -57,17 +59,6 @@ async def cast_ballot_transaction(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Path election parameter does not match payload election identifier"
-        )
-
-    # Validate engine ciphertext and proofs format
-    is_valid_ballot, ballot_err = validate_engine_ballot(
-        request.engine_ballot_b64url,
-        request.engine_proofs_b64url
-    )
-    if not is_valid_ballot:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid engine ballot or proofs: {ballot_err}"
         )
 
     # Compute deterministic request digest for idempotency checking
@@ -130,6 +121,33 @@ async def cast_ballot_transaction(
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="Witness acknowledgement backlog limit exceeded, temporarily pausing acceptance"
+            )
+
+        # Base64 decoding is not cryptographic ballot validation. In remote
+        # mode the configured engine must validate the native ballot and proof
+        # before the casting transaction can accept it. The syntax-only mode is
+        # deliberately restricted to non-production test environments.
+        try:
+            is_valid_ballot, ballot_err = await validate_ballot_with_engine(
+                election_id=election_id,
+                manifest_digest=election.manifest_digest,
+                engine_ballot_b64url=request.engine_ballot_b64url,
+                engine_proofs_b64url=request.engine_proofs_b64url,
+            )
+        except EngineValidationUnavailable as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=str(exc),
+            ) from exc
+        if not is_valid_ballot:
+            error_status = (
+                status.HTTP_503_SERVICE_UNAVAILABLE
+                if ballot_err.startswith("CRYPTO_ENGINE_NOT_VALIDATED")
+                else status.HTTP_400_BAD_REQUEST
+            )
+            raise HTTPException(
+                status_code=error_status,
+                detail=ballot_err or "Invalid engine ballot or proofs",
             )
 
         # 3. Verify anonymous credential proof against election manifest
@@ -287,11 +305,68 @@ async def get_receipt_status(
 
     if ack is not None or last_witnessed_size > ballot.leaf_index:
         ack_time = ack.acknowledged_at_utc if ack else ballot.cast_at_utc
+        evidence = {
+            "tree_size": None,
+            "leaf_hash": None,
+            "merkle_root": None,
+            "merkle_proof": None,
+        }
+
+        if ack is not None:
+            outbox_query = (
+                select(CheckpointOutbox)
+                .where(
+                    CheckpointOutbox.election_id == election_id,
+                    CheckpointOutbox.leaf_index < ack.tree_size,
+                )
+                .order_by(CheckpointOutbox.leaf_index.asc())
+            )
+            outbox_result = await session.execute(outbox_query)
+            outbox_entries = list(outbox_result.scalars().all())
+            expected_indexes = list(range(ack.tree_size))
+            actual_indexes = [entry.leaf_index for entry in outbox_entries]
+            if actual_indexes != expected_indexes:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Witnessed evidence is incomplete for this receipt",
+                )
+
+            try:
+                leaf_digests = [bytes.fromhex(entry.leaf_digest) for entry in outbox_entries]
+                computed_root = merkle_root_from_leaf_digests(leaf_digests).hex()
+                expected_root = ack.merkle_root.lower()
+                if computed_root != expected_root:
+                    raise HTTPException(
+                        status_code=status.HTTP_409_CONFLICT,
+                        detail="Witnessed Merkle root does not match committed evidence",
+                    )
+                leaf_digest = leaf_digests[ballot.leaf_index].hex()
+                proof = [
+                    sibling.hex()
+                    for sibling in inclusion_proof_from_leaf_digests(
+                        ballot.leaf_index,
+                        leaf_digests,
+                    )
+                ]
+            except ValueError as exc:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="Witnessed evidence contains an invalid Merkle digest",
+                ) from exc
+
+            evidence = {
+                "tree_size": ack.tree_size,
+                "leaf_hash": leaf_digest,
+                "merkle_root": expected_root,
+                "merkle_proof": proof,
+            }
+
         return ReceiptStatusResponse(
             status=BallotStatus.WITNESSED,
             handle=ballot.receipt_handle,
             leaf_index=ballot.leaf_index,
-            witnessed_at_utc=ack_time
+            witnessed_at_utc=ack_time,
+            **evidence,
         )
 
     return ReceiptStatusResponse(

@@ -105,6 +105,8 @@ services:
       LOG_LEVEL: info
       LOG_REDACTION_ENABLED: "true"
       CASTING_DB_SSL_MODE: verify-full
+      ELECTION_ENGINE_BASE: http://election_engine:8084
+      ENGINE_VALIDATION_MODE: remote
       CASTING_ALLOWED_ORIGINS: ${CASTING_ALLOWED_ORIGINS:?Set CASTING_ALLOWED_ORIGINS to trusted HTTPS origins}
       INTERNAL_CONTROL_TOKEN: ${CASTING_INTERNAL_CONTROL_TOKEN:?Set CASTING_INTERNAL_CONTROL_TOKEN in the secret manager}
     deploy:

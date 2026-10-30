@@ -19,6 +19,7 @@ if str(CASTING_DIR) not in sys.path:
     sys.path.insert(0, str(CASTING_DIR))
 
 from src.database import get_db
+from src.config import settings
 from src.main import create_app
 from src.models import Base, Election, ManifestVersion, Contest, Candidate
 
@@ -112,18 +113,27 @@ async def submit_one(client: httpx.AsyncClient, base_url: str = "") -> httpx.Res
 @pytest.mark.anyio
 async def test_duplicate_cast():
     is_live = False
+    original_engine_mode = settings.ENGINE_VALIDATION_MODE
+    original_app_env = settings.APP_ENV
     async with httpx.AsyncClient() as live_client:
         try:
             resp = await submit_one(live_client, CASTING_BASE)
             if resp.status_code in (200, 202, 409):
                 is_live = True
-        except (httpx.ConnectError, httpx.NetworkError):
+        except (httpx.ConnectError, httpx.NetworkError, httpx.RemoteProtocolError):
+            is_live = False
+        except Exception:
             is_live = False
 
     if is_live:
         client = httpx.AsyncClient()
         base_url = CASTING_BASE
     else:
+        # The in-process fallback is an integrity transaction test. It does
+        # not provide the established external election engine required for a
+        # Q7 privacy/tally claim, so opt into the explicitly limited test mode.
+        settings.ENGINE_VALIDATION_MODE = "syntax_only"
+        settings.APP_ENV = "test"
         engine = create_async_engine(
             "sqlite+aiosqlite:///:memory:",
             echo=False,
@@ -149,7 +159,7 @@ async def test_duplicate_cast():
                 yield session
 
         app.dependency_overrides[get_db] = override_get_db
-        transport = httpx.ASGITransport(app=app)
+        transport = httpx.ASGITransport(app=app, raise_app_exceptions=False)
         client = httpx.AsyncClient(transport=transport, base_url="http://testserver")
         base_url = ""
 
@@ -196,6 +206,8 @@ async def test_duplicate_cast():
 
     finally:
         await client.aclose()
+        settings.ENGINE_VALIDATION_MODE = original_engine_mode
+        settings.APP_ENV = original_app_env
 
 
 if __name__ == "__main__":

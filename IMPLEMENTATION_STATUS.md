@@ -1,31 +1,31 @@
 # SecureVote implementation status
 
-Audit date: 30 October 2026  
+Audit date: 31 October 2026
 Repository root: `/home/Kali/Desktop/HPTU/Team-Rocket`  
 Requested working directory: `/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop`  
 Product namespace observed in source: HimVote  
 
 ## Executive status
 
-The repository contains a functional, thoroughly verified educational voting prototype: Python backend services, an encrypted casting and evidence pipeline, a standalone verifier CLI, a local witness implementation, a Solidity EVM anchor contract, a Next.js 15 web application, an Android Kotlin/Compose mobile client, an Avalonia/C# cross-platform desktop client, and a native Linux offline inspection GUI.
+The repository contains a limited educational voting prototype with tested integrity slices: Python backend services, a development casting and evidence pipeline, a standalone verifier CLI, a local witness implementation, a Solidity EVM anchor contract, a Next.js 15 web application, an Android Kotlin/Compose mobile client, an Avalonia/C# cross-platform desktop client, and a native Linux offline inspection GUI.
 
-Strict adherence to Question 07 integrity controls is maintained across all test suites, with all five mandatory adversarial attacks (duplicate submission, unauthorized insertion, deletion, modification, and tally manipulation) verified failing closed.
+The local test suites exercise the five adversarial integrity mutations, but this does not establish the full Question 07 outcome: the external vetted engine gate, independent operator trust, and production deployment remain limited or blocked.
 
 ## Area-by-area status
 
 | Area | Status | Observed basis |
 |---|---|---|
 | Repository/reference input audit | **TESTED** | `python3 tools/source_audit.py` executed; specification boundary and input traceability recorded in `SPEC_CONFLICTS.md` and `REQUIREMENTS_TRACEABILITY.md`. |
-| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **275 passed, 0 failed, 0 skipped** across all 11 test suites in 35.79s, exit code 0. |
-| Profile VEEM engine gate | **TESTED** | `python3 services/election_engine/gate_e1.py` verified: all 5 gate checks pass (create, export, independent verify, tamper detection, single cast). |
+| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **280 passed, 0 failed, 0 skipped** across all 11 test suites in 44.86s, exit code 0. |
+| Profile VEEM engine gate | **LIMITED** | The local profile adapter has executable tests, but it is not Helios, Belenios, ElectionGuard, or another externally vetted election engine. No complete Q07 privacy/tally claim is made. |
 | Casting and duplicate prevention | **TESTED** | Monotonic zero-indexed leaf assignment, PostgreSQL ACID row lock (`SELECT FOR UPDATE`), and nullifier uniqueness enforced. 100 concurrent submissions in `tests/security/Q7-01_duplicate_cast_test.py` produce exactly 1 accepted leaf and safe identical replays. |
 | Canonical evidence and Merkle/checkpoint code | **TESTED** | RFC 8785 canonical JCS leaves, RFC 9162 Merkle tree hash chaining, and independent witness checkpoints verified across Python and TypeScript test vectors. |
 | Standalone verifier CLI | **TESTED** | `verifier/verify.py` and `tests/test_verifier.py` passed 37 tests. Strictly audits exported evidence against external out-of-band trust pins (`trusted/pinned-trust.json`) with zero backend connection. |
-| Web application Next.js | **TESTED** | `apps/web` passed 53 Vitest tests (9 test files) and generated a 48-route optimized Next.js 15 production build covering all 7 institutional roles. |
-| Android Native Client | **TESTED** | `apps/android` passed 55 unit tests across debug and release suites via Gradle 8.13 (`./gradlew test`). Keystore-backed storage, biometric prompts, and Chrome Custom Tab booth integration tested. |
+| Web application Next.js | **TESTED** | `apps/web` passed 76 Vitest tests across 12 files, typecheck, a clean production build, and production browser smoke including CSP hydration and fail-closed casting/inclusion states. |
+| Android Native Client | **FAILED CURRENT RUN** | The Gradle test run reached report processing but failed to create expected hash state; no passing Android build claim is made for this continuation. |
 | Desktop Avalonia Client (.NET 8) | **TESTED** | `/home/Kali/.dotnet/dotnet test HimVote.Windows.sln` passed all **101 tests** across `HimVote.Core`, `HimVote.Linux`, and `HimVote.Windows.Tests`. |
 | Auxiliary Python Linux GUI | **TESTED** | `pytest apps/linux/tests` passed all **61 tests** in 1.66s. Standalone offline Merkle tree visualizer and audit explorer verified. |
-| Solidity / Foundry Smart Contracts | **TESTED** | `/home/Kali/.foundry/bin/forge test` in `chain/` executed successfully: all **17 tests passed** covering relayer authorization, sequence monotonicity, digest chaining, pause state, and finality locks. |
+| Solidity / Foundry Smart Contracts | **BLOCKED / NOT EXECUTED** | `forge --version` is unavailable in this environment; no Foundry contract test result is claimed. |
 | iOS Native Client | **SOURCE READY / BLOCKED** | Swift 6 and SwiftUI source is present in `apps/ios/HimVote` and `Package.swift`, but macOS and Xcode are unavailable in this Linux environment; no iOS build is claimed. |
 | Independent witness and blockchain trust | **LIMITED** | Local witness emulator and local EVM chain code are verified. Per specifications, local same-repository custody simulates multi-party independence. Production deployment requires separate institutional operators. |
 
@@ -34,27 +34,31 @@ Strict adherence to Question 07 integrity controls is maintained across all test
 1. **All Python Test Suites**:
    ```bash
    python3 tools/run_all_tests.py
-   # Result: 275 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
+   # Result: 280 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
    ```
 2. **Foundry Smart Contract Tests**:
    ```bash
    /home/Kali/.foundry/bin/forge test
-   # Result: 17 passed, 0 failed in test/HimVoteAnchor.t.sol
+   # NOT EXECUTED: Foundry/forge is unavailable in this environment
    ```
 3. **Desktop .NET Avalonia Tests**:
    ```bash
    /home/Kali/.dotnet/dotnet test HimVote.Windows.sln
    # Result: 101 passed, 0 failed, 0 skipped in HimVote.Windows.Tests.dll (net8.0)
    ```
-4. **Web Client Vitest & Next.js Build**:
+4. **Web Client Vitest and Typecheck**:
    ```bash
-   cd apps/web && ./node_modules/.bin/vitest run && ./node_modules/.bin/next build
-   # Result: 53 tests passed; 48 routes compiled in optimized production build
+   cd apps/web && npm run typecheck && npm test
+   # Result: 76 tests passed across 12 files; typecheck passed
+   NEXT_PRIVATE_BUILD_WORKER=1 npm run build
+   # Result: clean production build passed; 48 application routes compiled
+   python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --timeout 60 --server "npm run start" --port 3000 -- python -u tests/browser_smoke.py
+   # Result: exit 0; browser smoke passed
    ```
 5. **Android Gradle Unit Tests**:
    ```bash
    cd apps/android && ./gradlew test
-   # Result: 55 tests passed across debug and release test suites
+   # Result: current run failed during Gradle test report processing; no pass claimed
    ```
 6. **Linux Native GUI Tests**:
    ```bash
@@ -64,5 +68,5 @@ Strict adherence to Question 07 integrity controls is maintained across all test
 7. **Adversarial Q7 Attack Suite**:
    ```bash
    python3 tests/run_tests.py
-   # Result: 54 passed, 0 skipped; all 5 attack vectors (duplicate, insertion, deletion, modification, tally manipulation) fail closed as required
+   # Result: 54 passed, 0 skipped; local harness covers duplicate, insertion, deletion, modification, and tally mutation checks. This is not evidence of an independent production election audit.
    ```

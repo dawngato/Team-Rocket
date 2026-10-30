@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { INITIAL_ELECTIONS } from "@/lib/mock_data";
-import { StateBadge } from "@/components/StateBadge";
 import { AccessibleDialog } from "@/components/AccessibleDialog";
+import { StateBadge } from "@/components/StateBadge";
+import { electionClient } from "@/lib/election_client";
+import type { Election } from "@/lib/types";
 import { Vote, ArrowRight, ShieldCheck, CheckCircle2, Lock, AlertCircle } from "lucide-react";
 import {
   castingClient,
@@ -17,13 +18,36 @@ export default function CastBallotPage() {
   const params = useParams();
   const router = useRouter();
   const electionId = params?.id as string;
-  const election = INITIAL_ELECTIONS.find((e) => e.id === electionId) || INITIAL_ELECTIONS[0];
 
+  const [election, setElection] = useState<Election | null>(null);
+  const [isLoadingElection, setIsLoadingElection] = useState(true);
+  const [electionError, setElectionError] = useState<string | null>(null);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [engineHandoff, setEngineHandoff] = useState<EngineBallotHandoff | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!electionId) return;
+    let cancelled = false;
+    void electionClient.getElection(electionId)
+      .then((nextElection) => {
+        if (!cancelled) {
+          setElection(nextElection);
+          setElectionError(null);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled) setElectionError(cause instanceof Error ? cause.message : "Election could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingElection(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [electionId]);
 
   useEffect(() => {
     if (!electionId) return;
@@ -42,10 +66,10 @@ export default function CastBallotPage() {
     }
   }, [electionId]);
 
-  const selectedCandidate = election.candidates?.find((c) => c.id === selectedCandidateId);
+  const selectedCandidate = election?.candidates?.find((c) => c.id === selectedCandidateId);
 
   const handleConfirmVote = async () => {
-    if (!engineHandoff) {
+    if (!election || !engineHandoff) {
       setHandoffError("An approved encrypted-ballot booth must complete the handoff before submission.");
       return;
     }
@@ -59,6 +83,35 @@ export default function CastBallotPage() {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoadingElection) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12 text-sm text-slate-600 dark:text-slate-300" role="status">
+        Loading the server-authoritative election manifest…
+      </div>
+    );
+  }
+
+  if (electionError || !election) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-12">
+        <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
+          {electionError || "Election manifest was not returned by the election service."}
+        </div>
+      </div>
+    );
+  }
+
+  if (election.state !== "OPEN") {
+    return (
+      <div className="mx-auto max-w-3xl space-y-5 px-4 py-12 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status">
+          This election is not accepting ballots. The authoritative election service reports state <strong>{election.state}</strong>.
+        </div>
+        <StateBadge state={election.state} showDescription />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">

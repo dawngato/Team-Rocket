@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   Vote,
@@ -15,11 +15,40 @@ import {
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
 import { EvidenceOrbit } from "../components/EvidenceOrbit";
-import { INITIAL_ELECTIONS } from "../lib/mock_data";
+import { electionClient } from "../lib/election_client";
+import type { Election } from "../lib/types";
+
+function formatUtc(value: string): string {
+  const date = new Date(value);
+  if (!value || Number.isNaN(date.getTime())) return "Not scheduled";
+  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZoneName: "short" }).format(date);
+}
 
 export default function HomePage() {
   const [receiptQuery, setReceiptQuery] = useState("");
-  const activeElections = INITIAL_ELECTIONS.slice(0, 3);
+  const [electionQuery, setElectionQuery] = useState("");
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const [elections, setElections] = useState<Election[]>([]);
+  const [electionsError, setElectionsError] = useState<string | null>(null);
+  const [electionsLoading, setElectionsLoading] = useState(true);
+  const activeElections = useMemo(() => elections.slice(0, 3), [elections]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void electionClient.getElections()
+      .then((nextElections) => {
+        if (!cancelled) setElections(nextElections);
+      })
+      .catch((cause) => {
+        if (!cancelled) setElectionsError(cause instanceof Error ? cause.message : "Elections could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancelled) setElectionsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="w-full max-w-[1800px] mx-auto space-y-16 py-8 px-[clamp(1.25rem,4vw,5rem)]">
@@ -92,20 +121,36 @@ export default function HomePage() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              const handle = receiptQuery.trim() || "HV_24F8_19C2";
-              window.location.href = `/student/receipts/${encodeURIComponent(handle)}`;
+              const handle = receiptQuery.trim();
+              const electionId = electionQuery.trim();
+              if (!handle || !electionId) {
+                setReceiptError("Enter both the opaque receipt handle and its election ID. A handle alone is not enough to retrieve evidence.");
+                return;
+              }
+              setReceiptError(null);
+              window.location.href = `/student/receipts/${encodeURIComponent(handle)}?election_id=${encodeURIComponent(electionId)}`;
             }}
-            className="flex flex-col sm:flex-row gap-3 pt-3"
+            className="flex flex-col gap-3 pt-3"
           >
-            <div className="relative flex-1">
-              <Search className="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+                <input
+                  type="text"
+                  value={receiptQuery}
+                  onChange={(e) => setReceiptQuery(e.target.value)}
+                  placeholder="Receipt handle"
+                  aria-label="Receipt handle"
+                  className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
+                />
+              </div>
               <input
                 type="text"
-                value={receiptQuery}
-                onChange={(e) => setReceiptQuery(e.target.value)}
-                placeholder="Enter Receipt Handle (e.g. HV 24F8 19C2)"
-                aria-label="Receipt Handle"
-                className="w-full min-h-[44px] pl-11 pr-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#38BDF8] transition-colors"
+                value={electionQuery}
+                onChange={(e) => setElectionQuery(e.target.value)}
+                placeholder="Election ID"
+                aria-label="Election ID"
+                className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] sm:w-52"
               />
             </div>
             <button
@@ -115,6 +160,7 @@ export default function HomePage() {
               <span>Inspect Receipt</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
+            {receiptError && <p className="text-xs font-semibold text-[#FCD34D]" role="alert">{receiptError}</p>}
           </form>
         </div>
       </section>
@@ -139,7 +185,10 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {electionsError && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="alert">{electionsError} Synthetic elections are not substituted.</div>}
+        {electionsLoading && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">Loading elections from the authoritative service…</div>}
+        {!electionsLoading && !electionsError && activeElections.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">No elections were returned by the authoritative service.</div>}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {activeElections.map((elec) => (
             <article
               key={elec.id}
@@ -149,7 +198,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between">
                   <StateBadge state={elec.state} size="sm" />
                   <span className="text-xs text-slate-500 font-mono">
-                    {elec.eligible_count} Eligible
+                    {typeof elec.eligible_count === "number" ? `${elec.eligible_count} Eligible` : "Eligibility withheld"}
                   </span>
                 </div>
                 <h3 className="font-bold text-lg text-[#10233F] dark:text-white leading-snug">
@@ -163,7 +212,7 @@ export default function HomePage() {
               <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
                 <span className="text-xs text-slate-500 flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
-                  {new Date(elec.closes_at_utc).toLocaleDateString()}
+                  {formatUtc(elec.closes_at_utc)}
                 </span>
                 <Link
                   href={elec.state === "OPEN" ? `/student/elections/${elec.id}/candidates` : `/results?election=${elec.id}`}

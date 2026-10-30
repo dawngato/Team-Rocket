@@ -50,6 +50,7 @@ When a client invokes POST /v1/cast/{election_id}/ballots:
 Clients query receipt verification via GET /v1/cast/{election_id}/receipts/{handle}:
 * Returns status COMMITTED_PENDING_WITNESS prior to witness aggregation.
 * Returns status WITNESSED once an independent witness acknowledgement covers the assigned leaf index.
+* A witnessed response includes the authenticated `tree_size`, `leaf_hash`, `merkle_root`, and RFC 9162 `merkle_proof` needed for receipt-side inclusion checking.
 * Returns HTTP 404 if the handle is invalid or unknown.
 
 ## Verification and Testing

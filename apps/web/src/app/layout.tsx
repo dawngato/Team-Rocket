@@ -11,6 +11,8 @@ export const metadata: Metadata = {
     "Educational institutional election prototype with inspectable evidence and explicit security limits.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{

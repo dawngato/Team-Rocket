@@ -128,6 +128,39 @@ async def test_security_response_headers(client):
 
 
 @pytest.mark.anyio
+async def test_production_rejects_syntax_only_engine_validation(
+    client,
+    open_election,
+    sample_election_id,
+    make_proof,
+    valid_ballot_b64url,
+    valid_proofs_b64url,
+):
+    """Production must fail closed instead of accepting opaque test payloads."""
+    original_env = settings.APP_ENV
+    original_mode = settings.ENGINE_VALIDATION_MODE
+    settings.APP_ENV = "production"
+    settings.ENGINE_VALIDATION_MODE = "syntax_only"
+    try:
+        response = await client.post(
+            f"/v1/cast/{sample_election_id}/ballots",
+            json={
+                "election_id": sample_election_id,
+                "credential_proof_b64url": make_proof("null_engine_gate"),
+                "engine_ballot_b64url": valid_ballot_b64url,
+                "engine_proofs_b64url": valid_proofs_b64url,
+                "idempotency_key": "idemp_engine_gate",
+            },
+        )
+    finally:
+        settings.APP_ENV = original_env
+        settings.ENGINE_VALIDATION_MODE = original_mode
+
+    assert response.status_code == 503
+    assert "CRYPTO_ENGINE_NOT_VALIDATED" in response.json()["detail"]
+
+
+@pytest.mark.anyio
 async def test_production_lifecycle_routes_require_internal_control_token(
     client,
     open_election,

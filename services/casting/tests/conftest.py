@@ -22,6 +22,7 @@ if _SERVICE_DIR not in sys.path:
     sys.path.insert(0, _SERVICE_DIR)
 
 from src.database import get_db
+from src.config import settings
 from src.main import create_app
 from src.models import (
     Base,
@@ -35,6 +36,20 @@ from src.models import (
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
+
+
+@pytest.fixture(autouse=True)
+def local_engine_validation_mode():
+    """Make test fixtures explicit about their non-production validation mode."""
+    original_mode = settings.ENGINE_VALIDATION_MODE
+    original_environment = settings.APP_ENV
+    settings.ENGINE_VALIDATION_MODE = "syntax_only"
+    settings.APP_ENV = "test"
+    try:
+        yield
+    finally:
+        settings.ENGINE_VALIDATION_MODE = original_mode
+        settings.APP_ENV = original_environment
 
 
 @pytest.fixture
