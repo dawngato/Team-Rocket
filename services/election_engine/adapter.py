@@ -10,22 +10,40 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519, padding, rsa
 
-from .constants import G, P, Q, PROTOCOL_VERSION, SCHEMA_BALLOT_EVIDENCE
-from .credentials import derive_nullifier, hash_token_to_int, verify_credential_proof
-from .crypto import (
-    DLEQProof,
-    DisjunctiveProof,
-    ElGamalCiphertext,
-    MerkleTree,
-    SumProof,
-    canonical_json,
-    is_in_subgroup,
-    sha256_digest,
-    solve_discrete_log,
-    verify_dleq,
-    verify_disjunctive,
-    verify_sum,
-)
+try:
+    from .constants import G, P, Q, PROTOCOL_VERSION, SCHEMA_BALLOT_EVIDENCE
+    from .credentials import derive_nullifier, hash_token_to_int, verify_credential_proof
+    from .crypto import (
+        DLEQProof,
+        DisjunctiveProof,
+        ElGamalCiphertext,
+        MerkleTree,
+        SumProof,
+        canonical_json,
+        is_in_subgroup,
+        sha256_digest,
+        solve_discrete_log,
+        verify_dleq,
+        verify_disjunctive,
+        verify_sum,
+    )
+except (ImportError, ValueError):
+    from constants import G, P, Q, PROTOCOL_VERSION, SCHEMA_BALLOT_EVIDENCE
+    from credentials import derive_nullifier, hash_token_to_int, verify_credential_proof
+    from crypto import (
+        DLEQProof,
+        DisjunctiveProof,
+        ElGamalCiphertext,
+        MerkleTree,
+        SumProof,
+        canonical_json,
+        is_in_subgroup,
+        sha256_digest,
+        solve_discrete_log,
+        verify_dleq,
+        verify_disjunctive,
+        verify_sum,
+    )
 
 try:
     from himvote_crypto.rsa_blind import (

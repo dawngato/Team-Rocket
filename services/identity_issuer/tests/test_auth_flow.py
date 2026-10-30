@@ -34,6 +34,18 @@ def test_user_login_logout_and_session(client, db_session):
     token = data["session_token"]
     assert len(token) > 0
 
+    profile_resp = client.get(
+        "/v1/auth/me",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert profile_resp.status_code == 200
+    profile = profile_resp.json()
+    assert profile["user_id"] == user.id
+    assert profile["email"] == user.email
+    assert profile["roles"] == []
+    assert profile["scopes"] == []
+    assert profile["mfa_authenticated"] is False
+
     # Step 2: Failed login with invalid password
     bad_login = client.post(
         "/v1/auth/login",

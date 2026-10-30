@@ -23,6 +23,20 @@ export interface LoginResponse {
   mfa_required: boolean;
 }
 
+export interface SessionScope {
+  role: string;
+  scope_type: string;
+  scope_id: string;
+}
+
+export interface SessionProfile {
+  user_id: string;
+  email: string;
+  roles: string[];
+  scopes: SessionScope[];
+  mfa_authenticated: boolean;
+}
+
 export interface RegistrationResponse {
   status: string;
   student_id?: string;
@@ -142,6 +156,18 @@ function isLoginResponse(value: unknown): value is LoginResponse {
     typeof value.mfa_required === "boolean";
 }
 
+function isSessionProfile(value: unknown): value is SessionProfile {
+  return isRecord(value) &&
+    typeof value.user_id === "string" &&
+    typeof value.email === "string" &&
+    Array.isArray(value.roles) && value.roles.every((role) => typeof role === "string") &&
+    Array.isArray(value.scopes) && value.scopes.every((scope) => isRecord(scope) &&
+      typeof scope.role === "string" &&
+      typeof scope.scope_type === "string" &&
+      typeof scope.scope_id === "string") &&
+    typeof value.mfa_authenticated === "boolean";
+}
+
 function isRegistrationResponse(value: unknown): value is RegistrationResponse {
   return isRecord(value) && typeof value.status === "string";
 }
@@ -245,6 +271,10 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       } finally {
         inMemorySessionToken = null;
       }
+    },
+
+    async getSession(): Promise<SessionProfile> {
+      return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
     },
 
     async registerStudent(input: { student_id: string; email: string; full_name: string }): Promise<RegistrationResponse> {

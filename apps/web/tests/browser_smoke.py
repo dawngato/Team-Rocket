@@ -38,6 +38,7 @@ def goto_ready(page: Page, path: str) -> None:
     # Use a DOM wait instead of string-evaluated JavaScript so the smoke test
     # also works against the production CSP, which correctly blocks eval.
     page.locator("head link[rel='stylesheet'], head style").first.wait_for(state="attached")
+    page.wait_for_load_state("networkidle", timeout=30_000)
     page.wait_for_timeout(1_000)
 
 
@@ -78,11 +79,11 @@ def run_smoke() -> None:
         assert page.get_by_text("Evidence observatory").is_visible()
         assert page.get_by_test_id("ballot-box-hero").is_visible()
         assert page.get_by_text("Decorative only.").is_visible()
-        workspace_preview = page.locator(
-            'button[aria-label="Open navigation only workspace preview"]'
-        )
-        assert workspace_preview.get_attribute("aria-label") == "Open navigation only workspace preview"
-        assert workspace_preview.get_attribute("aria-expanded") == "false"
+        # Production public navigation contains no client-side role chooser.
+        # Privileged navigation is rendered only after the server-authoritative
+        # identity session is confirmed.
+        assert page.locator("text=Navigation preview only").count() == 0
+        assert page.locator("a[href='/admin']").count() == 0
         assert_no_horizontal_overflow(page)
 
         reduced_motion_page = browser.new_page(viewport={"width": 1440, "height": 900})
@@ -99,11 +100,12 @@ def run_smoke() -> None:
 
         # Mobile navigation remains reachable without leaving the already compiled route.
         page.set_viewport_size({"width": 390, "height": 844})
-        page.get_by_role("button", name="Open navigation menu").click()
-        assert page.locator("a[href='/security-limits']").last.is_visible()
-        assert page.get_by_text("Evidence observatory").is_visible()
+        page.locator("button.sv-public-menu").click()
+        page.locator("nav.sv-public-nav.is-open").wait_for(state="visible")
+        assert page.get_by_role("link", name="Security limits", exact=True).is_visible()
+        assert page.get_by_role("link", name="Sign in", exact=True).is_visible()
         assert_no_horizontal_overflow(page)
-        page.locator('button[aria-label="Close navigation menu"]').evaluate("node => node.click()")
+        page.locator("button.sv-public-menu").click()
         page.set_viewport_size({"width": 1440, "height": 900})
 
         goto_ready(page, "/how-it-works")
@@ -116,29 +118,22 @@ def run_smoke() -> None:
         ).wait_for(state="visible")
         page.get_by_text("Independent witness operation is not present locally.").wait_for(state="visible")
 
-        # Casting stays fail-closed when the authoritative election service is not configured.
+        # Protected voting routes stay behind the identity gate. A guest must
+        # not receive fixture ballots, election records, or a cast form.
         goto_ready(page, "/student/elections/elec_su_2026/cast")
-        page.get_by_text(
-            "The authoritative election service is not configured.", exact=True
-        ).wait_for(state="visible")
+        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
 
-        # Inclusion must fail closed until the casting origin returns authenticated proof inputs.
+        # Inclusion is also protected; the receipt handle must never be
+        # resolved for an unauthenticated browser session.
         goto_ready(page, "/student/receipts/HV_24F8_19C2/inclusion")
-        assert page.get_by_role(
-            "heading", name="Cryptographic inclusion verifier"
-        ).is_visible()
-        assert page.get_by_text(
-            "This verifier needs both an opaque receipt handle and its election context."
-        ).is_visible()
-        assert page.get_by_role("button", name="Verify Merkle path").count() == 0
+        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
 
         # Officer operational views also fail closed instead of rendering
-        # local election fixtures when their authoritative service is absent.
+        # local election fixtures when the identity service is absent.
         goto_ready(page, "/officer")
-        assert page.get_by_text("Live election service data", exact=False).is_visible()
-        page.get_by_text("The authoritative election service is not configured.", exact=True).wait_for(state="visible")
+        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
         goto_ready(page, "/officer/elections")
-        page.get_by_text("The authoritative election service is not configured.", exact=True).wait_for(state="visible")
+        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
 
         browser.close()
 

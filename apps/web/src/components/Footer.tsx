@@ -57,33 +57,13 @@ export function Footer() {
           </h3>
           <ul className="flex flex-col gap-2">
             <li>
-                <Link href="/student/elections" className="apple-footer-link">
-                Student Voting Portal
+                <Link href="/auth/login" className="apple-footer-link">
+                Sign in to institutional workspace
               </Link>
             </li>
             <li>
-                <Link href="/teacher/verification-queue" className="apple-footer-link">
-                Teacher Verification Queue
-              </Link>
-            </li>
-            <li>
-                <Link href="/officer/create" className="apple-footer-link">
-                Election Officer Desk
-              </Link>
-            </li>
-            <li>
-                <Link href="/admin" className="apple-footer-link">
-                Administrative Console
-              </Link>
-            </li>
-            <li>
-                <Link href="/super-admin" className="apple-footer-link">
-                Super Administrator
-              </Link>
-            </li>
-            <li>
-                <Link href="/auditor" className="apple-footer-link">
-                Independent Auditor Workspace
+                <Link href="/security-limits" className="apple-footer-link">
+                Review access boundaries
               </Link>
             </li>
           </ul>
@@ -120,7 +100,7 @@ export function Footer() {
 
       <div className="w-full max-w-[1280px] mx-auto mt-12 pt-6 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
         <div>HimVote Institutional Election System. Open Standards Verification.</div>
-        <div className="mt-2 sm:mt-0">All cryptographic proofs reproducible offline.</div>
+        <div className="mt-2 sm:mt-0">Offline verification applies only to released evidence with trusted pins.</div>
       </div>
     </footer>
   );

@@ -21,6 +21,20 @@ class LoginResponse(BaseModel):
     mfa_required: bool
 
 
+class SessionScope(BaseModel):
+    role: str
+    scope_type: str
+    scope_id: str
+
+
+class SessionProfile(BaseModel):
+    user_id: str
+    email: EmailStr
+    roles: List[str]
+    scopes: List[SessionScope]
+    mfa_authenticated: bool
+
+
 class InvitationRedeemRequest(BaseModel):
     """Single-use invitation redemption payload."""
     invitation_token: str = Field(min_length=16)

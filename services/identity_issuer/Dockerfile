@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /opt
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy alembic pydantic argon2-cffi psycopg2-binary python-jose cryptography httpx python-dotenv
+RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy alembic pydantic argon2-cffi psycopg2-binary python-jose cryptography httpx python-dotenv email-validator greenlet
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . ./identity_issuer

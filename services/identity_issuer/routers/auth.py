@@ -37,6 +37,8 @@ from ..schemas import (
     RecoveryResetRequest,
     MfaSetupResponse,
     MfaVerifyRequest,
+    SessionProfile,
+    SessionScope,
 )
 from ..crypto.hashing import hash_password, verify_password, dummy_verify
 from ..crypto.totp import generate_totp_secret, get_totp_uri, verify_totp
@@ -262,7 +264,9 @@ def login(
         key="session_id",
         value=session_token,
         httponly=True,
-        secure=True,
+        # Local development and the browser smoke environment run on HTTP.
+        # Production remains HTTPS-only through APP_ENV.
+        secure=APP_ENV == "production",
         samesite="lax",
         max_age=SESSION_EXPIRE_HOURS * 3600,
     )
@@ -280,6 +284,44 @@ def login(
         user_id=user.id,
         role=primary_role,
         mfa_required=False,
+    )
+
+
+@router.get("/me", response_model=SessionProfile, status_code=status.HTTP_200_OK)
+def session_profile(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the server-authoritative identity and scoped capabilities.
+
+    The response is intentionally limited to membership and scope metadata. It
+    does not expose election choices, credentials, receipts, or casting data.
+    """
+    assignments = (
+        db.query(RoleAssignment, RoleDefinition.name)
+        .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+        .filter(RoleAssignment.user_id == current_user.id)
+        .all()
+    )
+    now = datetime.now(timezone.utc)
+    active = [
+        (assignment, role)
+        for assignment, role in assignments
+        if assignment.expires_at is None
+        or (assignment.expires_at.replace(tzinfo=timezone.utc) if assignment.expires_at.tzinfo is None else assignment.expires_at) > now
+    ]
+    roles = sorted({role for _assignment, role in active})
+    scopes = [
+        SessionScope(role=role, scope_type=assignment.scope_type, scope_id=assignment.scope_id)
+        for assignment, role in active
+    ]
+    return SessionProfile(
+        user_id=current_user.id,
+        email=current_user.email,
+        roles=roles,
+        scopes=scopes,
+        mfa_authenticated=bool(getattr(request.state, "authenticated_session_mfa", False)),
     )
 
 
