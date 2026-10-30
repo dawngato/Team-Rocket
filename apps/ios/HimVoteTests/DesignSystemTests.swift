@@ -136,4 +136,54 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertEqual(bullet.icon, "shield.fill")
         XCTAssertEqual(bullet.title, "Hardware Isolation")
     }
+    
+    func testTailAdminThemeColorTokens() {
+        XCTAssertNotNil(ColorTokens.tailAdminBrand)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandDark)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandLight)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandBg)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkBg)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkCard)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkBorder)
+        XCTAssertNotNil(ColorTokens.tailAdminLightBg)
+        XCTAssertNotNil(ColorTokens.tailAdminLightCard)
+        XCTAssertNotNil(ColorTokens.tailAdminLightBorder)
+        XCTAssertNotNil(ColorTokens.tailAdminSuccess)
+        XCTAssertNotNil(ColorTokens.tailAdminWarning)
+        XCTAssertNotNil(ColorTokens.tailAdminDanger)
+        XCTAssertNotNil(ColorTokens.tailAdminInfo)
+        XCTAssertNotNil(ColorTokens.tailAdminPurple)
+    }
+    
+    func testFloatingBottomBarInitialization() {
+        var selected = 0
+        let binding = Binding<Int>(
+            get: { selected },
+            set: { selected = $0 }
+        )
+        let bar = FloatingBottomBar(selectedTab: binding)
+        XCTAssertNotNil(bar)
+    }
+    
+    func testTailAdminDashboardViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let dashboard = TailAdminDashboardView(
+            authViewModel: authVM,
+            electionsViewModel: elecVM,
+            onNavigateToTab: { _ in },
+            onOpenSidebar: { }
+        )
+        XCTAssertNotNil(dashboard)
+    }
+    
+    func testMainTabViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let mainView = MainTabView(
+            authViewModel: authVM,
+            electionsViewModel: elecVM
+        )
+        XCTAssertNotNil(mainView)
+    }
 }

@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HimVote iOS — TailAdmin & iOS Glass Preview</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#EEF2FF',
+              100: '#E0E7FF',
+              500: '#465FFF',
+              600: '#3641F5',
+              700: '#2A30D8',
+            },
+            slate: {
+              850: '#172033',
+              900: '#0F172A',
+            },
+            success: {
+              50: '#EBFDF5',
+              500: '#10B981',
+              600: '#059669',
+            },
+            warning: {
+              50: '#FFFBEB',
+              500: '#F59E0B',
+            },
+            danger: {
+              50: '#FEF2F2',
+              500: '#EF4444',
+            },
+            info: {
+              50: '#F0F9FF',
+              500: '#0EA5E9',
+            },
+            purple: {
+              50: '#F5F3FF',
+              500: '#8B5CF6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* iOS Glassmorphism Effects */
+    .ios-glass-bar {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12), 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .dark .ios-glass-bar {
+      background: rgba(15, 23, 42, 0.82);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(255, 255, 255, 0.05);
+    }
+
+    .ios-glass-card {
+      background: rgba(255, 255, 255, 0.72);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(226, 232, 240, 0.8);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    }
+    .dark .ios-glass-card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .ios-drawer-glass {
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-right: 1px solid rgba(226, 232, 240, 0.8);
+    }
+    .dark .ios-drawer-glass {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(32px);
+      -webkit-backdrop-filter: blur(32px);
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Smooth iOS Scrollbar */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* iPhone Frame */
+    .iphone-bezel {
+      box-shadow: 0 0 0 12px #1e293b, 0 0 0 14px #334155, 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col items-center justify-center p-2 sm:p-6 font-sans">
+
+  <!-- Desktop Controls Bar -->
+  <div class="w-full max-w-md mb-4 flex items-center justify-between px-2 text-xs text-slate-400">
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      <span class="font-medium text-slate-200">HimVote iOS (TailAdmin Edition)</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="toggleDarkMode()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+        <span id="theme-icon">🌙 Dark</span>
+      </button>
+      <button onclick="toggleDeviceFrame()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition">
+        <span id="frame-icon">📱 Frame</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- iOS Device Mockup Container -->
+  <div id="device-container" class="relative w-full max-w-[400px] h-[844px] bg-slate-50 dark:bg-slate-900 rounded-[50px] overflow-hidden iphone-bezel transition-all duration-300 flex flex-col border border-slate-700/50">
+
+    <!-- Dynamic Island & iOS Status Bar -->
+    <div class="relative z-50 pt-3 px-7 flex items-center justify-between text-xs font-semibold text-slate-900 dark:text-white select-none">
+      <span id="status-time">9:41</span>
+      <!-- Dynamic Island Pill -->
+      <div class="w-28 h-6 bg-black rounded-full mx-auto flex items-center justify-between px-3">
+        <div class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-800"></div>
+        <div class="w-2.5 h-2.5 rounded-full bg-blue-500/80 animate-pulse"></div>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.5a1 1 0 0 0 .73 1.68h13.84a1 1 0 0 0 .73-1.68l-.62-.89C20.26 16.07 21 14.12 21 12c0-4.97-4.03-9-9-9z"/></svg>
+        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4z"/></svg>
+        <div class="w-5 h-2.5 border border-current rounded-sm p-0.5 flex items-center"><div class="w-full h-full bg-current rounded-xs"></div></div>
+      </div>
+    </div>
+
+    <!-- Main Screen Viewport (Scrollable) -->
+    <div id="viewport" class="relative flex-1 overflow-y-auto no-scrollbar pb-24">
+
+      <!-- ================= TAB 0: TAILADMIN DASHBOARD ================= -->
+      <div id="tab-0" class="tab-pane p-4 space-y-4">
+        <!-- Top Hero Banner with Hamburger Button -->
+        <div class="ios-glass-card rounded-2xl p-4 flex items-center justify-between">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              <h1 class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">SecureVote</h1>
+              <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400">Live</span>
+            </div>
+            <p id="dashboard-email" class="text-xs text-slate-500 dark:text-slate-400 font-medium">student.synth01@himcampus.edu</p>
+            <p id="dashboard-role-badge" class="text-[11px] font-semibold text-brand-500">Role: Eligible Student • Node #01</p>
+          </div>
+          <button onclick="toggleSideMenu()" class="p-2.5 rounded-xl bg-brand-50 dark:bg-brand-950/40 text-brand-500 hover:bg-brand-100 transition" title="Open Menu">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          </button>
+        </div>
+
+        <!-- TailAdmin 4-Card Metric Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Metric 1: Ballots Cast -->
+          <div class="ios-glass-card rounded-2xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-950/50 flex items-center justify-center text-brand-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+              </div>
+              <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">+11.01%</span>
+            </div>
+            <div>
+              <div class="text-xl font-extrabold text-slate-900 dark:text-white">1,248</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">Ballots Cast</div>
+            </div>
+          </div>
+
+          <!-- Metric 2: Registered Electorate -->
+          <div class="ios-glass-card rounded-2xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 flex items-center justify-center text-emerald-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              </div>
+              <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400">98.4%</span>
+            </div>
+            <div>
+              <div class="text-xl font-extrabold text-slate-900 dark:text-white">3,782</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">Registered Voters</div>
+            </div>
+          </div>
+
+          <!-- Metric 3: Witness Checkpoints -->
+          <div class="ios-glass-card rounded-2xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/50 flex items-center justify-center text-purple-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              </div>
+              <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-purple-50 text-purple-600 dark:bg-purple-950/50 dark:text-purple-400">Append-Only</span>
+            </div>
+            <div>
+              <div class="text-xl font-extrabold text-slate-900 dark:text-white">48</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">Witness Checkpoints</div>
+            </div>
+          </div>
+
+          <!-- Metric 4: Blockchain Anchors -->
+          <div class="ios-glass-card rounded-2xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/50 flex items-center justify-center text-sky-500">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+              </div>
+              <span class="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/50 dark:text-sky-400">Anvil #142</span>
+            </div>
+            <div>
+              <div class="text-xl font-extrabold text-slate-900 dark:text-white">12</div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">EVM Anchors</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Contest Spotlight Card -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3 border-l-4 border-brand-500">
+          <div class="flex items-center justify-between text-xs">
+            <span class="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Active Campus Contest
+            </span>
+            <span class="text-slate-400">Closes 17:00 UTC</span>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Student Council General Election 2026</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400">Contest: Executive Board • Single-Choice Cryptographic Ballot</p>
+          </div>
+          <div class="space-y-1">
+            <div class="flex justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <span>Turnout Progress</span>
+              <span class="text-brand-500">1,248 / 3,782 (33.0%)</span>
+            </div>
+            <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-brand-500 to-indigo-600 rounded-full" style="width: 33%"></div>
+            </div>
+          </div>
+          <div class="flex gap-2 pt-1">
+            <button onclick="switchTab(2)" class="flex-1 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition shadow-md shadow-brand-500/25 flex items-center justify-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Enter Voting Booth
+            </button>
+            <button onclick="switchTab(1)" class="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium text-xs hover:bg-slate-200 transition">
+              Candidates
+            </button>
+          </div>
+        </div>
+
+        <!-- Ingestion Rate Chart (Pure CSS Bar Chart) -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-white">Hourly Ballot Ingestion</h3>
+              <p class="text-[11px] text-slate-500">Ciphertexts committed per window</p>
+            </div>
+            <span class="text-[10px] font-bold text-brand-500 px-2 py-0.5 rounded-full bg-brand-50 dark:bg-brand-950/40">Today</span>
+          </div>
+          <!-- Bars -->
+          <div class="h-32 flex items-end justify-between gap-2 pt-4 px-1">
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500/30 rounded-t-sm transition hover:bg-brand-500" style="height: 30%"></div>
+              <span class="text-[10px] text-slate-400">08:00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500/50 rounded-t-sm transition hover:bg-brand-500" style="height: 55%"></div>
+              <span class="text-[10px] text-slate-400">10:00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500/80 rounded-t-sm transition hover:bg-brand-500" style="height: 85%"></div>
+              <span class="text-[10px] text-slate-400">12:00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500 rounded-t-sm shadow-sm shadow-brand-500/40" style="height: 100%"></div>
+              <span class="text-[10px] text-brand-500 font-bold">14:00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500/60 rounded-t-sm transition hover:bg-brand-500" style="height: 60%"></div>
+              <span class="text-[10px] text-slate-400">16:00</span>
+            </div>
+            <div class="flex-1 flex flex-col items-center gap-1.5">
+              <div class="w-full bg-brand-500/40 rounded-t-sm transition hover:bg-brand-500" style="height: 40%"></div>
+              <span class="text-[10px] text-slate-400">18:00</span>
+            </div>
+          </div>
+          <div class="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between text-[11px] text-slate-500">
+            <span>Latency: <strong>18ms</strong></span>
+            <span class="text-emerald-500 font-semibold">Zero Plaintext Leakage</span>
+          </div>
+        </div>
+
+        <!-- Recent Merkle Checkpoints Data Table -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Append-Only Checkpoints</h3>
+            <button onclick="switchTab(3)" class="text-xs text-brand-500 font-semibold hover:underline">View All</button>
+          </div>
+          <div class="space-y-2">
+            <!-- Row 1 -->
+            <div onclick="showCheckpointDetail(48, 1248, '0x8fa32b0c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855667788', 'FINAL WITNESSED')" class="p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/60 flex items-center justify-between hover:bg-brand-50/50 dark:hover:bg-brand-950/20 cursor-pointer transition">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-500 flex items-center justify-center text-xs font-bold">#48</div>
+                <div>
+                  <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">Tree Size: 1,248</div>
+                  <div class="text-[10px] font-mono text-slate-400">Root: 0x8fa32b...667788</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">Anchored</span>
+            </div>
+            <!-- Row 2 -->
+            <div onclick="showCheckpointDetail(47, 1152, '0x7da21a9b038efae3b7885ea81316bd30d3538a823b9384880a6741a7445566', 'INTERIM WITNESSED')" class="p-2.5 rounded-xl bg-white/60 dark:bg-slate-800/60 flex items-center justify-between hover:bg-brand-50/50 dark:hover:bg-brand-950/20 cursor-pointer transition">
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-full bg-purple-50 dark:bg-purple-950/60 text-purple-500 flex items-center justify-center text-xs font-bold">#47</div>
+                <div>
+                  <div class="text-xs font-semibold text-slate-800 dark:text-slate-200">Tree Size: 1,152</div>
+                  <div class="text-[10px] font-mono text-slate-400">Root: 0x7da21a...445566</div>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400">Witness ACK</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 1: ELECTIONS CATALOG ================= -->
+      <div id="tab-1" class="tab-pane hidden p-4 space-y-4">
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <h2 class="text-lg font-bold text-slate-900 dark:text-white">Campus Elections</h2>
+          <!-- Search Input -->
+          <div class="relative">
+            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" placeholder="Search elections by title..." class="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white border-0 focus:ring-2 focus:ring-brand-500 outline-none">
+          </div>
+          <!-- Filter Pills -->
+          <div class="flex gap-1.5 overflow-x-auto no-scrollbar text-xs">
+            <button class="px-3 py-1 rounded-full bg-brand-500 text-white font-medium">All (4)</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">Voting Open</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">Closed</button>
+            <button class="px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">Published</button>
+          </div>
+        </div>
+
+        <!-- Election Cards -->
+        <div class="space-y-3">
+          <!-- Election 1 -->
+          <div class="ios-glass-card rounded-2xl p-4 space-y-2 hover:border-brand-500/50 cursor-pointer transition">
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">VOTING OPEN</span>
+              <span class="text-[11px] text-slate-400">ID: elec_01</span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Student Council General Election 2026</h3>
+            <p class="text-xs text-slate-500">Contest: Executive Board • 4 Candidates Registered</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-800 text-[11px]">
+              <span class="text-slate-400">Eligible: 3,782 voters</span>
+              <button onclick="switchTab(2)" class="text-brand-500 font-semibold hover:underline">Cast Ballot →</button>
+            </div>
+          </div>
+
+          <!-- Election 2 -->
+          <div class="ios-glass-card rounded-2xl p-4 space-y-2 opacity-90">
+            <div class="flex items-center justify-between">
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400">RESULTS PUBLISHED</span>
+              <span class="text-[11px] text-slate-400">ID: elec_02</span>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">Department of Computer Science Representative</h3>
+            <p class="text-xs text-slate-500">Contest: Academic Senate • 2 Candidates</p>
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200/50 dark:border-slate-800 text-[11px]">
+              <span class="text-emerald-500 font-semibold">Auditor Attested</span>
+              <button onclick="alert('Audited Result: Winner Alice Sharma with 612 votes (74.2%) — Zero proof discrepancies.')" class="text-brand-500 font-semibold hover:underline">Inspect Results →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 2: VOTING BOOTH & RECEIPT ================= -->
+      <div id="tab-2" class="tab-pane hidden p-4 space-y-4">
+        <!-- Header -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-brand-50 dark:bg-brand-950/50 text-brand-500 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">Voter Terminal & Booth</h2>
+              <p class="text-[11px] text-slate-500">RFC 9474 Blind Issuance • Ephemeral Session</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 1: Blind Credential -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-900 dark:text-white">1. Anonymous Credential</span>
+            <span id="cred-status-pill" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400">UNRESERVED</span>
+          </div>
+          <p class="text-xs text-slate-500">Reserve an idempotent single-use authorization token. The identity issuer never learns your ballot authorization token.</p>
+          <div id="cred-details" class="hidden p-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-[11px] font-mono text-slate-600 dark:text-slate-300 space-y-1">
+            <div class="text-emerald-500 font-semibold">✓ Blinded Token Obtained</div>
+            <div class="truncate">Nullifier: 0x4981fa12039abec71829...</div>
+          </div>
+          <button id="btn-request-cred" onclick="requestBlindCredential()" class="w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition shadow-md shadow-brand-500/20">
+            Request Anonymous Credential
+          </button>
+        </div>
+
+        <!-- Step 2: Launch Booth -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-900 dark:text-white">2. Supported Encrypted Booth</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-sky-50 text-sky-600 dark:bg-sky-950/40 dark:text-sky-400">STRICT 1-VOTE</span>
+          </div>
+          <p class="text-xs text-slate-500">Ballot encryption occurs inside an isolated session. Vetted proofs and encrypted ciphertexts are submitted directly to the casting origin.</p>
+          <button id="btn-open-booth" onclick="openVotingBoothModal()" disabled class="w-full py-2.5 rounded-xl bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-semibold text-xs transition cursor-not-allowed">
+            Launch Encrypted Voter Booth
+          </button>
+        </div>
+
+        <!-- Step 3: Receipt Tracker -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-900 dark:text-white">3. Merkle Inclusion Tracker</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">FINAL WITNESSED</span>
+          </div>
+          <div class="p-3 rounded-xl bg-white/70 dark:bg-slate-800/70 text-xs space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Tracker Handle:</span>
+              <span class="font-bold text-brand-500 font-mono">rcpt_9824_campus</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-400">Leaf Index:</span>
+              <span class="font-semibold text-purple-500">#1247</span>
+            </div>
+            <div class="pt-1 text-[11px] font-mono text-slate-400 truncate">
+              Leaf Hash: 0x77bca092149afbf4c8996fb92427ae41e4...
+            </div>
+            <button onclick="alert('Merkle Inclusion Proof:\n\nElection ID: elec_01\nLeaf Index: 1247\nRoot: 0x8fa32b0c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855667788\nAudit Verdict: PASS (Cryptographically verified in tree)')" class="w-full mt-1 py-1.5 rounded-lg bg-brand-50 dark:bg-brand-950/40 text-brand-500 text-xs font-semibold hover:bg-brand-100 transition">
+              Inspect Inclusion Proof
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 3: AUDIT & MERKLE ================= -->
+      <div id="tab-3" class="tab-pane hidden p-4 space-y-4">
+        <!-- Header -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-500 flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+            </div>
+            <div>
+              <h2 class="text-base font-bold text-slate-900 dark:text-white">Auditor & Merkle Explorer</h2>
+              <p class="text-[11px] text-slate-500">Independent Evidence Verifier • EVM Anchor</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merkle Tree Visualizer -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-bold text-slate-900 dark:text-white">Merkle Transparency Tree</span>
+            <span class="text-brand-500 font-semibold">Tree Size: 1,248</span>
+          </div>
+          <!-- Visual Tree Hierarchy -->
+          <div class="space-y-2 text-xs">
+            <div onclick="showNodeDetail('Witness Root', '0x8fa32b0c149afbf4...667788', 'Level 2 (Root)', 'PASS')" class="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 cursor-pointer flex items-center justify-between hover:bg-purple-500/20 transition">
+              <span class="font-bold text-purple-600 dark:text-purple-400">🌳 Merkle Root</span>
+              <span class="font-mono text-[10px] text-slate-400">0x8fa32b...667788</span>
+            </div>
+            <div class="pl-4 border-l-2 border-slate-200 dark:border-slate-700 space-y-1.5">
+              <div onclick="showNodeDetail('Left Branch [0..624]', '0x7da21a9b038e...445566', 'Level 1 (Branch)', 'PASS')" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] cursor-pointer flex justify-between">
+                <span>Branch Left [0..624]</span>
+                <span class="text-emerald-500 font-semibold">Verified</span>
+              </div>
+              <div onclick="showNodeDetail('Right Branch [625..1247]', '0x6ca1098a92...334455', 'Level 1 (Branch)', 'PASS')" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] cursor-pointer flex justify-between">
+                <span>Branch Right [625..1247]</span>
+                <span class="text-emerald-500 font-semibold">Verified</span>
+              </div>
+              <div onclick="showNodeDetail('Your Ballot Leaf #1247', '0x77bca092149...aa11', 'Level 0 (Leaf)', 'PASS')" class="p-2 rounded-lg bg-brand-500/10 border border-brand-500/30 text-[11px] cursor-pointer flex justify-between">
+                <span class="text-brand-500 font-bold">Your Cast Leaf #1247</span>
+                <span class="text-emerald-500 font-semibold">In Tree ✓</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EVM Contract Anchor Card -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-sky-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+              EVM Smart Contract Anchor
+            </span>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">Finalized</span>
+          </div>
+          <div class="space-y-1 font-mono text-[11px] text-slate-500 dark:text-slate-400">
+            <div>Contract: 0x5FbDB2315678afecb367f032d93F...</div>
+            <div>Anchor Tx: 0x4f128912abcdef9876543210456...</div>
+            <div>Network: Anvil Local EVM (Chain ID: 31337)</div>
+            <div>Block: #142 (6 Confirmations)</div>
+          </div>
+        </div>
+
+        <!-- 5 Mandated Security Adversarial Demos (Prompt1 & Prompt2) -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <h3 class="font-bold text-slate-900 dark:text-white">5 Mandated Adversarial Checks</h3>
+            <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-400">Prompt1 / Q7</span>
+          </div>
+          <div class="space-y-2 text-xs">
+            <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">1. Duplicate Submission Replay</div>
+                <div class="text-[10px] text-slate-400">Simulate repeat cast with spent nullifier</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">BLOCKED 409</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">2. Unauthorized Insertion</div>
+                <div class="text-[10px] text-slate-400">Inject unissued leaf into log</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">DETECTED</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">3. Ballot Deletion Attempt</div>
+                <div class="text-[10px] text-slate-400">Omit committed leaf from tree</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">DETECTED</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">4. Ciphertext Modification</div>
+                <div class="text-[10px] text-slate-400">Tamper with ballot ciphertext</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">PROOF FAIL</span>
+            </div>
+            <div class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 flex justify-between items-center">
+              <div>
+                <div class="font-semibold text-slate-800 dark:text-slate-200">5. Tally Manipulation</div>
+                <div class="text-[10px] text-slate-400">Inject false candidate sum</div>
+              </div>
+              <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full">ZK MISMATCH</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= TAB 4: ROLES & PROFILE ================= -->
+      <div id="tab-4" class="tab-pane hidden p-4 space-y-4">
+        <!-- Profile Card -->
+        <div class="ios-glass-card rounded-2xl p-4 flex items-center gap-3">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-brand-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold">
+            S
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">student.synth01@himcampus.edu</h3>
+            <div class="flex gap-1.5 mt-1">
+              <span id="role-pill-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-50 text-brand-500 dark:bg-brand-950/40">Student</span>
+              <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40">Synthetic Roster</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Role Perspective Switcher -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-3">
+          <h3 class="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Simulate Role Perspective</h3>
+          <p class="text-xs text-slate-500">Test client behaviors for each role as defined in Prompt 1.</p>
+          <div class="space-y-1.5">
+            <button onclick="setRole('Student', 'Eligible Student')" class="w-full p-2.5 rounded-xl bg-brand-50/60 dark:bg-brand-950/30 text-xs flex items-center justify-between text-left border border-brand-500/20">
+              <span class="font-bold text-brand-500">Student / Voter</span>
+              <span class="text-[10px] text-slate-400">Ballot & Receipts</span>
+            </button>
+            <button onclick="setRole('Election Officer', 'Election Administrator')" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs flex items-center justify-between text-left hover:bg-slate-200 transition">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Election Officer</span>
+              <span class="text-[10px] text-slate-400">Freeze & Open/Close</span>
+            </button>
+            <button onclick="setRole('Auditor', 'Independent Auditor')" class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs flex items-center justify-between text-left hover:bg-slate-200 transition">
+              <span class="font-medium text-slate-700 dark:text-slate-300">Independent Auditor</span>
+              <span class="text-[10px] text-slate-400">Witness & Verify</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Hardware Keychain Vault Card -->
+        <div class="ios-glass-card rounded-2xl p-4 space-y-2 text-xs">
+          <div class="flex items-center justify-between">
+            <span class="font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/></svg>
+              Apple Keychain Secure Enclave
+            </span>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40">SEALED</span>
+          </div>
+          <p class="text-slate-500 text-[11px]">Hardware-backed storage with kSecAttrAccessibleWhenUnlockedThisDeviceOnly policy.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= TRANSLUCENT FLOATING BOTTOM MENU (iOS DOCK) ================= -->
+    <div class="absolute bottom-5 inset-x-4 z-40">
+      <div class="ios-glass-bar rounded-full p-1.5 flex items-center justify-around">
+        <!-- Tab 0: Dashboard -->
+        <button id="nav-0" onclick="switchTab(0)" class="nav-btn flex-1 py-1.5 rounded-full flex flex-col items-center gap-0.5 text-brand-500 font-bold transition">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M4 13h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zm0 8h6c.55 0 1-.45 1-1v-4c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1zm10 0h6c.55 0 1-.45 1-1v-8c0-.55-.45-1-1-1h-6c-.55 0-1 .45-1 1v8c0 .55.45 1 1 1zm0-18c-.55 0-1 .45-1 1v4c0 .55.45 1 1 1h6c.55 0 1-.45 1-1V4c0-.55-.45-1-1-1h-6z"/></svg>
+          <span class="text-[10px]">Dashboard</span>
+        </button>
+
+        <!-- Tab 1: Elections -->
+        <button id="nav-1" onclick="switchTab(1)" class="nav-btn flex-1 py-1.5 rounded-full flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+          <span class="text-[10px]">Elections</span>
+        </button>
+
+        <!-- Tab 2: Booth -->
+        <button id="nav-2" onclick="switchTab(2)" class="nav-btn flex-1 py-1.5 rounded-full flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition relative">
+          <div class="relative">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+            <span class="w-2 h-2 rounded-full bg-brand-500 absolute -top-0.5 -right-0.5"></span>
+          </div>
+          <span class="text-[10px]">Booth</span>
+        </button>
+
+        <!-- Tab 3: Audit -->
+        <button id="nav-3" onclick="switchTab(3)" class="nav-btn flex-1 py-1.5 rounded-full flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          <span class="text-[10px]">Audit</span>
+        </button>
+
+        <!-- Tab 4: Roles -->
+        <button id="nav-4" onclick="switchTab(4)" class="nav-btn flex-1 py-1.5 rounded-full flex flex-col items-center gap-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          <span class="text-[10px]">Roles</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ================= TRANSLUCENT SLIDE-OUT MENU DRAWER ================= -->
+    <div id="side-menu-overlay" onclick="toggleSideMenu()" class="fixed inset-0 bg-black/40 backdrop-blur-xs z-50 hidden transition-opacity"></div>
+    <div id="side-menu" class="absolute top-0 left-0 bottom-0 w-72 ios-drawer-glass z-50 -translate-x-full transition-transform duration-300 flex flex-col p-5 space-y-6">
+      <!-- Drawer Header -->
+      <div class="flex items-center justify-between pt-6">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-brand-500 text-white flex items-center justify-center font-bold">HV</div>
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 dark:text-white">SecureVote</h2>
+            <span class="text-[10px] text-brand-500 font-semibold">TailAdmin Suite</span>
+          </div>
+        </div>
+        <button onclick="toggleSideMenu()" class="p-1 rounded-full text-slate-400 hover:text-slate-600">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Drawer Links -->
+      <div class="space-y-4 text-xs font-medium">
+        <div>
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Workflows</div>
+          <div class="space-y-1">
+            <a onclick="switchTab(0); toggleSideMenu();" class="block p-2 rounded-lg bg-brand-50/80 dark:bg-brand-950/40 text-brand-500 font-semibold cursor-pointer">📊 Executive Dashboard</a>
+            <a onclick="switchTab(1); toggleSideMenu();" class="block p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">🗳️ Elections Catalog</a>
+            <a onclick="switchTab(2); toggleSideMenu();" class="block p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">🎟️ Encrypted Booth</a>
+            <a onclick="switchTab(3); toggleSideMenu();" class="block p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">🛡️ Merkle Verifier</a>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Governance</div>
+          <div class="space-y-1">
+            <a onclick="alert('Campus Voting Guidelines:\n1. One verifiable ballot per student.\n2. Ballots encrypted client-side.\n3. Verified append-only Merkle tree witness.')" class="block p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">📜 Voter Guidelines</a>
+            <a onclick="alert('Trust Architecture:\n- Split Identity and Casting Origins\n- RFC 9474 Blind Issuance\n- Anvil Blockchain Anchor')" class="block p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">🔐 Security Architecture</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-auto pt-4 border-t border-slate-200 dark:border-slate-800">
+        <button onclick="alert('Session signed out successfully.')" class="w-full py-2 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 font-semibold text-xs hover:bg-red-100 transition">
+          Sign Out
+        </button>
+      </div>
+    </div>
+
+    <!-- Home Indicator -->
+    <div class="absolute bottom-1 inset-x-0 flex justify-center z-50 pointer-events-none">
+      <div class="w-32 h-1 bg-slate-900/60 dark:bg-white/60 rounded-full"></div>
+    </div>
+  </div>
+
+  <!-- Modal: Voting Booth Mockup -->
+  <div id="booth-modal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-5 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">Supported Booth Session</h3>
+        </div>
+        <button onclick="closeVotingBoothModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      <p class="text-xs text-slate-500">Select your candidate. The ballot is encrypted locally with the election trustee public key before being committed.</p>
+      
+      <div class="space-y-2 text-xs">
+        <label class="block p-3 rounded-xl border-2 border-brand-500 bg-brand-50/40 dark:bg-brand-950/20 cursor-pointer">
+          <input type="radio" name="candidate" checked class="text-brand-500 mr-2">
+          <strong>Alice Sharma</strong> — <span class="text-slate-500">Student First Alliance</span>
+        </label>
+        <label class="block p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <input type="radio" name="candidate" class="text-brand-500 mr-2">
+          <strong>Brian Patel</strong> — <span class="text-slate-500">Campus Tech Forward</span>
+        </label>
+        <label class="block p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
+          <input type="radio" name="candidate" class="text-brand-500 mr-2">
+          <strong>Clara Chen</strong> — <span class="text-slate-500">Sustainable Campus</span>
+        </label>
+      </div>
+
+      <button onclick="castBallotAction()" class="w-full py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-bold text-xs transition shadow-lg shadow-brand-500/30">
+        Cast Encrypted Ballot
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Live Clock
+    function updateClock() {
+      const now = new Date();
+      const hours = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      document.getElementById('status-time').innerText = `${hours}:${mins}`;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Tab Navigation
+    function switchTab(index) {
+      document.querySelectorAll('.tab-pane').forEach((pane, i) => {
+        pane.classList.toggle('hidden', i !== index);
+      });
+      document.querySelectorAll('.nav-btn').forEach((btn, i) => {
+        if (i === index) {
+          btn.classList.add('text-brand-500', 'font-bold');
+          btn.classList.remove('text-slate-400');
+        } else {
+          btn.classList.remove('text-brand-500', 'font-bold');
+          btn.classList.add('text-slate-400');
+        }
+      });
+      document.getElementById('viewport').scrollTop = 0;
+    }
+
+    // Side Menu Drawer
+    function toggleSideMenu() {
+      const menu = document.getElementById('side-menu');
+      const overlay = document.getElementById('side-menu-overlay');
+      const isOpen = !menu.classList.contains('-translate-x-full');
+      if (isOpen) {
+        menu.classList.add('-translate-x-full');
+        overlay.classList.add('hidden');
+      } else {
+        menu.classList.remove('-translate-x-full');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    // Role Simulation
+    function setRole(roleName, title) {
+      document.getElementById('dashboard-role-badge').innerText = `Role: ${roleName} • Node #01`;
+      document.getElementById('role-pill-badge').innerText = roleName;
+      alert(`Switched perspective to: ${roleName} (${title})\nPermissions updated in memory.`);
+    }
+
+    // Blind Credential Simulation
+    function requestBlindCredential() {
+      const btn = document.getElementById('btn-request-cred');
+      btn.innerText = 'Blinding & Requesting Issuer Signature...';
+      btn.disabled = true;
+      setTimeout(() => {
+        document.getElementById('cred-status-pill').innerText = 'ISSUED';
+        document.getElementById('cred-status-pill').className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400';
+        document.getElementById('cred-details').classList.remove('hidden');
+        btn.innerText = 'Credential Ready (RFC 9474)';
+        btn.className = 'w-full py-2.5 rounded-xl bg-emerald-500 text-white font-semibold text-xs';
+        
+        const boothBtn = document.getElementById('btn-open-booth');
+        boothBtn.disabled = false;
+        boothBtn.className = 'w-full py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs transition cursor-pointer shadow-md shadow-brand-500/20';
+      }, 700);
+    }
+
+    function openVotingBoothModal() {
+      document.getElementById('booth-modal').classList.remove('hidden');
+    }
+    function closeVotingBoothModal() {
+      document.getElementById('booth-modal').classList.add('hidden');
+    }
+    function castBallotAction() {
+      closeVotingBoothModal();
+      alert('Ballot Encrypted & Accepted!\n\nReceipt Handle: rcpt_9824_campus\nWitness ACK: Received\nMerkle Leaf #1247 committed.');
+      switchTab(2);
+    }
+
+    function showCheckpointDetail(seq, size, root, status) {
+      alert(`Checkpoint #${seq}\nStatus: ${status}\nTree Size: ${size}\nMerkle Root: ${root}\nWitness Signature: Verified Ed25519 signature\nEVM Transaction: 0x4f128912...`);
+    }
+
+    function showNodeDetail(name, digest, level, verdict) {
+      alert(`Node: ${name}\nLevel: ${level}\nDigest: ${digest}\nVerification: ${verdict}`);
+    }
+
+    // Dark Mode Toggle
+    function toggleDarkMode() {
+      document.documentElement.classList.toggle('dark');
+      const isDark = document.documentElement.classList.contains('dark');
+      document.getElementById('theme-icon').innerText = isDark ? '☀️ Light' : '🌙 Dark';
+    }
+
+    // Frame Toggle
+    function toggleDeviceFrame() {
+      const container = document.getElementById('device-container');
+      container.classList.toggle('iphone-bezel');
+      container.classList.toggle('rounded-[50px]');
+      container.classList.toggle('rounded-none');
+      container.classList.toggle('max-w-[400px]');
+      container.classList.toggle('max-w-2xl');
+    }
+  </script>
+</body>
+</html>

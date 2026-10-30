@@ -41,7 +41,7 @@ public struct ContentView: View {
     public var body: some View {
         Group {
             if authViewModel.isAuthenticated {
-                ElectionsView(
+                MainTabView(
                     authViewModel: authViewModel,
                     electionsViewModel: electionsViewModel
                 )
