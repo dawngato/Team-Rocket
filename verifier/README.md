@@ -17,6 +17,8 @@ python -m verifier verify --archive <evidence_dir_or_archive> --trust <pins_json
 
 The independent final checkpoint, roster approval, issuance closure, and chain anchor remain required evidence. If any are omitted, the command returns exit code 3 and does not claim a verification pass.
 
+The normal command is strict. It requires native ballot and tally evidence from the selected vetted engine. The current repository Profile VEEM fixture is a development adapter and is rejected by the strict command because its test profile can contain plaintext selections. The fixture runner must opt in explicitly with `--allow-development-profile`, and that option is for local tests only.
+
 The `--verify-inclusion` option accepts a JSON tracker with `election_id`, `manifest_digest`, `leaf_index`, `leaf_digest`, `audit_path`, and optional `root`. Each audit path entry contains a sibling `hash` and a `position` of `left` or `right`. The tracker is checked against the exported canonical leaf and the externally signed final root. A malformed or mismatched tracker fails closed.
 
 ### 1. audit_evidence
@@ -27,6 +29,12 @@ Command syntax:
 
 ```bash
 python verifier/verify.py audit_evidence --export <dir_or_archive> --trust <pins_json> --final <witness_final_json> --roster <roster_approval_json> --issuance <issuer_closure_json> --chain <chain_anchor_json> --report <output_report_json>
+```
+
+For the local plaintext fixture only:
+
+```bash
+python verifier/verify.py audit_evidence --export <dir_or_archive> --trust <pins_json> --final <witness_final_json> --roster <roster_approval_json> --issuance <issuer_closure_json> --chain <chain_anchor_json> --report <output_report_json> --allow-development-profile
 ```
 
 Options:
@@ -76,7 +84,7 @@ Options:
   Confirm all credential nullifiers are strictly unique across all leaves. Verify cryptographic credential proofs using pinned issuer key.
 
 * Step 7: Engine Ballot Proofs and Tally Verification
-  Decode engine ballots and verify cryptographic validity proofs. Recompute contest tallies across all leaves. Confirm exact match against announced totals in results JSON.
+  Decode native engine ballots and verify cryptographic validity and tally proofs. A plaintext development fixture is not accepted by the strict command.
 
 * Step 8: Blockchain Contract Anchor and Finality
   Verify chain ID, contract address, and contract code hash match pinned values. Verify anchored digest matches witness final checkpoint or Merkle root. Confirm transaction has reached finalized status with sufficient confirmation depth.

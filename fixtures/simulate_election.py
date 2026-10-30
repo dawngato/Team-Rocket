@@ -739,7 +739,7 @@ def run_simulation(base_dir: Path) -> int:
 
     report_file = base_dir / "report.json"
 
-    print("[10/10] Runs verifier/verify.py audit_evidence and asserts return code 0")
+    print("[10/10] Runs the verifier against the explicit development fixture profile")
     verifier_script = repo_root / "verifier" / "verify.py"
     if not verifier_script.exists():
         raise FileNotFoundError(f"Verifier script not found at {verifier_script}")
@@ -754,7 +754,8 @@ def run_simulation(base_dir: Path) -> int:
         "--roster", str(roster_approval_file),
         "--issuance", str(issuance_closure_file),
         "--chain", str(chain_pins_file),
-        "--report", str(report_file)
+        "--report", str(report_file),
+        "--allow-development-profile",
     ]
 
     env = dict(os.environ)
@@ -769,7 +770,10 @@ def run_simulation(base_dir: Path) -> int:
         print(proc.stderr)
 
     assert proc.returncode == 0, f"Verifier failed with unexpected exit code: {proc.returncode}"
-    print(f"[SUCCESS] audit_evidence passed with return code {proc.returncode}")
+    print(
+        "[SUCCESS] Development profile audit passed with return code "
+        f"{proc.returncode}. This fixture is not evidence of a vetted encrypted engine."
+    )
 
     with open(report_file, "r", encoding="utf-8") as f:
         report_data = json.load(f)
