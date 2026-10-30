@@ -1,16 +1,18 @@
-# HimVote Native iOS Application
+# HimVote Native iOS Application — TailAdmin & iOS Glassmorphic Edition
 
-HimVote iOS is an institutional election mobile application built with Swift 6 and SwiftUI. The application provides cryptographic voting capabilities for university students, faculty members, and authorized election administrators.
+HimVote iOS is an institutional campus election mobile application built with Swift 6 and SwiftUI. The application provides cryptographic voting capabilities for university students, faculty members, and authorized election administrators, styled with the **TailAdmin** dashboard theme and modern **iOS translucent glassmorphism** aesthetic.
 
-## Core Architectural Principles
+## Core Architectural & Visual Principles
 
-* Swift 6 concurrency using modern async await patterns and strict actor boundary isolation.
-* SwiftUI user interface driven by Observation framework Observable view models.
-* Zero plaintext ballot visibility on mobile device per Section 0.1 Rule 3. Voting choices occur inside an isolated web booth sandbox.
-* Dual network origin architecture strictly partitioning student identity services from anonymous ballot casting endpoints.
-* Hardware backed enclave security utilizing Apple Keychain with kSecAttrAccessibleWhenUnlockedThisDeviceOnly.
-* Universal Links and ASWebAuthenticationSession integration with cryptographic anti CSRF state verification.
-* URLSession network transport enforcing public key certificate pinning.
+* **TailAdmin Design System**: Clean typography, Tailwind-inspired color tokens (Brand `#465FFF`, Dark Slate `#0F172A`, Slate Cards `#1E293B`, Crisp Borders, Success Emerald `#10B981`, Warning Amber `#F59E0B`, Danger Rose `#EF4444`, Info Sky `#0EA5E9`), 4-metric dashboard stat cards with percentage growth chips, and structured tabular views.
+* **iOS Translucent Glassmorphism**: Translucent floating bottom navigation bar (floating dock) and slide-out side menu built with iOS `.ultraThinMaterial` / `.thinMaterial`, frosted blur backgrounds, subtle specular white borders, and ambient drop shadows.
+* **Swift 6 Concurrency**: Modern async/await patterns and strict actor boundary isolation.
+* **SwiftUI + Observation**: Observable architecture with clean state management across `AuthViewModel`, `ElectionsViewModel`, `CredentialViewModel`, `VotingViewModel`, `ReceiptViewModel`, and `AuditorViewModel`.
+* **Zero Plaintext Ballot Visibility**: Voting choices occur strictly inside the isolated web booth sandbox with cryptographic proofs.
+* **Dual Network Origin**: Identity and voting records are kept strictly separate. Identity sessions never leak into ballot casting endpoints.
+* **Five Mandated Q7 Adversarial Checks**: Interactive verification of duplicate submission rejection, unauthorized insertion detection, deletion detection, ciphertext modification detection, and ZK tally proof mismatch detection.
+* **Hardware-Backed Enclave**: Apple Keychain (`kSecAttrAccessibleWhenUnlockedThisDeviceOnly`) for session tokens and blinded credential nonces.
+* **EVM Blockchain Anchors**: Independent display and verification of Anvil local EVM checkpoints, transaction hashes, block heights, and Merkle tree roots.
 
 ## Directory Structure
 
@@ -36,22 +38,39 @@ apps/ios/
 │   │   ├── ReceiptViewModel.swift
 │   │   └── AuditorViewModel.swift
 │   ├── Views/
-│   │   ├── LoginView.swift
-│   │   ├── ElectionsView.swift
-│   │   ├── CandidateListView.swift
-│   │   ├── CredentialIssueView.swift
-│   │   ├── VotingBoothView.swift
-│   │   ├── ReceiptView.swift
-│   │   ├── VerificationView.swift
-│   │   └── ResultsView.swift
+│   │   ├── MainTabView.swift               # Translucent Navigation Shell & Tab Coordinator
+│   │   ├── FloatingBottomBar.swift         # Translucent Floating Bottom Menu (iOS Glass Dock)
+│   │   ├── TranslucentSideMenu.swift       # Translucent Slide-Out Menu Drawer (TailAdmin Sidebar)
+│   │   ├── TailAdminDashboardView.swift    # 4-Card Metric Grid, Turnout Chart, Checkpoints Table
+│   │   ├── VoterBoothPortalView.swift      # Blind Credential Request & Voting Booth Portal
+│   │   ├── AuditExplorerView.swift         # Merkle Tree Visualizer, EVM Anchor & 5 Q7 Demos
+│   │   ├── RolesProfileView.swift          # Live Role Switcher & Hardware Keychain Vault
+│   │   ├── LoginView.swift                 # TailAdmin styled Login View
+│   │   ├── ElectionsView.swift             # Election Catalog & Status Filter Pills
+│   │   ├── CandidateListView.swift         # Candidate Nominees & Manifest SHA256 Inspector
+│   │   ├── CredentialIssueView.swift       # RFC 9474 Blind Token Reservation
+│   │   ├── VotingBoothView.swift           # Ephemeral Booth Session Launcher
+│   │   ├── ReceiptView.swift               # Inclusion Tracker & Merkle Proof Detail
+│   │   ├── VerificationView.swift          # Standalone Evidence Package Verifier
+│   │   ├── ResultsView.swift               # Verifiable Results & Candidate Tallies
+│   │   ├── MerkleAuditDetailSheet.swift    # Cryptographic Checkpoint Inspector Sheet
+│   │   ├── ManifestInspectorSheet.swift    # Signed Election Manifest Inspector Sheet
+│   │   ├── MerkleProofSheet.swift          # JSON Inclusion Proof Inspector Sheet
+│   │   ├── CandidateDetailSheet.swift      # Candidate Manifesto & Policy Sheet
+│   │   ├── ElectionGuidelinesSheet.swift   # Campus Voting Guidelines Sheet
+│   │   └── InstitutionalSecuritySheet.swift# Cryptographic Security Architecture Sheet
 │   ├── Services/
 │   │   ├── ApiClient.swift
 │   │   ├── KeychainService.swift
 │   │   └── BoothSessionHandler.swift
 │   └── DesignSystem/
-│       ├── ColorTokens.swift
-│       ├── Typography.swift
-│       └── StateBadges.swift
+│       ├── ColorTokens.swift               # TailAdmin Brand & State Color Tokens
+│       ├── Typography.swift                # Institutional & Monospaced Digest Typography
+│       ├── GlassModifiers.swift            # Ultra-Thin Material & Specular Border Modifiers
+│       ├── StateBadges.swift               # Election, Receipt & Credential Status Badges
+│       ├── MerkleVisualizer.swift          # Interactive Node Tree Visualizer
+│       ├── SpringAnimations.swift          # Apple Fluid Spring Timing Tokens
+│       └── HapticFeedback.swift            # UIImpactFeedbackGenerator Tactile Engine
 └── HimVoteTests/
     ├── MockApiClient.swift
     ├── KeychainServiceTests.swift
@@ -60,7 +79,10 @@ apps/ios/
     ├── CredentialViewModelTests.swift
     ├── VotingViewModelTests.swift
     ├── ReceiptViewModelTests.swift
-    └── AuditorViewModelTests.swift
+    ├── AuditorViewModelTests.swift
+    ├── BoothSessionHandlerTests.swift
+    ├── ElectionsViewModelTests.swift
+    └── DesignSystemTests.swift             # Token, Floating Menu & Glass Component Tests
 ```
 
 ## Security Implementation Details

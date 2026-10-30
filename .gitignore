@@ -1,17 +1,19 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node / Next.js
 node_modules/
 .next/
-out/
-*.tsbuildinfo
-.env
-.env.*
-!.env.example
-coverage/
-playwright-report/
-test-results/
 dist/
+out/
 build/
-cache/
-TestResults/
+.build/
+*.tsbuildinfo
+
+# Python test / coverage
+.pytest_cache/
 .coverage
 *.coverage
 __pycache__/
@@ -19,6 +21,7 @@ __pycache__/
 .gradle/
 .kotlin/
 chain/cache/
+cache/
 chain/out/
 *.sqlite3
 *.sqlite
@@ -38,3 +41,6 @@ bin/
 obj/
 *.dll
 *.pdb
+prompt1.md
+prompt2.md
+eCommerce Dashboard _ TailAdmin - Tailwind CSS Admin Dashboard Template.html

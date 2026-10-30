@@ -241,6 +241,14 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
   const fetchImpl = options.fetchImpl ?? fetch;
   let inMemorySessionToken: string | null = null;
 
+  if (typeof window !== "undefined") {
+    try {
+      inMemorySessionToken = sessionStorage.getItem("himvote_session_token");
+    } catch {
+      // sessionStorage unavailable
+    }
+  }
+
   async function request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T, message: string): Promise<T> {
     if (baseUrl === null) {
       throw new IdentityApiError({ code: "IDENTITY_API_CONFIG_INVALID", message: "The identity service URL is invalid.", status: 503, retryable: false });
@@ -277,8 +285,14 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       }, isLoginResponse, "The identity service returned an invalid login response.");
       if (response.mfa_required) {
         inMemorySessionToken = null;
+        if (typeof window !== "undefined") {
+          try { sessionStorage.removeItem("himvote_session_token"); } catch {}
+        }
       } else if (response.session_token) {
         inMemorySessionToken = response.session_token;
+        if (typeof window !== "undefined") {
+          try { sessionStorage.setItem("himvote_session_token", response.session_token); } catch {}
+        }
       } else {
         throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
       }
@@ -290,6 +304,9 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
         await request("/v1/auth/logout", { method: "POST" }, (value): value is Record<string, unknown> => isRecord(value) && value.status === "logged_out", "The identity service returned an invalid logout response.");
       } finally {
         inMemorySessionToken = null;
+        if (typeof window !== "undefined") {
+          try { sessionStorage.removeItem("himvote_session_token"); } catch {}
+        }
       }
     },
 

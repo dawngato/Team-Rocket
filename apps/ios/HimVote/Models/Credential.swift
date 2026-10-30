@@ -109,4 +109,16 @@ public struct Credential: Codable, Identifiable, Sendable, Equatable {
         self.status = status
         self.issuedAtUtc = issuedAtUtc
     }
+    
+    public var blindedRequest: String {
+        blindedSecret ?? ""
+    }
+    
+    public var credentialToken: String {
+        unblindedSignature ?? blindSignatureResponse ?? ""
+    }
+    
+    public var nullifier: String {
+        String((blindedSecret ?? electionId).prefix(16))
+    }
 }

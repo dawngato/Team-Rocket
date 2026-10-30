@@ -41,7 +41,24 @@ if DATABASE_URL.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
     engine_kwargs["poolclass"] = StaticPool
 
-engine = create_engine(DATABASE_URL, **engine_kwargs)
+try:
+    engine = create_engine(DATABASE_URL, **engine_kwargs)
+    with engine.connect() as conn:
+        pass
+except Exception as exc:
+    # TR-004: Fail loudly in production and staging; do not silently fallback to in-memory SQLite
+    if settings.environment.lower() in ("production", "staging"):
+        raise RuntimeError(
+            f"Database connection failed in production/staging environment ({settings.environment}): {exc}. "
+            "Silent fallback to in-memory SQLite is disabled."
+        ) from exc
+    
+    DATABASE_URL = "sqlite:///:memory:"
+    engine = create_engine(
+        DATABASE_URL,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool
+    )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

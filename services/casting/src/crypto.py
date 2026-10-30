@@ -46,8 +46,9 @@ except ImportError:
 
 def canonical_json_bytes(obj: Any) -> bytes:
     """
-    Serialize Python dictionary to RFC 8785 canonical JSON UTF 8 bytes.
-    Ensures keys are lexicographically sorted and whitespace is stripped.
+    Serialize Python dictionary to RFC 8785 canonical JSON UTF-8 bytes.
+    Ensures keys are lexicographically sorted by UTF-16 code units,
+    whitespace is stripped, and floats are disallowed per HimVote specification.
     """
     if HAVE_JCS:
         return _jcs_canonicalize(obj)
