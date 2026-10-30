@@ -111,6 +111,35 @@ python3 apps/linux/himvote_linux.py --check-origins
 
 ---
 
+
+---
+
+## PROMPT3 Premium 3D UI & Desktop Audit Workflows
+
+The Linux client implements the complete PROMPT3 visual realism and thick-client desktop audit contract:
+
+1. **Interactive 3D Ballot Box Enclave Model (`BallotBox3DCanvas`)**:
+   - Physically plausible isometric 3D projection with studio lighting, realistic paper insertion slot, entering ballot card, teal/pearl materials, and floating cryptographic verification marks.
+   - Interactive mouse drag/tilt rotation in all axes.
+   - Accessible **Reduced Motion** toggle adhering to WCAG 2.2 AA.
+
+2. **Interactive 6-Stage Isometric Evidence Pipeline (`IsometricEvidencePipelineCanvas`)**:
+   - Visualizes the complete trust-boundary pipeline: `Identity Roster` -> `Anonymous Token` -> `Casting Enclave` -> `Merkle Log` -> `Witness Checkpoint` -> `Offline Verifier`.
+   - Connected via animated conduit pipes with real-time stage selection and metadata inspection.
+
+3. **Split-View Results Comparison & Discrepancy Analyzer (`ResultsComparisonModal`, DESKTOP-05)**:
+   - Side-by-side comparison of Announced / Certified Results against Independently Recomputed Engine Totals.
+   - Candidate-by-candidate delta discrepancy analysis (`MATCH (0)` with green chip, `DIFF (+X)` with red chip).
+   - Direct export of sanitized Markdown and JSON Discrepancy Audit Reports.
+
+4. **DESKTOP-01 through DESKTOP-06 Action Workflows**:
+   - `DESKTOP-01`: Network-independent offline audit home with quick report loading.
+   - `DESKTOP-02`: Safe archive loading and memory clearing (`Discard Archive`).
+   - `DESKTOP-03`: Independent trusted key pin store with fingerprint comparison.
+   - `DESKTOP-04`: Interactive Merkle proof explorer and pipeline visualization.
+   - `DESKTOP-05`: Split-view results comparison and discrepancy detection.
+   - `DESKTOP-06`: Report export and one-click reproduction CLI command generation (`Copy CLI`).
+
 ## Automated Testing
 
 Run the full suite of unit, integration, and UI tests:

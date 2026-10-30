@@ -11,6 +11,19 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+
+def _safe_create_tk() -> tk.Tk:
+    import time
+    last_err = None
+    for _ in range(5):
+        try:
+            r = tk.Tk()
+            return r
+        except Exception as e:
+            last_err = e
+            time.sleep(0.15)
+    raise last_err
+
 from apps.linux.himvote_linux import (
     CHIP_DANGER_BG,
     CHIP_DANGER_FG,
@@ -105,7 +118,7 @@ def test_chip_variant_mapping() -> None:
 @pytest.mark.skipif(not os.environ.get("DISPLAY"), reason="A display server is required for Tk window testing")
 def test_status_chip_widget_lifecycle() -> None:
     """Test status chip creation, updates, and compatibility configure calls."""
-    root = tk.Tk()
+    root = _safe_create_tk()
     root.withdraw()
 
     chip = StatusChip(root, text="ACTIVE", variant="success")
@@ -129,7 +142,7 @@ def test_status_chip_widget_lifecycle() -> None:
 @pytest.mark.skipif(not os.environ.get("DISPLAY"), reason="A display server is required for Tk window testing")
 def test_merkle_tree_visualizer_canvas_rendering_and_highlights() -> None:
     """Test Merkle tree canvas visualizer drawing, step highlighting, and reset."""
-    root = tk.Tk()
+    root = _safe_create_tk()
     root.withdraw()
 
     visualizer = MerkleTreeVisualizer(root)
@@ -220,7 +233,7 @@ def test_merkle_tree_visualizer_canvas_rendering_and_highlights() -> None:
 @pytest.mark.skipif(not os.environ.get("DISPLAY"), reason="A display server is required for Tk window testing")
 def test_receipt_inspection_modal_dialog() -> None:
     """Test cryptographic receipt modal layout, copy actions, and archive check."""
-    root = tk.Tk()
+    root = _safe_create_tk()
     root.withdraw()
 
     demos = demo_receipts()
