@@ -1,4 +1,4 @@
-import type { Candidate, Election, ElectionState } from "./types";
+import type { Candidate, Election, ElectionState, EvidencePackage, PublishedResults } from "./types";
 
 export interface ElectionClientOptions {
   baseUrl?: string;
@@ -196,6 +196,23 @@ function toElection(value: unknown, expectedId?: string): Election {
   };
 }
 
+function isPublishedResults(value: unknown, expectedElectionId: string): value is PublishedResults {
+  if (!isRecord(value) || value.election_id !== expectedElectionId) return false;
+  if (typeof value.manifest_digest !== "string" || typeof value.published_at_utc !== "string" || Number.isNaN(Date.parse(value.published_at_utc))) return false;
+  if (typeof value.total_ballots !== "number" || !Number.isSafeInteger(value.total_ballots) || value.total_ballots < 0) return false;
+  if (typeof value.privacy_limited !== "boolean" || !isRecord(value.tally)) return false;
+  return Object.values(value.tally).every((count) => typeof count === "number" && Number.isSafeInteger(count) && count >= 0);
+}
+
+function isEvidencePackage(value: unknown, expectedElectionId: string): value is EvidencePackage {
+  return isRecord(value) &&
+    value.election_id === expectedElectionId &&
+    typeof value.manifest_digest === "string" &&
+    typeof value.final_checkpoint_digest === "string" &&
+    typeof value.anchor_tx_hash === "string" &&
+    typeof value.auditor_signature === "string";
+}
+
 function normalizeBaseUrl(value: string): string | null {
   if (!value.trim()) return "";
   try {
@@ -297,6 +314,28 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
         });
       }
       return toElection(await request(`/v1/elections/${encodeURIComponent(electionId)}`), electionId);
+    },
+
+    async getResults(electionId: string): Promise<PublishedResults> {
+      if (!/^[A-Za-z0-9][A-Za-z0-9._~:-]{0,255}$/.test(electionId)) {
+        throw new ElectionApiError({ code: "ELECTION_ID_INVALID", message: "The election identifier is invalid.", status: 422, retryable: false });
+      }
+      const body = await request(`/v1/elections/${encodeURIComponent(electionId)}/results`);
+      if (!isPublishedResults(body, electionId)) {
+        throw new ElectionApiError({ code: "RESULT_RESPONSE_INVALID", message: "The election service returned an invalid published result.", status: 502, retryable: false });
+      }
+      return body;
+    },
+
+    async getEvidence(electionId: string): Promise<EvidencePackage> {
+      if (!/^[A-Za-z0-9][A-Za-z0-9._~:-]{0,255}$/.test(electionId)) {
+        throw new ElectionApiError({ code: "ELECTION_ID_INVALID", message: "The election identifier is invalid.", status: 422, retryable: false });
+      }
+      const body = await request(`/v1/elections/${encodeURIComponent(electionId)}/evidence`);
+      if (!isEvidencePackage(body, electionId)) {
+        throw new ElectionApiError({ code: "EVIDENCE_RESPONSE_INVALID", message: "The election service returned incomplete evidence.", status: 502, retryable: false });
+      }
+      return body;
     },
   };
 }

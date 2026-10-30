@@ -47,6 +47,9 @@ RECOVERY_EXPIRE_HOURS = int(os.getenv("RECOVERY_EXPIRE_HOURS", "1"))
 # The development delivery mode returns a token only to the local test client.
 # Production requires an external delivery adapter before this flow is enabled.
 RECOVERY_DELIVERY_MODE = os.getenv("RECOVERY_DELIVERY_MODE", "development").strip().lower()
+# Local development may return a one-time invitation token to the test/demo
+# caller. Production requires a separately operated notification adapter.
+INVITATION_DELIVERY_MODE = os.getenv("INVITATION_DELIVERY_MODE", "development").strip().lower()
 INVITATION_EXPIRE_DAYS = int(os.getenv("INVITATION_EXPIRE_DAYS", "7"))
 
 # Cryptography and Key Management

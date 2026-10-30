@@ -6,7 +6,7 @@ import { AccessibleDialog } from "@/components/AccessibleDialog";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { Vote, ArrowRight, ShieldCheck, CheckCircle2, Lock, AlertCircle } from "lucide-react";
+import { Vote, ArrowRight, ShieldCheck, Lock, AlertCircle } from "lucide-react";
 import {
   castingClient,
   getEngineHandoffStorageKey,
@@ -22,7 +22,6 @@ export default function CastBallotPage() {
   const [election, setElection] = useState<Election | null>(null);
   const [isLoadingElection, setIsLoadingElection] = useState(true);
   const [electionError, setElectionError] = useState<string | null>(null);
-  const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [engineHandoff, setEngineHandoff] = useState<EngineBallotHandoff | null>(null);
@@ -65,8 +64,6 @@ export default function CastBallotPage() {
       setHandoffError("The engine handoff could not be read. Return to the supported booth and try again.");
     }
   }, [electionId]);
-
-  const selectedCandidate = election?.candidates?.find((c) => c.id === selectedCandidateId);
 
   const handleConfirmVote = async () => {
     if (!election || !engineHandoff) {
@@ -139,44 +136,10 @@ export default function CastBallotPage() {
           </p>
         </div>
 
-        <fieldset className="space-y-3">
-          <legend className="sr-only">Select your candidate for {election.contest}</legend>
-          {election.candidates?.map((cand) => {
-            const isSelected = selectedCandidateId === cand.id;
-            return (
-              <label
-                key={cand.id}
-                className={`min-h-[44px] flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                  isSelected
-                    ? "border-[#157E92] bg-[#157E92]/5 dark:bg-[#157E92]/15 shadow-sm"
-                    : "border-slate-200 dark:border-[#1E3352] hover:border-slate-300 dark:hover:border-slate-700 bg-white dark:bg-[#132135]"
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="candidate_selection"
-                    value={cand.id}
-                    checked={isSelected}
-                    onChange={() => setSelectedCandidateId(cand.id)}
-                    className="w-5 h-5 text-[#157E92] focus:ring-[#157E92] border-slate-300"
-                  />
-                  <div>
-                    <span className="font-bold text-sm text-[#10233F] dark:text-white block">
-                      {cand.name}
-                    </span>
-                    <span className="text-xs text-slate-500">
-                      {cand.contest}
-                    </span>
-                  </div>
-                </div>
-                {isSelected && (
-                  <CheckCircle2 className="w-5 h-5 text-[#157E92]" aria-hidden="true" />
-                )}
-              </label>
-            );
-          })}
-        </fieldset>
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:border-[#1E3352] dark:bg-slate-900/40 dark:text-slate-300" role="status">
+          <strong className="block text-sm text-[#10233F] dark:text-white">Selection is controlled by the supported voting engine</strong>
+          <span className="mt-1 block">This page deliberately does not turn a local candidate click into a ballot. The approved engine must create the encrypted ballot and proofs after the voter reviews the authoritative manifest.</span>
+        </div>
 
         <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] space-y-4">
           <div
@@ -209,7 +172,7 @@ export default function CastBallotPage() {
 
           <button
             type="button"
-            disabled={!selectedCandidateId || !engineHandoff}
+            disabled={!engineHandoff}
             onClick={() => setIsReviewOpen(true)}
             className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] shadow-sm transition-all duration-75 ease-out select-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
           >
@@ -228,13 +191,9 @@ export default function CastBallotPage() {
       >
         <div className="space-y-4">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] space-y-2">
-            <span className="text-xs font-mono uppercase text-slate-500 block">Selected Option</span>
-            <strong className="text-lg text-[#10233F] dark:text-white block">
-              {selectedCandidate?.name}
-            </strong>
-            <span className="text-xs text-slate-600 dark:text-slate-400 block">
-              Contest: {selectedCandidate?.contest}
-            </span>
+            <span className="text-xs font-mono uppercase text-slate-500 block">Engine handoff</span>
+            <strong className="text-lg text-[#10233F] dark:text-white block">Encrypted ballot ready for review</strong>
+            <span className="text-xs text-slate-600 dark:text-slate-400 block">The supported engine supplied the election-bound ciphertext and proof artifacts.</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">

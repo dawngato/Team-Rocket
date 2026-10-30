@@ -5,7 +5,14 @@ Enforces separation of duties: creators can never approve their own requests.
 
 from datetime import datetime, timedelta, timezone
 import hashlib
-from services.identity_issuer.models import User, RoleDefinition, RoleAssignment, Session as UserSession
+import pyotp
+from services.identity_issuer.models import (
+    User,
+    RoleDefinition,
+    RoleAssignment,
+    Invitation,
+    Session as UserSession,
+)
 from services.identity_issuer.crypto.hashing import hash_password
 
 
@@ -42,6 +49,7 @@ def create_authenticated_user(db_session, email: str, role_name: str, external_i
     session = UserSession(
         user_id=user.id,
         token_hash=token_hash,
+        is_mfa_authenticated=True,
         expires_at=datetime.now(timezone.utc) + timedelta(hours=4),
     )
     db_session.add(session)
@@ -53,17 +61,60 @@ def create_authenticated_user(db_session, email: str, role_name: str, external_i
 def test_admin_invitations_and_role_requests(client, db_session):
     """Verify administrator invitation creation and role grant submission."""
     admin_user, admin_token = create_authenticated_user(
-        db_session, "admin1@institution.edu", "administrator", "ADM001"
+        db_session, "admin1@institution.edu", "super_admin", "ADM001"
     )
 
-    # Step 1: Create administrator invitation
+    # Step 1: Create a scoped staff invitation. Ordinary administrators cannot
+    # mint another administrator or an independent auditor.
     inv_resp = client.post(
         "/v1/admin/invitations",
         headers={"Authorization": f"Bearer {admin_token}"},
-        json={"email": "newadmin@institution.edu", "role": "administrator", "scope": "department_cse"},
+        json={"email": "newteacher@institution.edu", "role": "teacher", "scope": "department_cse"},
     )
     assert inv_resp.status_code == 201
     assert inv_resp.json()["status"] == "invitation_created"
+
+    # Invitation redemption is a real activation path, not just token creation.
+    redeem_resp = client.post(
+        "/v1/auth/invitations/redeem",
+        json={
+            "invitation_token": inv_resp.json()["token"],
+            "password": "NewAdminPassword2026!",
+        },
+    )
+    assert redeem_resp.status_code == 201
+    redeemed = redeem_resp.json()
+    assert redeemed["role"] == "teacher"
+    assert redeemed["scope"] == "department_cse"
+    invitation = db_session.query(Invitation).filter_by(id=inv_resp.json()["invitation_id"]).one()
+    assert invitation.status == "REDEEMED"
+    assigned_role = db_session.query(RoleDefinition).filter_by(name="teacher").one()
+    assignment = db_session.query(RoleAssignment).filter_by(
+        user_id=redeemed["user_id"],
+        role_id=assigned_role.id,
+        scope_id="department_cse",
+    ).one()
+    assert assignment.scope_type == "delegated"
+    login_resp = client.post(
+        "/v1/auth/login",
+        json={
+            "email": "newteacher@institution.edu",
+            "password": "NewAdminPassword2026!",
+            "mfa_token": pyotp.TOTP(redeemed["totp_secret"]).now(),
+        },
+    )
+    assert login_resp.status_code == 200
+    assert login_resp.json()["mfa_required"] is False
+
+    # A redeemed token cannot provision a second account.
+    replay_resp = client.post(
+        "/v1/auth/invitations/redeem",
+        json={
+            "invitation_token": inv_resp.json()["token"],
+            "password": "NewAdminPassword2026!",
+        },
+    )
+    assert replay_resp.status_code == 400
 
     # Step 2: Request role grant for target user
     target_user, _ = create_authenticated_user(
@@ -102,6 +153,55 @@ def test_admin_invitations_and_role_requests(client, db_session):
     )
     assert approve_resp.status_code == 200
     assert approve_resp.json()["status"] == "decision_recorded"
+    target_assignment = db_session.query(RoleAssignment).join(
+        RoleDefinition, RoleAssignment.role_id == RoleDefinition.id
+    ).filter(
+        RoleAssignment.user_id == target_user.id,
+        RoleDefinition.name == "election_officer",
+        RoleAssignment.scope_id == "annual_election_2026",
+    ).one()
+    assert target_assignment.scope_type == "delegated"
+
+
+def test_admin_cannot_delegate_uncontrolled_roles(client, db_session):
+    """Ordinary admin workflows cannot mint super admin or auditor roles."""
+    admin_user, admin_token = create_authenticated_user(
+        db_session, "scoped_admin@institution.edu", "administrator", "ADM_SCOPE"
+    )
+    target_user, _ = create_authenticated_user(
+        db_session, "target_teacher@institution.edu", "teacher", "TCH_SCOPE"
+    )
+
+    response = client.post(
+        "/v1/admin/role-grant-requests",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "user_id": target_user.id,
+            "role": "super_admin",
+            "scope": "*",
+            "justification": "must be rejected",
+        },
+    )
+    assert response.status_code == 403
+
+    response = client.post(
+        "/v1/admin/role-grant-requests",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={
+            "user_id": target_user.id,
+            "role": "roster_approver",
+            "scope": "*",
+            "justification": "must be independently provisioned",
+        },
+    )
+    assert response.status_code == 403
+
+    response = client.post(
+        "/v1/admin/invitations",
+        headers={"Authorization": f"Bearer {admin_token}"},
+        json={"email": "auditor@institution.edu", "role": "independent_auditor", "scope": "*"},
+    )
+    assert response.status_code == 403
 
 
 def test_admin_audit_events_endpoint(client, db_session):

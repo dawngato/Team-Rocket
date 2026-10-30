@@ -7,7 +7,9 @@ import base64
 import hashlib
 import json
 import os
+import posixpath
 import shutil
+import stat
 import sys
 import tarfile
 import tempfile
@@ -83,6 +85,7 @@ STATUS_LIMITED = "LIMITED"
 STATUS_ASSUMED = "ASSUMED"
 STATUS_NOT_SUPPORTED = "NOT_SUPPORTED"
 STATUS_UNVERIFIABLE = "UNVERIFIABLE"
+STATUS_PASS_WITH_LIMITATIONS = "PASS_WITH_LIMITATIONS"
 
 # Failure code constants
 FAIL_BAD_SIGNATURE = "BAD_SIGNATURE"
@@ -100,6 +103,8 @@ MAX_ARCHIVE_SIZE_BYTES = 100 * 1024 * 1024
 MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024
 MAX_FILE_COUNT = 10000
 MAX_COMPRESSION_RATIO = 100
+MAX_INPUT_FILE_SIZE_BYTES = 50 * 1024 * 1024
+MAX_MEMBER_NAME_LENGTH = 4096
 
 
 class BadArchiveError(Exception):
@@ -171,11 +176,15 @@ def safe_json_loads(data: str | bytes) -> Any:
     def reject_float_hook(val: str) -> None:
         raise BadArchiveError(f"Floats not permitted in canonical records: {val}")
 
+    def reject_constant_hook(val: str) -> None:
+        raise BadArchiveError(f"Non finite JSON number is not permitted: {val}")
+
     try:
         return json.loads(
             text,
             object_pairs_hook=duplicate_key_hook,
             parse_float=reject_float_hook,
+            parse_constant=reject_constant_hook,
         )
     except json.JSONDecodeError as err:
         raise BadArchiveError(f"Malformed JSON data: {err}") from err
@@ -375,8 +384,55 @@ def get_public_key_fingerprint(public_key: Any) -> str:
         return ""
 
 
+def _load_pinned_key_entries(key_info: Any, label: str) -> List[Dict[str, Any]]:
+    """Load trust-root entries and validate optional out-of-band fingerprints."""
+    entries = key_info if isinstance(key_info, list) else [key_info]
+    if not entries or any(item is None for item in entries):
+        raise UnverifiableError(f"{label} trust root is empty")
+
+    loaded: List[Dict[str, Any]] = []
+    for item in entries:
+        key = load_public_key_from_info(item)
+        key_id = item.get("key_id") if isinstance(item, dict) else None
+        pinned_fingerprint = None
+        if isinstance(item, dict):
+            pinned_fingerprint = item.get("fingerprint") or item.get("public_key_fingerprint")
+        actual_fingerprint = get_public_key_fingerprint(key)
+        if pinned_fingerprint and normalize_digest(pinned_fingerprint) != normalize_digest(actual_fingerprint):
+            raise UnverifiableError(f"{label} fingerprint does not match pinned key material")
+        loaded.append({"key": key, "key_id": key_id, "fingerprint": actual_fingerprint})
+    return loaded
+
+
+def _select_pinned_key(
+    entries: List[Dict[str, Any]],
+    claimed_key_id: Optional[str],
+    label: str,
+) -> Dict[str, Any]:
+    """Select a pinned key, requiring an identifier when rotation is configured."""
+    if claimed_key_id:
+        matches = [entry for entry in entries if entry.get("key_id") == claimed_key_id]
+        if len(matches) != 1:
+            raise UnverifiableError(f"{label} key id is not present in the external trust pins")
+        return matches[0]
+    if len(entries) != 1:
+        raise UnverifiableError(f"{label} key id is required when multiple pinned keys are configured")
+    return entries[0]
+
+
+def _declared_key_matches(key: Any, declared_key: Any, label: str) -> None:
+    """Reject a checkpoint that claims a public key different from the pinned root."""
+    if declared_key is None:
+        return
+    declared = load_public_key_from_info(declared_key)
+    if get_public_key_fingerprint(declared) != get_public_key_fingerprint(key):
+        raise CryptoAuthError(f"{label} public key does not match the pinned trust root")
+
+
 def safe_inspect_directory(dir_path: str) -> None:
     """Inspect a directory to reject symlinks and enforce file size limits."""
+    if os.path.islink(dir_path) or not os.path.isdir(dir_path):
+        raise BadArchiveError("Export directory must be a real directory")
     file_count = 0
     total_size = 0
 
@@ -389,6 +445,8 @@ def safe_inspect_directory(dir_path: str) -> None:
             full_f = os.path.join(root, f)
             if os.path.islink(full_f):
                 raise BadArchiveError(f"Symlinks are prohibited: {full_f}")
+            if not stat.S_ISREG(os.lstat(full_f).st_mode):
+                raise BadArchiveError(f"Only regular files are permitted: {full_f}")
             file_count += 1
             if file_count > MAX_FILE_COUNT:
                 raise BadArchiveError("File count exceeds maximum permitted limit")
@@ -400,14 +458,68 @@ def safe_inspect_directory(dir_path: str) -> None:
 
 def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
     """Extract an archive safely with path traversal and symlink and size limit checks."""
-    if not os.path.exists(archive_path):
+    if os.path.islink(archive_path) or not os.path.isfile(archive_path):
         raise BadArchiveError(f"Archive file not found: {archive_path}")
+
+    os.makedirs(extract_dir, exist_ok=True)
+    if os.path.islink(extract_dir) or not os.path.isdir(extract_dir):
+        raise BadArchiveError("Extraction target must be a real directory")
+
+    def validate_name(name: str) -> Tuple[str, bool]:
+        if not name or len(name) > MAX_MEMBER_NAME_LENGTH:
+            raise BadArchiveError("Archive entry name is empty or too long")
+        if "\x00" in name or "\\" in name:
+            raise BadArchiveError("Archive entry contains an unsafe path separator")
+        if any(ord(char) > 127 for char in name):
+            raise BadArchiveError("Non ASCII archive entry names are not permitted")
+        is_dir = name.endswith("/")
+        raw_name = name[:-1] if is_dir else name
+        if not raw_name or raw_name == "." or posixpath.normpath(raw_name) != raw_name:
+            raise BadArchiveError(f"Non canonical archive entry name: {name}")
+        if raw_name.startswith("/") or any(part == ".." for part in raw_name.split("/")):
+            raise BadArchiveError(f"Path traversal detected in archive entry: {name}")
+        if any(part == "" for part in raw_name.split("/")):
+            raise BadArchiveError(f"Empty archive path component: {name}")
+        return raw_name, is_dir
+
+    extract_real = os.path.realpath(extract_dir)
+
+    def safe_target(name: str) -> str:
+        target = os.path.join(extract_dir, *name.split("/"))
+        target_real = os.path.realpath(target)
+        if not (target_real == extract_real or target_real.startswith(extract_real + os.sep)):
+            raise BadArchiveError(f"Path traversal target outside boundary: {name}")
+        current = extract_dir
+        for component in name.split("/"):
+            current = os.path.join(current, component)
+            if os.path.islink(current):
+                raise BadArchiveError(f"Symlink path component is prohibited: {name}")
+        return target
+
+    def write_member(target: str, source: Any, expected_size: int, label: str) -> None:
+        parent = os.path.dirname(target)
+        os.makedirs(parent, exist_ok=True)
+        if os.path.islink(parent) or not os.path.isdir(parent):
+            raise BadArchiveError(f"Unsafe extraction parent: {label}")
+        if os.path.lexists(target):
+            raise BadArchiveError(f"Archive entry would overwrite an existing path: {label}")
+        copied = 0
+        with open(target, "xb") as destination:
+            while True:
+                chunk = source.read(1024 * 1024)
+                if not chunk:
+                    break
+                copied += len(chunk)
+                if copied > expected_size:
+                    raise BadArchiveError(f"Archive member expanded beyond declared size: {label}")
+                destination.write(chunk)
+        if copied != expected_size:
+            raise BadArchiveError(f"Archive member size mismatch: {label}")
 
     archive_size = os.path.getsize(archive_path)
     if archive_size > MAX_ARCHIVE_SIZE_BYTES:
         raise BadArchiveError("Archive file size exceeds maximum limit")
 
-    extract_real = os.path.realpath(extract_dir)
     file_count = 0
     total_uncompressed = 0
 
@@ -415,27 +527,18 @@ def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
         with zipfile.ZipFile(archive_path, "r") as zf:
             seen_names: Set[str] = set()
             for info in zf.infolist():
-                name = info.filename
-                if "\x00" in name:
-                    raise BadArchiveError("NUL byte in archive entry name")
-                if any(ord(char) > 127 for char in name):
-                    raise BadArchiveError("Non ASCII archive entry names are not permitted")
-                normalized_name = unicodedata.normalize("NFC", name)
-                if normalized_name != name:
-                    raise BadArchiveError("Non canonical Unicode archive entry name")
+                name, is_dir = validate_name(info.filename)
                 if name in seen_names:
                     raise BadArchiveError(f"Duplicate archive entry: {name}")
                 seen_names.add(name)
-                if name.startswith("/") or name.startswith("\\") or ".." in name.split("/") or ".." in name.split("\\"):
-                    raise BadArchiveError(f"Path traversal detected in archive entry: {name}")
 
-                target = os.path.realpath(os.path.join(extract_dir, name))
-                if not (target == extract_real or target.startswith(extract_real + os.sep)):
-                    raise BadArchiveError(f"Path traversal target outside boundary: {name}")
-
-                is_symlink = ((info.external_attr >> 16) & 0o120000) == 0o120000
-                if is_symlink:
+                mode = (info.external_attr >> 16) & 0o170000
+                if mode == stat.S_IFLNK:
                     raise BadArchiveError(f"Symlinks are prohibited in archive: {name}")
+                if mode not in (0, stat.S_IFREG, stat.S_IFDIR):
+                    raise BadArchiveError(f"Special archive entry is prohibited: {name}")
+                if mode == stat.S_IFDIR:
+                    is_dir = True
 
                 file_count += 1
                 if file_count > MAX_FILE_COUNT:
@@ -447,34 +550,30 @@ def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
                     compression_ratio = info.file_size / info.compress_size
                     if compression_ratio > MAX_COMPRESSION_RATIO:
                         raise BadArchiveError("Archive compression ratio exceeds limit")
-
-            zf.extractall(extract_dir)
+                target = safe_target(name)
+                if is_dir:
+                    os.makedirs(target, exist_ok=True)
+                    if os.path.islink(target) or not os.path.isdir(target):
+                        raise BadArchiveError(f"Unsafe archive directory: {name}")
+                else:
+                    with zf.open(info, "r") as source:
+                        write_member(target, source, info.file_size, name)
         return
 
     if tarfile.is_tarfile(archive_path):
         with tarfile.open(archive_path, "r:*") as tf:
             seen_names = set()
             for member in tf.getmembers():
-                name = member.name
-                if "\x00" in name:
-                    raise BadArchiveError("NUL byte in archive entry name")
-                if any(ord(char) > 127 for char in name):
-                    raise BadArchiveError("Non ASCII archive entry names are not permitted")
-                normalized_name = unicodedata.normalize("NFC", name)
-                if normalized_name != name:
-                    raise BadArchiveError("Non canonical Unicode archive entry name")
+                name, is_dir = validate_name(member.name)
                 if name in seen_names:
                     raise BadArchiveError(f"Duplicate archive entry: {name}")
                 seen_names.add(name)
-                if name.startswith("/") or name.startswith("\\") or ".." in name.split("/") or ".." in name.split("\\"):
-                    raise BadArchiveError(f"Path traversal detected in tar entry: {name}")
-
-                target = os.path.realpath(os.path.join(extract_dir, name))
-                if not (target == extract_real or target.startswith(extract_real + os.sep)):
-                    raise BadArchiveError(f"Path traversal target outside boundary: {name}")
-
                 if member.issym() or member.islnk():
                     raise BadArchiveError(f"Symlinks are prohibited in tar: {name}")
+                if not member.isdir() and not member.isreg():
+                    raise BadArchiveError(f"Only regular files and directories are permitted in tar: {name}")
+                if member.isdir():
+                    is_dir = True
 
                 file_count += 1
                 if file_count > MAX_FILE_COUNT:
@@ -482,8 +581,17 @@ def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
                 total_uncompressed += member.size
                 if total_uncompressed > MAX_UNCOMPRESSED_SIZE_BYTES:
                     raise BadArchiveError("Tar archive uncompressed size exceeds limit")
-
-            tf.extractall(extract_dir)
+                target = safe_target(name)
+                if is_dir:
+                    os.makedirs(target, exist_ok=True)
+                    if os.path.islink(target) or not os.path.isdir(target):
+                        raise BadArchiveError(f"Unsafe archive directory: {name}")
+                else:
+                    source = tf.extractfile(member)
+                    if source is None:
+                        raise BadArchiveError(f"Tar regular file has no readable payload: {name}")
+                    with source:
+                        write_member(target, source, member.size, name)
         return
 
     raise BadArchiveError("Unsupported archive format. Expected zip or tar archive")
@@ -501,10 +609,12 @@ def get_verifier_sha256() -> str:
 
 def load_file_content(path: str) -> bytes:
     """Read file content safely."""
-    if not os.path.exists(path):
+    if os.path.islink(path) or not os.path.isfile(path):
         raise UnverifiableError(f"Required file does not exist: {path}")
-    if os.path.islink(path):
-        raise BadArchiveError(f"File cannot be a symlink: {path}")
+    if not stat.S_ISREG(os.lstat(path).st_mode):
+        raise BadArchiveError(f"File must be a regular file: {path}")
+    if os.path.getsize(path) > MAX_INPUT_FILE_SIZE_BYTES:
+        raise BadArchiveError(f"Input file exceeds maximum size: {path}")
     with open(path, "rb") as f:
         return f.read()
 
@@ -519,7 +629,11 @@ def _load_export_leaves(export_path: str) -> Tuple[str, List[Dict[str, Any]]]:
         raise BadArchiveError("Export target cannot be a symlink")
     if os.path.isfile(export_path):
         temp_dir = tempfile.mkdtemp(prefix="himvote_inclusion_")
-        safe_extract_archive(export_path, temp_dir)
+        try:
+            safe_extract_archive(export_path, temp_dir)
+        except Exception:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise
         export_dir = temp_dir
     else:
         safe_inspect_directory(export_path)
@@ -565,15 +679,24 @@ def verify_inclusion(
     witness_keys_info = trust_pins.get("witness_keys") or trust_pins.get("witness_public_key")
     if not witness_keys_info:
         raise UnverifiableError("Trust pins file is missing witness keys")
-    witness_infos = witness_keys_info if isinstance(witness_keys_info, list) else [witness_keys_info]
-    witness_keys = [load_public_key_from_info(item) for item in witness_infos]
+    witness_entries = _load_pinned_key_entries(witness_keys_info, "Witness")
+    selected_witness = _select_pinned_key(
+        witness_entries,
+        final_checkpoint.get("witness_key_id"),
+        "Witness",
+    )
+    _declared_key_matches(
+        selected_witness["key"],
+        final_checkpoint.get("witness_public_key"),
+        "Witness",
+    )
 
     checkpoint_data = dict(final_checkpoint)
     checkpoint_signature = checkpoint_data.pop("signature", None)
     if final_checkpoint.get("checkpoint_kind") != "FINAL" or not checkpoint_signature:
         raise CryptoAuthError("External checkpoint is not a signed FINAL")
     checkpoint_bytes = canonicalize_json(checkpoint_data)
-    if not any(verify_signature(key, checkpoint_bytes, checkpoint_signature) for key in witness_keys):
+    if not verify_signature(selected_witness["key"], checkpoint_bytes, checkpoint_signature):
         raise CryptoAuthError("External final checkpoint signature is invalid")
 
     election_id = tracker.get("election_id")
@@ -835,15 +958,13 @@ def audit_evidence(
     if not roster_approver_key_info or not issuer_key_info or not witness_keys_info:
         raise UnverifiableError("Trust pins file is missing required authority keys")
 
-    roster_approver_key = load_public_key_from_info(roster_approver_key_info)
-    issuer_key = load_public_key_from_info(issuer_key_info)
-
-    witness_keys: List[Any] = []
-    if isinstance(witness_keys_info, list):
-        for wk in witness_keys_info:
-            witness_keys.append(load_public_key_from_info(wk))
-    else:
-        witness_keys.append(load_public_key_from_info(witness_keys_info))
+    roster_entries = _load_pinned_key_entries(roster_approver_key_info, "Roster approver")
+    issuer_entries = _load_pinned_key_entries(issuer_key_info, "Issuer")
+    witness_entries = _load_pinned_key_entries(witness_keys_info, "Witness")
+    roster_approver_entry = _select_pinned_key(roster_entries, None, "Roster approver")
+    issuer_entry = _select_pinned_key(issuer_entries, None, "Issuer")
+    roster_approver_key = roster_approver_entry["key"]
+    issuer_key = issuer_entry["key"]
 
     # Step 9: Parser safety on export
     if not os.path.exists(export_path):
@@ -854,7 +975,11 @@ def audit_evidence(
 
     if os.path.isfile(export_path):
         temp_dir = tempfile.mkdtemp(prefix="himvote_verify_")
-        safe_extract_archive(export_path, temp_dir)
+        try:
+            safe_extract_archive(export_path, temp_dir)
+        except Exception:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise
         export_dir = temp_dir
     else:
         safe_inspect_directory(export_path)
@@ -901,6 +1026,10 @@ def audit_evidence(
             raise BadArchiveError("Roster approval must be a JSON object")
 
         roster_ok = True
+        if roster_approval.get("approver_key_id") and roster_approver_entry.get("key_id"):
+            if roster_approval.get("approver_key_id") != roster_approver_entry.get("key_id"):
+                roster_ok = False
+                failure_reasons.append(FAIL_BAD_SIGNATURE)
         if roster_approval.get("election_id") != election_id:
             roster_ok = False
             failure_reasons.append(FAIL_BAD_SIGNATURE)
@@ -965,6 +1094,10 @@ def audit_evidence(
             failure_reasons.append(FAIL_BAD_SIGNATURE)
 
         issuance_sig = issuance_closure.get("signature")
+        if issuance_closure.get("issuer_key_id") and issuer_entry.get("key_id"):
+            if issuance_closure.get("issuer_key_id") != issuer_entry.get("key_id"):
+                issuance_ok = False
+                failure_reasons.append(FAIL_BAD_SIGNATURE)
         if not issuance_sig:
             issuance_ok = False
             failure_reasons.append(FAIL_BAD_SIGNATURE)
@@ -1008,6 +1141,17 @@ def audit_evidence(
             checkpoint_ok = False
             failure_reasons.append(FAIL_BAD_SIGNATURE)
 
+        selected_witness = _select_pinned_key(
+            witness_entries,
+            final_checkpoint.get("witness_key_id"),
+            "Witness",
+        )
+        _declared_key_matches(
+            selected_witness["key"],
+            final_checkpoint.get("witness_public_key"),
+            "Witness",
+        )
+
         checkpoint_sig = final_checkpoint.get("signature")
         if not checkpoint_sig:
             checkpoint_ok = False
@@ -1016,11 +1160,9 @@ def audit_evidence(
             checkpoint_data_to_verify = dict(final_checkpoint)
             checkpoint_data_to_verify.pop("signature", None)
             checkpoint_canonical_bytes = canonicalize_json(checkpoint_data_to_verify)
-            witness_sig_valid = False
-            for wk in witness_keys:
-                if verify_signature(wk, checkpoint_canonical_bytes, checkpoint_sig):
-                    witness_sig_valid = True
-                    break
+            witness_sig_valid = verify_signature(
+                selected_witness["key"], checkpoint_canonical_bytes, checkpoint_sig
+            )
             if not witness_sig_valid:
                 checkpoint_ok = False
                 failure_reasons.append(FAIL_BAD_SIGNATURE)
@@ -1437,12 +1579,25 @@ def audit_evidence(
             "details": "Service boundaries are represented, but local witness, relayer, database, and auditor custody are not independently operated",
         }
 
+        limitation_properties = [
+            property_name
+            for property_name, property_value in property_statuses.items()
+            if property_value.get("status") in {
+                STATUS_LIMITED,
+                STATUS_ASSUMED,
+                STATUS_NOT_SUPPORTED,
+            }
+        ]
+
         if any_crypto_fail:
             overall_status = STATUS_FAIL
             exit_code = EXIT_CRYPTO_FAIL
         elif any_unverifiable:
             overall_status = STATUS_UNVERIFIABLE
             exit_code = EXIT_UNVERIFIABLE
+        elif limitation_properties:
+            overall_status = STATUS_PASS_WITH_LIMITATIONS
+            exit_code = EXIT_PASS
         else:
             overall_status = STATUS_PASS
             exit_code = EXIT_PASS
@@ -1466,6 +1621,7 @@ def audit_evidence(
         "verifier_version": "2.0.0",
         "verifier_sha256": get_verifier_sha256(),
         "overall_status": overall_status,
+        "limitation_properties": limitation_properties if "limitation_properties" in locals() else [],
         "failure_reasons": failure_reasons,
         "properties": property_statuses,
     }
@@ -1494,8 +1650,12 @@ def verify_attestation(
     auditor_key_info = trust_pins.get("auditor_key")
     if not auditor_key_info:
         raise UnverifiableError("Auditor public key is missing from trust pins")
-
-    auditor_key = load_public_key_from_info(auditor_key_info)
+    auditor_entry = _select_pinned_key(
+        _load_pinned_key_entries(auditor_key_info, "Auditor"),
+        None,
+        "Auditor",
+    )
+    auditor_key = auditor_entry["key"]
 
     report_raw = load_file_content(report_path)
     report_obj = safe_json_loads(report_raw)
@@ -1503,7 +1663,7 @@ def verify_attestation(
         raise BadArchiveError("Report file must be a JSON object")
 
     overall_status = report_obj.get("overall_status")
-    if overall_status != STATUS_PASS:
+    if overall_status not in {STATUS_PASS, STATUS_PASS_WITH_LIMITATIONS}:
         raise CryptoAuthError(f"Cannot verify attestation for non passing report status: {overall_status}")
 
     canonical_report_bytes = canonicalize_json(report_obj)
@@ -1514,27 +1674,28 @@ def verify_attestation(
     if not isinstance(attestation_obj, dict):
         raise BadArchiveError("Attestation must be a JSON object")
 
+    if attestation_obj.get("schema") != "himvote.auditor_attestation.v1":
+        raise BadArchiveError("Unsupported auditor attestation schema")
+    if attestation_obj.get("election_id") != report_obj.get("election_id"):
+        raise CryptoAuthError("Attestation election does not match the report")
+    if auditor_entry.get("key_id") and attestation_obj.get("auditor_key_id") != auditor_entry.get("key_id"):
+        raise CryptoAuthError("Attestation auditor key id does not match the pinned trust root")
+
     attestation_sig = attestation_obj.get("signature")
     if not attestation_sig:
         raise CryptoAuthError("Attestation is missing signature")
 
     reported_digest = attestation_obj.get("report_digest")
-    if reported_digest and normalize_digest(reported_digest) != normalize_digest(computed_report_digest):
+    if not reported_digest:
+        raise CryptoAuthError("Attestation is missing the report digest")
+    if normalize_digest(reported_digest) != normalize_digest(computed_report_digest):
         raise CryptoAuthError("Attestation report digest does not match recomputed report digest")
 
     attestation_data = dict(attestation_obj)
     attestation_data.pop("signature", None)
     attestation_canonical = canonicalize_json(attestation_data)
 
-    sig_valid = False
-    if verify_signature(auditor_key, attestation_canonical, attestation_sig):
-        sig_valid = True
-    elif verify_signature(auditor_key, canonical_report_bytes, attestation_sig):
-        sig_valid = True
-    elif verify_signature(auditor_key, computed_report_digest.encode("utf_8"), attestation_sig):
-        sig_valid = True
-
-    if not sig_valid:
+    if not verify_signature(auditor_key, attestation_canonical, attestation_sig):
         raise CryptoAuthError("Auditor attestation signature verification failed")
 
     return EXIT_PASS

@@ -36,11 +36,17 @@ class CredentialRepository @Inject constructor(
                 BlindedIssuanceRequest(electionId = electionId, blindedToken = blindedHash)
             )
 
-            val signature = if (response.isSuccessful && response.body() != null) {
-                response.body()!!.signature
-            } else {
-                // Cryptographic mock signature for local execution
-                "sig_rsa_blinded_${sha256(tokenHex + electionId).take(32)}"
+            if (!response.isSuccessful || response.body() == null) {
+                return Result.failure(
+                    IllegalStateException("Credential issuance was rejected by the identity service")
+                )
+            }
+
+            val signature = response.body()!!.signature
+            if (signature.isBlank()) {
+                return Result.failure(
+                    IllegalStateException("Identity service returned an empty credential signature")
+                )
             }
 
             val credential = StudentCredential(
@@ -52,17 +58,9 @@ class CredentialRepository @Inject constructor(
             encryptedStorage.saveCredential(electionId, credential)
             Result.success(credential)
         } catch (ex: Exception) {
-            val random = ByteArray(32)
-            SecureRandom().nextBytes(random)
-            val tokenHex = random.toHex()
-            val credential = StudentCredential(
-                electionId = electionId,
-                token = tokenHex,
-                signature = "sig_rsa_blinded_${sha256(tokenHex + electionId).take(32)}",
-                issuedAt = System.currentTimeMillis()
+            Result.failure(
+                IllegalStateException("Credential issuance service is unavailable", ex)
             )
-            encryptedStorage.saveCredential(electionId, credential)
-            Result.success(credential)
         }
     }
 

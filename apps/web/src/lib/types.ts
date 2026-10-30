@@ -50,6 +50,8 @@ export interface Election extends ElectionSummary {
   selection_rule?: string;
   min_anonymous_turnout?: number;
   description?: string;
+  published_results?: PublishedResults;
+  evidence?: EvidencePackage;
 }
 
 export interface CastBallotRequest {

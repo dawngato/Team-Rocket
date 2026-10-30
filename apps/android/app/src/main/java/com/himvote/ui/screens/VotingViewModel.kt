@@ -66,20 +66,20 @@ class VotingViewModel @Inject constructor(
      */
     fun runOfflineVerification() {
         viewModelScope.launch {
-            val receipt = _uiState.value.castSuccessReceipt
-            val sampleHandle = receipt?.receiptHandle ?: "rcpt_proof_${electionId.take(8)}"
-            val syntheticProof = votingRepository.verifyProofOfflineOnly(electionId, sampleHandle)
-            val isValid = offlineVerificationHelper.verifyInclusionProofOffline(syntheticProof)
-
-            if (isValid) {
+            try {
+                val receipt = _uiState.value.castSuccessReceipt
+                    ?: throw IllegalStateException("No cast receipt is available for offline verification")
+                val proof = votingRepository.verifyProofOfflineOnly(electionId, receipt.receiptHandle)
+                val isValid = offlineVerificationHelper.verifyInclusionProofOffline(proof)
+                if (!isValid) throw IllegalStateException("Authenticated inclusion proof did not verify")
                 _uiState.value = _uiState.value.copy(
                     isOfflineVerified = true,
-                    offlineVerificationSummary = "Merkle root ${syntheticProof.rootHash.take(16)}... mathematically verified offline"
+                    offlineVerificationSummary = "Authenticated Merkle inclusion proof verified offline"
                 )
-            } else {
+            } catch (ex: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isOfflineVerified = false,
-                    errorMessage = "Offline cryptographic verification check failed"
+                    errorMessage = ex.message ?: "No authenticated inclusion proof is available offline"
                 )
             }
         }
@@ -96,7 +96,13 @@ class VotingViewModel @Inject constructor(
         }
 
         val cred = credentialRepository.getStoredCredential(electionId)
-        val token = cred?.token ?: "dev_cred_token_sample"
+        val token = cred?.token
+        if (token.isNullOrBlank()) {
+            _uiState.value = _uiState.value.copy(
+                errorMessage = "An issued credential is required before opening the voting booth"
+            )
+            return
+        }
         val boothUrl = votingRepository.buildBoothHandoffUrl(electionId, token)
 
         val customTabsIntent = CustomTabsIntent.Builder()
@@ -131,23 +137,18 @@ class VotingViewModel @Inject constructor(
             )
 
             result.onSuccess { receipt ->
-                val offlineValid = offlineVerificationHelper.verifyReceiptFormat(receiptHandle, ballotHash)
-                if (offlineValid) {
-                    singleCastChecker.recordCast(
-                        electionId = returnElectionId,
-                        receiptHandle = receiptHandle,
-                        ballotHash = ballotHash,
-                        isOfflineVerified = true
-                    )
-                }
+                singleCastChecker.recordCast(
+                    electionId = returnElectionId,
+                    receiptHandle = receiptHandle,
+                    ballotHash = ballotHash,
+                    isOfflineVerified = false
+                )
                 _uiState.value = _uiState.value.copy(
                     isProcessingReturn = false,
                     canCast = false,
                     castSuccessReceipt = receipt,
-                    isOfflineVerified = offlineValid,
-                    offlineVerificationSummary = if (offlineValid) {
-                        "Cryptographic hash format verified offline: ${ballotHash.take(16)}..."
-                    } else null
+                    isOfflineVerified = false,
+                    offlineVerificationSummary = "Accepted receipt stored locally; witness verification is still pending"
                 )
                 onSuccess(returnElectionId)
             }.onFailure { ex ->
@@ -160,16 +161,12 @@ class VotingViewModel @Inject constructor(
     }
 
     /**
-     * Simulates successful booth return for test and emulator environments.
+     * Kept as a compatibility hook for older navigation code. A client must
+     * never synthesize a ballot or receipt locally.
      */
     fun simulateSuccessfulBoothReturn(onSuccess: (String) -> Unit) {
-        val simulatedHandle = "rcpt_mock_${System.currentTimeMillis()}"
-        val simulatedHash = offlineVerificationHelper.sha256("simulated_ballot_content_${electionId}_${System.currentTimeMillis()}")
-        handleAppLinkReturn(
-            returnElectionId = electionId,
-            receiptHandle = simulatedHandle,
-            ballotHash = simulatedHash,
-            onSuccess = onSuccess
+        _uiState.value = _uiState.value.copy(
+            errorMessage = "Synthetic booth returns are disabled. Use the supported voting booth."
         )
     }
 }

@@ -55,14 +55,12 @@ class InclusionProofViewModel @Inject constructor(
                     isOfflineVerified = offlineValid
                 )
             }.onFailure { ex ->
-                // Fallback to pure offline verification
-                val offlineProof = votingRepository.verifyProofOfflineOnly(electionId, receiptHandle)
-                val offlineValid = offlineVerificationHelper.verifyInclusionProofOffline(offlineProof)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    proof = offlineProof,
-                    isVerifiedLocally = offlineProof.verified,
-                    isOfflineVerified = offlineValid
+                    proof = null,
+                    isVerifiedLocally = false,
+                    isOfflineVerified = false,
+                    errorMessage = ex.message ?: "An authenticated inclusion proof is unavailable"
                 )
             }
         }

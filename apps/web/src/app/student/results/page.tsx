@@ -1,90 +1,44 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { StateBadge } from "../../components/StateBadge";
-import { INITIAL_ELECTIONS, INITIAL_RESULTS } from "../../lib/mock_data";
-import { Award, ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowRight, Award } from "lucide-react";
+import { StateBadge } from "@/components/StateBadge";
+import { electionClient } from "@/lib/election_client";
+import type { Election, PublishedResults } from "@/lib/types";
 
 export default function StudentResultsPage() {
-  const publishedElectionIds = Object.keys(INITIAL_RESULTS);
-  const electionsWithResults = INITIAL_ELECTIONS.filter((e) =>
-    publishedElectionIds.includes(e.id)
-  );
+  const [elections, setElections] = useState<Array<{ election: Election; results: PublishedResults }>>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void electionClient.getElections().then(async (summaries) => {
+      const published = summaries.filter((election) => election.state === "PUBLISHED");
+      const entries = await Promise.all(published.map(async (summary) => {
+        const [election, results] = await Promise.all([electionClient.getElection(summary.id), electionClient.getResults(summary.id)]);
+        return { election, results };
+      }));
+      if (!cancelled) setElections(entries);
+    }).catch((cause) => {
+      if (!cancelled) {
+        setElections([]);
+        setError(cause instanceof Error ? cause.message : "Published results could not be loaded.");
+      }
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
-            <Award className="w-3.5 h-3.5" aria-hidden="true" />
-            Published Campus Outcomes
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Election Results and Attestations
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Published development outcomes with visible evidence status. Native engine verification is required for a production result.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {electionsWithResults.map((elec) => {
-          const res = INITIAL_RESULTS[elec.id];
-          return (
-            <div
-              key={elec.id}
-              className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-5 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <StateBadge state={elec.state} size="sm" />
-                  <span className="text-xs font-mono text-slate-500">
-                    {res ? `${res.total_ballots} ballots cast` : ""}
-                  </span>
-                </div>
-                <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-                  {elec.title}
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Contest: {elec.contest} | Evidence status: {elec.state}
-                </p>
-
-                {res && (
-                  <div className="pt-2 space-y-2">
-                    {Object.entries(res.tally).map(([name, count]) => (
-                      <div
-                        key={name}
-                        className="flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-900/40 text-xs font-semibold"
-                      >
-                        <span className="text-[#10233F] dark:text-white">{name}</span>
-                        <span className="font-mono text-[#157E92]">{count} votes</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
-                <Link
-                  href={`/results?election=${elec.id}`}
-                  className="text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline flex items-center gap-1"
-                >
-                  <span>Detailed Proof Breakdown</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-                <Link
-                  href={`/audit?election=${elec.id}`}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
-                >
-                  Audit Ledger
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
+    <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+      <header className="space-y-2 border-b border-slate-200 pb-6 dark:border-[#1E3352]"><div className="inline-flex items-center gap-1.5 rounded bg-[#15805D]/10 px-2.5 py-1 text-xs font-semibold text-[#15805D] dark:text-[#34D399]"><Award className="size-3.5" aria-hidden="true" /> Published outcomes</div><h1 className="text-3xl font-bold tracking-tight text-[#10233F] dark:text-white">Election Results and Attestations</h1><p className="text-sm text-slate-600 dark:text-slate-400">Results are shown only after the authoritative service reports publication. The independent verifier remains the source of cryptographic assurance.</p></header>
+      {loading && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">Loading published results…</div>}
+      {error && <div className="flex items-start gap-2 rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert"><AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />{error} No local results are substituted.</div>}
+      {!loading && !error && elections.length === 0 && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">No published results are available.</div>}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">{elections.map(({ election, results }) => <article key={election.id} className="flex flex-col justify-between space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="space-y-3"><div className="flex items-center justify-between"><StateBadge state={election.state} size="sm" /><span className="font-mono text-xs text-slate-500">{results.total_ballots} ballots</span></div><h2 className="text-lg font-bold text-[#10233F] dark:text-white">{election.title}</h2><p className="text-xs text-slate-600 dark:text-slate-400">{election.contest || "Published contest"} · manifest {election.manifest_digest}</p>{!results.privacy_limited && <div className="space-y-2">{Object.entries(results.tally).map(([candidate, count]) => <div key={candidate} className="flex items-center justify-between rounded-lg bg-slate-50 p-2 text-xs font-semibold dark:bg-slate-900/40"><span>{candidate}</span><span className="font-mono text-[#157E92]">{count} votes</span></div>)}</div>}{results.privacy_limited && <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/20 dark:text-amber-200">Detailed tally is suppressed by the published privacy policy.</div>}</div><div className="flex items-center justify-between border-t border-slate-100 pt-4 dark:border-[#1E3352]"><Link href={`/results?election=${encodeURIComponent(election.id)}`} className="inline-flex min-h-11 items-center gap-1 text-xs font-bold text-[#157E92] hover:underline">Detailed evidence <ArrowRight className="size-3.5" aria-hidden="true" /></Link><Link href={`/audit?election=${encodeURIComponent(election.id)}`} className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white">Audit ledger</Link></div></article>)}</div>
+    </main>
   );
 }

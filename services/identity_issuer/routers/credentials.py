@@ -7,6 +7,7 @@ import hashlib
 import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..config import ISSUER_KEY_ID
@@ -78,7 +79,7 @@ def issue_credential(
         cutoff_utc = snapshot.issuance_cutoff_utc
         if cutoff_utc.tzinfo is None:
             cutoff_utc = cutoff_utc.replace(tzinfo=timezone.utc)
-        if now > cutoff_utc:
+        if now >= cutoff_utc:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Issuance window has closed",
@@ -159,7 +160,29 @@ def issue_credential(
         roster_version=snapshot.roster_version,
     )
     db.add(record)
-    db.flush()
+    try:
+        db.flush()
+    except IntegrityError:
+        # Another request won the per-election and per-student uniqueness
+        # race.  Never sign the losing request or create a second usable slot.
+        db.rollback()
+        raced = (
+            db.query(CredentialIssuanceRecord)
+            .filter(
+                CredentialIssuanceRecord.election_id == req.election_id,
+                CredentialIssuanceRecord.student_id == student_id,
+            )
+            .first()
+        )
+        if raced and raced.blinded_request == req.blinded_request and raced.blind_signature_response:
+            return BlindedIssuanceResponse(
+                blind_signature_response=raced.blind_signature_response,
+                status="DELIVERED",
+            )
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Credential issuance is already in progress; retry the exact request",
+        )
 
     db.add(
         IssuanceEvent(

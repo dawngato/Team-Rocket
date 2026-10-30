@@ -44,6 +44,7 @@ from verifier.verify import (
     PROPERTY_ANCHOR_FINALITY,
     PROPERTY_INDEPENDENT_OPERATORS,
     STATUS_PASS,
+    STATUS_PASS_WITH_LIMITATIONS,
     STATUS_FAIL,
     STATUS_LIMITED,
     STATUS_UNVERIFIABLE,
@@ -959,7 +960,8 @@ def test_audit_evidence_happy_path(election_helper: ElectionFixtureHelper) -> No
     )
 
     assert exit_code == EXIT_PASS
-    assert report["overall_status"] == STATUS_PASS
+    assert report["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
+    assert PROPERTY_INDEPENDENT_OPERATORS in report["limitation_properties"]
     assert len(report["failure_reasons"]) == 0
 
     # Verify all 11 required properties exist
@@ -974,7 +976,7 @@ def test_audit_evidence_happy_path(election_helper: ElectionFixtureHelper) -> No
     # Verify report was written to destination
     assert os.path.exists(bundle["report"])
     written_data = safe_json_loads(open(bundle["report"], "rb").read())
-    assert written_data["overall_status"] == STATUS_PASS
+    assert written_data["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
 
 
 def test_audit_evidence_zip_archive(election_helper: ElectionFixtureHelper) -> None:
@@ -991,7 +993,7 @@ def test_audit_evidence_zip_archive(election_helper: ElectionFixtureHelper) -> N
     )
 
     assert exit_code == EXIT_PASS
-    assert report["overall_status"] == STATUS_PASS
+    assert report["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
 
 
 def test_verify_attestation_happy_path(election_helper: ElectionFixtureHelper) -> None:
@@ -1460,7 +1462,7 @@ def test_homomorphic_tally_with_trustee_proofs(election_helper: ElectionFixtureH
     )
 
     assert exit_code == EXIT_PASS
-    assert report["overall_status"] == STATUS_PASS
+    assert report["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
     assert len(report["failure_reasons"]) == 0
     assert report["properties"][PROPERTY_TALLY_PROOF]["status"] == STATUS_PASS
 
@@ -1538,7 +1540,7 @@ def test_rfc9474_rsabssa_credential_verification(election_helper: ElectionFixtur
     )
 
     assert exit_code == EXIT_PASS
-    assert report["overall_status"] == STATUS_PASS
+    assert report["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
     assert len(report["failure_reasons"]) == 0
     assert report["properties"][PROPERTY_CREDENTIAL_UNIQUENESS]["status"] == STATUS_PASS
 
@@ -1591,7 +1593,7 @@ def test_scalar_rsa_blind_credential_verification(election_helper: ElectionFixtu
     )
 
     assert exit_code == EXIT_PASS
-    assert report["overall_status"] == STATUS_PASS
+    assert report["overall_status"] == STATUS_PASS_WITH_LIMITATIONS
     assert len(report["failure_reasons"]) == 0
     assert report["properties"][PROPERTY_CREDENTIAL_UNIQUENESS]["status"] == STATUS_PASS
 

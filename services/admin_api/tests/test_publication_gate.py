@@ -2,7 +2,7 @@
 Unit tests for the publication gate.
 Verifies Section 4 and 6.2 publication requirements:
 1. Pinned auditor cryptographic signature verification.
-2. ANCHOR_FINALIZED and FINAL_WITNESSED preconditions.
+2. ANCHOR_FINALIZED and final witness consistency preconditions.
 """
 
 import pytest
@@ -21,7 +21,7 @@ from src.state_machine.lifecycle import StatePreconditionError
 
 
 def setup_witnessed_election(db, election_id="elec_pub_gate"):
-    """Helper setting up election at FINAL_WITNESSED state with witness acknowledgment."""
+    """Helper setting up election at ANCHOR_FINALIZED with witness acknowledgment."""
     elec = ElectionModel(
         id=election_id,
         title="Campus Election",
@@ -36,7 +36,7 @@ def setup_witnessed_election(db, election_id="elec_pub_gate"):
 
     state = ElectionStateModel(
         election_id=election_id,
-        state="FINAL_WITNESSED",
+        state="ANCHOR_FINALIZED",
         manifest_digest="manifest_digest_sample_12345",
         opens_at_utc="2026_11_25T09:00:00Z",
         closes_at_utc="2026_11_25T17:00:00Z",
@@ -120,6 +120,64 @@ def test_publication_requires_valid_prerequisite_state(test_db, auditor_keypair)
             election_id=elec.id,
             actor_id="auditor_lead",
             req=req
+        )
+
+
+def test_publication_rejects_unanchored_final_witness(test_db, auditor_keypair):
+    """A witnessed root alone cannot move directly to public publication."""
+    elec = setup_witnessed_election(test_db, "elec_unanchored_final")
+    state = test_db.query(ElectionStateModel).filter_by(election_id=elec.id).first()
+    state.state = "FINAL_WITNESSED"
+    test_db.commit()
+
+    attestation = {
+        "election_id": elec.id,
+        "manifest_digest": "manifest_digest_sample_12345",
+        "final_checkpoint_digest": "final_root_hash_abcde",
+        "anchor_tx_hash": "0x1234567890abcdef",
+        "tally": {"cand_1": 25, "cand_2": 17},
+        "total_ballots": 42,
+    }
+    sig = sign_data_ed25519(auditor_keypair["private_key_hex"], canonical_json_bytes(attestation))
+    req = PublicationRequest(
+        auditor_public_key=auditor_keypair["public_key_hex"],
+        auditor_signature=sig,
+        attestation_data=attestation,
+    )
+
+    with pytest.raises(StatePreconditionError, match="externally finalized anchor"):
+        PublicationService.process_publication_request(
+            db=test_db,
+            election_id=elec.id,
+            actor_id="auditor_lead",
+            req=req,
+        )
+
+
+def test_publication_rejects_mismatched_witness_count(test_db, auditor_keypair):
+    """A signed tally cannot claim a ballot count different from the final tree."""
+    elec = setup_witnessed_election(test_db, "elec_count_mismatch")
+    attestation = {
+        "election_id": elec.id,
+        "manifest_digest": "manifest_digest_sample_12345",
+        "final_checkpoint_digest": "final_root_hash_abcde",
+        "anchor_tx_hash": "0x1234567890abcdef",
+        "tally": {"cand_1": 25, "cand_2": 17},
+        "total_ballots": 41,
+    }
+    sig = sign_data_ed25519(auditor_keypair["private_key_hex"], canonical_json_bytes(attestation))
+    req = PublicationRequest(
+        auditor_public_key=auditor_keypair["public_key_hex"],
+        auditor_signature=sig,
+        attestation_data=attestation,
+    )
+
+    with pytest.raises(StatePreconditionError, match="ballot count"):
+        PublicationService.process_publication_request(
+            db=test_db,
+            election_id=elec.id,
+            actor_id="auditor_lead",
+            req=req,
         )
 
 

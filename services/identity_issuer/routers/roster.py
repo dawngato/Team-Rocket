@@ -8,6 +8,7 @@ import hashlib
 import json
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..models import (
@@ -30,7 +31,7 @@ from ..schemas import (
     RosterSnapshotResponse,
 )
 from ..crypto.hashing import hash_password
-from .deps import get_current_user, require_roles, record_audit_event
+from .deps import get_current_user, get_user_roles, require_roles, record_audit_event, user_has_scope
 
 router = APIRouter(prefix="/v1", tags=["roster"])
 
@@ -47,7 +48,8 @@ def register_student(
     # Check for existing profile or user
     existing_profile = db.query(StudentProfile).filter(StudentProfile.student_id == req.student_id).first()
     existing_user = db.query(User).filter(User.external_id == req.student_id).first()
-    if existing_profile or existing_user:
+    existing_email = db.query(User).filter(User.email == str(req.email).lower()).first()
+    if existing_profile or existing_user or existing_email:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Student registration already exists",
@@ -86,6 +88,23 @@ def import_students(
     Batch import student records from Student Information System (SIS) or CSV.
     Records enrollment source metadata and sets imported accounts to PENDING_VERIFICATION.
     """
+    normalized_ids = [item.student_id.strip() for item in req.records]
+    normalized_emails = [str(item.email).lower() for item in req.records]
+    if len(set(normalized_ids)) != len(normalized_ids):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate student IDs in import")
+    if len(set(normalized_emails)) != len(normalized_emails):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate email addresses in import")
+    existing_ids = {
+        row[0]
+        for row in db.query(StudentProfile.student_id).filter(StudentProfile.student_id.in_(normalized_ids)).all()
+    }
+    existing_emails = {
+        row[0]
+        for row in db.query(User.email).filter(User.email.in_(normalized_emails)).all()
+    }
+    if existing_ids or existing_emails:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Import contains an existing student ID or email address")
+
     source = EnrollmentSource(
         name=f"import_{req.source}_{datetime.now(timezone.utc).isoformat()}",
         type=req.source,
@@ -95,15 +114,21 @@ def import_students(
     db.add(source)
 
     imported_count = 0
+    current_roles = get_user_roles(current_user, db)
     for item in req.records:
-        existing = db.query(StudentProfile).filter(StudentProfile.student_id == item.student_id).first()
-        if existing:
-            continue
-
+        if (
+            "super_admin" not in current_roles
+            and not any(role in current_roles for role in {"administrator"})
+            and not user_has_scope(current_user, db, ["teacher"], item.department)
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Teacher scope does not include one or more imported departments",
+            )
         pwd_hash, pwd_params = hash_password(str(uuid.uuid4()))
         user = User(
             external_id=item.student_id,
-            email=item.email,
+            email=str(item.email).lower(),
             password_hash=pwd_hash,
             password_algorithm=pwd_params["algorithm"],
             password_params=pwd_params,
@@ -113,7 +138,7 @@ def import_students(
 
         profile = StudentProfile(
             student_id=item.student_id,
-            email=item.email,
+            email=str(item.email).lower(),
             full_name=item.full_name,
         )
         db.add(profile)
@@ -126,7 +151,11 @@ def import_students(
         actor_id=current_user.id,
         details={"source": req.source, "count": imported_count},
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Import conflicts with an existing identity record")
 
     return {"status": "import_accepted", "imported_count": imported_count}
 
@@ -156,8 +185,27 @@ def verify_student(
             detail="Student user account not found",
         )
 
+    current_roles = get_user_roles(current_user, db)
+    if (
+        "super_admin" not in current_roles
+        and "administrator" not in current_roles
+        and not user_has_scope(current_user, db, ["teacher"], req.department)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teacher scope does not include the requested department",
+        )
+
+    if req.verified_by not in {current_user.id, current_user.email}:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="verified_by must identify the authenticated verifier",
+        )
+
     # Resolve or create department
     dept = db.query(Department).filter(Department.name == req.department).first()
+    if db.query(StudentVerification).filter(StudentVerification.student_id == profile.id).first():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Student has already been verified")
     dept_id = dept.id if dept else str(uuid.uuid4())
 
     verification = StudentVerification(
@@ -200,16 +248,24 @@ def create_roster_snapshot(
         .order_by(ElectionRosterSnapshot.roster_version.desc())
         .first()
     )
+    if latest and latest.status in {"APPROVED", "FROZEN"}:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A roster snapshot is already approved or frozen for this election",
+        )
     next_version = (latest.roster_version + 1) if latest else 1
 
     # Fetch verified student profiles
     verified_students = (
         db.query(StudentProfile)
         .join(StudentVerification, StudentVerification.student_id == StudentProfile.id)
+        .join(User, User.external_id == StudentProfile.student_id)
+        .filter(User.status == "ACTIVE")
+        .distinct()
         .all()
     )
 
-    member_ids = sorted([s.student_id for s in verified_students])
+    member_ids = sorted({s.student_id for s in verified_students})
     # Deterministic SHA256 digest of sorted roster
     digest = hashlib.sha256(json.dumps(member_ids).encode("utf-8")).hexdigest()
 
@@ -263,7 +319,7 @@ def create_roster_snapshot(
 @router.post("/roster/snapshots/{snapshot_id}/approve", status_code=status.HTTP_200_OK)
 def approve_roster_snapshot(
     snapshot_id: str,
-    current_user: User = Depends(require_roles(["roster_approver", "administrator", "super_admin"])),
+    current_user: User = Depends(require_roles(["roster_approver"])),
     db: Session = Depends(get_db),
 ):
     """

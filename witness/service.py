@@ -134,14 +134,14 @@ class WitnessService:
             return provided_public_key
 
         trusted_key = self.storage.get_trusted_writer(election_id)
-        writer_key = trusted_key or provided_public_key
-
-        if not writer_key:
+        if not trusted_key:
             raise WriterSignatureVerificationError(
                 f"No pinned writer key found for election {election_id}"
             )
 
-        if trusted_key and provided_public_key and trusted_key.lower() != provided_public_key.lower():
+        writer_key = trusted_key
+
+        if provided_public_key and trusted_key.lower() != provided_public_key.lower():
             raise WriterSignatureVerificationError(
                 f"Provided writer key does not match pinned key for election {election_id}"
             )

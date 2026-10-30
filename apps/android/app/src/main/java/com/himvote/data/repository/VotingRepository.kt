@@ -66,7 +66,10 @@ class VotingRepository @Inject constructor(
             receiptHandle = receiptHandle,
             ballotHash = ballotHash,
             castTimestamp = System.currentTimeMillis().toString(),
-            verified = true
+            // A deep-link return proves only that the browser handed control
+            // back to the app. The casting service must still authenticate
+            // the receipt before it can be called witnessed or verified.
+            verified = false
         )
         return Result.success(receipt)
     }
@@ -119,9 +122,8 @@ class VotingRepository @Inject constructor(
             val verified = offlineVerificationHelper.verifyInclusionProofOffline(existingCached)
             return existingCached.copy(verified = verified)
         }
-        val syntheticProof = offlineVerificationHelper.buildSyntheticVerifiedProof(electionId, receiptHandle)
-        encryptedStorage.saveInclusionProof(electionId, syntheticProof)
-        encryptedStorage.markOfflineVerified(electionId)
-        return syntheticProof
+        throw IllegalStateException(
+            "No authenticated inclusion proof is available offline for receipt $receiptHandle"
+        )
     }
 }

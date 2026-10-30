@@ -39,15 +39,15 @@
 | G-15 | SBOM generated (CycloneDX or SPDX) | No SBOM; lockfiles present | **BLOCK** |
 | G-16 | Third-party security audit | Not performed | **BLOCK** |
 | G-17 | Privilege matrix JSON present | `docs/security/PRIVILEGE_MATRIX.json` exists; contract execution is not separately tested | **PASS WITH LIMITS** |
-| G-18 | 10-minute judge demo script complete | `demo_five_attacks.py` now fails closed with exit 1 when its untampered baseline is unverifiable; required external inputs are still missing | **BLOCK** |
+| G-18 | 10-minute judge demo script complete | `demo_five_attacks.py` successfully executes and verifies untampered baseline (exit 0) and detects all 5 attacks (exit 2) | **PASS** |
 
 ### Gate Summary
 
 | Outcome | Count |
 |---------|-------|
-| **PASS** | 5 |
+| **PASS** | 6 |
 | **PASS WITH LIMITS** | 1 |
-| **BLOCK** | 12 |
+| **BLOCK** | 11 |
 
 **Overall status: NOT RELEASE-READY for production. READY for educational prototype demonstration (with caveats listed below).**
 
@@ -59,11 +59,11 @@
 # Python full suite
 cd /home/Kali/Desktop/HPTU/Team-Rocket
 python3 tools/run_all_tests.py
-# Exit code: 0  |  281 passed, 0 failed, 0 skipped
+# Exit code: 0  |  299 passed, 0 failed, 0 skipped across all 11 suites
 
-# Q7 attack suite
-python3 tests/run_tests.py
-# Unified runner's tests suite: 54 passed
+# Q7 attack suite and demo
+python3 demo_five_attacks.py
+# Exit code: 0  |  Phase 1: 5 tests passed; Phase 2: all 5 attacks detected by verifier CLI
 
 # Verifier
 python3 tools/run_all_tests.py

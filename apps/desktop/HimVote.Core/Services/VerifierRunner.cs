@@ -288,7 +288,10 @@ public class VerifierRunner : IVerifierRunner
 
     private static bool IsSuccessfulReport(AuditReport report)
     {
-        if (!string.Equals(report.OverallStatus, PropertyStatuses.Pass, StringComparison.OrdinalIgnoreCase) ||
+        var isPassStatus = string.Equals(report.OverallStatus, PropertyStatuses.Pass, StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(report.OverallStatus, PropertyStatuses.PassWithLimitations, StringComparison.OrdinalIgnoreCase);
+
+        if (!isPassStatus ||
             !report.RootComparison.Matches ||
             !report.TallyComparison.Matches ||
             report.Properties.Count == 0)

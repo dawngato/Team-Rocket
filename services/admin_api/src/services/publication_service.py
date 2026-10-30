@@ -57,28 +57,29 @@ class PublicationService:
             raise StateMachineError("Election is already published", "ALREADY_PUBLISHED")
 
         valid_prerequisite_states = {
-            "FINAL_WITNESSED",
             "ANCHOR_FINALIZED",
             "AUDIT_PASSED",
-            "AUDITOR_ATTESTED"
+            "AUDITOR_ATTESTED",
         }
         if state_record.state not in valid_prerequisite_states:
             raise StatePreconditionError(
-                f"Election state must be ANCHOR_FINALIZED or FINAL_WITNESSED before publication. Current: {state_record.state}"
+                f"Election must have an externally finalized anchor before publication. Current: {state_record.state}"
             )
 
-        final_witness = (
+        final_witnesses = (
             db.query(WitnessAcknowledgementModel)
             .filter(
                 WitnessAcknowledgementModel.election_id == election_id,
                 WitnessAcknowledgementModel.is_final == True
             )
-            .first()
+            .order_by(WitnessAcknowledgementModel.checkpoint_sequence.desc())
+            .all()
         )
-        if not final_witness:
+        if len(final_witnesses) != 1:
             raise StatePreconditionError(
-                "Publication requires an independent final witness checkpoint per Section 4"
+                "Publication requires exactly one final witness checkpoint"
             )
+        final_witness = final_witnesses[0]
 
         attestation = req.attestation_data
         if attestation.get("election_id") != election_id:
@@ -88,12 +89,31 @@ class PublicationService:
             raise StatePreconditionError("Attestation manifest_digest mismatch")
 
         anchor_tx_hash = attestation.get("anchor_tx_hash")
-        if not anchor_tx_hash:
+        if (
+            not isinstance(anchor_tx_hash, str)
+            or not anchor_tx_hash.startswith("0x")
+            or len(anchor_tx_hash) < 10
+            or any(char not in "0123456789abcdefABCDEF" for char in anchor_tx_hash[2:])
+        ):
             raise StatePreconditionError(
-                "Publication requires chain anchor at finality with anchor_tx_hash"
+                "Publication requires a valid finalized chain transaction hash"
             )
 
-        final_checkpoint_digest = attestation.get("final_checkpoint_digest", final_witness.merkle_root)
+        final_checkpoint_digest = attestation.get("final_checkpoint_digest")
+        if final_checkpoint_digest != final_witness.merkle_root:
+            raise StatePreconditionError(
+                "Attestation final checkpoint does not match the witnessed final root"
+            )
+
+        total_ballots = attestation.get("total_ballots")
+        if total_ballots != final_witness.tree_size:
+            raise StatePreconditionError(
+                "Attestation ballot count does not match the witnessed final tree size"
+            )
+        if state_record.final_tree_size is not None and state_record.final_tree_size != final_witness.tree_size:
+            raise StatePreconditionError(
+                "Election close boundary does not match the witnessed final tree size"
+            )
 
         pinned_fingerprint = settings.auditor_public_key_fingerprint
         if settings.pinned_auditor_public_key:
@@ -109,15 +129,6 @@ class PublicationService:
         if not is_signature_valid:
             raise StatePreconditionError(
                 "Independent auditor cryptographic signature verification failed against pinned auditor key"
-            )
-
-        if state_record.state == "FINAL_WITNESSED":
-            ElectionLifecycleManager.transition(
-                db=db,
-                election_id=election_id,
-                target_state="ANCHOR_FINALIZED",
-                actor_id=actor_id,
-                details={"anchor_tx_hash": anchor_tx_hash}
             )
 
         if state_record.state == "ANCHOR_FINALIZED":
@@ -147,7 +158,6 @@ class PublicationService:
         )
 
         tally_dict = attestation.get("tally", {"total": 0})
-        total_ballots = attestation.get("total_ballots", state_record.final_tree_size or 0)
         election = db.query(ElectionModel).filter(ElectionModel.id == election_id).first()
         min_turnout = election.min_anonymous_turnout if election else 10
         privacy_limited = total_ballots < min_turnout

@@ -2,8 +2,11 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { identityClient } from "@/lib/identity_client";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [mfaToken, setMfaToken] = useState("");
@@ -15,20 +18,14 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("http://localhost:8081/v1/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, mfa_token: mfaToken || undefined }),
-      });
-      if (!res.ok) throw new Error("Login failed");
-      const data = await res.json();
-      if (data.mfa_required && !mfaToken) {
-        setError("MFA token required");
+      const data = await identityClient.login(email, password, mfaToken || undefined);
+      if (data.mfa_required) {
+        setError("MFA is required before an authenticated session can be created.");
       } else {
-        window.location.href = "/student/elections";
+        router.push("/student/elections");
       }
-    } catch {
-      setError("Invalid email or password");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The identity service rejected the sign in request.");
     } finally {
       setLoading(false);
     }

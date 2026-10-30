@@ -3,19 +3,26 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { ShieldAlert, ArrowRight, CheckCircle2, KeyRound } from "lucide-react";
+import { identityClient } from "@/lib/identity_client";
 
 export default function AccountRecoveryPage() {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      await identityClient.requestRecovery(email);
       setSubmitted(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Recovery could not be requested.");
+    } finally {
       setLoading(false);
-    }, 400);
+    }
   };
 
   return (
@@ -77,6 +84,8 @@ export default function AccountRecoveryPage() {
               Per Section 0.1 hard rules, password reset will invalidate previous session tokens and require MFA reverification.
             </span>
           </div>
+
+          {error && <div className="rounded-lg border border-[#C23C45]/30 bg-[#C23C45]/10 p-3 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
 
           <button
             type="submit"

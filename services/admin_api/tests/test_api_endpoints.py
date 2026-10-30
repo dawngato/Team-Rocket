@@ -144,6 +144,9 @@ def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roste
     from src.state_machine.lifecycle import ElectionLifecycleManager
     ElectionLifecycleManager.transition(test_db, election_id, "CLOSED_PENDING_WITNESS", "worker")
     ElectionLifecycleManager.transition(test_db, election_id, "FINAL_WITNESSED", "worker")
+    # The publication gate must observe an externally finalized anchor state;
+    # a witness checkpoint alone is not sufficient.
+    ElectionLifecycleManager.transition(test_db, election_id, "ANCHOR_FINALIZED", "anchor_worker")
 
     # Results endpoint before publication must return 404
     res = client.get(f"/v1/elections/{election_id}/results")

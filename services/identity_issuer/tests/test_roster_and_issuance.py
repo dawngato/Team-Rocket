@@ -6,6 +6,7 @@ Validates RFC 9474 issuance algorithm, independent roster approval, and slot uni
 from datetime import datetime, timedelta, timezone
 import hashlib
 from services.identity_issuer.models import User, Session as UserSession
+from services.identity_issuer.models import RoleAssignment, RoleDefinition
 from services.identity_issuer.crypto.rfc9474 import (
     get_default_issuer,
     client_blind,
@@ -51,6 +52,41 @@ def test_student_registration_and_verification(client, db_session):
     )
     assert verify_resp.status_code == 200
     assert verify_resp.json()["status"] == "student_verified"
+
+
+def test_teacher_cannot_verify_student_outside_delegated_department(client, db_session):
+    """Teacher permissions are scoped to the department in the role assignment."""
+    teacher, teacher_token = create_authenticated_user(
+        db_session, "scoped_teacher@institution.edu", "teacher", "TCH_SCOPED"
+    )
+    teacher_role = db_session.query(RoleDefinition).filter_by(name="teacher").one()
+    assignment = db_session.query(RoleAssignment).filter_by(
+        user_id=teacher.id,
+        role_id=teacher_role.id,
+    ).one()
+    assignment.scope_type = "department"
+    assignment.scope_id = "Computer Science"
+    db_session.commit()
+
+    register_resp = client.post(
+        "/v1/students/register",
+        json={
+            "student_id": "STU_OUT_OF_SCOPE",
+            "email": "out.of.scope@institution.edu",
+            "full_name": "Out Of Scope",
+        },
+    )
+    assert register_resp.status_code == 202
+
+    verify_resp = client.post(
+        "/v1/students/STU_OUT_OF_SCOPE/verify",
+        headers={"Authorization": f"Bearer {teacher_token}"},
+        json={
+            "verified_by": teacher.email,
+            "department": "Electrical Engineering",
+        },
+    )
+    assert verify_resp.status_code == 403
 
 
 def test_roster_snapshot_approval_and_freezing(client, db_session):
