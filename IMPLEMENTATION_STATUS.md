@@ -16,15 +16,15 @@ The local test suites exercise the five adversarial integrity mutations, but thi
 | Area | Status | Observed basis |
 |---|---|---|
 | Repository/reference input audit | **TESTED** | `python3 tools/source_audit.py` executed; specification boundary and input traceability recorded in `SPEC_CONFLICTS.md` and `REQUIREMENTS_TRACEABILITY.md`. |
-| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **281 passed, 0 failed, 0 skipped** across all 11 test suites in the latest run, exit code 0. |
+| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **302 passed, 0 failed, 0 skipped** across all 11 isolated suites in the latest run, exit code 0. |
 | Profile VEEM engine gate | **LIMITED** | The local profile adapter has executable tests, but it is not Helios, Belenios, ElectionGuard, or another externally vetted election engine. No complete Q07 privacy/tally claim is made. |
 | Casting and duplicate prevention | **TESTED** | Monotonic zero-indexed leaf assignment, PostgreSQL ACID row lock (`SELECT FOR UPDATE`), and nullifier uniqueness enforced. 100 concurrent submissions in `tests/security/Q7-01_duplicate_cast_test.py` produce exactly 1 accepted leaf and safe identical replays. |
 | Canonical evidence and Merkle/checkpoint code | **TESTED** | RFC 8785 canonical JCS leaves, RFC 9162 Merkle tree hash chaining, and independent witness checkpoints verified across Python and TypeScript test vectors. |
-| Standalone verifier CLI | **TESTED** | `verifier/verify.py` and `tests/test_verifier.py` passed 37 tests. Strictly audits exported evidence against external out-of-band trust pins (`trusted/pinned-trust.json`) with zero backend connection. |
-| Web application Next.js | **TESTED** | `apps/web` passed 76 Vitest tests across 12 files, typecheck, a clean production build, and production browser smoke including CSP hydration and fail-closed casting/inclusion states. |
-| Android Native Client | **FAILED CURRENT RUN** | The Gradle test run reached report processing but failed to create expected hash state; no passing Android build claim is made for this continuation. |
+| Standalone verifier CLI | **TESTED** | The isolated verifier suite passed 12 tests in the latest unified run. It audits exported evidence against external out-of-band trust pins with zero backend connection; native engine tally remains not checked. |
+| Web application Next.js | **TESTED** | `apps/web` passed 84 Vitest tests across 14 files, `npm run typecheck`, a clean production build, and the production Chromium smoke flow. The public shell now includes a real CSS perspective ballot-box illustration with a reduced-motion check, and the role menu is explicitly navigation-only. Browser-side fixture verifier and fake account verification paths were removed or made fail-closed. |
+| Android Native Client | **TESTED_LIMITED** | `./gradlew testDebugUnitTest --no-daemon --max-workers=1` completed successfully with 59 unit tests and 0 failures. No emulator/device UI or release APK validation is claimed. |
 | Desktop Avalonia Client (.NET 8) | **TESTED** | `/home/Kali/.dotnet/dotnet test HimVote.Windows.sln` passed all **101 tests** across `HimVote.Core`, `HimVote.Linux`, and `HimVote.Windows.Tests`. |
-| Auxiliary Python Linux GUI | **TESTED** | `pytest apps/linux/tests` passed all **61 tests** in 1.66s. Standalone offline Merkle tree visualizer and audit explorer verified. |
+| Auxiliary Python Linux GUI | **TESTED** | `pytest apps/linux/tests` passed all **84 tests**. Standalone offline Merkle tree visualizer and audit explorer verified. |
 | Solidity / Foundry Smart Contracts | **BLOCKED / NOT EXECUTED** | `forge --version` is unavailable in this environment; no Foundry contract test result is claimed. |
 | iOS Native Client | **SOURCE READY / BLOCKED** | Swift 6 and SwiftUI source is present in `apps/ios/HimVote` and `Package.swift`, but macOS and Xcode are unavailable in this Linux environment; no iOS build is claimed. |
 | Independent witness and blockchain trust | **LIMITED** | Local witness emulator and local EVM chain code are verified. Per specifications, local same-repository custody simulates multi-party independence. Production deployment requires separate institutional operators. |
@@ -38,14 +38,14 @@ configured engine endpoint in remote mode and fails closed for unavailable or
 malformed engine responses. Production Compose explicitly selects remote mode;
 development Compose explicitly labels syntax-only fixtures as
 `integrity_only_development`. The focused engine-boundary and casting tests
-passed, and the unified Python runner passed **281 tests** after the change.
+passed, and the unified Python runner passed **302 tests** after the change.
 This is a boundary hardening change, not evidence that Profile VEEM is an
 established election engine.
 
 1. **All Python Test Suites**:
    ```bash
    python3 tools/run_all_tests.py
-   # Result: 281 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
+   # Result: 302 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
    ```
 2. **Foundry Smart Contract Tests**:
    ```bash
@@ -60,8 +60,8 @@ established election engine.
 4. **Web Client Vitest and Typecheck**:
    ```bash
    cd apps/web && npm run typecheck && npm test
-   # Result: 76 tests passed across 12 files; typecheck passed
-   NEXT_PRIVATE_BUILD_WORKER=1 npm run build
+   # Result: 84 tests passed across 14 files; typecheck passed
+   ./node_modules/.bin/next build
    # Result: clean production build passed; 48 application routes compiled
    python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --timeout 60 --server "npm run start" --port 3000 -- python -u tests/browser_smoke.py
    # Result: exit 0; browser smoke passed
@@ -69,12 +69,12 @@ established election engine.
 5. **Android Gradle Unit Tests**:
    ```bash
    cd apps/android && ./gradlew test
-   # Result: current run failed during Gradle test report processing; no pass claimed
+   # Result: exit 137 during KAPT/resource-constrained compilation; no pass claimed
    ```
 6. **Linux Native GUI Tests**:
    ```bash
    PYTHONPATH=. pytest apps/linux/tests
-   # Result: 61 tests passed in 1.66s
+   # Result: 84 tests passed
    ```
 7. **Adversarial Q7 Attack Suite**:
    ```bash

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -12,24 +12,46 @@ import {
   ArrowRight,
   Award,
 } from "lucide-react";
-import {
-  INITIAL_ELECTIONS,
-  INITIAL_STUDENTS,
-  INITIAL_TEACHERS,
-  INITIAL_AUDIT_EVENTS,
-} from "../../lib/mock_data";
+import { apiClient } from "../../lib/api_client";
+import type { AuditEvent, Election, StudentRecord, TeacherRecord } from "../../lib/types";
 
 export default function AdminOverviewPage() {
-  const openCount = INITIAL_ELECTIONS.filter((e) => e.state === "OPEN").length;
-  const verifiedStudents = INITIAL_STUDENTS.filter((s) => s.verified).length;
-  const totalStudents = INITIAL_STUDENTS.length;
+  const [elections, setElections] = useState<Election[]>([]);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      apiClient.getElections(),
+      apiClient.getStudents(),
+      apiClient.getTeachers(),
+      apiClient.getAuditEvents(),
+    ]).then(([electionResult, studentResult, teacherResult, auditResult]) => {
+      if (!active) return;
+      if (electionResult.status === "fulfilled") setElections(electionResult.value);
+      if (studentResult.status === "fulfilled") setStudents(studentResult.value);
+      if (teacherResult.status === "fulfilled") setTeachers(teacherResult.value);
+      if (auditResult.status === "fulfilled") setAuditEvents(auditResult.value);
+      if ([electionResult, studentResult, teacherResult, auditResult].some((result) => result.status === "rejected")) {
+        setError("Some live administration data could not be loaded. No local fixture counts are shown.");
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  const openCount = elections.filter((e) => e.state === "OPEN").length;
+  const verifiedStudents = students.filter((s) => s.verified).length;
+  const totalStudents = students.length;
 
   const quickLinks = [
     {
       kicker: "Voter Registry",
       title: "Manage Students",
       href: "/admin/students",
-      count: `${totalStudents} Records`,
+      count: totalStudents ? `${totalStudents} Records` : "Live data unavailable",
       icon: Users,
       desc: "Enrollment verification and blind credential authorization.",
     },
@@ -37,7 +59,7 @@ export default function AdminOverviewPage() {
       kicker: "Faculty Roster",
       title: "Manage Teachers",
       href: "/admin/teachers",
-      count: `${INITIAL_TEACHERS.length} Officers`,
+      count: teachers.length ? `${teachers.length} Officers` : "Live data unavailable",
       icon: UserCheck,
       desc: "Verification permissions and class supervision assignments.",
     },
@@ -53,7 +75,7 @@ export default function AdminOverviewPage() {
       kicker: "Access Control",
       title: "Role Approvals",
       href: "/admin/approvals",
-      count: "2 Pending",
+      count: "Live API required",
       icon: CheckCircle2,
       desc: "Dual control approval for elevated election officer roles.",
     },
@@ -61,7 +83,7 @@ export default function AdminOverviewPage() {
       kicker: "Department Scope",
       title: "Election Assignments",
       href: "/admin/assignments",
-      count: "3 Assigned",
+      count: "Live API required",
       icon: Award,
       desc: "Link verification officers to specific election boundaries.",
     },
@@ -69,7 +91,7 @@ export default function AdminOverviewPage() {
       kicker: "Staff Credentials",
       title: "Admin Invitations",
       href: "/admin/invitations",
-      count: "Active",
+      count: "Live API required",
       icon: Mail,
       desc: "Hardware token onboarding with mandatory TOTP MFA.",
     },
@@ -77,7 +99,7 @@ export default function AdminOverviewPage() {
       kicker: "Ledger Review",
       title: "Audit Event Logs",
       href: "/admin/audit-logs",
-      count: `${INITIAL_AUDIT_EVENTS.length} Events`,
+      count: auditEvents.length ? `${auditEvents.length} Events` : "Live data unavailable",
       icon: ShieldCheck,
       desc: "Tamper evident append only log of administrative actions.",
     },
@@ -101,6 +123,8 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
+      {error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FBBF24]" role="status">{error}</div>}
+
       {/* Metric Cards with High Contrast Status Indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
@@ -116,7 +140,7 @@ export default function AdminOverviewPage() {
             {openCount}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Across 5 campus departments
+            Reported by the election service
           </span>
         </div>
 
@@ -126,14 +150,14 @@ export default function AdminOverviewPage() {
               Verified Student Voters
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              {Math.round((verifiedStudents / totalStudents) * 100)}%
+              {totalStudents ? `${Math.round((verifiedStudents / totalStudents) * 100)}%` : "—"}
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono tabular-nums">
             {verifiedStudents} / {totalStudents}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Roster verification threshold met
+            Reported by the identity service
           </span>
         </div>
 
@@ -147,10 +171,10 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#10233F] dark:text-white font-mono tabular-nums">
-            {INITIAL_TEACHERS.length}
+            {teachers.length || "—"}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            All active in departmental queues
+            Reported by the identity service
           </span>
         </div>
 
@@ -160,14 +184,14 @@ export default function AdminOverviewPage() {
               Nullifier Integrity
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Verified
+              LIMITED
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono">
-            PASS
+            —
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Zero duplicate nullifier leaks
+            Requires the independent verifier and released evidence package
           </span>
         </div>
       </div>
@@ -233,7 +257,7 @@ export default function AdminOverviewPage() {
         </div>
 
         <div className="space-y-3">
-          {INITIAL_AUDIT_EVENTS.slice(0, 3).map((evt) => (
+          {auditEvents.slice(0, 3).map((evt) => (
             <div
               key={evt.id}
               className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-slate-900/40 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
@@ -261,6 +285,7 @@ export default function AdminOverviewPage() {
               </span>
             </div>
           ))}
+          {auditEvents.length === 0 && <p className="text-sm text-slate-500">No live audit events were returned.</p>}
         </div>
       </div>
     </div>

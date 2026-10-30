@@ -13,7 +13,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Fingerprint
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.*
@@ -31,9 +30,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.himvote.ui.components.BannerStyle
-import com.himvote.ui.components.BiometricAuthFeedbackCard
-import com.himvote.ui.components.BiometricFeedbackController
-import com.himvote.ui.components.BiometricState
 import com.himvote.ui.components.HimVoteButton
 import com.himvote.ui.components.MicroInteractions.animateCardElevation
 import com.himvote.ui.components.MicroInteractions.microPressScale
@@ -43,12 +39,10 @@ import com.himvote.util.AccessibilityHelpers.LargeFontScaleThreshold
 import com.himvote.util.AccessibilityHelpers.accessibleTouchTarget
 import com.himvote.util.AccessibilityHelpers.talkBackHeading
 import com.himvote.util.DesignTokens
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
- * Login screen featuring biometric hardware feedback,
- * tactile micro interactions, elevation transitions, and accessible font scale reflow.
+ * Login screen for the real identity service, with tactile micro interactions,
+ * elevation transitions, and accessible font scale reflow.
  */
 @Composable
 fun LoginScreen(
@@ -57,18 +51,11 @@ fun LoginScreen(
 ) {
     val state by viewModel.uiState.collectAsState()
     val keyboardController = LocalSoftwareKeyboardController.current
-    val coroutineScope = rememberCoroutineScope()
     val fontScale = LocalDensity.current.fontScale
     val isLargeFont = fontScale >= LargeFontScaleThreshold
 
     val interactionSource = remember { MutableInteractionSource() }
     val elevation by animateCardElevation(interactionSource)
-
-    // Biometric feedback controller for quick sign in
-    val biometricController = remember { BiometricFeedbackController() }
-    val biometricState by biometricController.state.collectAsState()
-    val biometricError by biometricController.errorMessage.collectAsState()
-    var showBiometricCard by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -114,28 +101,6 @@ fun LoginScreen(
         )
 
         Spacer(modifier = Modifier.height(DesignTokens.SpacingSmall))
-
-        // Biometric quick sign in section
-        if (showBiometricCard) {
-            BiometricAuthFeedbackCard(
-                state = biometricState,
-                errorMessage = biometricError,
-                onTriggerScan = {
-                    coroutineScope.launch {
-                        biometricController.startScan()
-                        delay(800)
-                        biometricController.markSuccess()
-                        delay(400)
-                        viewModel.populateDemoCredentials()
-                        viewModel.login(onLoginSuccess)
-                    }
-                },
-                onFallbackPassword = {
-                    showBiometricCard = false
-                    biometricController.reset()
-                }
-            )
-        }
 
         Card(
             modifier = Modifier
@@ -229,42 +194,6 @@ fun LoginScreen(
                     contentDesc = "Submit credentials and sign in"
                 )
 
-                if (!showBiometricCard) {
-                    TextButton(
-                        onClick = {
-                            showBiometricCard = true
-                            biometricController.reset()
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .accessibleTouchTarget()
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Fingerprint,
-                                contentDescription = null,
-                                tint = DesignTokens.Teal600,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Text(
-                                text = "Sign In with Biometric Passkey",
-                                color = DesignTokens.Teal600,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-                }
-
-                HimVoteButton(
-                    text = "Use Quick Demo Student Credentials",
-                    onClick = { viewModel.populateDemoCredentials() },
-                    isSecondary = true,
-                    contentDesc = "Fill demo student credentials"
-                )
             }
         }
 

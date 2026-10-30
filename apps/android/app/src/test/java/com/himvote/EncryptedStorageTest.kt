@@ -97,6 +97,10 @@ class EncryptedStorageTest {
 
         val castIds = storage.getCastElectionIds()
         assertTrue(castIds.contains(electionId))
+        assertTrue(
+            "Receipt handles must not be duplicated into the local audit trail",
+            storage.getAuditTrail().none { it.contains(receiptHandle) }
+        )
     }
 
     @Test
@@ -135,6 +139,7 @@ class EncryptedStorageTest {
             rollNumber = "CS2023_002"
         )
         storage.saveSession(session)
+        assertTrue(storage.getAuditTrail().none { it.contains(session.rollNumber.orEmpty()) })
         storage.saveCredential(electionId, StudentCredential(electionId, "tok", "sig"))
         storage.markBallotCast(electionId, "rcpt_retain", "hash_retain")
 

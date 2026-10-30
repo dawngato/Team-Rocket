@@ -8,7 +8,11 @@ public enum ApiError: LocalizedError, Sendable, Equatable {
     case unauthorized
     case forbidden
     case notFound
+    case invalidRequest
+    case conflict
+    case validationFailed
     case rateLimited
+    case serviceUnavailable
     case serverError(statusCode: Int, message: String)
     case decodingError(message: String)
     case networkError(message: String)
@@ -25,8 +29,16 @@ public enum ApiError: LocalizedError, Sendable, Equatable {
             return "You do not have administrative authority to perform this operation."
         case .notFound:
             return "The requested election resource was not found on the platform."
+        case .invalidRequest:
+            return "The request was not accepted. Review the submitted data and try again."
+        case .conflict:
+            return "The request conflicts with the current election state or was already processed. Check the existing status before retrying."
+        case .validationFailed:
+            return "The platform rejected the request data. No vote was accepted."
         case .rateLimited:
             return "Too many requests. Please wait before attempting again."
+        case .serviceUnavailable:
+            return "The required platform service is temporarily unavailable. Try again when it is available."
         case .serverError(let statusCode, let message):
             return "Platform server error \(statusCode): \(message)"
         case .decodingError(let message):
@@ -140,7 +152,7 @@ public final class ApiClient: ApiClientProtocol, @unchecked Sendable {
         identityBaseUrl: URL = URL(string: "http://localhost:8080")!,
         castingBaseUrl: URL = URL(string: "http://localhost:8080")!,
         pinnedPublicKeyHashes: Set<String> = [],
-        allowSelfSignedForTesting: Bool = true
+        allowSelfSignedForTesting: Bool = false
     ) {
         self.identityBaseUrl = identityBaseUrl
         self.castingBaseUrl = castingBaseUrl
@@ -213,11 +225,23 @@ public final class ApiClient: ApiClientProtocol, @unchecked Sendable {
             throw ApiError.forbidden
         case 404:
             throw ApiError.notFound
+        case 400:
+            throw ApiError.invalidRequest
+        case 409:
+            throw ApiError.conflict
+        case 422:
+            throw ApiError.validationFailed
         case 429:
             throw ApiError.rateLimited
+        case 503:
+            throw ApiError.serviceUnavailable
         default:
-            let message = String(data: data, encoding: .utf8) ?? "Unknown server error"
-            throw ApiError.serverError(statusCode: httpResponse.statusCode, message: message)
+            // Do not surface an arbitrary response body: a misconfigured
+            // gateway could echo ballot artifacts or credential material.
+            throw ApiError.serverError(
+                statusCode: httpResponse.statusCode,
+                message: "The platform returned an unexpected response."
+            )
         }
     }
     

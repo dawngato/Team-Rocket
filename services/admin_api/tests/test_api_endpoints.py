@@ -7,7 +7,7 @@ import io
 import zipfile
 from src.crypto.signatures import sign_data_ed25519
 from src.crypto.canonical import canonical_json_bytes
-from src.models.database import WitnessAcknowledgementModel
+from src.models.database import ElectionModel, ElectionStateModel, WitnessAcknowledgementModel
 from src.config import settings
 
 
@@ -217,3 +217,31 @@ def test_admin_rejects_caller_actor_headers_when_dev_mode_is_disabled(client):
         settings.allow_dev_actor_headers = original
 
     assert response.status_code == 401
+
+
+def test_evidence_download_is_blocked_before_release(client, test_db):
+    """The download route must not manufacture a pre-publication archive."""
+    election_id = "elec_unreleased_download"
+    test_db.add(ElectionModel(
+        id=election_id,
+        title="Unreleased election",
+        contest="President",
+        selection_rule="plurality",
+        opens_at_utc="2026-12-01T09:00:00Z",
+        closes_at_utc="2026-12-01T17:00:00Z",
+        issuance_cutoff_utc="2026-12-01T08:00:00Z",
+    ))
+    test_db.add(ElectionStateModel(
+        election_id=election_id,
+        state="CLOSED_PENDING_WITNESS",
+        manifest_digest="manifest_unreleased",
+        opens_at_utc="2026-12-01T09:00:00Z",
+        closes_at_utc="2026-12-01T17:00:00Z",
+        issuance_cutoff_utc="2026-12-01T08:00:00Z",
+    ))
+    test_db.commit()
+
+    response = client.get(f"/v1/elections/{election_id}/evidence?download=true")
+
+    assert response.status_code == 404
+    assert response.json()["error_code"] == "EVIDENCE_NOT_RELEASED"

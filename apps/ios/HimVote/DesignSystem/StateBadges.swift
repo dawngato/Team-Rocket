@@ -80,7 +80,7 @@ public struct ReceiptStatusBadge: View {
         case .witnessed:
             return ColorTokens.stateWitnessed
         case .anchored:
-            return ColorTokens.stateSuccess
+            return ColorTokens.stateAnchored
         case .rejected:
             return ColorTokens.stateDanger
         }
@@ -93,7 +93,7 @@ public struct ReceiptStatusBadge: View {
         case .witnessed:
             return ColorTokens.stateWitnessedBackground
         case .anchored:
-            return ColorTokens.stateSuccessBackground
+            return ColorTokens.stateAnchoredBackground
         case .rejected:
             return ColorTokens.stateDangerBackground
         }
@@ -113,7 +113,7 @@ public struct ReceiptStatusBadge: View {
             )
             .animation(SpringTokens.snappy, value: status)
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Receipt verification status: \(status.displayName)")
+            .accessibilityLabel("Receipt lifecycle status: \(status.displayName)")
     }
 }
 

@@ -23,6 +23,7 @@ public struct MerkleAuditTreeCard: View {
     public let nullifierCommitment: String?
     public let rootHash: String?
     public let status: ReceiptStatus
+    public let isInclusionVerified: Bool
     public let onInspectProof: (() -> Void)?
     
     @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 20
@@ -38,6 +39,7 @@ public struct MerkleAuditTreeCard: View {
         nullifierCommitment: String? = nil,
         rootHash: String? = nil,
         status: ReceiptStatus,
+        isInclusionVerified: Bool = false,
         onInspectProof: (() -> Void)? = nil
     ) {
         self.electionId = electionId
@@ -46,6 +48,7 @@ public struct MerkleAuditTreeCard: View {
         self.nullifierCommitment = nullifierCommitment
         self.rootHash = rootHash
         self.status = status
+        self.isInclusionVerified = isInclusionVerified
         self.onInspectProof = onInspectProof
     }
     
@@ -117,9 +120,9 @@ public struct MerkleAuditTreeCard: View {
         VStack(alignment: .leading, spacing: 0) {
             merkleNodeRow(
                 levelTitle: "Root Anchor",
-                digestText: rootHash ?? "0x7a49c90b6e15bf28a599d14ec812",
-                badgeText: status == .anchored ? "Anchored" : "Pending Anchor",
-                color: status == .anchored ? ColorTokens.stateSuccess : ColorTokens.brandAccent,
+                digestText: rootHash ?? "Awaiting authenticated witness root",
+                badgeText: status == .anchored ? "Anchor reported" : "Witness pending",
+                color: status == .anchored ? ColorTokens.stateAnchored : ColorTokens.stateWarning,
                 isTerminal: false
             )
             
@@ -127,9 +130,9 @@ public struct MerkleAuditTreeCard: View {
             
             merkleNodeRow(
                 levelTitle: "Witness Tree Checkpoint",
-                digestText: "Witness signed inclusion branch",
-                badgeText: status.isTerminalSuccess ? "Witnessed" : "Verifying",
-                color: status.isTerminalSuccess ? ColorTokens.stateWitnessed : ColorTokens.stateWarning,
+                digestText: isInclusionVerified ? "Computed root matches supplied witness root" : "Proof has not been verified on this device",
+                badgeText: isInclusionVerified ? "Verified" : "Not checked",
+                color: isInclusionVerified ? ColorTokens.stateSuccess : ColorTokens.stateWarning,
                 isTerminal: false
             )
             
@@ -137,9 +140,9 @@ public struct MerkleAuditTreeCard: View {
             
             merkleNodeRow(
                 levelTitle: "Cast Ballot Leaf #\(leafIndex)",
-                digestText: nullifierCommitment ?? leafHash ?? "Committed Ciphertext",
-                badgeText: "Included",
-                color: ColorTokens.stateSuccess,
+                digestText: leafHash ?? nullifierCommitment ?? "Awaiting authenticated leaf digest",
+                badgeText: isInclusionVerified ? "Included" : "Not proven",
+                color: isInclusionVerified ? ColorTokens.stateSuccess : ColorTokens.stateWarning,
                 isTerminal: true
             )
         }
@@ -232,7 +235,7 @@ public struct MerkleAuditTreeCard: View {
         case .witnessed:
             return ColorTokens.stateWitnessed
         case .anchored:
-            return ColorTokens.stateSuccess
+            return ColorTokens.stateAnchored
         case .rejected:
             return ColorTokens.stateDanger
         }

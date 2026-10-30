@@ -58,7 +58,7 @@ public struct MerkleAuditDetailSheet: View {
                     .fill(verdictColor.opacity(0.12))
                     .frame(width: headerCircleSize, height: headerCircleSize)
                 
-                Image(systemName: checkItem.verdict == .pass ? "checkmark.shield.fill" : "xmark.shield.fill")
+                Image(systemName: verdictIcon)
                     .resizable()
                     .scaledToFit()
                     .frame(width: headerCircleSize * 0.5, height: headerCircleSize * 0.5)
@@ -170,7 +170,7 @@ public struct MerkleAuditDetailSheet: View {
             return ColorTokens.stateSuccess
         case .fail:
             return ColorTokens.stateDanger
-        case .unverifiable:
+        case .limited, .notChecked, .unverifiable:
             return ColorTokens.stateWarning
         }
     }
@@ -181,8 +181,19 @@ public struct MerkleAuditDetailSheet: View {
             return ColorTokens.stateSuccessBackground
         case .fail:
             return ColorTokens.stateDangerBackground
-        case .unverifiable:
+        case .limited, .notChecked, .unverifiable:
             return ColorTokens.stateWarningBackground
+        }
+    }
+
+    private var verdictIcon: String {
+        switch checkItem.verdict {
+        case .pass:
+            return "checkmark.shield.fill"
+        case .fail:
+            return "xmark.shield.fill"
+        case .limited, .notChecked, .unverifiable:
+            return "exclamationmark.shield.fill"
         }
     }
 }

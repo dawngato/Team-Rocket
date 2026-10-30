@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   UserCheck,
@@ -12,13 +12,30 @@ import {
   Clock,
   ShieldCheck,
 } from "lucide-react";
-import { INITIAL_STUDENTS, INITIAL_ELECTIONS } from "@/lib/mock_data";
+import { apiClient } from "@/lib/api_client";
+import type { Election, StudentRecord } from "@/lib/types";
 
 export default function TeacherOverviewPage() {
-  const pendingStudents = INITIAL_STUDENTS.filter((s) => !s.verified);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [elections, setElections] = useState<Election[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([apiClient.getStudents(), apiClient.getElections()]).then(([studentResult, electionResult]) => {
+      if (!active) return;
+      if (studentResult.status === "fulfilled") setStudents(studentResult.value);
+      if (electionResult.status === "fulfilled") setElections(electionResult.value);
+      if (studentResult.status === "rejected" || electionResult.status === "rejected") {
+        setError("Live teacher workspace data could not be loaded. No local fixture counts are shown.");
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  const pendingStudents = students.filter((s) => !s.verified);
   const pendingCount = pendingStudents.length;
-  const verifiedCount = INITIAL_STUDENTS.filter((s) => s.verified).length;
-  const openElectionsCount = INITIAL_ELECTIONS.filter((e) => e.state === "OPEN").length;
+  const verifiedCount = students.filter((s) => s.verified).length;
+  const openElectionsCount = elections.filter((e) => e.state === "OPEN").length;
 
   const teacherLinks = [
     {
@@ -49,7 +66,7 @@ export default function TeacherOverviewPage() {
       kicker: "Department Contests",
       title: "Published Elections",
       href: "/teacher/elections",
-      count: `${INITIAL_ELECTIONS.length} Contests`,
+      count: elections.length ? `${elections.length} Contests` : "Live data unavailable",
       icon: Vote,
       desc: "Inspect active department elections and published verifiable results.",
     },
@@ -81,6 +98,8 @@ export default function TeacherOverviewPage() {
           </Link>
         </div>
       </div>
+
+      {error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FBBF24]" role="status">{error}</div>}
 
       {/* Metric Cards with High Contrast Status Indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">

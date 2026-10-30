@@ -1,23 +1,38 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { UserCheck, CheckCircle2, XCircle, AlertCircle, Search, Filter } from "lucide-react";
-import { INITIAL_STUDENTS } from "../../../lib/mock_data";
 import { StudentRecord } from "../../../lib/types";
 import { apiClient } from "../../../lib/api_client";
 
 export default function TeacherVerificationQueuePage() {
-  const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterDepartment, setFilterDepartment] = useState("ALL");
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    apiClient.getStudents().then((records) => {
+      if (active) setStudents(records);
+    }).catch((cause) => {
+      if (active) setLoadError(cause instanceof Error ? cause.message : "The identity service could not load the verification queue.");
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
+
   const handleDecision = async (studentId: string, decision: "VERIFIED" | "REJECTED") => {
-    await apiClient.verifyStudent(studentId, decision);
-    setStudents((prev) =>
-      prev.map((s) => (s.id === studentId ? { ...s, status: decision, verified: decision === "VERIFIED" } : s))
-    );
-    setActionSuccess(`Student ${studentId} marked as ${decision}.`);
+    try {
+      const updated = await apiClient.verifyStudent(studentId, decision);
+      setStudents((prev) => prev.map((s) => s.student_id === updated.student_id ? updated : s));
+      setActionSuccess(`Student ${studentId} marked as ${decision}.`);
+    } catch (cause) {
+      setLoadError(cause instanceof Error ? cause.message : "The identity service rejected the verification decision.");
+    }
     setTimeout(() => setActionSuccess(null), 3000);
   };
 
@@ -53,6 +68,8 @@ export default function TeacherVerificationQueuePage() {
           <span>{actionSuccess}</span>
         </div>
       )}
+
+      {loadError && <div className="p-4 rounded-xl bg-[#C23C45]/10 border border-[#C23C45]/30 text-[#8B2630] dark:text-[#FCA5A5] text-sm" role="alert">{loadError}</div>}
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center bg-white dark:bg-[#132135] p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] shadow-sm">
@@ -99,7 +116,7 @@ export default function TeacherVerificationQueuePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {filtered.map((stu) => {
+              {loading ? <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">Loading the authoritative identity roster…</td></tr> : filtered.map((stu) => {
                 const isPending = stu.status === "PENDING_VERIFICATION";
                 const isVerified = stu.status === "VERIFIED";
 
@@ -167,6 +184,7 @@ export default function TeacherVerificationQueuePage() {
                   </tr>
                 );
               })}
+              {!loading && filtered.length === 0 && <tr><td colSpan={5} className="px-6 py-12 text-center text-slate-500">No roster records were returned by the identity service.</td></tr>}
             </tbody>
           </table>
         </div>

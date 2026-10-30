@@ -22,13 +22,13 @@
 
 | Gate | Requirement | Result | Block / Pass |
 |------|-------------|--------|--------------|
-| G-01 | Python test suite ≥ 200 tests, all pass | 281 pass (`python3 tools/run_all_tests.py`) | **PASS** |
-| G-02 | Web UI tests pass (Vitest) | 76 pass | **PASS** |
+| G-01 | Python test suite ≥ 200 tests, all pass | 302 pass (`python3 tools/run_all_tests.py`) | **PASS** |
+| G-02 | Web UI tests pass (Vitest) | 84 pass across 14 files and typecheck exit 0 | **PASS** |
 | G-03 | Desktop .NET tests pass | 101 pass | **PASS** |
 | G-04 | Android native tests pass (clean run) | UP-TO-DATE cached; prior clean run FAILED | **BLOCK** |
 | G-05 | iOS native tests pass | Blocked — no macOS | **BLOCK** |
 | G-06 | All 5 mandatory Q7 attack tests pass | 5/5 pass (54-test suite) | **PASS** |
-| G-07 | Standalone verifier verifies local evidence properties | 7 verifier tests pass in the isolated unified run | **PASS** |
+| G-07 | Standalone verifier verifies local evidence properties | 12 verifier tests pass in the isolated unified run; native tally is not checked | **PASS WITH LIMITS** |
 | G-08 | Crypto engine is Helios, Belenios, or ElectionGuard | Homegrown VEEM (Profile VEEM, ElGamal) | **BLOCK** |
 | G-09 | Trustee key ceremony implemented | No trustee ceremony; single operator holds keys | **BLOCK** |
 | G-10 | External witness structurally independent | Witness in same Compose stack as operator | **BLOCK** |
@@ -59,7 +59,7 @@
 # Python full suite
 cd /home/Kali/Desktop/HPTU/Team-Rocket
 python3 tools/run_all_tests.py
-# Exit code: 0  |  299 passed, 0 failed, 0 skipped across all 11 suites
+# Exit code: 0  |  302 passed, 0 failed, 0 skipped across all 11 suites
 
 # Q7 attack suite and demo
 python3 demo_five_attacks.py
@@ -67,11 +67,16 @@ python3 demo_five_attacks.py
 
 # Verifier
 python3 tools/run_all_tests.py
-# Isolated verifier suite: 7 passed
+# Isolated verifier suite: 12 passed; native engine tally remains NOT_CHECKED
 
 # Web
 cd apps/web && npm run typecheck && npm test
-# Exit code: 0  |  typecheck passed; 76 Vitest tests passed
+# Exit code: 0  |  typecheck passed; 84 Vitest tests passed across 14 files
+
+# Production web build and browser smoke
+./node_modules/.bin/next build
+python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --server "./node_modules/.bin/next start" --port 3000 -- python -u tests/browser_smoke.py
+# Exit code: 0  |  production build and Chromium smoke passed; CSP-safe stylesheet wait, reduced motion, public disclaimer, role preview disclosure, mobile navigation, and fail-closed routes checked
 
 # Desktop
 cd apps/desktop && dotnet test
@@ -79,7 +84,7 @@ cd apps/desktop && dotnet test
 
 # Android (incremental — NOT a clean run)
 cd apps/android && ./gradlew test
-# Exit code: 0  |  65 tasks UP-TO-DATE (prior clean run: FAILED per IMPLEMENTATION_STATUS.md)
+# Exit code: 137  |  terminated during KAPT/resource-constrained compilation; Android is not a pass
 
 # iOS — BLOCKED
 xcodebuild test -scheme HimVote ...
@@ -96,7 +101,7 @@ forge test --match-path chain/tests/
 
 | Area | Coverage |
 |------|----------|
-| Credential issuance (blind sig) | Fully tested |
+| Credential issuance primitive | Local RFC 9474 vectors are tested; complete established-engine issuance is not integrated |
 | Single-cast enforcement (nullifier) | Fully tested (including 100-concurrent load) |
 | State machine (20 states) | Fully tested |
 | Merkle log (RFC 9162) | Fully tested |
@@ -105,7 +110,7 @@ forge test --match-path chain/tests/
 | Anchor relayer (chain mock) | Fully tested |
 | 5 mandatory Q7 attacks | Fully tested |
 | Protocol integration (4 fault scenarios) | Fully tested |
-| Web UI (48 routes) | Fully tested |
+| Web UI | 84 Vitest tests, typecheck, production build and production browser smoke pass; full server-backed role coverage remains partial |
 | Desktop (101 .NET) | Fully tested |
 | Android (Jetpack Compose) | Not confirmed on clean build |
 | iOS (SwiftUI) | Not tested (no macOS) |
@@ -123,7 +128,7 @@ forge test --match-path chain/tests/
 
 | Platform | Implementation | Test Status | Notes |
 |----------|---------------|-------------|-------|
-| Web (Next.js) | `apps/web/` | **PASS** (76 Vitest) | Full |
+| Web (Next.js) | `apps/web/` | **PASS** (84 Vitest, typecheck, production build and browser smoke) | Authoritative API paths; external engine gate remains blocked |
 | Android (Jetpack Compose) | `apps/android/` | **BLOCKED** | Clean build evidence is unavailable; prior run failed |
 | iOS (SwiftUI) | `apps/ios/` | **BLOCKED** | Requires macOS + Xcode |
 | Windows/Linux Desktop (Avalonia) | `apps/desktop/` | **PASS** (101 .NET) | Full |

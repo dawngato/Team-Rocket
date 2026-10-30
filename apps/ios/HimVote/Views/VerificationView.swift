@@ -179,13 +179,13 @@ public struct VerificationView: View {
                     .font(Typography.cardHeader)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .foregroundStyle(auditorViewModel.overallVerdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
-                    .background(auditorViewModel.overallVerdict == .pass ? ColorTokens.stateSuccessBackground : ColorTokens.stateDangerBackground)
+                    .foregroundStyle(verdictColor)
+                    .background(verdictBackground)
                     .clipShape(Capsule())
                     .overlay(
                         Capsule()
                             .stroke(
-                                auditorViewModel.overallVerdict == .pass ? ColorTokens.stateSuccess.opacity(0.4) : ColorTokens.stateDanger.opacity(0.4),
+                                verdictColor.opacity(0.4),
                                 lineWidth: 1.5
                             )
                     )
@@ -203,11 +203,35 @@ public struct VerificationView: View {
     private var verdictSubtitle: String {
         switch auditorViewModel.overallVerdict {
         case .pass:
-            return "All cryptographic integrity proofs confirmed valid"
+            return "Every required check completed against independently supplied trust material"
         case .fail:
             return "One or more integrity checks failed verification"
-        case .unverifiable:
-            return "Evidence package pending verification"
+        case .limited:
+            return "Metadata checks completed; cryptographic verification still requires the standalone verifier"
+        case .notChecked, .unverifiable:
+            return "No independent cryptographic verdict is available yet"
+        }
+    }
+
+    private var verdictColor: Color {
+        switch auditorViewModel.overallVerdict {
+        case .pass:
+            return ColorTokens.stateSuccess
+        case .fail:
+            return ColorTokens.stateDanger
+        case .limited, .notChecked, .unverifiable:
+            return ColorTokens.stateWarning
+        }
+    }
+
+    private var verdictBackground: Color {
+        switch auditorViewModel.overallVerdict {
+        case .pass:
+            return ColorTokens.stateSuccessBackground
+        case .fail:
+            return ColorTokens.stateDangerBackground
+        case .limited, .notChecked, .unverifiable:
+            return ColorTokens.stateWarningBackground
         }
     }
     
@@ -224,8 +248,8 @@ public struct VerificationView: View {
                 } label: {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: check.verdict == .pass ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
+                            Image(systemName: verdictIcon(for: check.verdict))
+                                .foregroundStyle(verdictColor(for: check.verdict))
                             
                             Text(check.name)
                                 .font(Typography.bodyBold)
@@ -237,8 +261,8 @@ public struct VerificationView: View {
                                 .font(Typography.badgeText)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .foregroundStyle(check.verdict == .pass ? ColorTokens.stateSuccess : ColorTokens.stateDanger)
-                                .background(check.verdict == .pass ? ColorTokens.stateSuccessBackground : ColorTokens.stateDangerBackground)
+                                .foregroundStyle(verdictColor(for: check.verdict))
+                                .background(verdictBackground(for: check.verdict))
                                 .clipShape(RoundedRectangle(cornerRadius: 6))
                             
                             Image(systemName: "chevron.right")
@@ -296,7 +320,42 @@ public struct VerificationView: View {
                 HapticFeedback.success()
             } else if auditorViewModel.overallVerdict == .fail {
                 HapticFeedback.error()
+            } else {
+                HapticFeedback.warning()
             }
+        }
+    }
+
+    private func verdictIcon(for verdict: VerificationVerdict) -> String {
+        switch verdict {
+        case .pass:
+            return "checkmark.circle.fill"
+        case .fail:
+            return "xmark.circle.fill"
+        case .limited, .notChecked, .unverifiable:
+            return "exclamationmark.circle.fill"
+        }
+    }
+
+    private func verdictColor(for verdict: VerificationVerdict) -> Color {
+        switch verdict {
+        case .pass:
+            return ColorTokens.stateSuccess
+        case .fail:
+            return ColorTokens.stateDanger
+        case .limited, .notChecked, .unverifiable:
+            return ColorTokens.stateWarning
+        }
+    }
+
+    private func verdictBackground(for verdict: VerificationVerdict) -> Color {
+        switch verdict {
+        case .pass:
+            return ColorTokens.stateSuccessBackground
+        case .fail:
+            return ColorTokens.stateDangerBackground
+        case .limited, .notChecked, .unverifiable:
+            return ColorTokens.stateWarningBackground
         }
     }
 }

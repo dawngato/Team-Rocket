@@ -130,6 +130,15 @@ class VotingViewModel @Inject constructor(
     ) {
         _uiState.value = _uiState.value.copy(isProcessingReturn = true, errorMessage = null)
         viewModelScope.launch {
+            if (returnElectionId != electionId ||
+                !singleCastChecker.validateCastParameters(returnElectionId, receiptHandle, ballotHash)
+            ) {
+                _uiState.value = _uiState.value.copy(
+                    isProcessingReturn = false,
+                    errorMessage = "The booth return did not match this election or receipt format"
+                )
+                return@launch
+            }
             val result = votingRepository.handleBoothReturn(
                 electionId = returnElectionId,
                 receiptHandle = receiptHandle,
@@ -160,13 +169,4 @@ class VotingViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Kept as a compatibility hook for older navigation code. A client must
-     * never synthesize a ballot or receipt locally.
-     */
-    fun simulateSuccessfulBoothReturn(onSuccess: (String) -> Unit) {
-        _uiState.value = _uiState.value.copy(
-            errorMessage = "Synthetic booth returns are disabled. Use the supported voting booth."
-        )
-    }
 }

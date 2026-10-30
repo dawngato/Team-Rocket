@@ -1,6 +1,6 @@
 FROM python:3.12-slim
 WORKDIR /app
-RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy alembic pydantic psycopg2-binary httpx python-dotenv cryptography
+RUN pip install --no-cache-dir fastapi uvicorn sqlalchemy alembic pydantic psycopg2-binary httpx python-dotenv cryptography greenlet
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .

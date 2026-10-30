@@ -10,6 +10,7 @@ import argparse
 import base64
 import hashlib
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -249,6 +250,13 @@ class ArchiveInspectionResult:
     announced_tallies: dict[str, int]
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    has_witness_final: bool = False
+    has_trust_pins: bool = False
+    has_roster_approval: bool = False
+    has_issuer_closure: bool = False
+    has_chain_pins: bool = False
+    has_attestation: bool = False
+    external_package_complete: bool = False
 
     @property
     def is_valid(self) -> bool:
@@ -498,6 +506,10 @@ class ElectionArchive:
         source_path: Path,
         witness_final: dict[str, Any] | None = None,
         trust_pins: dict[str, Any] | None = None,
+        roster_approval: dict[str, Any] | None = None,
+        issuer_closure: dict[str, Any] | None = None,
+        chain_pins: dict[str, Any] | None = None,
+        attestation: dict[str, Any] | None = None,
         temp_dir: tempfile.TemporaryDirectory | None = None,
     ) -> None:
         self.manifest = manifest
@@ -506,6 +518,10 @@ class ElectionArchive:
         self.source_path = source_path
         self.witness_final = witness_final
         self.trust_pins = trust_pins
+        self.roster_approval = roster_approval
+        self.issuer_closure = issuer_closure
+        self.chain_pins = chain_pins
+        self.attestation = attestation
         self._temp_dir = temp_dir
         self._canonical_bytes_cache: list[bytes] | None = None
 
@@ -618,21 +634,27 @@ class ElectionArchive:
                 except Exception:
                     pass
 
-        # Locate optional trust pins
-        trust_pins: dict[str, Any] | None = None
-        trust_candidates = [
-            working_dir / "trust_pins.json",
-            working_dir / "external" / "trust_pins.json",
-            working_dir.parent / "external" / "trust_pins.json",
-        ]
-        for tc in trust_candidates:
-            if tc.exists():
-                try:
-                    with open(tc, "rb") as tf_pin:
-                        trust_pins = safe_json_loads(tf_pin.read())
-                    break
-                except Exception:
-                    pass
+        # Locate optional trust pins and external package files
+        def find_external_json(filename: str) -> dict[str, Any] | None:
+            candidates = [
+                working_dir / filename,
+                working_dir / "external" / filename,
+                working_dir.parent / "external" / filename,
+            ]
+            for c in candidates:
+                if c.exists():
+                    try:
+                        with open(c, "rb") as f:
+                            return safe_json_loads(f.read())
+                    except Exception:
+                        pass
+            return None
+
+        trust_pins = find_external_json("trust_pins.json")
+        roster_approval = find_external_json("roster_approval.json")
+        issuer_closure = find_external_json("issuer_closure.json")
+        chain_pins = find_external_json("chain_pins.json")
+        attestation = find_external_json("attestation.json")
 
         # Sort leaves by leaf_index if present
         def get_index(record: dict[str, Any]) -> int:
@@ -648,6 +670,10 @@ class ElectionArchive:
             source_path=target_path,
             witness_final=witness_final,
             trust_pins=trust_pins,
+            roster_approval=roster_approval,
+            issuer_closure=issuer_closure,
+            chain_pins=chain_pins,
+            attestation=attestation,
             temp_dir=temp_holder,
         )
 
@@ -914,6 +940,13 @@ class ElectionArchive:
             ),
             warnings=warnings,
             errors=errors,
+            has_witness_final=self.witness_final is not None,
+            has_trust_pins=self.trust_pins is not None,
+            has_roster_approval=self.roster_approval is not None,
+            has_issuer_closure=self.issuer_closure is not None,
+            has_chain_pins=self.chain_pins is not None,
+            has_attestation=self.attestation is not None,
+            external_package_complete=bool(self.witness_final and self.trust_pins and self.roster_approval and self.issuer_closure and self.chain_pins),
         )
 
 
@@ -1146,8 +1179,8 @@ class StatusChip(tk.Frame):
         glyph = self.GLYPHS.get(self.variant, "●")
         display_str = f" {glyph}  {text.strip()} " if text.strip() else ""
 
-        self.configure(bg=border_col, bd=1, relief="solid")
-        self.label.configure(text=display_str, bg=bg_col, fg=fg_col)
+        self.configure(bg=bg_col, bd=0, relief="flat", highlightthickness=1, highlightbackground=border_col)
+        self.label.configure(text=display_str, bg=bg_col, fg=fg_col, padx=10, pady=3)
 
     def get_status(self) -> tuple[str, str]:
         """Return tuple of current text and variant."""
@@ -1342,6 +1375,20 @@ class ReceiptInspectionModal(tk.Toplevel):
                 style="Action.TButton",
             ).pack(side="left")
 
+        ttk.Button(
+            bottom_bar,
+            text="Save to Voter Wallet",
+            command=self._save_to_wallet,
+            style="Action.TButton",
+        ).pack(side="left", padx=4)
+
+        ttk.Button(
+            bottom_bar,
+            text="Export Receipt File",
+            command=self._export_file,
+            style="Secondary.TButton",
+        ).pack(side="left", padx=4)
+
         self.archive_verdict = ttk.Label(bottom_bar, text="", style="CardBody.TLabel")
         self.archive_verdict.pack(side="left", padx=10)
 
@@ -1360,6 +1407,48 @@ class ReceiptInspectionModal(tk.Toplevel):
             self.copy_status.configure(text="Copied to clipboard!", foreground=GREEN)
         except Exception as exc:
             self.copy_status.configure(text=f"Copy failed: {exc}", foreground=RED)
+
+    def _save_to_wallet(self) -> None:
+        try:
+            handle = self.receipt_data.get("handle") or self.receipt_data.get("receipt_handle") or "rcpt_unknown"
+            elec_id = self.receipt_data.get("election_id") or "elec_unknown"
+            status = self.receipt_data.get("status") or "PENDING_WITNESS"
+            leaf_idx = self.receipt_data.get("leaf_index")
+            wit_at = self.receipt_data.get("witnessed_at")
+            server_commit = self.receipt_data.get("server_commitment")
+            wit_check = self.receipt_data.get("witness_checkpoint")
+            ballot_hash = self.receipt_data.get("ballot_hash")
+
+            saved = SavedReceipt(
+                receipt_handle=str(handle),
+                election_id=str(elec_id),
+                status=str(status),
+                leaf_index=leaf_idx if isinstance(leaf_idx, int) else None,
+                witnessed_at=str(wit_at) if wit_at else None,
+                server_commitment=str(server_commit) if server_commit else None,
+                witness_checkpoint=str(wit_check) if wit_check else None,
+                ballot_hash=str(ballot_hash) if ballot_hash else None,
+            )
+            wallet = ReceiptWallet()
+            wallet.save_receipt(saved)
+            self.copy_status.configure(text="Saved to voter wallet!", foreground=GREEN)
+        except Exception as exc:
+            self.copy_status.configure(text=f"Save failed: {exc}", foreground=RED)
+
+    def _export_file(self) -> None:
+        try:
+            from tkinter import filedialog
+            path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
+                title="Export Receipt Record",
+            )
+            if path:
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(self.receipt_data, f, indent=2)
+                self.copy_status.configure(text=f"Exported to {Path(path).name}", foreground=GREEN)
+        except Exception as exc:
+            self.copy_status.configure(text=f"Export failed: {exc}", foreground=RED)
 
     def _verify_against_archive(self) -> None:
         if not self.current_archive:
@@ -2087,6 +2176,445 @@ class AuditReportExportModal(tk.Toplevel):
 
 
 
+
+class ResultsComparisonModal(tk.Toplevel):
+    """Split-view modal comparing announced election tallies against recomputed engine totals (PROMPT3 DESKTOP-05)."""
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        election_title: str,
+        election_id: str,
+        manifest_digest: str,
+        merkle_root: str,
+        announced_tallies: dict[str, int],
+        recomputed_tallies: list[CandidateTally],
+    ) -> None:
+        super().__init__(parent)
+        self.title("Results Comparison & Discrepancy Analysis (DESKTOP-05)")
+        self.geometry("880x600")
+        self.minsize(740, 480)
+        self.configure(bg=SURFACE)
+
+        self.election_title = election_title
+        self.election_id = election_id
+        self.manifest_digest = manifest_digest
+        self.merkle_root = merkle_root
+        self.announced_tallies = announced_tallies
+        self.recomputed_tallies = recomputed_tallies
+
+        self.discrepancies: list[dict[str, Any]] = []
+        self.all_match = True
+
+        recomp_map = {t.candidate_id: t for t in recomputed_tallies}
+        all_cand_ids = sorted(set(list(announced_tallies.keys()) + list(recomp_map.keys())))
+
+        total_announced = sum(announced_tallies.values())
+        total_recomputed = sum(t.vote_count for t in recomputed_tallies)
+
+        for cid in all_cand_ids:
+            recomp_tally = recomp_map.get(cid)
+            name = recomp_tally.name if recomp_tally else cid
+            ann_votes = announced_tallies.get(cid, 0)
+            rec_votes = recomp_tally.vote_count if recomp_tally else 0
+            diff = rec_votes - ann_votes
+            is_match = (diff == 0)
+            if not is_match:
+                self.all_match = False
+
+            ann_pct = (ann_votes / total_announced * 100.0) if total_announced > 0 else 0.0
+            rec_pct = (rec_votes / total_recomputed * 100.0) if total_recomputed > 0 else 0.0
+
+            self.discrepancies.append({
+                "candidate_id": cid,
+                "name": name,
+                "announced_votes": ann_votes,
+                "announced_pct": ann_pct,
+                "recomputed_votes": rec_votes,
+                "recomputed_pct": rec_pct,
+                "diff": diff,
+                "is_match": is_match,
+            })
+
+        self._build_ui()
+
+    def _build_ui(self) -> None:
+        header = ttk.Frame(self, style="App.TFrame")
+        header.pack(fill="x", padx=24, pady=(18, 10))
+
+        ttk.Label(header, text="DESKTOP-05 AUDIT VERIFICATION", font=("DejaVu Sans", 8, "bold"), foreground=TEAL).pack(anchor="w")
+        ttk.Label(header, text=f"Tally Comparison: {self.election_title}", font=("DejaVu Sans", 14, "bold"), foreground=NAVY).pack(anchor="w", pady=(2, 4))
+
+        # Overall Verdict Banner
+        banner = ttk.Frame(self, style="Card.TFrame", padding=(14, 10))
+        banner.pack(fill="x", padx=24, pady=(0, 12))
+
+        v_text = "EXACT TALLY MATCH: Recomputed ballots match announced certified results (0 discrepancies)" if self.all_match else "DISCREPANCY DETECTED: Differences found between announced and recomputed counts"
+        v_color = GREEN if self.all_match else RED
+        ttk.Label(banner, text=v_text, font=("DejaVu Sans", 10, "bold"), foreground=v_color, background=WHITE).pack(anchor="w")
+
+        # Table container
+        table_frame = ttk.Frame(self, style="Card.TFrame", padding=14)
+        table_frame.pack(fill="both", expand=True, padx=24, pady=(0, 12))
+
+        # Column Headers
+        hdr_row = ttk.Frame(table_frame, style="Card.TFrame")
+        hdr_row.pack(fill="x", pady=(0, 8))
+        ttk.Label(hdr_row, text="Candidate", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=22).pack(side="left")
+        ttk.Label(hdr_row, text="Announced / Certified", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=24).pack(side="left")
+        ttk.Label(hdr_row, text="Recomputed Engine", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=24).pack(side="left")
+        ttk.Label(hdr_row, text="Delta", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=12).pack(side="left")
+
+        # Rows
+        for item in self.discrepancies:
+            row = ttk.Frame(table_frame, style="Card.TFrame", padding=(0, 4))
+            row.pack(fill="x", pady=2)
+
+            cand_text = f"{item['name']} ({item['candidate_id']})"
+            ttk.Label(row, text=cand_text, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, width=22).pack(side="left")
+
+            ann_str = f"{item['announced_votes']} votes ({item['announced_pct']:.1f}%)"
+            ttk.Label(row, text=ann_str, font=("DejaVu Sans", 9), foreground=NAVY, background=WHITE, width=24).pack(side="left")
+
+            rec_str = f"{item['recomputed_votes']} votes ({item['recomputed_pct']:.1f}%)"
+            ttk.Label(row, text=rec_str, font=("DejaVu Sans", 9, "bold"), foreground=TEAL, background=WHITE, width=24).pack(side="left")
+
+            diff_str = "MATCH (0)" if item["is_match"] else f"DIFF ({item['diff']:+d})"
+            diff_color = GREEN if item["is_match"] else RED
+            ttk.Label(row, text=diff_str, font=("DejaVu Sans", 9, "bold"), foreground=diff_color, background=WHITE, width=12).pack(side="left")
+
+        # Bottom Action Bar
+        bottom = ttk.Frame(self, style="App.TFrame")
+        bottom.pack(fill="x", padx=24, pady=(0, 18))
+
+        ttk.Button(bottom, text="Export Discrepancies Report", command=self.export_report, style="Action.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(bottom, text="Close", command=self.destroy, style="Secondary.TButton").pack(side="left")
+
+        self.status_label = ttk.Label(bottom, text="", font=("DejaVu Sans", 9))
+        self.status_label.pack(side="left", padx=12)
+
+    def generate_report_markdown(self) -> str:
+        lines = [
+            f"# Tally Comparison & Discrepancy Report",
+            f"**Election Title**: {self.election_title}",
+            f"**Election ID**: `{self.election_id}`",
+            f"**Manifest Digest**: `{self.manifest_digest}`",
+            f"**Merkle Tree Root**: `{self.merkle_root}`",
+            f"**Overall Verdict**: `{'EXACT_MATCH' if self.all_match else 'DISCREPANCY_DETECTED'}`",
+            f"",
+            f"| Candidate | Announced Votes | Recomputed Votes | Delta | Status |",
+            f"|---|---|---|---|---|",
+        ]
+        for d in self.discrepancies:
+            status = "PASS (Match)" if d["is_match"] else f"FAIL ({d['diff']:+d})"
+            lines.append(f"| {d['name']} (`{d['candidate_id']}`) | {d['announced_votes']} ({d['announced_pct']:.1f}%) | {d['recomputed_votes']} ({d['recomputed_pct']:.1f}%) | {d['diff']:+d} | {status} |")
+        return "\n".join(lines)
+
+    def export_report(self) -> None:
+        try:
+            path = filedialog.asksaveasfilename(
+                defaultextension=".md",
+                filetypes=[("Markdown", "*.md"), ("JSON", "*.json"), ("All Files", "*.*")],
+                title="Export Discrepancy Audit Report",
+            )
+            if path:
+                content = self.generate_report_markdown() if path.endswith(".md") else json.dumps(self.discrepancies, indent=2)
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(content)
+                self.status_label.configure(text=f"Exported to {Path(path).name}", foreground=GREEN)
+        except Exception as exc:
+            self.status_label.configure(text=f"Export failed: {exc}", foreground=RED)
+
+
+class BallotBox3DCanvas(tk.Canvas):
+    """Interactive 3D isometric rotatable ballot box sculpture with studio lighting (PROMPT3 Section 6.2)."""
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        width: int = 340,
+        height: int = 210,
+        bg_color: str = WHITE,
+        reduced_motion: bool = False,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, width=width, height=height, bg=bg_color, highlightthickness=0, **kwargs)
+        self.width = width
+        self.height = height
+        self.reduced_motion = reduced_motion
+        self.yaw = math.radians(35)
+        self.pitch = math.radians(22)
+        self._drag_start_x = 0
+        self._drag_start_y = 0
+        self._is_dragging = False
+        self._anim_id: str | None = None
+        self._anim_tick = 0.0
+
+        self.box_w = 48
+        self.box_h = 38
+        self.box_d = 48
+
+        self.bind("<ButtonPress-1>", self._on_mouse_down)
+        self.bind("<B1-Motion>", self._on_mouse_drag)
+        self.bind("<ButtonRelease-1>", self._on_mouse_up)
+
+        self.draw_box()
+        if not self.reduced_motion:
+            self.start_animation()
+
+    def toggle_reduced_motion(self) -> bool:
+        self.reduced_motion = not self.reduced_motion
+        if self.reduced_motion:
+            self.stop_animation()
+            self.yaw = math.radians(35)
+            self.pitch = math.radians(22)
+            self.draw_box()
+        else:
+            self.start_animation()
+        return self.reduced_motion
+
+    def start_animation(self) -> None:
+        if self._anim_id is not None:
+            return
+        self._step_animation()
+
+    def stop_animation(self) -> None:
+        if self._anim_id is not None:
+            self.after_cancel(self._anim_id)
+            self._anim_id = None
+
+    def _step_animation(self) -> None:
+        if self.reduced_motion or self._is_dragging:
+            self._anim_id = self.after(100, self._step_animation)
+            return
+        self._anim_tick += 0.03
+        self.yaw = math.radians(35) + math.sin(self._anim_tick) * 0.12
+        self.pitch = math.radians(22) + math.cos(self._anim_tick * 0.8) * 0.06
+        self.draw_box()
+        self._anim_id = self.after(40, self._step_animation)
+
+    def _on_mouse_down(self, event: tk.Event) -> None:
+        self._is_dragging = True
+        self._drag_start_x = event.x
+        self._drag_start_y = event.y
+
+    def _on_mouse_drag(self, event: tk.Event) -> None:
+        dx = event.x - self._drag_start_x
+        dy = event.y - self._drag_start_y
+        self._drag_start_x = event.x
+        self._drag_start_y = event.y
+
+        self.yaw += dx * 0.015
+        self.pitch += dy * 0.015
+        self.pitch = max(math.radians(-60), min(math.radians(60), self.pitch))
+        self.draw_box()
+
+    def _on_mouse_up(self, event: tk.Event) -> None:
+        self._is_dragging = False
+
+    def project_point(self, x: float, y: float, z: float, scale: float = 1.0) -> tuple[float, float, float]:
+        cos_y, sin_y = math.cos(self.yaw), math.sin(self.yaw)
+        cos_p, sin_p = math.cos(self.pitch), math.sin(self.pitch)
+
+        x1 = x * cos_y - z * sin_y
+        z1 = x * sin_y + z * cos_y
+
+        y2 = y * cos_p - z1 * sin_p
+        z2 = y * sin_p + z1 * cos_p
+
+        cx = self.width / 2.0
+        cy = self.height / 2.0 + 6.0
+        px = cx + x1 * scale
+        py = cy - y2 * scale
+        return (px, py, z2)
+
+    def draw_box(self) -> None:
+        self.delete("all")
+        w, h, d = self.box_w, self.box_h, self.box_d
+
+        verts = [
+            (-w, -h, -d), (w, -h, -d), (w, h, -d), (-w, h, -d),
+            (-w, -h, d),  (w, -h, d),  (w, h, d),  (-w, h, d)
+        ]
+
+        proj = [self.project_point(vx, vy, vz) for vx, vy, vz in verts]
+
+        faces = [
+            ([1, 0, 3, 2], "#081320", "#0B1B30", 1, "back"),
+            ([0, 4, 7, 3], "#0B1B30", TEAL, 1, "left"),
+            ([0, 1, 5, 4], "#050C16", "#050C16", 1, "bottom"),
+            ([3, 2, 6, 7], "#D7F3F9", TEAL, 2, "top"),
+            ([1, 5, 6, 2], TEAL, "#D7F3F9", 1, "right"),
+            ([4, 5, 6, 7], NAVY, TEAL, 2, "front"),
+        ]
+
+        face_depths = []
+        for face_indices, fill, outline, outline_w, name in faces:
+            avg_z = sum(proj[i][2] for i in face_indices) / len(face_indices)
+            face_depths.append((avg_z, face_indices, fill, outline, outline_w, name))
+        face_depths.sort(key=lambda item: item[0])
+
+        for _, face_indices, fill, outline, outline_w, name in face_depths:
+            poly_points = []
+            for i in face_indices:
+                poly_points.extend([proj[i][0], proj[i][1]])
+            self.create_polygon(poly_points, fill=fill, outline=outline, width=outline_w, tags="box_face")
+
+            if name == "top":
+                self._draw_slot_and_ballot(w, h, d)
+            elif name == "front":
+                self._draw_front_emblem(proj[4], proj[5], proj[6], proj[7])
+
+        self._draw_floating_badges()
+
+    def _draw_slot_and_ballot(self, w: float, h: float, d: float) -> None:
+        slot_w, slot_d = w * 0.55, d * 0.12
+        sw_verts = [
+            (-slot_w, h, -slot_d), (slot_w, h, -slot_d),
+            (slot_w, h, slot_d), (-slot_w, h, slot_d)
+        ]
+        sw_proj = [self.project_point(vx, vy, vz) for vx, vy, vz in sw_verts]
+        slot_pts = []
+        for p in sw_proj:
+            slot_pts.extend([p[0], p[1]])
+        self.create_polygon(slot_pts, fill="#0B1B30", outline=TEAL, width=1, tags="slot")
+
+        bw, bh = slot_w * 0.82, 20.0
+        b_verts = [
+            (-bw, h + bh, 0), (bw, h + bh, 0),
+            (bw, h + 2, 0), (-bw, h + 2, 0)
+        ]
+        b_proj = [self.project_point(vx, vy, vz) for vx, vy, vz in b_verts]
+        b_pts = []
+        for p in b_proj:
+            b_pts.extend([p[0], p[1]])
+        self.create_polygon(b_pts, fill=WHITE, outline=TEAL, width=1, tags="ballot")
+
+        m_x = (b_proj[0][0] + b_proj[1][0]) / 2.0
+        m_y = (b_proj[0][1] + b_proj[2][1]) / 2.0
+        self.create_text(m_x, m_y, text="ENCRYPTED", fill=TEAL, font=("DejaVu Sans", 6, "bold"), tags="ballot_text")
+
+    def _draw_front_emblem(self, p4: Any, p5: Any, p6: Any, p7: Any) -> None:
+        cx = (p4[0] + p5[0] + p6[0] + p7[0]) / 4.0
+        cy = (p4[1] + p5[1] + p6[1] + p7[1]) / 4.0
+        self.create_oval(cx - 9, cy - 9, cx + 9, cy + 9, fill=TEAL, outline="#D7F3F9", width=1)
+        self.create_text(cx, cy, text="H", fill=WHITE, font=("DejaVu Sans", 8, "bold"))
+        self.create_text(cx, cy + 14, text="SECURE ENCLAVE", fill="#D7F3F9", font=("DejaVu Sans", 5, "bold"))
+
+    def _draw_floating_badges(self) -> None:
+        badges = [
+            ("RFC 9162 MERKLE", 14, 16, GREEN),
+            ("ZERO-KNOWLEDGE", self.width - 14, 16, TEAL),
+            ("WITNESS CO-SIGNED", self.width / 2, self.height - 12, AMBER),
+        ]
+        for label, bx, by, color in badges:
+            anchor = "nw" if bx < self.width / 3 else ("ne" if bx > 2 * self.width / 3 else "center")
+            self.create_text(bx, by, text=f"* {label}", fill=color, font=("DejaVu Sans", 7, "bold"), anchor=anchor)
+
+    def destroy(self) -> None:
+        self.stop_animation()
+        super().destroy()
+
+
+class IsometricEvidencePipelineCanvas(tk.Canvas):
+    """Interactive isometric canvas illustrating the 6-stage cryptographic evidence pipeline (PROMPT3 Section 6.2)."""
+
+    STAGES = [
+        ("Identity Roster", "IDENTITY DOMAIN", "Approved synthetic voter snapshot & SSO", NAVY, "#D7F3F9"),
+        ("Anonymous Token", "ISSUER SERVICE", "RFC 9474 unblinded one-use credential", TEAL, WHITE),
+        ("Casting Enclave", "CASTING DOMAIN", "Zero-knowledge proof & encrypted ballot", NAVY, "#D7F3F9"),
+        ("Merkle Log", "EVIDENCE LOG", "RFC 9162 append-only hash tree leaves", GREEN, WHITE),
+        ("Witness Checkpoint", "EXTERNAL WITNESS", "Monotonic cosigned tree head checkpoint", AMBER, WHITE),
+        ("Offline Verifier", "INDEPENDENT AUDITOR", "Standalone verification with pinned keys", GREEN, WHITE),
+    ]
+
+    def __init__(
+        self,
+        parent: tk.Widget,
+        width: int = 760,
+        height: int = 120,
+        bg_color: str = SURFACE,
+        on_stage_select: Any = None,
+        **kwargs: Any,
+    ) -> None:
+        super().__init__(parent, width=width, height=height, bg=bg_color, highlightthickness=0, **kwargs)
+        self.width = width
+        self.height = height
+        self.on_stage_select = on_stage_select
+        self.selected_stage = 3
+        self.stage_bounds: list[tuple[float, float, float, float]] = []
+
+        self.bind("<Button-1>", self._on_click)
+        self.draw_pipeline()
+
+    def select_stage(self, idx: int) -> None:
+        if 0 <= idx < len(self.STAGES):
+            self.selected_stage = idx
+            self.draw_pipeline()
+            if self.on_stage_select:
+                self.on_stage_select(idx, self.STAGES[idx])
+
+    def _on_click(self, event: tk.Event) -> None:
+        for idx, (x1, y1, x2, y2) in enumerate(self.stage_bounds):
+            if x1 <= event.x <= x2 and y1 <= event.y <= y2:
+                self.select_stage(idx)
+                break
+
+    def draw_pipeline(self) -> None:
+        self.delete("all")
+        self.stage_bounds.clear()
+
+        n = len(self.STAGES)
+        margin_x = 18.0
+        avail_w = self.width - 2 * margin_x
+        node_w = min(112.0, avail_w / n - 10.0)
+        gap = (avail_w - n * node_w) / (n - 1)
+        node_h = 68.0
+        y_top = 16.0
+
+        for i in range(n - 1):
+            x_start = margin_x + i * (node_w + gap) + node_w
+            x_end = margin_x + (i + 1) * (node_w + gap)
+            y_mid = y_top + node_h / 2.0
+            self.create_line(x_start, y_mid, x_end, y_mid, fill="#CBD5E1", width=5)
+            self.create_line(x_start, y_mid, x_end, y_mid, fill=TEAL, width=2)
+            arrow_x = (x_start + x_end) / 2.0
+            self.create_polygon([arrow_x - 3, y_mid - 4, arrow_x + 3, y_mid, arrow_x - 3, y_mid + 4], fill=TEAL)
+
+        for i, (title, domain, desc, bg_color, fg_color) in enumerate(self.STAGES):
+            x = margin_x + i * (node_w + gap)
+            is_sel = (i == self.selected_stage)
+
+            self.create_rectangle(x + 2, y_top + 2, x + node_w + 2, y_top + node_h + 2, fill="#E2E8F0", outline="")
+
+            card_fill = bg_color if is_sel else WHITE
+            card_outline = TEAL if is_sel else "#CBD5E1"
+            outline_w = 2 if is_sel else 1
+            self.create_rectangle(x, y_top, x + node_w, y_top + node_h, fill=card_fill, outline=card_outline, width=outline_w)
+
+            stripe_color = GREEN if ("VERIFIER" in domain or "LOG" in domain) else TEAL
+            self.create_rectangle(x, y_top, x + node_w, y_top + 3, fill=stripe_color, outline="")
+
+            num_color = fg_color if is_sel else TEAL
+            self.create_text(x + 8, y_top + 12, text=f"0{i+1}", fill=num_color, font=("DejaVu Sans", 7, "bold"), anchor="w")
+
+            title_color = fg_color if is_sel else NAVY
+            self.create_text(x + 8, y_top + 28, text=title, fill=title_color, font=("DejaVu Sans", 7, "bold"), anchor="w")
+
+            dom_color = "#D7F3F9" if is_sel else MUTED
+            self.create_text(x + 8, y_top + 46, text=domain, fill=dom_color, font=("DejaVu Sans", 6, "bold"), anchor="w")
+
+            if is_sel:
+                self.create_oval(x + node_w - 12, y_top + 8, x + node_w - 4, y_top + 16, fill=GREEN, outline=WHITE)
+
+            self.stage_bounds.append((x, y_top, x + node_w, y_top + node_h))
+
+        sel_title, sel_domain, sel_desc, _, _ = self.STAGES[self.selected_stage]
+        legend_text = f"Stage 0{self.selected_stage + 1}: {sel_title} [{sel_domain}] - {sel_desc}"
+        self.create_text(self.width / 2.0, self.height - 12, text=legend_text, fill=NAVY, font=("DejaVu Sans", 8, "italic"), anchor="center")
+
+
+
 @dataclass
 class SavedReceipt:
     receipt_handle: str
@@ -2446,6 +2974,8 @@ class HimVoteLinuxApp(tk.Tk):
         self.settings_store = AppSettingsStore()
         self.user_session: UserSession | None = None
         self.admin_events: list[AdminAuditEvent] = demo_admin_events()
+        self.ballot_box_3d: BallotBox3DCanvas | None = None
+        self.pipeline_canvas: IsometricEvidencePipelineCanvas | None = None
         self._async_queue: queue.Queue[tuple[str, Any, Any, Any]] = queue.Queue()
         self._async_poll_id: str | None = None
         self._async_thread: threading.Thread | None = None
@@ -2470,6 +3000,12 @@ class HimVoteLinuxApp(tk.Tk):
                 self._async_thread.join(timeout=1.0)
             except Exception:
                 pass
+        if hasattr(self, "ballot_box_3d") and self.ballot_box_3d:
+            try:
+                self.ballot_box_3d.destroy()
+            except Exception:
+                pass
+            self.ballot_box_3d = None
         if hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
             self.merkle_visualizer.cancel_animation()
         if self.receipt_modal:
@@ -2525,27 +3061,32 @@ class HimVoteLinuxApp(tk.Tk):
             self.configure(bg=SURFACE)
             style.configure("App.TFrame", background=SURFACE)
             style.configure("Nav.TFrame", background=NAVY)
-            style.configure("Card.TFrame", background=WHITE, relief="solid", borderwidth=1)
+            style.configure("Card.TFrame", background=WHITE, relief="flat", borderwidth=0)
             style.configure("Title.TLabel", background=SURFACE, foreground=NAVY, font=("DejaVu Sans", 22, "bold"))
             style.configure("SubTitle.TLabel", background=WHITE, foreground=NAVY, font=("DejaVu Sans", 13, "bold"))
             style.configure("Body.TLabel", background=SURFACE, foreground=TEXT, font=("DejaVu Sans", 10))
             style.configure("Muted.TLabel", background=SURFACE, foreground=MUTED, font=("DejaVu Sans", 10))
             style.configure("CardBody.TLabel", background=WHITE, foreground=TEXT, font=("DejaVu Sans", 10))
             style.configure("CardMuted.TLabel", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9))
-            style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 18, "bold"))
-            style.configure("NavBody.TLabel", background=NAVY, foreground="#CBD5E1", font=("DejaVu Sans", 10))
-            style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
-            style.map("Action.TButton", background=[("active", NAVY_SOFT)])
-            style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
-            style.map("Secondary.TButton", background=[("active", "#CBD5E1")])
-            style.configure("Nav.TButton", background=NAVY, foreground=WHITE, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
-            style.map("Nav.TButton", background=[("active", NAVY_SOFT)])
+            style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 17, "bold"))
+            style.configure("NavBody.TLabel", background=NAVY, foreground="#94A3B8", font=("DejaVu Sans", 9))
+            style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(16, 8), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Action.TButton", background=[("active", NAVY_SOFT), ("disabled", "#94A3B8")])
+            style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(12, 7), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Secondary.TButton", background=[("active", "#CBD5E1"), ("disabled", "#F1F5F9")])
+            style.configure("Nav.TButton", background=NAVY, foreground="#94A3B8", padding=(14, 9), anchor="w", font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Nav.TButton", background=[("active", NAVY_SOFT), ("focus", NAVY_SOFT)], foreground=[("active", WHITE), ("focus", WHITE)])
             style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
             style.configure("Mode.TLabel", background=LIGHT_BG, foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("DemoMode.TLabel", background="#FEF3C7", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeGreen.TLabel", background="#DCFCE7", foreground=GREEN, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeRed.TLabel", background="#FEE2E2", foreground=RED, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeAmber.TLabel", background="#FEF3C7", foreground=AMBER, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+
+            # Modern Notebook Pill Tabs (eliminating boxy tab bars)
+            style.configure("TNotebook", background=SURFACE, borderwidth=0, tabmargins=(0, 4, 0, 0))
+            style.configure("TNotebook.Tab", background="#E2E8F0", foreground="#475569", padding=(18, 8), font=("DejaVu Sans", 9, "bold"), borderwidth=0, relief="flat")
+            style.map("TNotebook.Tab", background=[("selected", WHITE), ("active", "#CBD5E1")], foreground=[("selected", TEAL), ("active", NAVY)])
 
     def _build_shell(self) -> None:
         root = ttk.Frame(self, style="App.TFrame")
@@ -2555,19 +3096,30 @@ class HimVoteLinuxApp(tk.Tk):
         navigation.pack(side="left", fill="y")
         navigation.pack_propagate(False)
 
-        ttk.Label(navigation, text="HimVote", style="NavTitle.TLabel").pack(anchor="w", padx=22, pady=(28, 4))
-        ttk.Label(navigation, text="Linux desktop client", style="NavBody.TLabel").pack(anchor="w", padx=22, pady=(0, 24))
+        # Modern Sidebar Brand Badge
+        brand_frame = ttk.Frame(navigation, style="Nav.TFrame")
+        brand_frame.pack(fill="x", padx=16, pady=(22, 16))
 
-        self._nav_button(navigation, "Elections [Ctrl+1]", self._show_elections)
-        self._nav_button(navigation, "Receipt status [Ctrl+2]", self._show_receipt)
-        self._nav_button(navigation, "Offline audit [Ctrl+3]", self._show_audit)
-        self._nav_button(navigation, "How it works [Ctrl+4]", self._show_how_it_works)
-        self._nav_button(navigation, "Security limits [Ctrl+5]", self._show_security_limits)
-        self._nav_button(navigation, "Session & Identity [Ctrl+6]", self._show_login)
-        self._nav_button(navigation, "System Settings [Ctrl+7]", self._show_settings)
-        self._nav_button(navigation, "Audit Trail Logs [Ctrl+8]", self._show_admin)
-        self._nav_button(navigation, "High Contrast [Ctrl+H]", self.toggle_high_contrast)
-        self._nav_button(navigation, "Shortcuts [Ctrl+K]", self.show_shortcuts_modal)
+        logo_row = ttk.Frame(brand_frame, style="Nav.TFrame")
+        logo_row.pack(anchor="w")
+        ttk.Label(logo_row, text="✦ HIMVOTE", style="NavTitle.TLabel").pack(side="left")
+
+        ttk.Label(brand_frame, text="ZERO-KNOWLEDGE CLIENT v2.0", style="NavBody.TLabel", font=("DejaVu Sans", 7, "bold")).pack(anchor="w", pady=(2, 0))
+
+        # Thin divider
+        div = tk.Frame(navigation, height=1, bg=NAVY_SOFT, bd=0)
+        div.pack(fill="x", padx=16, pady=(0, 14))
+
+        self._nav_button(navigation, "🏛  Elections Portal [Ctrl+1]", self._show_elections)
+        self._nav_button(navigation, "🛡  Receipt Verifier [Ctrl+2]", self._show_receipt)
+        self._nav_button(navigation, "🔍  Offline Audit [Ctrl+3]", self._show_audit)
+        self._nav_button(navigation, "📐  How It Works [Ctrl+4]", self._show_how_it_works)
+        self._nav_button(navigation, "🔒  Security Limits [Ctrl+5]", self._show_security_limits)
+        self._nav_button(navigation, "👤  Session & SSO [Ctrl+6]", self._show_login)
+        self._nav_button(navigation, "⚙  System Settings [Ctrl+7]", self._show_settings)
+        self._nav_button(navigation, "📜  Audit Trail Logs [Ctrl+8]", self._show_admin)
+        self._nav_button(navigation, "⚡  High Contrast [Ctrl+H]", self.toggle_high_contrast)
+        self._nav_button(navigation, "⌨  Shortcuts Guide [Ctrl+K]", self.show_shortcuts_modal)
 
         ttk.Frame(navigation, style="Nav.TFrame").pack(fill="both", expand=True)
         self.mode_label = ttk.Label(navigation, text="", style="NavBody.TLabel", wraplength=185)
@@ -2599,16 +3151,51 @@ class HimVoteLinuxApp(tk.Tk):
             "The server enforces eligibility and timing per specification rules. This client displays confirmed states and hands voting to the vetted booth.",
         )
 
-        # Disciplinary Disclaimer Banner
-        disclaimer = ttk.Frame(self.content, style="Card.TFrame", padding=(14, 10))
-        disclaimer.pack(fill="x", padx=36, pady=(0, 10))
+        # 3D Premium Hero Banner & Interactive Enclave Model (PROMPT3 Section 6.2)
+        hero_frame = ttk.Frame(self.content, style="Card.TFrame", padding=(16, 12))
+        hero_frame.pack(fill="x", padx=36, pady=(0, 10))
+
+        hero_left = ttk.Frame(hero_frame, style="Card.TFrame")
+        hero_left.pack(side="left", fill="both", expand=True, padx=(0, 12))
+
         ttk.Label(
-            disclaimer,
-            text="Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. Voting is handed off securely to the vetted booth API contract.",
-            font=("DejaVu Sans", 9, "bold"),
+            hero_left,
+            text="PROMPT3 CRYPTOGRAPHIC ENCLAVE ARCHITECTURE",
+            font=("DejaVu Sans", 8, "bold"),
             foreground=TEAL,
             background=WHITE,
         ).pack(anchor="w")
+
+        ttk.Label(
+            hero_left,
+            text="Institutional Zero-Knowledge Voting System",
+            font=("DejaVu Sans", 13, "bold"),
+            foreground=NAVY,
+            background=WHITE,
+        ).pack(anchor="w", pady=(2, 4))
+
+        ttk.Label(
+            hero_left,
+            text="Specification Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. The ballot booth runs in an isolated cryptographic enclave communicating via verified API contracts.",
+            font=("DejaVu Sans", 9),
+            foreground=MUTED,
+            background=WHITE,
+            wraplength=520,
+        ).pack(anchor="w", pady=(0, 8))
+
+        btn_row = ttk.Frame(hero_left, style="Card.TFrame")
+        btn_row.pack(anchor="w")
+
+        def toggle_motion() -> None:
+            if hasattr(self, "ballot_box_3d") and self.ballot_box_3d:
+                is_reduced = self.ballot_box_3d.toggle_reduced_motion()
+                btn_motion.configure(text="Enable 3D Motion" if is_reduced else "Reduce 3D Motion")
+
+        btn_motion = ttk.Button(btn_row, text="Reduce 3D Motion", command=toggle_motion, style="Secondary.TButton")
+        btn_motion.pack(side="left", padx=(0, 8))
+
+        self.ballot_box_3d = BallotBox3DCanvas(hero_frame, width=320, height=140, bg_color=WHITE)
+        self.ballot_box_3d.pack(side="right")
 
         # Search and Filter Toolbar
         toolbar = ttk.Frame(self.content, style="App.TFrame")
@@ -2698,9 +3285,14 @@ class HimVoteLinuxApp(tk.Tk):
             self._election_card(election, index)
 
     def _election_card(self, election: Election, index: int) -> None:
-        card = ttk.Frame(self.election_list, style="Card.TFrame", padding=18)
-        card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=6, pady=6)
+        card = ttk.Frame(self.election_list, style="Card.TFrame", padding=(18, 14))
+        card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=8, pady=8)
         card.columnconfigure(0, weight=1)
+
+        # 3px top accent stripe (removing boxy border, adding modern card stripe)
+        stripe_color = GREEN if election.state in {"OPEN", "ACTIVE"} else (TEAL if election.state == "UPCOMING" else MUTED)
+        stripe = tk.Frame(card, height=3, bg=stripe_color, bd=0)
+        stripe.pack(fill="x", pady=(0, 10))
 
         top = ttk.Frame(card, style="Card.TFrame")
         top.pack(fill="x")
@@ -3300,12 +3892,15 @@ class HimVoteLinuxApp(tk.Tk):
         toolbar = ttk.Frame(self.content, style="App.TFrame")
         toolbar.pack(fill="x", padx=36, pady=(0, 12))
 
-        ttk.Button(toolbar, text="Open Archive File", command=self._open_archive_file, style="Action.TButton").pack(side="left", padx=(0, 8))
-        ttk.Button(toolbar, text="Open Evidence Directory", command=self._open_archive_directory, style="Secondary.TButton").pack(side="left", padx=(0, 8))
-        ttk.Button(toolbar, text="Load Demo Archive", command=self._load_demo_archive, style="Secondary.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(toolbar, text="Open Archive File", command=self._open_archive_file, style="Action.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Open Evidence Directory", command=self._open_archive_directory, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Load Demo Archive", command=self._load_demo_archive, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Compare Results [DESKTOP-05]", command=self._open_results_comparison, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Copy CLI [DESKTOP-06]", command=self._copy_cli_reproduction, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(toolbar, text="Discard Archive [DESKTOP-02]", command=self._discard_archive, style="Secondary.TButton").pack(side="left", padx=(0, 6))
 
         self.archive_path_label = ttk.Label(toolbar, text="No archive loaded", style="Muted.TLabel")
-        self.archive_path_label.pack(side="left", padx=10)
+        self.archive_path_label.pack(side="left", padx=8)
 
         self.archive_progress_bar = ttk.Progressbar(toolbar, mode="indeterminate", length=120)
 
@@ -3467,6 +4062,13 @@ class HimVoteLinuxApp(tk.Tk):
 
         panel = ttk.Frame(self.tab_overview, style="App.TFrame")
         panel.pack(fill="both", expand=True, pady=10)
+
+        # Interactive Isometric Cryptographic Pipeline (PROMPT3 Section 6.2 #7 & DESKTOP-04)
+        pipeline_card = ttk.Frame(panel, style="Card.TFrame", padding=(12, 10))
+        pipeline_card.pack(fill="x", pady=(0, 10))
+        ttk.Label(pipeline_card, text="Cryptographic Evidence Pipeline Architecture (DESKTOP-04)", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 4))
+        self.pipeline_canvas = IsometricEvidencePipelineCanvas(pipeline_card, width=820, height=115, bg_color=WHITE)
+        self.pipeline_canvas.pack(fill="x", pady=(2, 0))
 
         # Summary cards row
         cards_row = ttk.Frame(panel, style="App.TFrame")
@@ -3662,6 +4264,12 @@ class HimVoteLinuxApp(tk.Tk):
         elif insp.tally_recomputed_matches_announced is False:
             ttk.Label(info_row, text="  TALLY MISMATCH AGAINST ANNOUNCED  ", style="BadgeRed.TLabel").pack(side="left")
 
+        # Action button to trigger DESKTOP-05 Split-View Results Comparison
+        compare_bar = ttk.Frame(panel, style="Card.TFrame", padding=(14, 10))
+        compare_bar.pack(fill="x", pady=(0, 8))
+        ttk.Button(compare_bar, text="Open Split-View Results Comparison & Discrepancies (DESKTOP-05)", command=self._open_results_comparison, style="Action.TButton").pack(side="left", padx=(0, 10))
+        ttk.Label(compare_bar, text="Side-by-side announced certified totals vs independently recomputed engine tallies", style="CardMuted.TLabel").pack(side="left")
+
         # Scrollable container for candidate bars
         scroll_container = ttk.Frame(panel, style="Card.TFrame", padding=16)
         scroll_container.pack(fill="both", expand=True)
@@ -3689,17 +4297,19 @@ class HimVoteLinuxApp(tk.Tk):
         count_str = f"{tally.vote_count} votes ({tally.percentage:.1f}%)"
         ttk.Label(header, text=count_str, font=("DejaVu Sans", 11, "bold"), foreground=NAVY, background=WHITE).pack(side="right")
 
-        # Proportional bar canvas
-        canvas = tk.Canvas(row, height=18, bg=PROGRESS_BG, highlightthickness=0)
-        canvas.pack(fill="x", pady=(2, 0))
+        # Proportional bar canvas with modern rounded pill track
+        canvas = tk.Canvas(row, height=14, bg=PROGRESS_BG, highlightthickness=0)
+        canvas.pack(fill="x", pady=(4, 0))
 
         def draw_bar(event: tk.Event[tk.Canvas] | None = None) -> None:
             width = canvas.winfo_width()
-            fill_width = max(2, int(width * (tally.percentage / 100.0))) if tally.vote_count > 0 else 0
             canvas.delete("all")
+            # Pill track background
+            canvas.create_rectangle(0, 0, width, 14, fill="#E2E8F0", outline="")
+            fill_width = max(4, int(width * (tally.percentage / 100.0))) if tally.vote_count > 0 else 0
             fill_color = GREEN if tally.is_winner else TEAL
             if fill_width > 0:
-                canvas.create_rectangle(0, 0, fill_width, 18, fill=fill_color, outline="")
+                canvas.create_rectangle(0, 0, fill_width, 14, fill=fill_color, outline="")
 
         canvas.bind("<Configure>", draw_bar)
 
@@ -3898,6 +4508,45 @@ class HimVoteLinuxApp(tk.Tk):
             self.shortcuts_modal = None
         elif hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
             self.merkle_visualizer.reset_highlights()
+    def _open_results_comparison(self) -> None:
+        """Open the DESKTOP-05 split-view comparison modal."""
+        if not self.current_inspection:
+            messagebox.showinfo("Audit Notice", "Please load an election archive first.", parent=self)
+            return
+        insp = self.current_inspection
+        ResultsComparisonModal(
+            self,
+            election_title=insp.title,
+            election_id=insp.election_id,
+            manifest_digest=insp.manifest_digest,
+            merkle_root=insp.merkle_root_hex,
+            announced_tallies=insp.announced_tallies,
+            recomputed_tallies=insp.candidate_tallies,
+        )
+
+    def _discard_archive(self) -> None:
+        """Safely unload election archive, clear memory, and reset view (DESKTOP-02)."""
+        if self.current_archive:
+            try:
+                self.current_archive.close()
+            except Exception:
+                pass
+            self.current_archive = None
+        self.current_inspection = None
+        if hasattr(self, "archive_path_label"):
+            self.archive_path_label.configure(text="No archive loaded")
+        self._render_placeholder_views()
+
+    def _copy_cli_reproduction(self) -> None:
+        """Copy the standalone headless verifier command to clipboard (DESKTOP-06)."""
+        target = self.current_archive.source_path if self.current_archive else "fixtures/simulation_run/export"
+        cmd = f"python3 apps/linux/himvote_linux.py --headless --archive \"{target}\" --export-md report.md --export-json report.json"
+        self.clipboard_clear()
+        self.clipboard_append(cmd)
+        if hasattr(self, "archive_path_label"):
+            self.archive_path_label.configure(text="CLI command copied to clipboard!", foreground=GREEN)
+            self.after(3000, lambda: self.archive_path_label.configure(text=str(target)[:40] if self.current_archive else "No archive loaded", foreground=MUTED))
+
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -3912,6 +4561,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--export-md", default="", help="Export verification audit report as Markdown")
     parser.add_argument("--check-origins", action="store_true", help="Perform network health check on configured service origins")
     parser.add_argument("--view", default="elections", choices=["elections", "receipt", "audit", "how_it_works", "security_limits", "session", "settings", "admin"], help="Initial view to display on launch")
+    parser.add_argument("--web-preview", nargs="?", const=8085, type=int, help="Launch standalone interactive HTML5 web preview server on specified port (default: 8085)")
     parser.add_argument("--version", action="version", version="HimVote Linux 1.0.0")
     return parser.parse_args(argv)
 
@@ -4004,6 +4654,39 @@ def main(argv: list[str] | None = None) -> int:
             status = "OK" if ok else "OFFLINE"
             print(f"  {name:18} {url:26} [{status}] ({ms:.1f}ms - {msg})")
         return 0
+
+    if args.web_preview:
+        port = int(args.web_preview)
+        preview_file = Path(__file__).resolve().parent / "preview.html"
+        if not preview_file.exists():
+            print(f"Error: Preview file not found at {preview_file}", file=sys.stderr)
+            return 1
+        import functools
+        import http.server
+        import socketserver
+        import webbrowser
+
+        class PreviewHandler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *a, **kw):
+                super().__init__(*a, directory=str(preview_file.parent), **kw)
+            def do_GET(self):
+                if self.path in ("/", "/index.html"):
+                    self.path = "/preview.html"
+                return super().do_GET()
+            def log_message(self, format, *a):
+                pass
+
+        print("============================================================")
+        print("HimVote Linux Desktop Client — Interactive Web Preview Server")
+        print(f"Live URL: http://localhost:{port}")
+        print("============================================================")
+        webbrowser.open(f"http://localhost:{port}")
+        with socketserver.TCPServer(("", port), PreviewHandler) as httpd:
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nWeb preview server stopped.")
+                return 0
 
     if args.headless:
         if not args.archive:

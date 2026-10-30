@@ -15,6 +15,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ElectionsViewModelTest {
@@ -28,6 +29,26 @@ class ElectionsViewModelTest {
         val mockContext = Mockito.mock(android.content.Context::class.java)
         val encryptedStorage = EncryptedStorage(mockContext, customPrefs = InMemorySharedPreferences())
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
+        kotlinx.coroutines.runBlocking {
+            Mockito.doReturn(Response.success(com.himvote.data.models.ElectionListResponse(
+                elections = listOf(
+                    com.himvote.data.models.ElectionSummaryResponse(
+                        id = "elec_open",
+                        title = "Open synthetic election",
+                        state = "OPEN",
+                        opensAtUtc = "2026-10-31T00:00:00Z",
+                        closesAtUtc = "2026-11-01T00:00:00Z"
+                    ),
+                    com.himvote.data.models.ElectionSummaryResponse(
+                        id = "elec_closed",
+                        title = "Closed synthetic election",
+                        state = "PUBLISHED",
+                        opensAtUtc = "2026-10-20T00:00:00Z",
+                        closesAtUtc = "2026-10-21T00:00:00Z"
+                    )
+                )
+            ))).`when`(mockApiService).getElections()
+        }
         val electionRepository = ElectionRepository(mockApiService, encryptedStorage)
         val authRepository = AuthRepository(mockApiService, encryptedStorage)
         electionsViewModel = ElectionsViewModel(electionRepository, authRepository)

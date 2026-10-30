@@ -39,13 +39,35 @@ final class ReceiptViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.receipt?.leafIndex, 17)
     }
     
-    func testLoadReceiptFallbackWhenNotInKeychain() {
+    func testMissingLocalReceiptDoesNotFabricateLeafOrProof() {
         viewModel.loadReceipt(handle: "rcpt_nonexistent", electionId: "elec_test_01")
         
-        XCTAssertNotNil(viewModel.receipt)
-        XCTAssertEqual(viewModel.receipt?.handle, "rcpt_nonexistent")
-        XCTAssertEqual(viewModel.receipt?.status, .committedPendingWitness)
-        XCTAssertEqual(viewModel.receipt?.leafIndex, 0)
+        XCTAssertNil(viewModel.receipt)
+        XCTAssertEqual(viewModel.inclusionStatus, .notAvailable)
+        XCTAssertTrue(viewModel.errorMessage?.contains("not stored") == true)
+    }
+
+    func testWitnessedReceiptIsLocallyVerifiedFromServerProof() async throws {
+        mockApiClient.receiptStatusResponse = ReceiptStatusResponse(
+            status: "WITNESSED",
+            handle: "rcpt_handle_998877",
+            leafIndex: 2,
+            witnessedAtUtc: "2026-10-30T14:22:00Z",
+            treeSize: 3,
+            leafHash: "f931962f0917c346d447293c07b687ae1609f7003f8a44a06a75c4145b1e1929",
+            merkleRoot: "d4186e3c05a620ce61397e838bfbd76e6f27e6d7daa13c59eb82a8e094608e1c",
+            merkleProof: ["fb33dff7b9f27b94d57431d3c72e3268e5dda9c4de3d2b0d34ab34146d6e6806"]
+        )
+
+        viewModel.startPollingReceiptStatus(
+            electionId: "elec_test_01",
+            handle: "rcpt_handle_998877"
+        )
+
+        try await Task.sleep(nanoseconds: 50_000_000)
+
+        XCTAssertTrue(viewModel.inclusionStatus.isVerified)
+        XCTAssertEqual(viewModel.receipt?.treeSize, 3)
     }
     
     func testFormatReceiptJson() {

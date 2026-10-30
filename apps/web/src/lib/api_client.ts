@@ -1,121 +1,205 @@
-import {
-  Election,
-  PublishedResults,
-  EvidencePackage,
-  StudentRecord,
-  TeacherRecord,
+import type {
   AuditEvent,
-  TrustedPin,
   CastBallotRequest,
   CastBallotResponse,
+  Election,
+  EvidencePackage,
+  PublishedResults,
   ReceiptStatusResponse,
+  StudentRecord,
+  TeacherRecord,
+  TrustedPin,
 } from "./types";
 import { castingClient } from "./casting_client";
-import {
-  INITIAL_ELECTIONS,
-  INITIAL_RESULTS,
-  INITIAL_EVIDENCE,
-  INITIAL_STUDENTS,
-  INITIAL_TEACHERS,
-  INITIAL_AUDIT_EVENTS,
-  INITIAL_TRUSTED_PINS,
-} from "./mock_data";
+import { electionClient, ElectionApiError } from "./election_client";
 
-// Helper for local storage safe access
-function safeGetItem<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") return fallback;
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch {
-    return fallback;
+export class ApiClientError extends Error {
+  readonly code: string;
+  readonly status: number;
+
+  constructor(code: string, message: string, status = 503) {
+    super(message);
+    this.name = "ApiClientError";
+    this.code = code;
+    this.status = status;
   }
 }
 
-function safeSetItem<T>(key: string, value: T): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // ignore local storage quota errors
+function configuredBase(name: "admin" | "identity"): string {
+  const value = name === "admin"
+    ? process.env.NEXT_PUBLIC_ADMIN_API_BASE || process.env.NEXT_PUBLIC_API_BASE
+    : process.env.NEXT_PUBLIC_IDENTITY_API_BASE || process.env.NEXT_PUBLIC_API_BASE;
+  return (value || "").replace(/\/$/, "");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+async function requestJson<T>(
+  service: "admin" | "identity",
+  path: string,
+  init: RequestInit = {},
+): Promise<T> {
+  const base = configuredBase(service);
+  if (!base) {
+    throw new ApiClientError(
+      `${service.toUpperCase()}_API_NOT_CONFIGURED`,
+      `The ${service} service is not configured. No local demo data was used.`,
+    );
   }
+
+  const headers = new Headers(init.headers);
+  headers.set("Accept", "application/json");
+  if (init.body !== undefined) headers.set("Content-Type", "application/json");
+
+  let response: Response;
+  try {
+    response = await fetch(`${base}${path}`, {
+      ...init,
+      headers,
+      credentials: "include",
+      redirect: "error",
+      referrerPolicy: "no-referrer",
+    });
+  } catch (error) {
+    throw new ApiClientError(`${service.toUpperCase()}_NETWORK_ERROR`, `The ${service} service could not be reached.`);
+  }
+
+  const text = await response.text().catch(() => "");
+  let body: unknown = {};
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    body = {};
+  }
+  if (!response.ok) {
+    const record = isRecord(body) ? body : {};
+    const detail = isRecord(record.detail) ? record.detail : {};
+    const message = [record.message, detail.message, record.detail].find(
+      (value): value is string => typeof value === "string" && value.length > 0,
+    ) || `The ${service} service rejected the request.`;
+    throw new ApiClientError(
+      typeof record.error_code === "string" ? record.error_code : `${service.toUpperCase()}_REQUEST_FAILED`,
+      message,
+      response.status,
+    );
+  }
+  return body as T;
+}
+
+function toElection(value: unknown): Election {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.title !== "string") {
+    throw new ApiClientError("ELECTION_RESPONSE_INVALID", "The election service returned an invalid election.", 502);
+  }
+  return value as unknown as Election;
 }
 
 export const apiClient = {
-  // Elections
   async getElections(): Promise<Election[]> {
-    return safeGetItem<Election[]>("himvote_elections", INITIAL_ELECTIONS);
+    return electionClient.getElections();
   },
 
   async getElection(id: string): Promise<Election | null> {
-    const list = await this.getElections();
-    return list.find((e) => e.id === id) || null;
+    try {
+      return await electionClient.getElection(id);
+    } catch (error) {
+      if (error instanceof ElectionApiError && error.status === 404) return null;
+      throw error;
+    }
   },
 
   async createElection(payload: Partial<Election>): Promise<Election> {
-    const current = await this.getElections();
-    const newElection: Election = {
-      id: payload.id || `elec_${Date.now()}`,
-      title: payload.title || "Untitled Election",
-      state: "DRAFT",
-      manifest_digest: `sha256_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
-      opens_at_utc: payload.opens_at_utc || new Date(Date.now() + 86400000).toISOString(),
-      closes_at_utc: payload.closes_at_utc || new Date(Date.now() + 86400000 * 7).toISOString(),
-      issuance_cutoff_utc: payload.issuance_cutoff_utc || new Date(Date.now() + 86400000 - 3600000).toISOString(),
-      eligible_count: payload.eligible_count || 100,
-      contest: payload.contest || "General Council",
-      selection_rule: payload.selection_rule || "Plurality voting",
-      min_anonymous_turnout: payload.min_anonymous_turnout || 20,
-      description: payload.description || "Institutional election",
-      candidates: payload.candidates || [],
-    };
-    const updated = [newElection, ...current];
-    safeSetItem("himvote_elections", updated);
-    return newElection;
+    const body = await requestJson<unknown>("admin", "/v1/elections", {
+      method: "POST",
+      body: JSON.stringify({
+        title: payload.title,
+        contest: payload.contest || "General Council",
+        selection_rule: payload.selection_rule || "plurality",
+        opens_at_utc: payload.opens_at_utc,
+        closes_at_utc: payload.closes_at_utc,
+        issuance_cutoff_utc: payload.issuance_cutoff_utc,
+        min_anonymous_turnout: payload.min_anonymous_turnout,
+      }),
+    });
+    return toElection(body);
   },
 
   async freezeElection(id: string): Promise<Election> {
-    const current = await this.getElections();
-    const updated = current.map((e) => (e.id === id ? { ...e, state: "FROZEN" as const } : e));
-    safeSetItem("himvote_elections", updated);
-    const target = updated.find((e) => e.id === id)!;
-    return target;
+    await requestJson("admin", `/v1/elections/${encodeURIComponent(id)}/freeze`, { method: "POST", body: JSON.stringify({}) });
+    return electionClient.getElection(id);
   },
 
   async openElection(id: string): Promise<Election> {
-    const current = await this.getElections();
-    const updated = current.map((e) => (e.id === id ? { ...e, state: "OPEN" as const } : e));
-    safeSetItem("himvote_elections", updated);
-    return updated.find((e) => e.id === id)!;
+    await requestJson("admin", `/v1/elections/${encodeURIComponent(id)}/open`, { method: "POST" });
+    return electionClient.getElection(id);
   },
 
   async closeElection(id: string): Promise<Election> {
-    const current = await this.getElections();
-    const updated = current.map((e) => (e.id === id ? { ...e, state: "PENDING_WITNESS" as const } : e));
-    safeSetItem("himvote_elections", updated);
-    return updated.find((e) => e.id === id)!;
+    await requestJson("admin", `/v1/elections/${encodeURIComponent(id)}/close`, { method: "POST" });
+    return electionClient.getElection(id);
   },
 
-  async requestPublication(id: string): Promise<Election> {
-    const current = await this.getElections();
-    const updated = current.map((e) => (e.id === id ? { ...e, state: "WITNESSED" as const } : e));
-    safeSetItem("himvote_elections", updated);
-    return updated.find((e) => e.id === id)!;
+  async requestPublication(_id: string): Promise<Election> {
+    throw new ApiClientError(
+      "AUDITOR_SIGNATURE_REQUIRED",
+      "Publication requires an independently signed auditor attestation; the client will not invent one.",
+      409,
+    );
   },
 
-  // Results
   async getResults(electionId: string): Promise<PublishedResults | null> {
-    const all = safeGetItem<Record<string, PublishedResults>>("himvote_results", INITIAL_RESULTS);
-    return all[electionId] || null;
+    try {
+      return await electionClient.getResults(electionId);
+    } catch (error) {
+      if (error instanceof ElectionApiError && error.status === 404) return null;
+      throw error;
+    }
   },
 
-  // Evidence
   async getEvidence(electionId: string): Promise<EvidencePackage | null> {
-    const all = safeGetItem<Record<string, EvidencePackage>>("himvote_evidence", INITIAL_EVIDENCE);
-    return all[electionId] || null;
+    try {
+      return await electionClient.getEvidence(electionId);
+    } catch (error) {
+      if (error instanceof ElectionApiError && error.status === 404) return null;
+      throw error;
+    }
   },
 
-  // Casting
+  async downloadEvidence(electionId: string): Promise<Blob> {
+    const base = configuredBase("admin");
+    if (!base) {
+      throw new ApiClientError("ADMIN_API_NOT_CONFIGURED", "The admin service is not configured. No local evidence archive was generated.");
+    }
+    let response: Response;
+    try {
+      response = await fetch(`${base}/v1/elections/${encodeURIComponent(electionId)}/evidence?download=true`, {
+        headers: { Accept: "application/zip" },
+        credentials: "include",
+        redirect: "error",
+        referrerPolicy: "no-referrer",
+      });
+    } catch {
+      throw new ApiClientError("ADMIN_NETWORK_ERROR", "The admin service could not be reached.");
+    }
+    if (!response.ok) {
+      const text = await response.text().catch(() => "");
+      let body: unknown = {};
+      try { body = text ? JSON.parse(text) : {}; } catch { body = {}; }
+      const record = isRecord(body) ? body : {};
+      throw new ApiClientError(
+        typeof record.error_code === "string" ? record.error_code : "EVIDENCE_DOWNLOAD_FAILED",
+        typeof record.message === "string" ? record.message : "The evidence archive was not released by the authoritative service.",
+        response.status,
+      );
+    }
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/zip")) {
+      throw new ApiClientError("EVIDENCE_RESPONSE_INVALID", "The evidence service did not return a ZIP archive.", 502);
+    }
+    return response.blob();
+  },
+
   async castBallot(req: CastBallotRequest): Promise<CastBallotResponse> {
     return castingClient.castBallot(req);
   },
@@ -124,60 +208,60 @@ export const apiClient = {
     return castingClient.getReceiptStatus(electionId, handle);
   },
 
-  // Students & Roster
   async getStudents(): Promise<StudentRecord[]> {
-    return safeGetItem<StudentRecord[]>("himvote_students", INITIAL_STUDENTS);
+    return requestJson<StudentRecord[]>("identity", "/v1/students");
   },
 
   async verifyStudent(studentId: string, decision: "VERIFIED" | "REJECTED"): Promise<StudentRecord> {
-    const current = await this.getStudents();
-    const updated = current.map((s) =>
-      s.id === studentId ? { ...s, status: decision, verified: decision === "VERIFIED" } : s
-    );
-    safeSetItem("himvote_students", updated);
-    return updated.find((s) => s.id === studentId)!;
+    if (decision !== "VERIFIED") {
+      throw new ApiClientError("STUDENT_REJECTION_UNSUPPORTED", "Student rejection requires a reviewed identity workflow; no local status was changed.", 409);
+    }
+    const current = (await this.getStudents()).find((student) => student.id === studentId || student.student_id === studentId);
+    if (!current) throw new ApiClientError("STUDENT_NOT_FOUND", "The student was not found in the identity service.", 404);
+    await requestJson("identity", `/v1/students/${encodeURIComponent(current.student_id)}/verify`, {
+      method: "POST",
+      body: JSON.stringify({ department: current.department }),
+    });
+    return (await this.getStudents()).find((student) => student.student_id === current.student_id) || current;
   },
 
   async importStudents(newRecords: Partial<StudentRecord>[]): Promise<number> {
-    const current = await this.getStudents();
-    const created: StudentRecord[] = newRecords.map((r, i) => ({
-      id: `stu_imp_${Date.now()}_${i}`,
-      student_id: r.student_id || `HPTU_2026_GEN_${100 + i}`,
-      full_name: r.full_name || "Enrolled Student",
-      email: r.email || `student_${i}@hptu.ac.in`,
-      department: r.department || "General Engineering",
-      verified: true,
-      status: "VERIFIED",
-      created_at_utc: new Date().toISOString(),
+    const records = newRecords.map((record) => ({
+      student_id: record.student_id,
+      full_name: record.full_name,
+      email: record.email,
+      department: record.department,
     }));
-    safeSetItem("himvote_students", [...current, ...created]);
-    return created.length;
+    const response = await requestJson<{ imported_count?: number }>("identity", "/v1/students/import", {
+      method: "POST",
+      body: JSON.stringify({ source: "web_admin", records }),
+    });
+    return typeof response.imported_count === "number" ? response.imported_count : records.length;
   },
 
-  // Teachers
   async getTeachers(): Promise<TeacherRecord[]> {
-    return safeGetItem<TeacherRecord[]>("himvote_teachers", INITIAL_TEACHERS);
+    throw new ApiClientError("TEACHER_DIRECTORY_UNAVAILABLE", "The identity service does not expose a teacher directory contract yet.", 501);
   },
 
-  // Audit Events
   async getAuditEvents(): Promise<AuditEvent[]> {
-    return safeGetItem<AuditEvent[]>("himvote_audit_events", INITIAL_AUDIT_EVENTS);
+    const response = await requestJson<{ events?: Array<Record<string, unknown>> }>("admin", "/v1/admin/audit-events");
+    return (response.events || []).map((event) => ({
+      id: String(event.id || ""),
+      timestamp_utc: String(event.timestamp || event.timestamp_utc || ""),
+      actor: String(event.actor_id || event.actor || ""),
+      action: String(event.action || ""),
+      resource_type: "election",
+      resource_id: String(isRecord(event.details) && event.details.election_id || ""),
+      status: event.result === "SUCCESS" || event.result === "success" ? "PASS" : "WARNING",
+      details: JSON.stringify(event.details || {}),
+    }));
   },
 
-  // Trusted Pins
   async getTrustedPins(): Promise<TrustedPin[]> {
-    return safeGetItem<TrustedPin[]>("himvote_trusted_pins", INITIAL_TRUSTED_PINS);
+    throw new ApiClientError("TRUST_PINS_UNAVAILABLE", "Trusted pins must be installed out of band; the server does not provide them as application data.", 501);
   },
 
-  async addTrustedPin(pin: Omit<TrustedPin, "id" | "pinned_at_utc">): Promise<TrustedPin> {
-    const current = await this.getTrustedPins();
-    const newPin: TrustedPin = {
-      ...pin,
-      id: `pin_${Date.now()}`,
-      pinned_at_utc: new Date().toISOString(),
-    };
-    const updated = [newPin, ...current];
-    safeSetItem("himvote_trusted_pins", updated);
-    return newPin;
+  async addTrustedPin(_pin: Omit<TrustedPin, "id" | "pinned_at_utc">): Promise<TrustedPin> {
+    throw new ApiClientError("TRUST_PIN_MUTATION_FORBIDDEN", "Trusted pins cannot be added through the election application.", 403);
   },
 };

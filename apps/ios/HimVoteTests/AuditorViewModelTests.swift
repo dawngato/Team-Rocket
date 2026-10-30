@@ -18,17 +18,17 @@ final class AuditorViewModelTests: XCTestCase {
         super.tearDown()
     }
     
-    func testLoadEvidenceAndVerifyAllPass() async {
+    func testLoadEvidenceReportsLimitedMetadataInsteadOfFabricatedCryptoPass() async {
         await viewModel.loadEvidenceAndVerify(
             electionId: "elec_2026_stu_council",
             sessionToken: "valid_auditor_token"
         )
         
-        XCTAssertEqual(viewModel.overallVerdict, .pass)
+        XCTAssertEqual(viewModel.overallVerdict, .limited)
         XCTAssertEqual(viewModel.auditCheckItems.count, 6)
-        for item in viewModel.auditCheckItems {
-            XCTAssertEqual(item.verdict, .pass)
-        }
+        XCTAssertEqual(viewModel.auditCheckItems.filter { $0.verdict == .pass }.count, 1)
+        XCTAssertEqual(viewModel.auditCheckItems.filter { $0.verdict == .limited }.count, 5)
+        XCTAssertTrue(viewModel.auditCheckItems.allSatisfy { !$0.detail.contains("cryptographic attestation signature verified") })
     }
     
     func testLoadEvidenceFailureWhenAnchorInvalid() async {
@@ -100,7 +100,7 @@ final class AuditorViewModelTests: XCTestCase {
             sessionToken: "token"
         )
         
-        XCTAssertEqual(viewModel.overallVerdict, .fail)
+        XCTAssertEqual(viewModel.overallVerdict, .notChecked)
         XCTAssertNotNil(viewModel.errorMessage)
         XCTAssertTrue(viewModel.auditCheckItems.isEmpty)
     }
