@@ -21,7 +21,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="min-h-screen flex flex-col bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-[#E2E8F0] antialiased">
+      <body className="apple-body min-h-screen flex flex-col antialiased">
         <ClientErrorBoundary>
           <QueryProvider>
             <SkipLink />

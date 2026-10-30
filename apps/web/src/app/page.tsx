@@ -52,48 +52,48 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="w-full max-w-[1800px] mx-auto space-y-16 py-8 px-[clamp(1.25rem,4vw,5rem)]">
+    <div className="apple-home">
       {/* Hero Section */}
-      <section className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-6 pb-10">
-        <div className="lg:col-span-7 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/20">
+      <section className="apple-hero">
+        <div className="apple-hero-copy">
+          <div className="apple-eyebrow">
             <span className="w-2 h-2 rounded-full bg-[#157E92] animate-pulse" />
             Institutional platform for verifiable election workflows
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#10233F] dark:text-white tracking-tight leading-tight">
-            Institutional voting, made <span className="text-[#157E92]">verifiable.</span>
+          <h1 className="apple-display">
+            Institutional voting, made <span className="apple-display-accent">verifiable.</span>
           </h1>
-          <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
+          <p className="apple-lede">
             HimVote demonstrates how institutional identity, anonymous casting boundaries, witnessed evidence, and independent review fit together. The external voting engine and production operations remain explicit release gates.
           </p>
 
-          <div className="flex flex-wrap gap-4 pt-2">
+          <div className="apple-actions">
             <Link
               href="/elections"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold text-white bg-[#157E92] hover:bg-[#0E6273] shadow-md transition-all flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+              className="apple-cta focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3]"
             >
               <span>Explore Active Elections</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </Link>
             <Link
               href="/how-it-works"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold text-[#10233F] dark:text-white bg-white dark:bg-[#132135] border border-slate-300 dark:border-[#1E3352] hover:bg-slate-50 dark:hover:bg-slate-800 transition-all flex items-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+              className="apple-cta-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3]"
             >
               <FileCheck2 className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
               <span>How Verification Works</span>
             </Link>
           </div>
 
-          <div className="pt-4 flex flex-wrap gap-6 text-xs text-slate-600 dark:text-slate-400 font-medium">
-            <span className="inline-flex items-center gap-2">
+          <div className="apple-trust-row">
+            <span className="apple-trust-item">
               <BadgeCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
               Blind Credential Test Vectors
             </span>
-            <span className="inline-flex items-center gap-2">
+            <span className="apple-trust-item">
               <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
               Witness Checkpoint Workflow
             </span>
-            <span className="inline-flex items-center gap-2">
+            <span className="apple-trust-item">
               <LockKeyhole className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
               No Identity in Sample Evidence
             </span>
@@ -109,16 +109,16 @@ export default function HomePage() {
       </section>
 
       {/* Quick Receipt Look Up Widget */}
-      <section className="rounded-2xl bg-[#10233F] text-white p-8 sm:p-10 shadow-lg">
-        <div className="max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#38BDF8] uppercase tracking-wider">
+      <section className="apple-receipt">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#2997ff] uppercase tracking-wider">
             <Sparkles className="w-4 h-4" aria-hidden="true" />
             Voter Inclusion Check
           </div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+          <h2 className="apple-receipt-title">
             Verify your ballot was included in the final tree
           </h2>
-          <p className="text-slate-300 text-sm leading-relaxed">
+          <p className="apple-receipt-copy text-sm">
             Enter your receipt handle to inspect checkpoint witness signatures, Merkle branch proofs, and public chain transaction records without compromising your voting secrecy.
           </p>
 
@@ -134,7 +134,7 @@ export default function HomePage() {
               setReceiptError(null);
               window.location.href = `/student/receipts/${encodeURIComponent(handle)}?election_id=${encodeURIComponent(electionId)}`;
             }}
-            className="flex flex-col gap-3 pt-3"
+            className="flex flex-col gap-3 pt-6"
           >
             <div className="flex flex-col gap-3 sm:flex-row">
               <div className="relative flex-1">
@@ -146,7 +146,7 @@ export default function HomePage() {
                   suppressHydrationWarning
                   placeholder="Receipt handle"
                   aria-label="Receipt handle"
-                  className="min-h-11 w-full rounded-lg border border-white/20 bg-white/10 py-3 pl-11 pr-4 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8]"
+                  className="apple-field py-3 pl-11 pr-4 text-sm placeholder:text-[#a1a1a6]"
                 />
               </div>
               <input
@@ -156,12 +156,12 @@ export default function HomePage() {
                 suppressHydrationWarning
                 placeholder="Election ID"
                 aria-label="Election ID"
-                className="min-h-11 rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#38BDF8] sm:w-52"
+                className="apple-field px-4 py-3 text-sm placeholder:text-[#a1a1a6] sm:w-52"
               />
             </div>
             <button
               type="submit"
-              className="min-h-[44px] px-6 py-3 rounded-lg font-bold bg-[#157E92] hover:bg-[#0E6273] text-white text-sm transition-colors flex items-center justify-center gap-2 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+              className="apple-submit flex items-center justify-center gap-2 px-6 py-3 text-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
             >
               <span>Inspect Receipt</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -172,19 +172,19 @@ export default function HomePage() {
       </section>
 
       {/* Live Featured Elections */}
-      <section className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <section className="apple-section">
+        <div className="apple-section-header">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+            <h2 className="apple-section-title">
               Institutional Elections
             </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
+            <p className="apple-section-copy">
               Follow current campus elections and inspect published development records.
             </p>
           </div>
           <Link
             href="/elections"
-            className="min-h-[44px] inline-flex items-center gap-2 text-sm font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
+            className="apple-link inline-flex items-center gap-2"
           >
             <span>View All Elections</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
@@ -194,35 +194,35 @@ export default function HomePage() {
         {electionsError && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="alert">{electionsError} Synthetic elections are not substituted.</div>}
         {electionsLoading && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">Loading elections from the authoritative service…</div>}
         {!electionsLoading && !electionsError && activeElections.length === 0 && <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">No elections were returned by the authoritative service.</div>}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <div className="apple-election-grid">
           {activeElections.map((elec) => (
             <article
               key={elec.id}
-              className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-4"
+              className="apple-election-card"
             >
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <StateBadge state={elec.state} size="sm" />
                   <span className="text-xs text-slate-500 font-mono">
                     {typeof elec.eligible_count === "number" ? `${elec.eligible_count} Eligible` : "Eligibility withheld"}
                   </span>
                 </div>
-                <h3 className="font-bold text-lg text-[#10233F] dark:text-white leading-snug">
+                <h3 className="font-semibold text-lg text-[#1d1d1f] dark:text-white leading-snug tracking-tight">
                   {elec.title}
                 </h3>
-                <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-3">
+                <p className="text-sm text-[#6e6e73] dark:text-[#a1a1a6] line-clamp-3">
                   {elec.description}
                 </p>
               </div>
 
-              <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
-                <span className="text-xs text-slate-500 flex items-center gap-1">
+              <div className="pt-4 border-t border-black/10 dark:border-white/10 flex items-center justify-between">
+                <span className="text-xs text-[#6e6e73] dark:text-[#a1a1a6] flex items-center gap-1">
                   <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
                   {formatUtc(elec.closes_at_utc)}
                 </span>
                 <Link
                   href={elec.state === "OPEN" ? `/student/elections/${elec.id}/candidates` : `/results?election=${elec.id}`}
-                  className="min-h-[44px] px-3 py-1.5 text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:bg-[#157E92]/10 rounded-md transition-colors flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                  className="min-h-[44px] px-3 py-1.5 text-xs font-semibold text-[#0071e3] hover:bg-[#0071e3]/10 rounded-full transition-colors flex items-center gap-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3]"
                 >
                   <span>{elec.state === "OPEN" ? "Review and Vote" : "View Tally"}</span>
                   <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
@@ -234,12 +234,12 @@ export default function HomePage() {
       </section>
 
       {/* Verification Pillars */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-8 py-8 border-t border-slate-200 dark:border-[#1E3352]">
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#157E92]/10 text-[#157E92] flex items-center justify-center font-bold">
+      <section className="apple-section apple-info-grid">
+        <div className="apple-info-item">
+          <div className="apple-info-number">
             01
           </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+          <h3>
             Dual Origin Separation
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -247,11 +247,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#15805D]/10 text-[#15805D] flex items-center justify-center font-bold">
+        <div className="apple-info-item">
+          <div className="apple-info-number text-[#15805D]">
             02
           </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+          <h3>
             Witness Checkpoint Workflow
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -259,11 +259,11 @@ export default function HomePage() {
           </p>
         </div>
 
-        <div className="space-y-3">
-          <div className="w-10 h-10 rounded-lg bg-[#AA6C0B]/10 text-[#AA6C0B] flex items-center justify-center font-bold">
+        <div className="apple-info-item">
+          <div className="apple-info-number text-[#AA6C0B]">
             03
           </div>
-          <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
+          <h3>
             Checkpoint Anchor Verification Ledger
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
