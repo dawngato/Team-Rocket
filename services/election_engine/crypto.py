@@ -10,13 +10,21 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
 try:
+    from himvote_crypto.jcs import canonicalize as _reviewed_jcs_canonicalize
+except ImportError:
+    _reviewed_jcs_canonicalize = None
+
+try:
     from .constants import G, P, Q
 except (ImportError, ValueError):
     from constants import G, P, Q
 
 
 def canonical_json(data: Any) -> bytes:
-    """Serialize data to deterministic RFC 8785 canonical JSON bytes."""
+    """Serialize data with the shared RFC 8785 integer-only HimVote profile."""
+    if _reviewed_jcs_canonicalize is not None:
+        return _reviewed_jcs_canonicalize(data, allow_floats=False)
+
     def _check_floats(obj: Any) -> None:
         if isinstance(obj, float):
             raise ValueError("Float values forbidden in canonical JSON")
@@ -30,15 +38,25 @@ def canonical_json(data: Any) -> bytes:
                 _check_floats(item)
 
     _check_floats(data)
-    dumped = json.dumps(
-        data,
-        ensure_ascii=False,
-        allow_nan=False,
-        indent=None,
-        separators=(",", ":"),
-        sort_keys=True,
-    )
-    return dumped.encode("utf_8")
+    def _serialize(obj: Any) -> str:
+        if isinstance(obj, dict):
+            keys = sorted(obj.keys(), key=lambda key: key.encode("utf-16-be"))
+            return "{" + ",".join(f"{json.dumps(key, ensure_ascii=False)}:{_serialize(obj[key])}" for key in keys) + "}"
+        if isinstance(obj, (list, tuple)):
+            return "[" + ",".join(_serialize(item) for item in obj) + "]"
+        if isinstance(obj, str):
+            return json.dumps(obj, ensure_ascii=False)
+        if obj is True:
+            return "true"
+        if obj is False:
+            return "false"
+        if obj is None:
+            return "null"
+        if isinstance(obj, int):
+            return str(obj)
+        raise TypeError(f"Unsupported canonical JSON value: {type(obj).__name__}")
+
+    return _serialize(data).encode("utf_8")
 
 
 def sha256_digest(*items: Any) -> bytes:

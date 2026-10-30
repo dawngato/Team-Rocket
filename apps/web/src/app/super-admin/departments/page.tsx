@@ -3,16 +3,10 @@
 import React, { useState } from "react";
 import { GraduationCap, Plus, CheckCircle2, MapPin, Users, Award } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
-import { INITIAL_DEPARTMENTS } from "@/lib/mock_data";
+import type { DepartmentRecord } from "@/lib/types";
 
 export default function SuperAdminDepartmentsPage() {
-  const [departments, setDepartments] = useState(INITIAL_DEPARTMENTS);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const handleCreateDept = () => {
-    setFeedback("Department quota validation complete. Verification thresholds locked.");
-    setTimeout(() => setFeedback(null), 3000);
-  };
+  const departments: DepartmentRecord[] = [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -31,22 +25,17 @@ export default function SuperAdminDepartmentsPage() {
         </div>
         <button
           type="button"
-          onClick={handleCreateDept}
+          disabled
           className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Validate Department Quotas</span>
+          <span>Department API unavailable</span>
         </button>
       </div>
 
       <SuperAdminNav />
 
-      {feedback && (
-        <div className="p-4 rounded-xl bg-[#15805D]/10 border border-[#15805D]/30 text-[#15805D] text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span>{feedback}</span>
-        </div>
-      )}
+      <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08]" role="status">Department provisioning is disabled until the authenticated directory service endpoint is deployed. No fixture departments are shown.</div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {departments.map((dept) => (

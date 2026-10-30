@@ -26,8 +26,9 @@ User authentication sessions, cryptographic voting credentials, and cast ballot 
 
 ### Certificate Pinning
 OkHttp is configured with production certificate pins for both the identity origin and casting origin:
-* api.himvote.example.in
-* cast.himvote.example.in
+The application does not contain a production booth hostname. Configure
+`himvote.boothBaseUrl`, `himvote.returnUrl`, and `himvote.returnHost` in the
+Gradle build properties; release builds fail when these values are absent.
 
 In release builds, cleartext HTTP is strictly rejected. In local debug builds, developers can connect to the host alias 10.0.2.2.
 

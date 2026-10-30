@@ -13,19 +13,18 @@ import {
   Globe,
   AlertTriangle,
 } from "lucide-react";
-import { INITIAL_ELECTIONS, INITIAL_TRUSTED_PINS } from "@/lib/mock_data";
 import { electionClient } from "@/lib/api_client";
 import { Election } from "@/lib/types";
 
 export default function AuditorOverviewPage() {
-  const [elections, setElections] = useState<Election[]>(INITIAL_ELECTIONS);
+  const [elections, setElections] = useState<Election[]>([]);
 
   useEffect(() => {
     electionClient.getElections()
       .then((data) => {
-        if (data && data.length > 0) setElections(data);
+        setElections(data);
       })
-      .catch(() => {});
+      .catch(() => setElections([]));
   }, []);
 
   const attestedCount = elections.filter((e) => e.state === "AUDITOR_ATTESTED").length;
@@ -37,7 +36,7 @@ export default function AuditorOverviewPage() {
       href: "/auditor/trusted-pins",
       desc: "Manage cryptographic root pins for witness nodes, HSM signers, and smart contract registries.",
       icon: Key,
-      count: `${INITIAL_TRUSTED_PINS.length} Pinned Keys`,
+      count: "Not checked",
     },
     {
       kicker: "Witness Log",
@@ -45,7 +44,7 @@ export default function AuditorOverviewPage() {
       href: "/auditor/witness",
       desc: "Inspect the local witness emulator checkpoint signature and Merkle log size.",
       icon: Layers,
-      count: "Fixture Signature",
+      count: "Live status required",
     },
     {
       kicker: "Relay Adapter",
@@ -69,7 +68,7 @@ export default function AuditorOverviewPage() {
       href: "/auditor/verify",
       desc: "Review the fixture workflow before running the offline verifier with external trust pins.",
       icon: CheckCircle2,
-      count: "Limited Preview",
+      count: "Offline report required",
     },
     {
       kicker: "External Signature",
@@ -107,14 +106,14 @@ export default function AuditorOverviewPage() {
               Attested Contests
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Verified
+              Not checked
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono tabular-nums">
             {attestedCount}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Dual auditor signature recorded in fixture data
+            Counted from the live election summary only; attestation is not inferred.
           </span>
         </div>
 
@@ -124,14 +123,14 @@ export default function AuditorOverviewPage() {
               Witness Node Network
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
-              Pinned
+              Limited
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono">
-            {INITIAL_TRUSTED_PINS.length} Keys
+            Not checked
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Out of band pinned public keys loaded
+            Trust pins must be installed and verified out of band.
           </span>
         </div>
 
@@ -141,14 +140,14 @@ export default function AuditorOverviewPage() {
               Verifier Integrity
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Pass
+              Limited
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono">
-            TESTED
+            NOT CHECKED
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Golden test vectors verified locally
+            Run the standalone verifier against a signed evidence archive.
           </span>
         </div>
       </div>

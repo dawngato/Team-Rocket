@@ -20,7 +20,7 @@ export default function OfficerCandidateManagementPage() {
 
   useEffect(() => {
     if (!electionId) return;
-    void Promise.all([apiClient.getElection(electionId), apiClient.getCandidates(electionId)]).then(([nextElection, nextCandidates]) => {
+    void Promise.all([apiClient.getElection(electionId, { includeInternal: true }), apiClient.getCandidates(electionId)]).then(([nextElection, nextCandidates]) => {
       if (!nextElection) throw new Error("Election not found in the admin service.");
       setElection(nextElection);
       setCandidates(nextCandidates);

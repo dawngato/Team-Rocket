@@ -1,32 +1,43 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Key, Plus, ShieldCheck, CheckCircle2 } from "lucide-react";
-import { INITIAL_TRUSTED_PINS } from "../../lib/mock_data";
 import { TrustedPin } from "../../lib/types";
 import { apiClient } from "../../lib/api_client";
 
 export default function AuditorTrustedPinsPage() {
-  const [pins, setPins] = useState<TrustedPin[]>(INITIAL_TRUSTED_PINS);
+  const [pins, setPins] = useState<TrustedPin[]>([]);
   const [label, setLabel] = useState("");
   const [service, setService] = useState<"WITNESS" | "CHAIN" | "IDENTITY">("WITNESS");
   const [keySpki, setKeySpki] = useState("");
   const [algorithm, setAlgorithm] = useState("Ed25519");
   const [isAdding, setIsAdding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadPins = useCallback(async () => {
+    setError(null);
+    try {
+      setPins(await apiClient.getTrustedPins());
+    } catch (cause) {
+      setPins([]);
+      setError(cause instanceof Error ? cause.message : "Trusted pins must be loaded from the offline trust ceremony.");
+    }
+  }, []);
+
+  useEffect(() => { void loadPins(); }, [loadPins]);
 
   const handleAddPin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created = await apiClient.addTrustedPin({
-      label,
-      service,
-      public_key_spki: keySpki,
-      algorithm,
-      active: true,
-    });
-    setPins([created, ...pins]);
-    setLabel("");
-    setKeySpki("");
-    setIsAdding(false);
+    setError(null);
+    try {
+      const created = await apiClient.addTrustedPin({ label, service, public_key_spki: keySpki, algorithm, active: true });
+      setPins([created, ...pins]);
+      setLabel("");
+      setKeySpki("");
+      setIsAdding(false);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Trusted pin was not stored.");
+    }
   };
 
   return (
@@ -54,6 +65,8 @@ export default function AuditorTrustedPinsPage() {
           <span>{isAdding ? "Cancel" : "Add Trusted Pin"}</span>
         </button>
       </div>
+
+      {error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08]" role="alert">{error}</div>}
 
       {isAdding && (
         <form

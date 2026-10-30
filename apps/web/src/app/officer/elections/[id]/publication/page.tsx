@@ -18,7 +18,7 @@ export default function OfficerPublicationRequestPage() {
   const [requested, setRequested] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { if (electionId) void apiClient.getElection(electionId).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election unavailable.")); }, [electionId]);
+  useEffect(() => { if (electionId) void apiClient.getElection(electionId, { includeInternal: true }).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election unavailable.")); }, [electionId]);
   const submit = async () => {
     if (!election) return;
     setBusy(true); setError(null);

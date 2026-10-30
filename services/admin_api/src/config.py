@@ -53,6 +53,7 @@ class Settings(BaseModel):
         "http://localhost:8081" if os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")) != "production" else "",
     ).rstrip("/")
     identity_request_timeout_seconds: float = float(os.getenv("IDENTITY_REQUEST_TIMEOUT_SECONDS", "3"))
+    admin_schema_version: str = os.getenv("ADMIN_SCHEMA_VERSION", "1")
 
     def model_post_init(self, __context) -> None:
         if self.environment == "production" and not self.casting_db_url:

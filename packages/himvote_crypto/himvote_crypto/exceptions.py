@@ -19,7 +19,7 @@ class DuplicateKeyError(CanonicalizationError):
         super().__init__(message or f"Duplicate object key detected: {key}")
 
 
-class FloatNotPermittedError(CanonicalizationError):
+class FloatNotPermittedError(CanonicalizationError, ValueError):
     """Raised when floating point numbers are encountered in strict integer mode."""
 
     def __init__(self, message: Optional[str] = None) -> None:

@@ -33,7 +33,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:scheme="https"
-                    android:host="himvote.example.in"
+                    android:host="${himvoteReturnHost}"
                     android:pathPrefix="/booth/return" />
             </intent-filter>
 

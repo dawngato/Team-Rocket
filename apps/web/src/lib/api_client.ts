@@ -100,13 +100,13 @@ function toElection(value: unknown): Election {
 }
 
 export const apiClient = {
-  async getElections(): Promise<Election[]> {
-    return electionClient.getElections();
+  async getElections(options: { includeInternal?: boolean } = {}): Promise<Election[]> {
+    return electionClient.getElections(options);
   },
 
-  async getElection(id: string): Promise<Election | null> {
+  async getElection(id: string, options: { includeInternal?: boolean } = {}): Promise<Election | null> {
     try {
-      return await electionClient.getElection(id);
+      return await electionClient.getElection(id, options);
     } catch (error) {
       if (error instanceof ElectionApiError && error.status === 404) return null;
       throw error;

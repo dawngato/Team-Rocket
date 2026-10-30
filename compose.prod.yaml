@@ -57,6 +57,7 @@ services:
       CASTING_DB_URL: ${ADMIN_DATABASE_URL:?Set ADMIN_DATABASE_URL to the managed admin database URL}
       IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL:?Set IDENTITY_SERVICE_URL to the identity issuer}
       PINNED_AUDITOR_PUBLIC_KEY: ${PINNED_AUDITOR_PUBLIC_KEY:?Set PINNED_AUDITOR_PUBLIC_KEY}
+      ADMIN_SCHEMA_VERSION: ${ADMIN_SCHEMA_VERSION:?Set ADMIN_SCHEMA_VERSION after applying admin migrations}
       IDENTITY_DB_SSL_MODE: verify-full
       CASTING_DB_SSL_MODE: verify-full
     deploy:

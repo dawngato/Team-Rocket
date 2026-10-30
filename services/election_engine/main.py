@@ -1,6 +1,7 @@
-"""HimVote Election Engine Service API.
-FastAPI microservice exposing the vetted voting engine adapter interface.
-Profile VEEM with zero knowledge proofs and threshold tallying.
+"""HimVote development election-engine adapter service.
+
+This service is a custom protocol test harness. It is never advertised as an
+established or independently vetted voting engine.
 """
 
 import base64

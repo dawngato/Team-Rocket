@@ -65,12 +65,22 @@ def get_current_actor_id(request: Request) -> str:
 @router.get("", response_model=ElectionList)
 def list_elections(
     state: Optional[str] = Query(None),
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
-    """Lists elections with optional state filter."""
+    """Lists public elections, or scoped internal elections for operators."""
     query = db.query(ElectionModel).join(ElectionStateModel)
     if state:
         query = query.filter(ElectionStateModel.state == state)
+    elif include_internal:
+        # Internal lifecycle views must use the same authenticated actor
+        # boundary as mutations. Public callers never receive draft metadata.
+        get_current_actor_id(request)
+    else:
+        query = query.filter(
+            ElectionStateModel.state.notin_(["DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"])
+        )
 
     elections = query.all()
     summaries = [
@@ -152,12 +162,19 @@ def create_election(
 @router.get("/{id}", response_model=Election)
 def get_election(
     id: str,
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """Retrieves detailed election information."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    state = election.state_record.state if election.state_record else "UNKNOWN"
+    if state in {"DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"}:
+        if not include_internal:
+            raise HTTPException(status_code=404, detail="Election not found")
+        get_current_actor_id(request)
 
     candidates = [
         Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)

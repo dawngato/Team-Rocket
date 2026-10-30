@@ -1,181 +1,65 @@
 "use client";
 
-import React, { useState } from "react";
-import { Users2, UserPlus, CheckCircle2, ShieldCheck, Mail, Key } from "lucide-react";
+import React, { useCallback, useEffect, useState } from "react";
+import { CheckCircle2, Key, Mail, UserPlus, Users2 } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
-import { INITIAL_ADMINISTRATORS } from "@/lib/mock_data";
+import { apiClient } from "@/lib/api_client";
+import type { AdminInvitationRecord } from "@/lib/types";
 
 export default function SuperAdminAdministratorsPage() {
-  const [admins, setAdmins] = useState(INITIAL_ADMINISTRATORS);
+  const [invitations, setInvitations] = useState<AdminInvitationRecord[]>([]);
   const [newEmail, setNewEmail] = useState("");
-  const [newFullName, setNewFullName] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
 
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newEmail || !newFullName) return;
+  const load = useCallback(async () => {
+    setError(null);
+    try {
+      setInvitations(await apiClient.getInvitations());
+    } catch (cause) {
+      setInvitations([]);
+      setError(cause instanceof Error ? cause.message : "Administrator invitation records are unavailable.");
+    }
+  }, []);
 
-    const newAdmin = {
-      id: `adm_local_${Date.now()}`,
-      email: newEmail,
-      full_name: newFullName,
-      role: "ADMINISTRATOR" as const,
-      scope: ["Regional Campus", "STUDENT_ROSTER"],
-      mfa_enabled: false,
-      invited_by: "superadmin@hptu.ac.in",
-      created_at_utc: new Date().toISOString(),
-      last_login_utc: "PENDING_ENROLLMENT",
-    };
+  useEffect(() => { void load(); }, [load]);
 
-    setAdmins([newAdmin, ...admins]);
-    setFeedback(`Invitation issued to ${newEmail} with required TOTP MFA registration.`);
-    setNewEmail("");
-    setNewFullName("");
-    setTimeout(() => setFeedback(null), 4000);
+  const handleInvite = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setFeedback(null);
+    try {
+      const invitation = await apiClient.createInvitation({ email: newEmail, role: "administrator", scope: "institution" });
+      setFeedback(`Invitation ${invitation.invitation_id} was committed. Delivery status is controlled by the identity service.`);
+      setNewEmail("");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The identity service rejected the invitation.");
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white mb-1">
-            <Users2 className="w-3.5 h-3.5 text-[#157E92]" aria-hidden="true" />
-            Administrative Accounts
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Institutional Administrators
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Provision local administrators with designated scopes and mandatory multi factor authentication.
-          </p>
-        </div>
-      </div>
-
+    <main className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+      <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
+        <p className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#10233F]/10 px-2.5 py-0.5 text-xs font-semibold text-[#10233F] dark:bg-white/10 dark:text-white"><Users2 className="size-3.5 text-[#157E92]" aria-hidden="true" />Administrative accounts</p>
+        <h1 className="text-3xl font-bold tracking-tight text-[#10233F] dark:text-white">Institutional administrators</h1>
+        <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Invitations and status are read from the identity service. No local administrator records are created.</p>
+      </header>
       <SuperAdminNav />
-
-      {feedback && (
-        <div className="p-4 rounded-xl bg-[#15805D]/10 border border-[#15805D]/30 text-[#15805D] text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span>{feedback}</span>
-        </div>
-      )}
-
-      {/* Invite Form */}
-      <div className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-4">
-        <h2 className="text-lg font-bold text-[#10233F] dark:text-white flex items-center gap-2">
-          <UserPlus className="w-5 h-5 text-[#157E92]" aria-hidden="true" />
-          <span>Invite New Campus Administrator</span>
-        </h2>
-        <form onSubmit={handleInvite} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <label htmlFor="adm-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Full Name
-            </label>
-            <input
-              id="adm-name"
-              type="text"
-              required
-              value={newFullName}
-              onChange={(e) => setNewFullName(e.target.value)}
-              placeholder="e.g. Dr. Kavita Sharma"
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            />
-          </div>
-          <div>
-            <label htmlFor="adm-email" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Institutional Email (@hptu.ac.in)
-            </label>
-            <input
-              id="adm-email"
-              type="email"
-              required
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="kavita.s@hptu.ac.in"
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            />
-          </div>
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-            >
-              <Mail className="w-4 h-4" aria-hidden="true" />
-              <span>Send Invitation</span>
-            </button>
-          </div>
+      {error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}
+      {feedback && <div className="flex items-center gap-2 rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-sm font-semibold text-[#0F5B43]" role="status"><CheckCircle2 className="size-5" aria-hidden="true" />{feedback}</div>}
+      <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+        <h2 className="flex items-center gap-2 font-bold text-[#10233F] dark:text-white"><UserPlus className="size-5 text-[#157E92]" aria-hidden="true" />Invite administrator</h2>
+        <form onSubmit={handleInvite} className="grid gap-4 sm:grid-cols-2">
+          <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Institutional email<input id="administrator-email" required type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} className="mt-1 min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /></label>
+          <button type="submit" className="mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white"><Mail className="size-4" aria-hidden="true" />Issue identity invitation</button>
         </form>
-      </div>
-
-      {/* Administrators Table */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352]">
-          <h2 className="font-bold text-base text-[#10233F] dark:text-white">
-            Active Administrative Staff
-          </h2>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-[#1E3352]">
-              <tr>
-                <th scope="col" className="px-6 py-3">Administrator</th>
-                <th scope="col" className="px-6 py-3">Role Tier</th>
-                <th scope="col" className="px-6 py-3">Assigned Scopes</th>
-                <th scope="col" className="px-6 py-3">MFA Status</th>
-                <th scope="col" className="px-6 py-3">Last Active</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {admins.map((adm) => (
-                <tr key={adm.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-[#10233F] dark:text-white">{adm.full_name}</div>
-                    <div className="text-xs text-slate-500 font-mono">{adm.email}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2.5 py-0.5 rounded text-xs font-bold ${
-                        adm.role === "SUPER_ADMINISTRATOR"
-                          ? "bg-[#10233F] text-white dark:bg-[#157E92]"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
-                      {adm.role.replace(/_/g, " ")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex flex-wrap gap-1">
-                      {adm.scope.map((s) => (
-                        <span key={s} className="px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[11px] text-slate-600 dark:text-slate-400 font-mono">
-                          {s}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {adm.mfa_enabled ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#15805D]">
-                        <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span>Enrolled (TOTP)</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-[#AA6C0B]">
-                        <Key className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span>Pending Setup</span>
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-xs font-mono text-slate-500">
-                    {adm.last_login_utc === "PENDING_ENROLLMENT"
-                      ? "Pending"
-                      : new Date(adm.last_login_utc).toLocaleDateString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+        <p className="text-xs text-slate-500">The identity service may reject delivery in production until an independently configured notification adapter is available.</p>
+      </section>
+      <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+        <div className="border-b border-slate-100 px-6 py-4 dark:border-[#1E3352]"><h2 className="font-bold text-[#10233F] dark:text-white">Authoritative invitation log</h2></div>
+        {invitations.length === 0 ? <p className="p-6 text-sm text-slate-500">No invitations returned by the identity service.</p> : <div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900/50"><tr><th className="px-6 py-3">Email</th><th className="px-6 py-3">Role and scope</th><th className="px-6 py-3">Status</th><th className="px-6 py-3">Expires</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">{invitations.map((invitation) => <tr key={invitation.id}><td className="px-6 py-4 font-mono text-xs">{invitation.email}</td><td className="px-6 py-4">{invitation.role} · {invitation.scope}</td><td className="px-6 py-4"><span className="inline-flex items-center gap-1 text-xs font-semibold text-[#AA6C0B]"><Key className="size-3.5" aria-hidden="true" />{invitation.status}</span></td><td className="px-6 py-4 text-xs text-slate-500">{new Date(invitation.expires_at).toLocaleString()}</td></tr>)}</tbody></table></div>}
+      </section>
+    </main>
   );
 }

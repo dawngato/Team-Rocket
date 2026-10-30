@@ -13,7 +13,7 @@ export default function OfficerFreezeManifestPage() {
   const [election, setElection] = useState<Election | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  useEffect(() => { void apiClient.getElection(electionId).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election unavailable.")); }, [electionId]);
+  useEffect(() => { void apiClient.getElection(electionId, { includeInternal: true }).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election unavailable.")); }, [electionId]);
   const freeze = async () => { if (!election) return; setBusy(true); setError(null); try { setElection(await apiClient.freezeElection(election.id)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Manifest freeze was rejected."); } finally { setBusy(false); } };
   if (!election) return <main className="mx-auto max-w-4xl px-4 py-12 text-sm" role="status">{error || "Loading authoritative election…"}</main>;
   const frozen = election.state !== "DRAFT";

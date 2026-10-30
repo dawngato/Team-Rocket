@@ -290,8 +290,8 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
   }
 
   return {
-    async getElections(): Promise<Election[]> {
-      const body = await request("/v1/elections");
+    async getElections(options: { includeInternal?: boolean } = {}): Promise<Election[]> {
+      const body = await request(options.includeInternal ? "/v1/elections?include_internal=true" : "/v1/elections");
       const values = Array.isArray(body) ? body : isRecord(body) && Array.isArray(body.elections) ? body.elections : null;
       if (!values) {
         throw new ElectionApiError({
@@ -304,7 +304,7 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
       return values.map((value) => toElectionSummary(value));
     },
 
-    async getElection(electionId: string): Promise<Election> {
+    async getElection(electionId: string, options: { includeInternal?: boolean } = {}): Promise<Election> {
       if (!/^[A-Za-z0-9][A-Za-z0-9._~:-]{0,255}$/.test(electionId)) {
         throw new ElectionApiError({
           code: "ELECTION_ID_INVALID",
@@ -313,7 +313,8 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
           retryable: false,
         });
       }
-      return toElection(await request(`/v1/elections/${encodeURIComponent(electionId)}`), electionId);
+      const suffix = options.includeInternal ? "?include_internal=true" : "";
+      return toElection(await request(`/v1/elections/${encodeURIComponent(electionId)}${suffix}`), electionId);
     },
 
     async getResults(electionId: string): Promise<PublishedResults> {

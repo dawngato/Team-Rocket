@@ -10,6 +10,11 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 from src.config import settings
 
+try:
+    from himvote_crypto.jcs import canonicalize as _reviewed_jcs_canonicalize
+except ImportError:
+    _reviewed_jcs_canonicalize = None
+
 
 SHA256_DIGEST_BYTES = 32
 
@@ -32,17 +37,46 @@ def base64url_encode(data: bytes) -> str:
     return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
 
 
+try:
+    from himvote_crypto.jcs import canonicalize as _jcs_canonicalize
+    HAVE_JCS = True
+except ImportError:
+    HAVE_JCS = False
+
+
 def canonical_json_bytes(obj: Any) -> bytes:
     """
     Serialize Python dictionary to RFC 8785 canonical JSON UTF 8 bytes.
     Ensures keys are lexicographically sorted and whitespace is stripped.
     """
-    return json.dumps(
-        obj,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False
-    ).encode("utf-8")
+    if HAVE_JCS:
+        return _jcs_canonicalize(obj)
+    if _reviewed_jcs_canonicalize is not None:
+        return _reviewed_jcs_canonicalize(obj, allow_floats=False)
+
+    def serialize(value: Any) -> str:
+        if isinstance(value, dict):
+            keys = sorted(value.keys(), key=lambda key: key.encode("utf-16-be"))
+            if any(not isinstance(key, str) for key in keys):
+                raise TypeError("Dictionary keys must be strings")
+            return "{" + ",".join(f"{json.dumps(key, ensure_ascii=False)}:{serialize(value[key])}" for key in keys) + "}"
+        if isinstance(value, (list, tuple)):
+            return "[" + ",".join(serialize(item) for item in value) + "]"
+        if isinstance(value, str):
+            return json.dumps(value, ensure_ascii=False)
+        if value is True:
+            return "true"
+        if value is False:
+            return "false"
+        if value is None:
+            return "null"
+        if isinstance(value, int):
+            return str(value)
+        if isinstance(value, float):
+            raise ValueError("Floats are prohibited in HimVote canonical JSON")
+        raise TypeError(f"Unsupported canonical JSON value: {type(value).__name__}")
+
+    return serialize(obj).encode("utf-8")
 
 
 def compute_leaf_digest(canonical_leaf_bytes: bytes) -> str:

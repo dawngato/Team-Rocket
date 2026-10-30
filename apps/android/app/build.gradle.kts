@@ -17,15 +17,29 @@ android {
         versionCode = 1
         versionName = "2.0.0"
     }
+    val boothBaseUrl = providers.gradleProperty("himvote.boothBaseUrl").orElse("").get()
+    val returnUrl = providers.gradleProperty("himvote.returnUrl").orElse("").get()
+    val returnHost = providers.gradleProperty("himvote.returnHost").orElse("").get()
+    if (boothBaseUrl.isBlank() || returnUrl.isBlank() || returnHost.isBlank()) {
+        logger.warn("HimVote booth App Link values are not configured; debug builds will not launch a real booth.")
+    }
     buildTypes {
         release {
+            if (boothBaseUrl.isBlank() || returnUrl.isBlank() || returnHost.isBlank()) {
+                throw GradleException("Configure himvote.boothBaseUrl, himvote.returnUrl, and himvote.returnHost for release builds")
+            }
+            buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
+            buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
         debug {
+            buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
+            buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             applicationIdSuffix = ".debug"
         }
     }
+    defaultConfig.manifestPlaceholders["himvoteReturnHost"] = returnHost
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

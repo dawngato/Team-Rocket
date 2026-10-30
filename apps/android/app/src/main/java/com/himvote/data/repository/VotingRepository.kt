@@ -17,8 +17,8 @@ class VotingRepository @Inject constructor(
     private val offlineVerificationHelper: OfflineVerificationHelper = OfflineVerificationHelper()
 ) {
     companion object {
-        const val BOOTH_BASE_URL = "https://cast.himvote.example.in/booth"
-        const val APP_LINK_RETURN_URL = "https://himvote.example.in/booth/return"
+        val BOOTH_BASE_URL: String get() = BuildConfig.BOOTH_BASE_URL
+        val APP_LINK_RETURN_URL: String get() = BuildConfig.APP_LINK_RETURN_URL
     }
 
     /**
@@ -37,6 +37,7 @@ class VotingRepository @Inject constructor(
     fun buildBoothHandoffUrl(electionId: String, credentialToken: String): String {
         require(electionId.isNotBlank()) { "Election ID cannot be blank" }
         require(credentialToken.isNotBlank()) { "Credential token cannot be blank" }
+        require(BOOTH_BASE_URL.startsWith("https://")) { "A deployed HTTPS booth URL must be configured" }
 
         // Candidate selection must be made inside the engine-controlled booth.
         // Putting it in a URL leaks the choice to browser history, referrers,
@@ -44,8 +45,11 @@ class VotingRepository @Inject constructor(
         fun encode(value: String): String =
             URLEncoder.encode(value, StandardCharsets.UTF_8.name()).replace("+", "%20")
 
+        // Credentials are never placed in navigation URLs. The production
+        // booth must exchange this request through a same-origin back channel
+        // or a one-time opaque handoff before accepting a ballot.
+        check(credentialToken.isNotBlank()) { "Credential is required for a secure back-channel handoff" }
         return "$BOOTH_BASE_URL?election_id=${encode(electionId)}" +
-            "&credential=${encode(credentialToken)}" +
             "&return_url=${encode(APP_LINK_RETURN_URL)}"
     }
 

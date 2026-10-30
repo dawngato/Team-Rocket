@@ -125,7 +125,12 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
         var components = URLComponents(url: boothBaseUrl, resolvingAgainstBaseURL: false)
         var items = components?.queryItems ?? []
         items.append(URLQueryItem(name: "election_id", value: electionId))
-        items.append(URLQueryItem(name: "credential_proof", value: credentialProof))
+        // Credential proof is intentionally kept out of navigation URLs. The
+        // deployed booth must receive it through a same-origin back channel or
+        // a short-lived opaque handoff.
+        guard !credentialProof.isEmpty else {
+            throw BoothError.missingArtifacts(detail: "credential proof is required for a secure back-channel handoff")
+        }
         items.append(URLQueryItem(name: "state", value: stateToken))
         items.append(URLQueryItem(name: "redirect_uri", value: "\(callbackScheme)://booth_return"))
         components?.queryItems = items

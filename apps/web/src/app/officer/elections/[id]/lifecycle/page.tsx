@@ -13,7 +13,7 @@ export default function OfficerLifecyclePage() {
   const [election, setElection] = useState<Election | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const load = () => void apiClient.getElection(electionId).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election status unavailable."));
+  const load = () => void apiClient.getElection(electionId, { includeInternal: true }).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election status unavailable."));
   useEffect(load, [electionId]);
   const transition = async (action: "open" | "close") => { if (!election) return; setBusy(true); setError(null); try { setElection(action === "open" ? await apiClient.openElection(election.id) : await apiClient.closeElection(election.id)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Lifecycle transition rejected."); } finally { setBusy(false); } };
   if (!election) return <main className="mx-auto max-w-4xl px-4 py-12 text-sm" role="status">{error || "Loading authoritative election…"}</main>;
