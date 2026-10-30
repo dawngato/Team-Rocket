@@ -56,30 +56,70 @@
   --sv-focus: #b2baff;
 }
 
-* {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 html {
   scroll-behavior: smooth;
-  min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
-}
-
-input, select, textarea {
-  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+  position: relative;
   color: var(--text);
   background-color: var(--surface);
   font-family: "DM Sans", "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Prevent mobile Safari automatic zooming on input focus */
+input, select, textarea {
+  font-size: 16px;
+}
+
+/* Responsive media and embedded assets */
+img, svg, video, canvas, audio, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Responsive typography and text containment: prevent single long strings from widening viewport */
+p, span, h1, h2, h3, h4, h5, h6, a, label, li, td, th {
+  overflow-wrap: break-word;
+}
+
+code, kbd, samp, pre, .font-mono, [class*="font-mono"] {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Ensure CSS Grid and Flexbox children shrink to viewport width */
+.grid > *, [class*="grid-cols-"] > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.flex > * {
+  max-width: 100%;
+}
+
+/* Smooth momentum scrolling on horizontal touch tables */
+.overflow-x-auto, [class*="overflow-x-"] {
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
 }
 
 /* Apple-inspired product surface: platform typography, calm materials, and
