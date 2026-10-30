@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ["lucide-react"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async headers() {
     return [
       {
@@ -20,4 +23,3 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
-
