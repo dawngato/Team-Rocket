@@ -46,19 +46,13 @@ try:
     with engine.connect() as conn:
         pass
 except Exception as exc:
-    # TR-004: Fail loudly in production and staging; do not silently fallback to in-memory SQLite
-    if settings.environment.lower() in ("production", "staging"):
-        raise RuntimeError(
-            f"Database connection failed in production/staging environment ({settings.environment}): {exc}. "
-            "Silent fallback to in-memory SQLite is disabled."
-        ) from exc
-    
-    DATABASE_URL = "sqlite:///:memory:"
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
+    # TR-004: a configured database failure must never be hidden by switching
+    # to an empty in-memory database. Disposable SQLite is selected explicitly
+    # through TESTING=true before the engine is constructed.
+    raise RuntimeError(
+        f"Admin database connection failed for {settings.environment} environment: {exc}. "
+        "Configure a reachable database or use TESTING=true for an isolated test database."
+    ) from exc
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

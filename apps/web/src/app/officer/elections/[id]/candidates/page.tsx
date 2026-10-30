@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowRight, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { StateBadge } from "../../../../components/StateBadge";
-import { apiClient } from "../../../../lib/api_client";
-import type { Candidate, Election } from "../../../../lib/types";
+import { apiClient } from "@/lib/api_client";
+import type { Candidate, Election } from "@/lib/types";
 
 export default function OfficerCandidateManagementPage() {
   const params = useParams();

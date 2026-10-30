@@ -178,7 +178,6 @@ class IntegrationVerifier:
             ("web", r'3000:3000'),
             ("identity_issuer", r'8081:8081'),
             ("casting", r'8082:8082'),
-            ("admin_api", r'8083:8083'),
             ("election_engine", r'8084:8084'),
             ("witness", r'8086:8086'),
             ("chain_node", r'8545:8545'),
@@ -190,6 +189,19 @@ class IntegrationVerifier:
                 self.passes.append(f"compose.yaml port verified for {svc}")
             else:
                 self.errors.append(f"compose.yaml missing port definition for {svc} matching {pattern}")
+
+        # Administrative APIs must remain reachable only over the internal
+        # Docker network. The gateway is the sole public application boundary.
+        admin_match = re.search(
+            r"(?ms)^  admin_api:\n(?P<body>.*?)(?=^  [A-Za-z0-9_]+:\n|^networks:\n)",
+            content,
+        )
+        if not admin_match:
+            self.errors.append("compose.yaml missing admin_api service definition")
+        elif re.search(r"(?m)^\s+ports:", admin_match.group("body")):
+            self.errors.append("compose.yaml exposes admin_api directly instead of through the gateway")
+        else:
+            self.passes.append("compose.yaml keeps admin_api internal")
 
     def verify_cross_service_references(self):
         """

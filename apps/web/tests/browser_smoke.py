@@ -119,21 +119,22 @@ def run_smoke() -> None:
         page.get_by_text("Independent witness operation is not present locally.").wait_for(state="visible")
 
         # Protected voting routes stay behind the identity gate. A guest must
-        # not receive fixture ballots, election records, or a cast form.
+        # be redirected before receiving fixture ballots, election records,
+        # or a cast form.
         goto_ready(page, "/student/elections/elec_su_2026/cast")
-        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
+        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
 
         # Inclusion is also protected; the receipt handle must never be
         # resolved for an unauthenticated browser session.
         goto_ready(page, "/student/receipts/HV_24F8_19C2/inclusion")
-        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
+        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
 
         # Officer operational views also fail closed instead of rendering
         # local election fixtures when the identity service is absent.
         goto_ready(page, "/officer")
-        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
+        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
         goto_ready(page, "/officer/elections")
-        page.get_by_role("heading", name="Identity service unavailable").wait_for(state="visible")
+        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
 
         browser.close()
 

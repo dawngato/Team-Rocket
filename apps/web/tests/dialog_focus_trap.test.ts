@@ -6,7 +6,7 @@ import {
   trapFocus,
 } from "../src/components/AccessibleDialog";
 import * as AppComponents from "../src/app/components";
-import * as AppLib from "../src/app/lib";
+import { apiClient } from "../src/lib/api_client";
 
 interface MockElementOptions {
   tagName?: string;
@@ -401,10 +401,9 @@ describe("AccessibleDialog Focus Trap and Accessibility", () => {
       expect(AppComponents.StateBadge).toBeDefined();
     });
 
-    it("exports API client and mock data from app lib stubs", () => {
-      expect(AppLib.apiClient).toBeDefined();
-      expect(AppLib.INITIAL_ELECTIONS).toBeDefined();
-      expect(typeof AppLib.apiClient.getElections).toBe("function");
+    it("exports the canonical API client boundary", () => {
+      expect(apiClient).toBeDefined();
+      expect(typeof apiClient.getElections).toBe("function");
     });
   });
 });

@@ -2,8 +2,8 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { Key, Plus, ShieldCheck, CheckCircle2 } from "lucide-react";
-import { TrustedPin } from "../../lib/types";
-import { apiClient } from "../../lib/api_client";
+import { TrustedPin } from "@/lib/types";
+import { apiClient } from "@/lib/api_client";
 
 export default function AuditorTrustedPinsPage() {
   const [pins, setPins] = useState<TrustedPin[]>([]);
