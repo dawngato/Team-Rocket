@@ -52,33 +52,18 @@ services:
       context: ./services/admin_api
       dockerfile: Dockerfile
     container_name: himvote_admin_api
-    ports:
-      - "127.0.0.1:8083:8083"
     environment:
-      - IDENTITY_DB_HOST=identity_db
-      - IDENTITY_DB_PORT=5432
-      - IDENTITY_DB_NAME=himvote_identity
-      - IDENTITY_DB_USER=himvote_identity
-      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD must be set}
-      - IDENTITY_DB_SSL_MODE=prefer
-      - CASTING_DB_HOST=casting_db
-      - CASTING_DB_PORT=5432
-      - CASTING_DB_NAME=himvote_casting
-      - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
-      - CASTING_DB_SSL_MODE=prefer
+      - ADMIN_DB_URL=sqlite:///./himvote_admin_development.db
+      - IDENTITY_SERVICE_URL=http://identity_issuer:8081
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
       - IDENTITY_ALLOWED_ORIGINS=${IDENTITY_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       - AUDITOR_PUBLIC_KEY_FINGERPRINT=${AUDITOR_PUBLIC_KEY_FINGERPRINT:-CHANGE_ME}
     depends_on:
-      identity_db:
-        condition: service_healthy
-      casting_db:
-        condition: service_healthy
+      identity_issuer:
+        condition: service_started
     networks:
       - himvote_identity_net
-      - himvote_casting_net
     restart: unless-stopped
 
   identity_issuer:

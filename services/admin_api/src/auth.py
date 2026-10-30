@@ -54,6 +54,12 @@ def _identity_profile(request: Request) -> dict[str, Any]:
 def get_authenticated_actor(request: Request) -> str:
     """Resolve an actor from the identity issuer, with an explicit dev-only test escape hatch."""
     if settings.allow_dev_actor_headers:
+        client_host = request.client.host if request.client else ""
+        if client_host not in {"127.0.0.1", "::1", "localhost", "testclient", "testserver"}:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Development actor headers are restricted to a loopback test boundary",
+            )
         for header_name in ["X-Actor-ID", "x-actor-id", "X_Actor_ID", "x_actor_id", "actor_id"]:
             value = request.headers.get(header_name)
             if value:

@@ -63,7 +63,7 @@ async def cookie_mutation_origin_check(request: Request, call_next):
     if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.cookies.get("session_id"):
         origin = request.headers.get("origin")
         fetch_site = request.headers.get("sec-fetch-site", "").lower()
-        if (origin and origin not in ALLOWED_ORIGINS) or fetch_site in {"cross-site", "same-origin"} and origin and origin not in ALLOWED_ORIGINS:
+        if (origin and origin not in ALLOWED_ORIGINS) or fetch_site == "cross-site" or (not origin and fetch_site not in {"same-origin", "same-site"}):
             return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "Cross-site mutation rejected"})
     return await call_next(request)
 

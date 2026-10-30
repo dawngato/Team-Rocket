@@ -11,24 +11,26 @@ from src.models.database import Base
 
 def build_database_url() -> str:
     """Constructs database URL with preference for configured overrides."""
-    if settings.casting_db_url:
-        if settings.environment == "production" and settings.casting_db_url.startswith("sqlite"):
+    if settings.admin_db_url:
+        if settings.environment == "production" and settings.admin_db_url.startswith("sqlite"):
             raise ValueError("SQLite is strictly forbidden in production environments")
-        return settings.casting_db_url
+        return settings.admin_db_url
     
     if os.getenv("TESTING", "false").lower() == "true":
         return "sqlite:///:memory:"
 
     if settings.environment != "production":
         # Development has an explicit, persistent local database default. It
-        # is never selected in production, where CASTING_DB_URL is required.
+        # is never selected in production, where ADMIN_DB_URL is required.
         return "sqlite:///./himvote_admin_development.db"
 
-    user = settings.casting_db_user
-    pwd = settings.casting_db_password
-    host = settings.casting_db_host
-    port = settings.casting_db_port
-    name = settings.casting_db_name
+    user = os.getenv("ADMIN_DB_USER", "himvote_admin")
+    pwd = os.getenv("ADMIN_DB_PASSWORD", "")
+    host = os.getenv("ADMIN_DB_HOST", "localhost")
+    port = os.getenv("ADMIN_DB_PORT", "5432")
+    name = os.getenv("ADMIN_DB_NAME", "himvote_admin")
+    if not pwd:
+        raise RuntimeError("ADMIN_DB_PASSWORD must be explicitly configured for the production admin database")
     return f"postgresql://{user}:{pwd}@{host}:{port}/{name}"
 
 

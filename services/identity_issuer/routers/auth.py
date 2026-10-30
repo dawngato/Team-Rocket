@@ -6,6 +6,8 @@ Handles Argon2id authentication, TOTP MFA validation, and session lifecycle.
 import uuid
 import hashlib
 import secrets
+import time
+from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.exc import IntegrityError
@@ -45,6 +47,30 @@ from ..crypto.totp import generate_totp_secret, get_totp_uri, verify_totp
 from .deps import get_current_user, get_user_roles, record_audit_event, INVITABLE_ROLES
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
+
+_LOGIN_WINDOW_SECONDS = 300
+_LOGIN_MAX_FAILURES = 5
+_login_failures: dict[str, deque[float]] = defaultdict(deque)
+
+
+def _login_key(request: Request, email: str) -> str:
+    remote = request.client.host if request.client else "unknown"
+    return hashlib.sha256(f"{email.strip().lower()}:{remote}".encode("utf-8")).hexdigest()
+
+
+def _enforce_login_limit(request: Request, email: str) -> str:
+    key = _login_key(request, email)
+    now = time.monotonic()
+    attempts = _login_failures[key]
+    while attempts and now - attempts[0] > _LOGIN_WINDOW_SECONDS:
+        attempts.popleft()
+    if len(attempts) >= _LOGIN_MAX_FAILURES:
+        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many sign in attempts; try again later")
+    return key
+
+
+def _record_login_failure(key: str) -> None:
+    _login_failures[key].append(time.monotonic())
 
 
 @router.post(
@@ -178,18 +204,22 @@ def redeem_invitation(
 def login(
     req: LoginRequest,
     response: Response,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Authenticate a user using Argon2id password and optional TOTP MFA."""
+    login_key = _enforce_login_limit(request, req.email)
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         dummy_verify()
+        _record_login_failure(login_key)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
         )
 
     if not verify_password(user.password_hash, req.password):
+        _record_login_failure(login_key)
         record_audit_event(
             db=db,
             action="auth.login.failed",
@@ -232,6 +262,7 @@ def login(
 
         mfa_valid = any(verify_totp(cred.secret_hash, req.mfa_token) for cred in mfa_creds)
         if not mfa_valid:
+            _record_login_failure(login_key)
             record_audit_event(
                 db=db,
                 action="auth.mfa.failed",
@@ -246,6 +277,7 @@ def login(
 
     # Generate session token
     session_token = str(uuid.uuid4())
+    _login_failures.pop(login_key, None)
     token_hash = hashlib.sha256(session_token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=SESSION_EXPIRE_HOURS)

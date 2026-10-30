@@ -32,7 +32,9 @@ export default function LoginPage() {
       if (data.mfa_required) {
         setError("MFA is required before an authenticated session can be created.");
       } else {
-        router.push(workspaceForRole(data.role));
+        const profile = await identityClient.getSession();
+        const grantedRole = profile.roles[0] || data.role;
+        router.push(workspaceForRole(grantedRole));
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The identity service rejected the sign in request.");

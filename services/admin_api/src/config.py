@@ -42,6 +42,7 @@ class Settings(BaseModel):
     casting_db_password: str = os.getenv("CASTING_DB_PASSWORD", "himvote_casting")
     casting_db_ssl_mode: str = os.getenv("CASTING_DB_SSL_MODE", "prefer")
     casting_db_url: Optional[str] = os.getenv("CASTING_DB_URL", None)
+    admin_db_url: Optional[str] = os.getenv("ADMIN_DB_URL", os.getenv("ADMIN_DATABASE_URL", None))
 
     auditor_public_key_fingerprint: str = os.getenv(
         "AUDITOR_PUBLIC_KEY_FINGERPRINT",
@@ -61,8 +62,8 @@ class Settings(BaseModel):
     established_engine_tally_verified: bool = os.getenv("ESTABLISHED_ENGINE_TALLY_VERIFIED", "false").lower() in {"true", "1", "yes"}
 
     def model_post_init(self, __context) -> None:
-        if self.environment == "production" and not self.casting_db_url:
-            raise RuntimeError("CASTING_DB_URL must be explicitly configured in production")
+        if self.environment == "production" and not self.admin_db_url:
+            raise RuntimeError("ADMIN_DB_URL must be explicitly configured in production")
         if self.environment == "production" and not self.identity_service_url:
             raise RuntimeError("IDENTITY_SERVICE_URL must be explicitly configured in production")
 
