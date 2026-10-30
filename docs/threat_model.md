@@ -1,5 +1,7 @@
 # HimVote Threat Model and Security Architecture
 
+This is a design threat model for the educational prototype. Its mitigations describe intended controls and tested local behaviors. They are not a production certification, and Profile VEEM is not a vetted external election engine.
+
 ## 1. System Overview
 
 HimVote is an institutional election platform engineered for universities and collegiate institutions. The platform delivers verifiable elections while protecting individual voter privacy and preventing administrative tampering. The system operates across distributed trust boundaries encompassing voter client applications, an identity issuer origin, an anonymous casting origin, independent multi organization witness services, a consortium blockchain anchor, and offline auditor verifiers.

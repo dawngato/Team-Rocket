@@ -32,6 +32,7 @@ EXPECTED_DIRECTORIES = [
     "apps/android",
     "apps/ios",
     "apps/desktop",
+    "apps/linux",
     "services/identity_issuer",
     "services/admin_api",
     "services/casting",

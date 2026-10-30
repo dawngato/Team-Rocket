@@ -52,6 +52,7 @@ from verifier.verify import (
     format_digest,
     main,
     safe_json_loads,
+    verify_inclusion,
     verify_attestation,
     BadArchiveError,
     CryptoAuthError,
@@ -1325,6 +1326,49 @@ def test_cli_main_audit_evidence(election_helper: ElectionFixtureHelper) -> None
     ]
     ret = main(argv)
     assert ret == EXIT_PASS
+
+
+def test_cli_main_verify_inclusion(election_helper: ElectionFixtureHelper) -> None:
+    """Verify a tracker against the exported leaf and signed final root."""
+    bundle = election_helper.build_valid_election_bundle(num_ballots=3)
+    leaves = safe_json_loads(open(os.path.join(bundle["export_dir"], "leaves.json"), "rb").read())
+    canonical_leaves = [canonicalize_json(item) for item in leaves]
+    leaf_hashes = [hashlib.sha256(b"\x00" + item).digest() for item in canonical_leaves]
+    tracker_path = os.path.join(bundle["bundle_dir"], "tracker.json")
+    tracker = {
+        "schema": "himvote.inclusion_tracker.v1",
+        "election_id": election_helper.election_id,
+        "manifest_digest": bundle["manifest_digest"],
+        "leaf_index": 0,
+        "leaf_digest": format_digest(b"\x00" + canonical_leaves[0]),
+        "audit_path": [
+            {"hash": f"sha256:{leaf_hashes[1].hex()}", "position": "right"},
+            {"hash": f"sha256:{leaf_hashes[2].hex()}", "position": "right"},
+        ],
+        "root": f"sha256:{compute_rfc9162_merkle_root(canonical_leaves).hex()}",
+    }
+    with open(tracker_path, "wb") as stream:
+        stream.write(canonicalize_json(tracker))
+
+    ret = main(
+        [
+            "verify",
+            "--archive",
+            bundle["export"],
+            "--trust",
+            bundle["trust"],
+            "--final",
+            bundle["final"],
+            "--verify-inclusion",
+            tracker_path,
+            "--report",
+            bundle["report"],
+        ]
+    )
+
+    assert ret == EXIT_PASS
+    report = safe_json_loads(open(bundle["report"], "rb").read())
+    assert report["status"] == STATUS_PASS
 
 
 def test_homomorphic_tally_with_trustee_proofs(election_helper: ElectionFixtureHelper) -> None:

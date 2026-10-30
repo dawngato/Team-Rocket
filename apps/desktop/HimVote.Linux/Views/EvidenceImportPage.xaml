@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="1000"
+             x:DataType="vm:EvidenceImportViewModel"
+             x:Class="HimVote.Linux.Views.EvidenceImportPage">
+
+    <StackPanel Spacing="20">
+        <!-- Header -->
+        <Border Classes="card" Background="{StaticResource SurfaceBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Offline Evidence Archive Extraction &amp; Trust Pin Ingestion" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Safely import election evidence packages with defense in depth controls against path traversal, symlink spoofing, and decompression bombs."
+                           Foreground="#475569" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- Feedback Alert Cards -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Step 1: Safe Archive Extraction -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Step 1: Safe Archive Extraction" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Decompresses election evidence ZIP archives while strictly checking canonical path boundaries, disallowing relative traversal sequences (..), and blocking symlink creation."
+                           Foreground="#64748B" FontSize="13" TextWrapping="Wrap" />
+
+                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto" RowSpacing="12" ColumnSpacing="16">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Evidence ZIP Archive:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ZipFilePath}" Watermark="/path/to/election_evidence.zip" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Extraction Destination:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding DestinationDirectory}" Watermark="Destination directory path" Classes="input-field" MinHeight="44" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Content="Safely Extract Archive"
+                            Command="{Binding ExtractArchiveCommand}"
+                            Classes="primary-button"
+                            MinHeight="44" />
+                    <Button Content="Reset All"
+                            Command="{Binding ResetCommand}"
+                            Classes="secondary-button"
+                            MinHeight="44" />
+                </StackPanel>
+
+                <!-- Extraction Summary -->
+                <Border IsVisible="{Binding ExtractionCompleted}" Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Extraction Completed Successfully" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
+                        <TextBlock Text="{Binding ExtractedCount, StringFormat='Total Extracted Files: {0}'}" FontSize="13" Foreground="#1E293B" />
+                        <TextBlock Text="{Binding TotalBytesExtracted, StringFormat='Total Uncompressed Bytes: {0:N0} bytes'}" FontSize="13" Foreground="#1E293B" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Extracted Files List -->
+                <Expander Header="View Extracted File Manifest" IsVisible="{Binding ExtractionCompleted}">
+                    <ItemsControl ItemsSource="{Binding ExtractedFiles}" MaxHeight="250">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" FontFamily="monospace" FontSize="12" Margin="0,4" Foreground="#334155" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Expander>
+            </StackPanel>
+        </Border>
+
+        <!-- Step 2: Isolated External Trust Pins -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Step 2: External Trust Pin Ingestion" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Trust pins contain the root of trust: expected manifest digest, registrar authority key, and independent witness public keys. They must be loaded externally to prevent attacker tampered roots."
+                           Foreground="#64748B" FontSize="13" TextWrapping="Wrap" />
+
+                <Grid ColumnDefinitions="180,*" RowDefinitions="Auto" RowSpacing="12" ColumnSpacing="16">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="External Trust Pins File:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding TrustPinsFilePath}" Watermark="/path/to/pinned_trust.json" Classes="input-field" MinHeight="44" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <Button Content="Validate &amp; Ingest Trust Pins"
+                            Command="{Binding ImportTrustPinsCommand}"
+                            Classes="primary-button"
+                            MinHeight="44" />
+                </StackPanel>
+
+                <!-- Ingested Trust Pins Display -->
+                <Border IsVisible="{Binding TrustPinsLoaded}" Background="#F8FAFC" BorderBrush="#CBD5E1" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Trust Pins Ingested" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                        <TextBlock Text="{Binding CurrentTrustPins.ManifestDigest, StringFormat='Manifest Digest: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
+                        <TextBlock Text="{Binding CurrentTrustPins.WitnessPublicKey, StringFormat='Witness Key: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
+                        <TextBlock Text="{Binding CurrentTrustPins.AuthorityPublicKey, StringFormat='Authority Key: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Ready for Audit Prompt -->
+        <Border IsVisible="{Binding IsReadyForAudit}" Background="#ECFDF5" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="16">
+            <StackPanel Spacing="8">
+                <TextBlock Text="Evidence &amp; Trust Pins Ready For Cryptographic Audit" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
+                <TextBlock Text="Both the evidence archive and external trust pins have passed integrity and isolation checks. Navigate to the Offline Audit Explorer to execute the independent verifier."
+                           Foreground="#065F46" FontSize="13" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

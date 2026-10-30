@@ -23,6 +23,7 @@ data class ElectionsUiState(
     val elections: List<ElectionSummary> = emptyList(),
     val filteredElections: List<ElectionSummary> = emptyList(),
     val selectedTab: ElectionFilterTab = ElectionFilterTab.ALL,
+    val searchQuery: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )
@@ -49,7 +50,7 @@ class ElectionsViewModel @Inject constructor(
                     elections = list,
                     isLoading = false
                 )
-                applyFilter(_uiState.value.selectedTab)
+                applyFilters(_uiState.value.selectedTab, _uiState.value.searchQuery)
             }.onFailure { ex ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -61,12 +62,17 @@ class ElectionsViewModel @Inject constructor(
 
     fun selectTab(tab: ElectionFilterTab) {
         _uiState.value = _uiState.value.copy(selectedTab = tab)
-        applyFilter(tab)
+        applyFilters(tab, _uiState.value.searchQuery)
     }
 
-    private fun applyFilter(tab: ElectionFilterTab) {
+    fun onSearchQueryChanged(query: String) {
+        _uiState.value = _uiState.value.copy(searchQuery = query)
+        applyFilters(_uiState.value.selectedTab, query)
+    }
+
+    private fun applyFilters(tab: ElectionFilterTab, query: String) {
         val all = _uiState.value.elections
-        val filtered = when (tab) {
+        val tabFiltered = when (tab) {
             ElectionFilterTab.ALL -> all
             ElectionFilterTab.OPEN_ACTIVE -> all.filter { it.status == ElectionStatus.OPEN }
             ElectionFilterTab.COMPLETED -> all.filter {
@@ -75,7 +81,18 @@ class ElectionsViewModel @Inject constructor(
                 it.status == ElectionStatus.ANCHOR_FINALIZED
             }
         }
-        _uiState.value = _uiState.value.copy(filteredElections = filtered)
+
+        val searchFiltered = if (query.isBlank()) {
+            tabFiltered
+        } else {
+            tabFiltered.filter { election ->
+                election.title.contains(query, ignoreCase = true) ||
+                election.department.contains(query, ignoreCase = true) ||
+                election.description.contains(query, ignoreCase = true)
+            }
+        }
+
+        _uiState.value = _uiState.value.copy(filteredElections = searchFiltered)
     }
 
     fun logout(onLoggedOut: () -> Unit) {

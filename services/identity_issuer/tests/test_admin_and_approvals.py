@@ -5,8 +5,8 @@ Enforces separation of duties: creators can never approve their own requests.
 
 from datetime import datetime, timedelta, timezone
 import hashlib
-from HimVote.services.identity_issuer.models import User, RoleDefinition, RoleAssignment, Session as UserSession
-from HimVote.services.identity_issuer.crypto.hashing import hash_password
+from services.identity_issuer.models import User, RoleDefinition, RoleAssignment, Session as UserSession
+from services.identity_issuer.crypto.hashing import hash_password
 
 
 def create_authenticated_user(db_session, email: str, role_name: str, external_id: str) -> tuple[User, str]:

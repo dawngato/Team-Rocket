@@ -58,3 +58,41 @@ def test_verifier_safe_json_loads():
     """Verify safe JSON loading."""
     result = safe_json_loads('{"status": "ok"}')
     assert result == {"status": "ok"}
+
+
+def test_verify_command_fails_closed_without_independent_inputs(tmp_path, capsys):
+    """The SecureVote command shape must not pass with archive and pins alone."""
+    result = main(
+        [
+            "verify",
+            "--archive",
+            str(tmp_path / "election.zip"),
+            "--trust",
+            str(tmp_path / "trust.json"),
+            "--report",
+            str(tmp_path / "report.json"),
+        ]
+    )
+
+    assert result == EXIT_UNVERIFIABLE
+    assert "missing independent inputs" in capsys.readouterr().err
+
+
+def test_verify_command_rejects_malformed_inclusion_tracker(tmp_path, capsys):
+    """Malformed tracker verification must fail explicitly rather than pass."""
+    result = main(
+        [
+            "verify",
+            "--archive",
+            str(tmp_path / "election.zip"),
+            "--trust",
+            str(tmp_path / "trust.json"),
+            "--report",
+            str(tmp_path / "report.json"),
+            "--verify-inclusion",
+            str(tmp_path / "tracker.json"),
+        ]
+    )
+
+    assert result == EXIT_UNVERIFIABLE
+    assert "Unverifiable inclusion evidence" in capsys.readouterr().err

@@ -1,0 +1,76 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             xmlns:models="clr-namespace:HimVote.Core.Models;assembly=HimVote.Core"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="800"
+             x:DataType="vm:CandidatesViewModel"
+             x:Class="HimVote.Linux.Views.CandidatesPage">
+
+    <StackPanel Spacing="20">
+        <!-- Header -->
+        <Border Classes="card" Background="{StaticResource SurfaceBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Candidate Slate &amp; Nominations" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="View certified candidate nominations and official contests for institutional elections."
+                           Foreground="#475569" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- Query Form -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Contest Selection" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+
+                <Grid ColumnDefinitions="140,*,Auto" ColumnSpacing="12">
+                    <TextBlock Grid.Column="0" Text="Election ID:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Column="1" Text="{Binding ElectionId}" Watermark="Enter election ID to load slate" Classes="input-field" MinHeight="44" />
+                    <Button Grid.Column="2" Content="Load Candidates" Command="{Binding LoadCandidatesCommand}"
+                            Classes="primary-button" MinHeight="44" />
+                </Grid>
+
+                <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                        Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Election Title Header if loaded -->
+        <Border IsVisible="{Binding ElectionTitle, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}" Classes="card" Background="#F8FAFC">
+            <StackPanel Spacing="4">
+                <TextBlock Text="{Binding ElectionTitle}" FontSize="20" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="{Binding ElectionId, StringFormat='Contest ID: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#64748B" />
+            </StackPanel>
+        </Border>
+
+        <!-- Candidates Slate Grid -->
+        <ItemsControl ItemsSource="{Binding Candidates}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="models:Candidate">
+                    <Border Classes="card" Width="360" Margin="0,0,16,16" Background="#FFFFFF">
+                        <Grid ColumnDefinitions="56,*" ColumnSpacing="14">
+                            <Border Grid.Column="0" Width="52" Height="52" CornerRadius="26" Background="#EEF2FF" VerticalAlignment="Center">
+                                <TextBlock Text="C" FontSize="20" FontWeight="Bold" Foreground="#4F46E5"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Name}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                                <TextBlock Text="{Binding Contest, StringFormat='Contest: {0}'}" FontSize="13" Foreground="#475569" FontWeight="Medium" />
+                                <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" FontFamily="monospace" FontSize="11" Foreground="#94A3B8" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

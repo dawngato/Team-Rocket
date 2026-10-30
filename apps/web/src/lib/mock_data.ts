@@ -1,4 +1,18 @@
-import { Election, StudentRecord, TeacherRecord, AuditEvent, TrustedPin, EvidencePackage, PublishedResults } from "./types";
+import {
+  Election,
+  StudentRecord,
+  TeacherRecord,
+  AuditEvent,
+  TrustedPin,
+  EvidencePackage,
+  PublishedResults,
+  InstitutionRecord,
+  DepartmentRecord,
+  AdminUserRecord,
+  RoleRequestRecord,
+  PolicyConfigRecord,
+  ElectionAssignment,
+} from "./types";
 
 export const INITIAL_ELECTIONS: Election[] = [
   {
@@ -379,3 +393,192 @@ export const INITIAL_TRUSTED_PINS: TrustedPin[] = [
     active: true,
   },
 ];
+
+export const INITIAL_INSTITUTIONS: InstitutionRecord[] = [
+  {
+    id: "inst_hptu_main",
+    name: "Himachal Pradesh Technical University",
+    code: "HPTU",
+    campuses: [
+      "Hamirpur Main Campus",
+      "Kangra Regional Campus",
+      "Solan Satellite Campus",
+    ],
+    active_elections_count: 3,
+    total_students_enrolled: 4250,
+    primary_domain: "hptu.ac.in",
+    status: "ACTIVE",
+  },
+];
+
+export const INITIAL_DEPARTMENTS: DepartmentRecord[] = [
+  {
+    id: "dept_cse",
+    code: "CSE",
+    name: "Computer Science and Engineering",
+    campus: "Hamirpur Main Campus",
+    faculty_count: 24,
+    student_count: 1420,
+    verification_threshold_percent: 100,
+  },
+  {
+    id: "dept_ece",
+    code: "ECE",
+    name: "Electronics and Communication Engineering",
+    campus: "Hamirpur Main Campus",
+    faculty_count: 18,
+    student_count: 980,
+    verification_threshold_percent: 100,
+  },
+  {
+    id: "dept_mech",
+    code: "MECH",
+    name: "Mechanical Engineering",
+    campus: "Kangra Regional Campus",
+    faculty_count: 16,
+    student_count: 850,
+    verification_threshold_percent: 100,
+  },
+  {
+    id: "dept_civil",
+    code: "CIVIL",
+    name: "Civil Engineering",
+    campus: "Solan Satellite Campus",
+    faculty_count: 14,
+    student_count: 650,
+    verification_threshold_percent: 100,
+  },
+];
+
+export const INITIAL_ADMINISTRATORS: AdminUserRecord[] = [
+  {
+    id: "adm_super_01",
+    email: "superadmin@hptu.ac.in",
+    full_name: "Prof. Arvind Sen",
+    role: "SUPER_ADMINISTRATOR",
+    scope: ["ALL_CAMPUSES", "SECURITY_POLICY", "DELEGATION_MANAGEMENT"],
+    mfa_enabled: true,
+    invited_by: "SYSTEM_BOOTSTRAP_INVITATION",
+    created_at_utc: "2026-01-01T00:00:00Z",
+    last_login_utc: "2026-10-30T14:30:00Z",
+  },
+  {
+    id: "adm_local_01",
+    email: "admin.hamirpur@hptu.ac.in",
+    full_name: "Sunita Sharma",
+    role: "ADMINISTRATOR",
+    scope: ["Hamirpur Main Campus", "STUDENT_ROSTER", "TEACHER_MANAGEMENT"],
+    mfa_enabled: true,
+    invited_by: "superadmin@hptu.ac.in",
+    created_at_utc: "2026-01-15T09:00:00Z",
+    last_login_utc: "2026-10-30T11:20:00Z",
+  },
+  {
+    id: "adm_local_02",
+    email: "admin.kangra@hptu.ac.in",
+    full_name: "Rajesh Thakur",
+    role: "ADMINISTRATOR",
+    scope: ["Kangra Regional Campus", "STUDENT_ROSTER"],
+    mfa_enabled: true,
+    invited_by: "superadmin@hptu.ac.in",
+    created_at_utc: "2026-02-01T10:00:00Z",
+    last_login_utc: "2026-10-29T16:45:00Z",
+  },
+];
+
+export const INITIAL_ROLE_REQUESTS: RoleRequestRecord[] = [
+  {
+    id: "req_rol_101",
+    requester_name: "Dr. Alok Nath Sen",
+    requester_email: "alok.sen@hptu.ac.in",
+    requested_role: "Election Officer",
+    scope: "Campus Sports Council Advisory",
+    justification: "Appointed faculty advisor to oversee November sports governance elections.",
+    requested_at_utc: "2026-10-28T11:00:00Z",
+    status: "PENDING_APPROVAL",
+  },
+  {
+    id: "req_rol_102",
+    requester_name: "Prof. Vandana Rao",
+    requester_email: "vandana.r@hptu.ac.in",
+    requested_role: "Roster Approver",
+    scope: "Department of Electronics and Communication",
+    justification: "Annual academic roster signoff authority for semester 7 voter verification.",
+    requested_at_utc: "2026-10-26T14:20:00Z",
+    status: "APPROVED",
+    dual_control_approver: "superadmin@hptu.ac.in",
+  },
+];
+
+export const INITIAL_POLICIES: PolicyConfigRecord[] = [
+  {
+    id: "pol_min_turnout",
+    key: "MINIMUM_ANONYMOUS_TURNOUT",
+    title: "Minimum Anonymity Turnout Threshold",
+    description: "Ballot tallies for electorates below this count are marked PRIVACY_LIMITED to prevent deduction.",
+    value: 20,
+    category: "PRIVACY",
+    immutable_after_freeze: true,
+  },
+  {
+    id: "pol_mfa_requirement",
+    key: "MANDATORY_MFA_ADMIN",
+    title: "Mandatory Hardware TOTP MFA",
+    description: "Enforces multi factor authentication for all Super Administrators and Administrators.",
+    value: true,
+    category: "SECURITY",
+    immutable_after_freeze: false,
+  },
+  {
+    id: "pol_cutoff_grace",
+    key: "ISSUANCE_CUTOFF_BUFFER_MINUTES",
+    title: "Blind Credential Issuance Cutoff Buffer",
+    description: "Minutes before election opening at which voter roster snapshot freezes permanently.",
+    value: 30,
+    category: "GOVERNANCE",
+    immutable_after_freeze: true,
+  },
+  {
+    id: "pol_reorg_depth",
+    key: "CHAIN_ANCHOR_CONFIRMATIONS",
+    title: "Consortium Blockchain Reorganization Depth",
+    description: "Number of block confirmations required before an anchor transaction reaches ANCHOR_FINALIZED.",
+    value: 12,
+    category: "SECURITY",
+    immutable_after_freeze: true,
+  },
+];
+
+export const INITIAL_ASSIGNMENTS: ElectionAssignment[] = [
+  {
+    id: "asgn_01",
+    election_id: "elec_su_2026",
+    election_title: "Student Union Council General Election 2026",
+    faculty_id: "FAC_CS_012",
+    faculty_name: "Dr. Rajeshwar Singh",
+    role: "VERIFICATION_OFFICER",
+    assigned_department: "Computer Science and Engineering",
+    assigned_at_utc: "2026-10-20T08:00:00Z",
+  },
+  {
+    id: "asgn_02",
+    election_id: "elec_su_2026",
+    election_title: "Student Union Council General Election 2026",
+    faculty_id: "FAC_ECE_008",
+    faculty_name: "Prof. Vandana Rao",
+    role: "ROSTER_REVIEWER",
+    assigned_department: "Electronics and Communication",
+    assigned_at_utc: "2026-10-21T09:30:00Z",
+  },
+  {
+    id: "asgn_03",
+    election_id: "elec_cs_2026",
+    election_title: "School of Computer Science Department Representative",
+    faculty_id: "FAC_CS_012",
+    faculty_name: "Dr. Rajeshwar Singh",
+    role: "SUPERVISOR",
+    assigned_department: "Computer Science and Engineering",
+    assigned_at_utc: "2026-10-08T10:00:00Z",
+  },
+];
+

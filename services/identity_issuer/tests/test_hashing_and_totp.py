@@ -3,13 +3,13 @@ Unit tests for Argon2id password hashing and TOTP multi factor authentication.
 """
 
 import pyotp
-from HimVote.services.identity_issuer.crypto.hashing import (
+from services.identity_issuer.crypto.hashing import (
     hash_password,
     verify_password,
     get_default_argon2_parameters,
     dummy_verify,
 )
-from HimVote.services.identity_issuer.crypto.totp import (
+from services.identity_issuer.crypto.totp import (
     generate_totp_secret,
     get_totp_uri,
     verify_totp,

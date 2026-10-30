@@ -28,9 +28,8 @@ public final class CredentialViewModel {
     }
     
     public func loadStoredCredential(electionId: String) {
-        let key = credentialStorageKey(for: electionId)
         do {
-            let cred = try keychainService.readCodable(Credential.self, forKey: key)
+            let cred = try keychainService.readCredential(forElectionId: electionId)
             self.currentCredential = cred
             self.issuanceStatus = cred.status
         } catch {
@@ -97,8 +96,7 @@ public final class CredentialViewModel {
                 issuedAtUtc: ISO8601DateFormatter().string(from: Date())
             )
             
-            let key = credentialStorageKey(for: electionId)
-            try keychainService.saveCodable(credential, forKey: key)
+            try keychainService.saveCredential(credential, forElectionId: electionId)
             
             self.currentCredential = credential
             self.issuanceStatus = .delivered

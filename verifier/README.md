@@ -7,6 +7,18 @@ It verifies evidence archives independently of election servers and never trusts
 
 ## Commands
 
+### 0. SecureVote compatible module command
+
+The standalone module entry point is:
+
+```bash
+python -m verifier verify --archive <evidence_dir_or_archive> --trust <pins_json> --report <output_report_json> --final <witness_final_json> --roster <roster_approval_json> --issuance <issuer_closure_json> --chain <chain_anchor_json>
+```
+
+The independent final checkpoint, roster approval, issuance closure, and chain anchor remain required evidence. If any are omitted, the command returns exit code 3 and does not claim a verification pass.
+
+The `--verify-inclusion` option accepts a JSON tracker with `election_id`, `manifest_digest`, `leaf_index`, `leaf_digest`, `audit_path`, and optional `root`. Each audit path entry contains a sibling `hash` and a `position` of `left` or `right`. The tracker is checked against the exported canonical leaf and the externally signed final root. A malformed or mismatched tracker fails closed.
+
 ### 1. audit_evidence
 
 Audits election evidence package and outputs an unsigned compliance report JSON file.

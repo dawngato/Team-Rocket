@@ -45,6 +45,27 @@ class Settings(BaseModel):
     LOG_REDACTION_ENABLED: bool = Field(
         default_factory=lambda: os.getenv("LOG_REDACTION_ENABLED", "true").lower() in ("true", "1")
     )
+    APP_ENV: str = Field(
+        default_factory=lambda: os.getenv("APP_ENV", "development")
+    )
+    INTERNAL_CONTROL_TOKEN: Optional[str] = Field(
+        default_factory=lambda: os.getenv("INTERNAL_CONTROL_TOKEN")
+    )
+    ALLOWED_ORIGINS: list[str] = Field(
+        default_factory=lambda: [
+            item.strip()
+            for item in (
+                os.getenv("CASTING_ALLOWED_ORIGINS")
+                if os.getenv("CASTING_ALLOWED_ORIGINS") is not None
+                else (
+                    "http://localhost:3000,http://127.0.0.1:3000"
+                    if os.getenv("APP_ENV", "development") != "production"
+                    else ""
+                )
+            ).split(",")
+            if item.strip()
+        ]
+    )
     MAX_UNWITNESSED_BACKLOG: int = Field(
         default_factory=lambda: int(os.getenv("MAX_UNWITNESSED_BACKLOG", "1000"))
     )

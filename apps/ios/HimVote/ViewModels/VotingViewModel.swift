@@ -57,7 +57,10 @@ public final class VotingViewModel {
         isCasting = true
         errorMessage = nil
         
-        let idempotencyKey = UUID().uuidString
+        var randomBytes = [UInt8](repeating: 0, count: 16)
+        _ = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        let idempotencyKey = randomBytes.map { String(format: "%02x", $0) }.joined()
+        
         let request = CastBallotRequest(
             electionId: artifacts.electionId,
             credentialProofB64url: artifacts.credentialProofB64url,
@@ -81,8 +84,7 @@ public final class VotingViewModel {
                 leafHash: nil
             )
             
-            let receiptKey = "himvote_receipt_\(response.handle)"
-            try? keychainService.saveCodable(receiptRecord, forKey: receiptKey)
+            try? keychainService.saveReceipt(receiptRecord)
         } catch {
             self.errorMessage = error.localizedDescription
         }

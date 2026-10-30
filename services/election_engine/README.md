@@ -2,9 +2,9 @@
 
 ## Overview
 
-The HimVote Voting Engine service delivers cryptographic voting operations for the institutional election platform. It implements Profile VEEM (Verifiable Electronic Election Mechanism), matching vetted architectures such as Belenios and ElectionGuard. The engine provides verifiable threshold encryption, zero knowledge correctness proofs, anonymous credential validation, tamper evident Merkle logging, and independent tally verification.
+The HimVote Voting Engine service is a development adapter and protocol test harness. It implements Profile VEEM for synthetic fixtures so that service boundaries, canonical evidence, duplicate enforcement, and failure handling can be exercised.
 
-This engine fulfills Section 6.4 and Gate E1 of the platform specification.
+Profile VEEM is not an official Belenios, ElectionGuard, or Helios implementation. It is not a vetted production voting engine. The SecureVote Gate E1 remains blocked until an established engine with its own independently usable verifier passes the required integration proof of concept. This service must not be used to make a production ballot secrecy claim.
 
 ## Core Adapter Interface
 
@@ -17,7 +17,7 @@ The engine exposes the six required adapter functions:
 * `verify_inclusion`: Verifies cryptographic inclusion of cast ballots in the RFC 9162 Merkle log.
 * `get_protocol_version`: Returns the protocol identifier `himvote_veem_v1`.
 
-## Cryptographic Architecture: Profile VEEM
+## Development cryptographic architecture: Profile VEEM
 
 The voting engine relies on vetted mathematical primitives and standards:
 
@@ -64,9 +64,9 @@ Cast ballots are recorded in an append only Merkle log:
 * Node hash: SHA256(0x01 || left_child || right_child)
 * Audit paths enable voters to verify ballot inclusion against the public Merkle root.
 
-## Gate E1 Verification Block
+## Local adapter verification block
 
-The engine includes the complete Gate E1 verification suite in `gate_e1.py`. Gate E1 validates five mandatory criteria:
+The engine includes a local adapter verification suite in `gate_e1.py`. It validates development behavior against five checks. These checks are useful regression evidence, but they are not the external engine gate:
 
 1. Real Encrypted Ballot Creation and Casting: Generates authentic exponential ElGamal ballots with zero knowledge proofs and successfully casts them.
 2. Native Proof Artifact Export: Exports canonical JSON proof artifacts and Merkle tree roots.

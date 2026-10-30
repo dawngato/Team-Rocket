@@ -1,11 +1,76 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:HimVote.Linux"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
              x:Class="HimVote.Linux.App"
-             RequestedThemeVariant="Default">
-    <!-- Design-time resources -->
+             RequestedThemeVariant="Light">
+
+    <Application.DataTemplates>
+        <local:ViewLocator />
+    </Application.DataTemplates>
+
     <Application.Styles>
-        <FluentTheme Mode="Light" />
+        <FluentTheme />
+
+        <Style Selector="Border.card">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <Style Selector="Border.sidebar">
+            <Setter Property="Background" Value="#F8FAFC" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="0,0,1,0" />
+        </Style>
+
+        <Style Selector="Border.topbar">
+            <Setter Property="Background" Value="#FFFFFF" />
+            <Setter Property="BorderBrush" Value="#E2E8F0" />
+            <Setter Property="BorderThickness" Value="0,0,0,1" />
+        </Style>
+
+        <Style Selector="Button.primary-button">
+            <Setter Property="Background" Value="#10233F" />
+            <Setter Property="Foreground" Value="#FFFFFF" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,10" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <Style Selector="Button.primary-button:pointerover">
+            <Setter Property="Background" Value="#1E3A8A" />
+        </Style>
+
+        <Style Selector="Button.secondary-button">
+            <Setter Property="Background" Value="#E2E8F0" />
+            <Setter Property="Foreground" Value="#17233B" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="14,10" />
+        </Style>
+
+        <Style Selector="Button.nav-button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="#10233F" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="Padding" Value="12,10" />
+            <Setter Property="FontWeight" Value="Medium" />
+        </Style>
+
+        <Style Selector="Button.nav-button:pointerover">
+            <Setter Property="Background" Value="#E2E8F0" />
+        </Style>
+
+        <Style Selector="TextBox.input-field">
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="BorderBrush" Value="#CBD5E1" />
+            <Setter Property="Padding" Value="10,8" />
+        </Style>
     </Application.Styles>
+
     <Application.Resources>
         <Thickness x:Key="WindowBorderThickness">0</Thickness>
         <CornerRadius x:Key="ButtonCornerRadius">6</CornerRadius>

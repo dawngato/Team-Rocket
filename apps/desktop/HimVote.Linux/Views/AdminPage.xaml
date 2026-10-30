@@ -3,27 +3,99 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:models="clr-namespace:HimVote.Core.Models;assembly=HimVote.Core"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="1000"
              x:DataType="vm:AdminViewModel"
              x:Class="HimVote.Linux.Views.AdminPage">
 
-    <Grid Margin="20">
-        <TextBlock Text="Administrative Console" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-        <TextBlock Text="Manage elections, teachers, students, and approvals." Foreground="#666666" Margin="0,10,0,20" />
+    <StackPanel Spacing="20">
+        <!-- Header -->
+        <Border Classes="card" Background="{StaticResource SurfaceBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Administrative Lifecycle Console" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Institutional registrar controls: draft contest creation, cryptographic roster freeze, casting window management, and results publication."
+                           Foreground="#475569" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
 
-        <Grid ColumnDefinitions="*,*" RowDefinitions="*,*" Margin="0,20,0,0">
-            <Border Grid.Row="0" Grid.Column="0" Classes="card" Padding="20" Margin="0,0,10,10">
-                <TextBlock Text="Elections" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            </Border>
-            <Border Grid.Row="0" Grid.Column="1" Classes="card" Padding="20" Margin="10,0,0,10">
-                <TextBlock Text="Teachers" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            </Border>
-            <Border Grid.Row="1" Grid.Column="0" Classes="card" Padding="20" Margin="0,10,10,0">
-                <TextBlock Text="Students" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            </Border>
-            <Border Grid.Row="1" Grid.Column="1" Classes="card" Padding="20" Margin="10,10,0,0">
-                <TextBlock Text="Approvals" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            </Border>
-        </Grid>
-    </Grid>
+        <!-- Feedback Alerts -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Create Election Draft Card -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Draft New Election Contest" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+
+                <Grid ColumnDefinitions="160,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="16">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Election Title:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding NewElectionTitle}" Watermark="e.g. 2026 Student Government President" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Contest Name:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding Contest}" Watermark="e.g. President" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Min Anonymous Turnout:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <NumericUpDown Grid.Row="2" Grid.Column="1" Value="{Binding MinAnonymousTurnout}" Minimum="5" Maximum="1000" MinHeight="44" />
+                </Grid>
+
+                <Button Content="Create Draft Election" Command="{Binding CreateElectionCommand}"
+                        Classes="primary-button" MinHeight="44" HorizontalAlignment="Left" />
+            </StackPanel>
+        </Border>
+
+        <!-- Managed Elections List & Actions -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0" Text="Election Lifecycle Management" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                    <Button Grid.Column="1" Content="Refresh" Command="{Binding RefreshElectionsCommand}" Classes="secondary-button" MinHeight="36" />
+                </Grid>
+
+                <ItemsControl ItemsSource="{Binding ManagedElections}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ElectionSummary">
+                            <Border BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Padding="14" Margin="0,0,0,12" Background="#FAFAFA">
+                                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                                    <Border Grid.Row="0" Grid.Column="1" CornerRadius="4" Padding="6,2" Background="#F1F5F9">
+                                        <TextBlock Text="{Binding State}" FontWeight="Bold" FontSize="11" Foreground="#334155" />
+                                    </Border>
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Id, StringFormat='Contest ID: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#64748B" />
+
+                                    <!-- Lifecycle Action Buttons -->
+                                    <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                        <Button Content="Freeze Roster"
+                                                Command="{Binding $parent[UserControl].((vm:AdminViewModel)DataContext).FreezeElectionCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                Classes="secondary-button" MinHeight="36" />
+                                        <Button Content="Open Election"
+                                                Command="{Binding $parent[UserControl].((vm:AdminViewModel)DataContext).OpenElectionCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                Classes="primary-button" MinHeight="36" />
+                                        <Button Content="Close Election"
+                                                Command="{Binding $parent[UserControl].((vm:AdminViewModel)DataContext).CloseElectionCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                Classes="secondary-button" MinHeight="36" />
+                                        <Button Content="Publish Results"
+                                                Command="{Binding $parent[UserControl].((vm:AdminViewModel)DataContext).RequestPublicationCommand}"
+                                                CommandParameter="{Binding Id}"
+                                                Classes="primary-button" MinHeight="36" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+    </StackPanel>
 </UserControl>

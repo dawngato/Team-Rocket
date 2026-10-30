@@ -481,6 +481,139 @@ def load_file_content(path: str) -> bytes:
         return f.read()
 
 
+def _load_export_leaves(export_path: str) -> Tuple[str, List[Dict[str, Any]]]:
+    """Load export leaves through the same archive safety boundary as a full audit."""
+    temp_dir: Optional[str] = None
+    export_dir = export_path
+    if not os.path.exists(export_path):
+        raise BadArchiveError(f"Export target does not exist: {export_path}")
+    if os.path.islink(export_path):
+        raise BadArchiveError("Export target cannot be a symlink")
+    if os.path.isfile(export_path):
+        temp_dir = tempfile.mkdtemp(prefix="himvote_inclusion_")
+        safe_extract_archive(export_path, temp_dir)
+        export_dir = temp_dir
+    else:
+        safe_inspect_directory(export_path)
+
+    leaves_path = os.path.join(export_dir, "leaves.json")
+    if not os.path.exists(leaves_path):
+        raise BadArchiveError("Export directory is missing leaves.json")
+    leaves = safe_json_loads(load_file_content(leaves_path))
+    if not isinstance(leaves, list) or any(not isinstance(item, dict) for item in leaves):
+        raise BadArchiveError("leaves.json must contain an array of objects")
+    return temp_dir or "", leaves
+
+
+def _digest_bytes(value: Any) -> bytes:
+    """Decode a sha256 digest string used by an inclusion tracker."""
+    normalized = normalize_digest(value)
+    if len(normalized) != 64:
+        raise BadArchiveError("Digest must contain exactly 32 bytes")
+    try:
+        return bytes.fromhex(normalized)
+    except ValueError as err:
+        raise BadArchiveError("Digest is not valid hexadecimal") from err
+
+
+def verify_inclusion(
+    export_path: str,
+    trust_path: str,
+    final_path: str,
+    tracker_path: str,
+    report_path: Optional[str] = None,
+) -> Tuple[int, Dict[str, Any]]:
+    """Verify one non choice revealing tracker against an external final root."""
+    tracker = safe_json_loads(load_file_content(tracker_path))
+    final_checkpoint = safe_json_loads(load_file_content(final_path))
+    trust_pins = safe_json_loads(load_file_content(trust_path))
+    if not isinstance(tracker, dict) or not isinstance(final_checkpoint, dict):
+        raise BadArchiveError("Tracker and final checkpoint must be JSON objects")
+    if not isinstance(trust_pins, dict):
+        raise BadArchiveError("Trust pins must be a JSON object")
+    if tracker.get("schema") != "himvote.inclusion_tracker.v1":
+        raise BadArchiveError("Unsupported inclusion tracker schema")
+
+    witness_keys_info = trust_pins.get("witness_keys") or trust_pins.get("witness_public_key")
+    if not witness_keys_info:
+        raise UnverifiableError("Trust pins file is missing witness keys")
+    witness_infos = witness_keys_info if isinstance(witness_keys_info, list) else [witness_keys_info]
+    witness_keys = [load_public_key_from_info(item) for item in witness_infos]
+
+    checkpoint_data = dict(final_checkpoint)
+    checkpoint_signature = checkpoint_data.pop("signature", None)
+    if final_checkpoint.get("checkpoint_kind") != "FINAL" or not checkpoint_signature:
+        raise CryptoAuthError("External checkpoint is not a signed FINAL")
+    checkpoint_bytes = canonicalize_json(checkpoint_data)
+    if not any(verify_signature(key, checkpoint_bytes, checkpoint_signature) for key in witness_keys):
+        raise CryptoAuthError("External final checkpoint signature is invalid")
+
+    election_id = tracker.get("election_id")
+    manifest_digest = tracker.get("manifest_digest")
+    leaf_index = tracker.get("leaf_index")
+    audit_path = tracker.get("audit_path")
+    if not election_id or not manifest_digest or not isinstance(leaf_index, int) or not isinstance(audit_path, list):
+        raise BadArchiveError("Tracker is missing election binding, leaf index, or audit path")
+    if final_checkpoint.get("election_id") != election_id:
+        raise CryptoAuthError("Tracker election does not match final checkpoint")
+    if normalize_digest(final_checkpoint.get("manifest_digest")) != normalize_digest(manifest_digest):
+        raise CryptoAuthError("Tracker manifest does not match final checkpoint")
+    tree_size = final_checkpoint.get("tree_size")
+    if not isinstance(tree_size, int) or tree_size < 1 or leaf_index < 0 or leaf_index >= tree_size:
+        raise CryptoAuthError("Tracker leaf index is outside the final tree")
+
+    temp_dir, leaves = _load_export_leaves(export_path)
+    try:
+        matching = [item for item in leaves if item.get("leaf_index") == leaf_index]
+        if len(matching) != 1:
+            raise CryptoAuthError("Tracker leaf index is absent or duplicated")
+        leaf = matching[0]
+        if leaf.get("election_id") != election_id or normalize_digest(leaf.get("manifest_digest")) != normalize_digest(manifest_digest):
+            raise CryptoAuthError("Tracker leaf election binding is invalid")
+
+        leaf_bytes = canonicalize_json(leaf)
+        leaf_digest = format_digest(b"\x00" + leaf_bytes)
+        if normalize_digest(tracker.get("leaf_digest")) != normalize_digest(leaf_digest):
+            raise CryptoAuthError("Tracker leaf digest does not match the exported leaf")
+
+        current = _digest_bytes(leaf_digest)
+        for node in audit_path:
+            if not isinstance(node, dict) or node.get("position") not in {"left", "right"}:
+                raise BadArchiveError("Each audit path entry needs a left or right position")
+            sibling = _digest_bytes(node.get("hash"))
+            if node["position"] == "left":
+                current = sha256_digest(b"\x01" + sibling + current)
+            else:
+                current = sha256_digest(b"\x01" + current + sibling)
+
+        computed_root = f"sha256:{current.hex()}"
+        final_root = final_checkpoint.get("merkle_root")
+        if normalize_digest(computed_root) != normalize_digest(final_root):
+            raise CryptoAuthError("Inclusion path does not reach the external final root")
+        tracker_root = tracker.get("root")
+        if tracker_root and normalize_digest(tracker_root) != normalize_digest(computed_root):
+            raise CryptoAuthError("Tracker root does not match computed root")
+
+        report = {
+            "schema": "himvote.inclusion_report.v1",
+            "election_id": election_id,
+            "manifest_digest": manifest_digest,
+            "leaf_index": leaf_index,
+            "leaf_digest": leaf_digest,
+            "merkle_root": computed_root,
+            "status": STATUS_PASS,
+            "verifier_sha256": get_verifier_sha256(),
+        }
+        if report_path:
+            os.makedirs(os.path.dirname(os.path.abspath(report_path)), exist_ok=True)
+            with open(report_path, "wb") as stream:
+                stream.write(canonicalize_json(report))
+        return EXIT_PASS, report
+    finally:
+        if temp_dir and os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+
 def derive_nullifier_local(election_id: str, voter_token: str) -> str:
     """Derive deterministic nullifier from election ID and voter secret token."""
     message = f"himvote_nullifier_v1:{election_id}:{voter_token}".encode("utf_8")
@@ -1389,6 +1522,29 @@ def main(argv: Optional[List[str]] = None) -> int:
     audit_parser.add_argument("--chain", required=True, help="Path to chain anchor JSON")
     audit_parser.add_argument("--report", required=True, help="Path to output report JSON file")
 
+    verify_parser = subparsers.add_parser(
+        "verify",
+        help="Verify an evidence archive using external trust and checkpoint inputs",
+    )
+    verify_parser.add_argument(
+        "--archive",
+        "--export",
+        dest="export",
+        required=True,
+        help="Path to the evidence directory or archive",
+    )
+    verify_parser.add_argument("--trust", required=True, help="Path to external trust pins JSON")
+    verify_parser.add_argument("--final", help="Path to independent final witness checkpoint JSON")
+    verify_parser.add_argument("--roster", help="Path to roster approval JSON")
+    verify_parser.add_argument("--issuance", help="Path to issuance closure JSON")
+    verify_parser.add_argument("--chain", help="Path to chain anchor JSON")
+    verify_parser.add_argument("--report", required=True, help="Path to output report JSON file")
+    verify_parser.add_argument(
+        "--verify-inclusion",
+        dest="inclusion_tracker",
+        help="Path to a non choice revealing inclusion tracker JSON",
+    )
+
     attest_parser = subparsers.add_parser("verify_attestation", help="Verify auditor attestation signature")
     attest_parser.add_argument("--report", required=True, help="Path to verified report JSON")
     attest_parser.add_argument("--attestation", required=True, help="Path to auditor signature JSON")
@@ -1396,7 +1552,44 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     args = parser.parse_args(normalized_argv)
 
-    if args.command == "audit_evidence":
+    if args.command in {"audit_evidence", "verify"}:
+        if args.command == "verify":
+            if args.inclusion_tracker:
+                if not args.final:
+                    sys.stderr.write("Unverifiable inclusion evidence: --final is required for inclusion verification\n")
+                    return EXIT_UNVERIFIABLE
+                try:
+                    exit_code, _ = verify_inclusion(
+                        export_path=args.export,
+                        trust_path=args.trust,
+                        final_path=args.final,
+                        tracker_path=args.inclusion_tracker,
+                        report_path=args.report,
+                    )
+                    return exit_code
+                except CryptoAuthError as err:
+                    sys.stderr.write(f"Inclusion verification failure: {err}\n")
+                    return EXIT_CRYPTO_FAIL
+                except UnverifiableError as err:
+                    sys.stderr.write(f"Unverifiable inclusion evidence: {err}\n")
+                    return EXIT_UNVERIFIABLE
+                except BadArchiveError as err:
+                    sys.stderr.write(f"Bad inclusion archive or tracker: {err}\n")
+                    return EXIT_BAD_ARCHIVE
+
+            missing_inputs = [
+                name
+                for name in ("final", "roster", "issuance", "chain")
+                if not getattr(args, name)
+            ]
+            if missing_inputs:
+                sys.stderr.write(
+                    "Unverifiable election evidence: missing independent inputs "
+                    + ", ".join(missing_inputs)
+                    + "\n"
+                )
+                return EXIT_UNVERIFIABLE
+
         try:
             exit_code, _ = audit_evidence(
                 export_path=args.export,

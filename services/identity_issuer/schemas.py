@@ -25,6 +25,11 @@ class RecoveryRequest(BaseModel):
     email: EmailStr
 
 
+class RecoveryResetRequest(BaseModel):
+    token: str = Field(min_length=32)
+    password: str = Field(min_length=16)
+
+
 class BootstrapClaimRequest(BaseModel):
     invitation_token: str
     password: str = Field(min_length=16)

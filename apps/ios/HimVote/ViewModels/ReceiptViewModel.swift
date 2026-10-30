@@ -21,8 +21,7 @@ public final class ReceiptViewModel {
     }
     
     public func loadReceipt(handle: String, electionId: String) {
-        let key = "himvote_receipt_\(handle)"
-        if let storedReceipt = try? keychainService.readCodable(Receipt.self, forKey: key) {
+        if let storedReceipt = try? keychainService.readReceipt(handle: handle) {
             self.receipt = storedReceipt
         } else {
             self.receipt = Receipt(
@@ -63,8 +62,7 @@ public final class ReceiptViewModel {
                     )
                     
                     self.receipt = updated
-                    let key = "himvote_receipt_\(handle)"
-                    try? self.keychainService.saveCodable(updated, forKey: key)
+                    try? self.keychainService.saveReceipt(updated)
                     
                     if statusResponse.receiptStatus == .witnessed || statusResponse.receiptStatus == .anchored || statusResponse.receiptStatus == .rejected {
                         terminalReached = true

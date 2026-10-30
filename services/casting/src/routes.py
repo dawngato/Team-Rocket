@@ -18,6 +18,7 @@ from src.service import (
     get_receipt_status,
     open_election_state,
 )
+from src.security import require_internal_control_token
 
 router = APIRouter(prefix="/v1", tags=["casting"])
 
@@ -74,7 +75,8 @@ async def get_receipt(
 )
 async def open_election(
     election_id: str,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    _control: None = Depends(require_internal_control_token),
 ) -> dict:
     """
     Open election endpoint.
@@ -90,7 +92,8 @@ async def open_election(
 )
 async def close_election(
     election_id: str,
-    session: AsyncSession = Depends(get_db)
+    session: AsyncSession = Depends(get_db),
+    _control: None = Depends(require_internal_control_token),
 ) -> dict:
     """
     Close election endpoint.

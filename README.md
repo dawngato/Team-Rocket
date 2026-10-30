@@ -1,8 +1,10 @@
 # HimVote Platform
 
-HimVote is a production grade institutional election platform engineered for universities and colleges. The system delivers mathematical verifiability, voter privacy, and operational resilience across modern platforms.
+HimVote is an educational institutional election security prototype for synthetic data. It is not approved for real campus elections. Its current evidence demonstrates service boundaries, integrity checks, audit fixtures, and client flows. It does not prove complete anonymity, coercion resistance, production engine suitability, or independent operation.
 
-## Core Architectural Guarantees
+The current cryptographic engine is Profile VEEM, a local development adapter. The SecureVote external engine gate remains blocked until a maintained engine with an independently usable verifier is supplied, integrated, and reviewed. No production secret ballot claim is enabled.
+
+## Core architectural behaviors exercised in development
 
 * Identity and Ballot Separation: Identity records and cast ballots reside in two physically isolated PostgreSQL clusters with distinct network boundaries, credentials, and operators. No table, log, or database view joins a student identity to a cast ballot.
 * Standardized Cryptography: Employs RFC 9474 RSA blind signatures for credential issuance, RFC 9162 Merkle tree structures for ordered audit logs, RFC 8785 canonical JSON for deterministic representations, and Argon2id for password security.
@@ -38,6 +40,12 @@ HimVote delivers native client software across four distinct computing platforms
 * Offline Audit Explorer: Standalone verification station capable of inspecting evidence archives offline without server network connectivity.
 * Safe Archive Extraction: Strict validation against directory traversal and symlink attacks with size limits.
 * Embedded Verifier: Executes the verified Python auditor executable, validating its SHA256 digest before invocation, and displaying granular cryptographic properties.
+
+### 5. Linux Desktop Demonstration (apps/linux)
+* Framework: Native Python Tkinter and ttk desktop application.
+* Operation: Runs on Linux without a browser wrapper and clearly labels local demo mode when the API is unavailable.
+* Audit: Provides receipt lookup and offline verifier handoff through the shared API and verifier boundary.
+* Scope: This is the current Linux demonstration client. It does not implement ballot encryption and does not replace the required cross platform native release review.
 
 ## Backend Microservices
 

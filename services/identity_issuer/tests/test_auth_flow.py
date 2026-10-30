@@ -3,8 +3,8 @@ Unit tests for authentication, session handling, recovery, and TOTP MFA flows.
 """
 
 import pyotp
-from HimVote.services.identity_issuer.models import User, MfaCredential, RoleDefinition, RoleAssignment
-from HimVote.services.identity_issuer.crypto.hashing import hash_password
+from services.identity_issuer.models import User, MfaCredential, RoleDefinition, RoleAssignment
+from services.identity_issuer.crypto.hashing import hash_password
 
 
 def test_user_login_logout_and_session(client, db_session):
@@ -99,7 +99,7 @@ def test_user_login_with_totp_mfa(client, db_session):
 
 
 def test_account_recovery_flow(client, db_session):
-    """Verify account recovery initiation returns accepted status."""
+    """Verify local recovery token delivery, one time reset, and revocation."""
     pwd_hash, pwd_params = hash_password("RecoveryTestPass123!")
     user = User(
         external_id="REC_USER_1",
@@ -118,3 +118,74 @@ def test_account_recovery_flow(client, db_session):
     )
     assert resp.status_code == 202
     assert resp.json()["status"] == "recovery_initiated"
+    recovery_token = resp.json()["development_token"]
+
+    login_resp = client.post(
+        "/v1/auth/login",
+        json={"email": "recovery_user@institution.edu", "password": "RecoveryTestPass123!"},
+    )
+    assert login_resp.status_code == 200
+    old_token = login_resp.json()["session_token"]
+
+    reset_resp = client.post(
+        "/v1/auth/reset",
+        json={"token": recovery_token, "password": "RecoveryTestPass456!"},
+    )
+    assert reset_resp.status_code == 200
+    assert reset_resp.json()["sessions_revoked"] is True
+
+    old_session_resp = client.post(
+        "/v1/auth/logout",
+        headers={"Authorization": f"Bearer {old_token}"},
+    )
+    assert old_session_resp.status_code == 401
+
+    new_login_resp = client.post(
+        "/v1/auth/login",
+        json={"email": "recovery_user@institution.edu", "password": "RecoveryTestPass456!"},
+    )
+    assert new_login_resp.status_code == 200
+
+    replay_resp = client.post(
+        "/v1/auth/reset",
+        json={"token": recovery_token, "password": "RecoveryTestPass789!"},
+    )
+    assert replay_resp.status_code == 400
+
+
+def test_recovery_does_not_return_tokens_outside_development(client, db_session, monkeypatch):
+    """Ensure production responses never expose recovery tokens in JSON."""
+    from services.identity_issuer.routers import auth as auth_router
+
+    pwd_hash, pwd_params = hash_password("RecoveryTestPass123!")
+    user = User(
+        external_id="REC_USER_2",
+        email="recovery_user_2@institution.edu",
+        password_hash=pwd_hash,
+        password_algorithm=pwd_params["algorithm"],
+        password_params=pwd_params,
+        status="ACTIVE",
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    monkeypatch.setattr(auth_router, "APP_ENV", "production")
+    resp = client.post(
+        "/v1/auth/recover",
+        json={"email": "recovery_user_2@institution.edu"},
+    )
+    assert resp.status_code == 503
+    assert "delivery is not configured" in resp.json()["detail"]
+
+
+def test_identity_cors_rejects_untrusted_origin(client):
+    """Credential origin CORS allows only configured origins."""
+    response = client.options(
+        "/v1/auth/login",
+        headers={
+            "Origin": "https://untrusted.example",
+            "Access-Control-Request-Method": "POST",
+        },
+    )
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers

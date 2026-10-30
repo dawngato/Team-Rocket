@@ -6,14 +6,15 @@ import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import com.google.gson.Gson
 import com.himvote.data.models.CastReceipt
+import com.himvote.data.models.InclusionProof
 import com.himvote.data.models.StudentCredential
 import com.himvote.data.models.UserSession
-import java.io.File
 
 /**
  * Keystore backed encrypted storage for HimVote.
- * Stores authenticated sessions, cryptographic credentials, and casting proofs.
- * Keystore storage is excluded from backup and device transfer by manifest rules.
+ * Stores authenticated sessions, cryptographic credentials, casting proofs,
+ * and offline verification status.
+ * Excluded from backup and device transfer by manifest security rules.
  */
 class EncryptedStorage(
     private val context: Context,
@@ -28,6 +29,9 @@ class EncryptedStorage(
         private const val PREFIX_CREDENTIAL = "credential_"
         private const val PREFIX_RECEIPT = "receipt_"
         private const val PREFIX_CAST_FLAG = "cast_flag_"
+        private const val PREFIX_OFFLINE_VERIFIED = "offline_verified_"
+        private const val PREFIX_PROOF = "proof_"
+        private const val KEY_AUDIT_LOGS = "audit_event_trail"
 
         private fun createEncryptedPreferences(context: Context): SharedPreferences {
             return try {
@@ -42,7 +46,7 @@ class EncryptedStorage(
                     EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
                     EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
                 )
-            } catch (ex: Exception) {
+            } catch (_: Exception) {
                 // Fallback for JVM test environments or older APIs
                 context.getSharedPreferences(PREFS_FILE_NAME, Context.MODE_PRIVATE)
             }
@@ -53,19 +57,21 @@ class EncryptedStorage(
     fun saveSession(session: UserSession) {
         val json = gson.toJson(session)
         prefs.edit().putString(KEY_SESSION, json).apply()
+        recordAuditEvent("SESSION_SAVED: ${session.rollNumber}")
     }
 
     fun getSession(): UserSession? {
         val json = prefs.getString(KEY_SESSION, null) ?: return null
         return try {
             gson.fromJson(json, UserSession::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
 
     fun clearSession() {
         prefs.edit().remove(KEY_SESSION).apply()
+        recordAuditEvent("SESSION_CLEARED")
     }
 
     fun isAuthenticated(): Boolean {
@@ -76,13 +82,14 @@ class EncryptedStorage(
     fun saveCredential(electionId: String, credential: StudentCredential) {
         val json = gson.toJson(credential)
         prefs.edit().putString(PREFIX_CREDENTIAL + electionId, json).apply()
+        recordAuditEvent("CREDENTIAL_SAVED: $electionId")
     }
 
     fun getCredential(electionId: String): StudentCredential? {
         val json = prefs.getString(PREFIX_CREDENTIAL + electionId, null) ?: return null
         return try {
             gson.fromJson(json, StudentCredential::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -91,7 +98,11 @@ class EncryptedStorage(
         return prefs.contains(PREFIX_CREDENTIAL + electionId)
     }
 
-    // Single Cast & Receipt Storage
+    fun removeCredential(electionId: String) {
+        prefs.edit().remove(PREFIX_CREDENTIAL + electionId).apply()
+    }
+
+    // Single Cast and Receipt Storage
     fun markBallotCast(electionId: String, receiptHandle: String, ballotHash: String) {
         val receipt = CastReceipt(
             electionId = electionId,
@@ -105,6 +116,7 @@ class EncryptedStorage(
             .putBoolean(PREFIX_CAST_FLAG + electionId, true)
             .putString(PREFIX_RECEIPT + electionId, json)
             .apply()
+        recordAuditEvent("BALLOT_CAST_COMMITTED: $electionId, handle: $receiptHandle")
     }
 
     fun hasCastBallot(electionId: String): Boolean {
@@ -115,7 +127,7 @@ class EncryptedStorage(
         val json = prefs.getString(PREFIX_RECEIPT + electionId, null) ?: return null
         return try {
             gson.fromJson(json, CastReceipt::class.java)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -133,5 +145,77 @@ class EncryptedStorage(
             }
         }
         return list
+    }
+
+    fun getCastElectionIds(): Set<String> {
+        val ids = mutableSetOf<String>()
+        val allKeys = prefs.all
+        for ((key, value) in allKeys) {
+            if (key.startsWith(PREFIX_CAST_FLAG) && value == true) {
+                ids.add(key.removePrefix(PREFIX_CAST_FLAG))
+            }
+        }
+        return ids
+    }
+
+    // Offline Verification Proof Storage
+    fun markOfflineVerified(electionId: String) {
+        prefs.edit().putBoolean(PREFIX_OFFLINE_VERIFIED + electionId, true).apply()
+        recordAuditEvent("OFFLINE_VERIFIED: $electionId")
+    }
+
+    fun isOfflineVerified(electionId: String): Boolean {
+        return prefs.getBoolean(PREFIX_OFFLINE_VERIFIED + electionId, false)
+    }
+
+    fun saveInclusionProof(electionId: String, proof: InclusionProof) {
+        val json = gson.toJson(proof)
+        prefs.edit().putString(PREFIX_PROOF + electionId, json).apply()
+    }
+
+    fun getInclusionProof(electionId: String): InclusionProof? {
+        val json = prefs.getString(PREFIX_PROOF + electionId, null) ?: return null
+        return try {
+            gson.fromJson(json, InclusionProof::class.java)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    // Audit Event Trail
+    fun recordAuditEvent(event: String) {
+        val timestamp = System.currentTimeMillis()
+        val entry = "[$timestamp] $event"
+        val existing = getAuditTrail().toMutableList()
+        existing.add(entry)
+        if (existing.size > 50) {
+            existing.removeAt(0)
+        }
+        prefs.edit().putString(KEY_AUDIT_LOGS, gson.toJson(existing)).apply()
+    }
+
+    fun getAuditTrail(): List<String> {
+        val json = prefs.getString(KEY_AUDIT_LOGS, null) ?: return emptyList()
+        return try {
+            val list = gson.fromJson(json, Array<String>::class.java)
+            list?.toList() ?: emptyList()
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    // Safe Logout: Clears session and tokens, preserves immutable cast records
+    fun clearSessionOnLogout() {
+        val editor = prefs.edit()
+        editor.remove(KEY_SESSION)
+        // Remove credentials but preserve cast flags and receipts so single cast cannot be circumvented
+        val allKeys = prefs.all
+        for (key in allKeys.keys) {
+            if (key.startsWith(PREFIX_CREDENTIAL)) {
+                editor.remove(key)
+            }
+        }
+        editor.apply()
+        recordAuditEvent("LOGOUT_SESSION_CLEARED")
     }
 }

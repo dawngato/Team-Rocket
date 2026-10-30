@@ -3,33 +3,80 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:models="clr-namespace:HimVote.Core.Models;assembly=HimVote.Core"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="900" d:DesignHeight="800"
              x:DataType="vm:ElectionsViewModel"
              x:Class="HimVote.Linux.Views.ElectionsPage">
 
-    <DockPanel Margin="20">
-        <StackPanel DockPanel.Dock="Top" Spacing="10">
-            <TextBlock Text="My Elections" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            <TextBlock Text="View your eligible elections and casting status." Foreground="#666666" />
-        </StackPanel>
+    <StackPanel Spacing="20">
+        <!-- Header -->
+        <Border Classes="card" Background="{StaticResource SurfaceBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Institutional Elections &amp; Voting Booth" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Browse active and scheduled university elections, check your voting eligibility, and launch the authenticated ballot booth."
+                           Foreground="#475569" TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
 
-        <ItemsControl DockPanel.Dock="Top" Items="{Binding Elections}" Margin="0,20,0,0">
+        <!-- Controls Toolbar -->
+        <Border Classes="card">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="16">
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Text="Filter by State:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <ComboBox SelectedItem="{Binding FilterState}" MinWidth="160">
+                        <x:String>ALL</x:String>
+                        <x:String>OPEN</x:String>
+                        <x:String>DRAFT</x:String>
+                        <x:String>ROSTER_FROZEN</x:String>
+                        <x:String>CLOSED</x:String>
+                        <x:String>RESULTS_PUBLISHED</x:String>
+                    </ComboBox>
+                </StackPanel>
+
+                <Button Grid.Column="2" Content="Refresh Elections" Command="{Binding LoadElectionsCommand}"
+                        Classes="primary-button" MinHeight="44" />
+            </Grid>
+        </Border>
+
+        <!-- Messages -->
+        <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+            <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
+        </Border>
+
+        <!-- Elections Cards List -->
+        <ItemsControl ItemsSource="{Binding FilteredElections}">
             <ItemsControl.ItemTemplate>
-                <DataTemplate>
-                    <Border Classes="card" Margin="0,0,0,12" Padding="20">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel Grid.Column="0">
-                                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-                                <TextBlock Text="{Binding CandidateCount, StringFormat='{0} candidates'}" Foreground="#666666" />
+                <DataTemplate x:DataType="models:ElectionSummary">
+                    <Border Classes="card" Margin="0,0,0,16" Background="#FFFFFF">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="8">
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+
+                            <Border Grid.Row="0" Grid.Column="1" CornerRadius="4" Padding="8,4" Background="#F1F5F9">
+                                <TextBlock Text="{Binding State}" FontWeight="Bold" FontSize="11" Foreground="#334155" />
+                            </Border>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Id, StringFormat='ID: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#64748B" />
+
+                            <StackPanel Grid.Row="2" Grid.Column="0" Orientation="Horizontal" Spacing="16">
+                                <TextBlock Text="{Binding OpensAtUtc, StringFormat='Opens: {0:g}'}" FontSize="12" Foreground="#475569" />
+                                <TextBlock Text="{Binding ClosesAtUtc, StringFormat='Closes: {0:g}'}" FontSize="12" Foreground="#475569" />
                             </StackPanel>
-                            <Button Grid.Column="1" Content="Vote now" Classes="primary-button" MinHeight="44" MinWidth="100" />
+
+                            <Button Grid.Row="2" Grid.Column="1" Content="Launch Ballot Booth"
+                                    Command="{Binding $parent[UserControl].((vm:ElectionsViewModel)DataContext).OpenBoothCommand}"
+                                    CommandParameter="{Binding}"
+                                    Classes="primary-button" MinHeight="44" />
                         </Grid>
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
-
-        <Button Content="Refresh" Command="{Binding LoadElectionsCommand}" 
-                DockPanel.Dock="Bottom" HorizontalAlignment="Right" MinHeight="44" IsEnabled="{Binding !IsLoading}" />
-    </DockPanel>
+    </StackPanel>
 </UserControl>

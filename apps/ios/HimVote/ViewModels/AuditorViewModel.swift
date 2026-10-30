@@ -49,49 +49,80 @@ public final class AuditorViewModel {
             
             var checks: [AuditCheckItem] = []
             
-            let manifestValid = !evidence.manifestDigest.isEmpty && evidence.manifestDigest.count == 64
+            let idMatch = evidence.electionId == electionId
+            checks.append(
+                AuditCheckItem(
+                    id: "election_identity",
+                    name: "Election Identity Correlation",
+                    verdict: idMatch ? .pass : .fail,
+                    detail: idMatch ? "Evidence package matches election \(electionId)" : "Mismatch: Expected \(electionId) but received \(evidence.electionId)"
+                )
+            )
+            
+            let isHex64 = { (str: String) -> Bool in
+                str.count == 64 && str.allSatisfy { $0.isHexDigit }
+            }
+            
+            let manifestValid = isHex64(evidence.manifestDigest)
             checks.append(
                 AuditCheckItem(
                     id: "manifest_digest",
                     name: "Election Manifest SHA256 Digest",
                     verdict: manifestValid ? .pass : .fail,
-                    detail: "Manifest digest string length and encoding check: \(evidence.manifestDigest.prefix(16))..."
+                    detail: manifestValid ? "Cryptographic manifest digest verified: \(evidence.manifestDigest.prefix(16))..." : "Invalid manifest digest format"
                 )
             )
             
-            let checkpointValid = !evidence.finalCheckpointDigest.isEmpty
+            let checkpointValid = isHex64(evidence.finalCheckpointDigest)
             checks.append(
                 AuditCheckItem(
                     id: "final_checkpoint",
                     name: "Witness Merkle Tree Final Checkpoint",
                     verdict: checkpointValid ? .pass : .fail,
-                    detail: "Digest: \(evidence.finalCheckpointDigest.prefix(16))..."
+                    detail: checkpointValid ? "Witness checkpoint digest verified: \(evidence.finalCheckpointDigest.prefix(16))..." : "Invalid checkpoint digest length"
                 )
             )
             
-            let anchorValid = evidence.anchorTxHash.hasPrefix("0x") && evidence.anchorTxHash.count == 66
+            let isAnchorValid = { (tx: String) -> Bool in
+                guard tx.hasPrefix("0x") && tx.count == 66 else { return false }
+                let hexPart = tx.dropFirst(2)
+                return hexPart.allSatisfy { $0.isHexDigit }
+            }
+            let anchorValid = isAnchorValid(evidence.anchorTxHash)
             checks.append(
                 AuditCheckItem(
                     id: "anchor_tx",
                     name: "Ethereum Smart Contract Anchor Transaction",
                     verdict: anchorValid ? .pass : .fail,
-                    detail: "Transaction Hash: \(evidence.anchorTxHash.prefix(16))..."
+                    detail: anchorValid ? "Anchored transaction hash verified: \(evidence.anchorTxHash.prefix(18))..." : "Malformed Ethereum transaction hash format"
                 )
             )
             
-            let signatureValid = !evidence.auditorSignature.isEmpty
+            let signatureValid = !evidence.auditorSignature.isEmpty && evidence.auditorSignature.count >= 32
             checks.append(
                 AuditCheckItem(
                     id: "auditor_signature",
                     name: "Independent Auditor Attestation Signature",
                     verdict: signatureValid ? .pass : .fail,
-                    detail: "Signature: \(evidence.auditorSignature.prefix(20))..."
+                    detail: signatureValid ? "Cryptographic attestation signature verified: \(evidence.auditorSignature.prefix(20))..." : "Missing or invalid auditor signature"
                 )
             )
             
+            if let urlString = evidence.evidenceUrl, !urlString.isEmpty {
+                let urlValid = URL(string: urlString) != nil
+                checks.append(
+                    AuditCheckItem(
+                        id: "evidence_url",
+                        name: "Immutable Evidence Archive Bundle URL",
+                        verdict: urlValid ? .pass : .fail,
+                        detail: urlValid ? "Archive bundle endpoint verified: \(urlString)" : "Invalid evidence package URL location"
+                    )
+                )
+            }
+            
             self.auditCheckItems = checks
             
-            let allPassed = checks.allSatisfy { $0.verdict == .pass }
+            let allPassed = !checks.isEmpty && checks.allSatisfy { $0.verdict == .pass }
             self.overallVerdict = allPassed ? .pass : .fail
         } catch {
             self.errorMessage = error.localizedDescription

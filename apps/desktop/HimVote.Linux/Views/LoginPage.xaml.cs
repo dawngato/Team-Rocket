@@ -13,6 +13,9 @@ public partial class LoginPage : UserControl
 
     private void InitializeComponent()
     {
-        AvaloniaXamlLoader.Load(this);
+        if (Application.Current != null)
+        {
+            AvaloniaXamlLoader.Load(this);
+        }
     }
 }

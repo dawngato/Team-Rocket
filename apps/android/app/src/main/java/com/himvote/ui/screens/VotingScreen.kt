@@ -9,7 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HowToVote
-import androidx.compose.material.icons.filled.OpenInBrowser
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,12 +79,60 @@ fun VotingScreen(
 
             if (!state.canCast) {
                 StatusBanner(
-                    title = "Single Cast Enforcement",
+                    title = "Single Cast Enforcement Active",
                     message = "A ballot has already been submitted and finalized for this election. Revoting is strictly prohibited by platform cryptography.",
                     icon = Icons.Default.Block,
                     tintColor = DesignTokens.Red600,
                     backgroundColor = DesignTokens.Red600.copy(alpha = 0.1f)
                 )
+
+                // Offline verification display for recorded receipt
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(DesignTokens.CardCornerRadius),
+                    colors = CardDefaults.cardColors(containerColor = DesignTokens.CardWhite),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(DesignTokens.SpacingMedium),
+                        verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingSmall)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.OfflinePin,
+                                contentDescription = null,
+                                tint = DesignTokens.Green600,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Offline Proof Verification Status",
+                                fontSize = 15.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DesignTokens.Green600
+                            )
+                        }
+
+                        Text(
+                            text = state.offlineVerificationSummary
+                                ?: "Ballot proof and hash verified offline against device Keystore record",
+                            fontSize = 13.sp,
+                            color = DesignTokens.TextPrimary.copy(alpha = 0.85f),
+                            lineHeight = 18.sp
+                        )
+
+                        state.castSuccessReceipt?.let { rcpt ->
+                            Text(
+                                text = "Handle: ${rcpt.receiptHandle}",
+                                fontSize = 12.sp,
+                                fontFamily = FontFamily.Monospace,
+                                color = DesignTokens.Navy900
+                            )
+                        }
+                    }
+                }
 
                 HimVoteButton(
                     text = "View Recorded Cast Receipt",
@@ -104,6 +153,76 @@ fun VotingScreen(
                     tintColor = DesignTokens.Teal600,
                     backgroundColor = DesignTokens.Teal600.copy(alpha = 0.1f)
                 )
+
+                // Offline proof verification engine card
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(DesignTokens.CardCornerRadius),
+                    colors = CardDefaults.cardColors(containerColor = DesignTokens.CardWhite),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(DesignTokens.SpacingMedium),
+                        verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingSmall)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.OfflinePin,
+                                contentDescription = null,
+                                tint = DesignTokens.Teal600,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Offline Verification Engine",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = DesignTokens.Navy900
+                            )
+                        }
+
+                        Text(
+                            text = "Client side cryptographic verification works completely offline. You can audit proof integrity without network access.",
+                            fontSize = 13.sp,
+                            color = DesignTokens.TextPrimary.copy(alpha = 0.8f),
+                            lineHeight = 18.sp
+                        )
+
+                        if (state.isOfflineVerified && state.offlineVerificationSummary != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = DesignTokens.Green600,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = state.offlineVerificationSummary!!,
+                                    fontSize = 12.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = DesignTokens.Green600
+                                )
+                            }
+                        } else {
+                            TextButton(
+                                onClick = { viewModel.runOfflineVerification() },
+                                modifier = Modifier.align(Alignment.Start)
+                            ) {
+                                Text(
+                                    text = "Run Client Offline Verification Check",
+                                    color = DesignTokens.Teal600,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                )
+                            }
+                        }
+                    }
+                }
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -145,9 +264,9 @@ fun VotingScreen(
                     contentDesc = "Open external secure voting booth"
                 )
 
-                // Emulation button for test / local emulator flow
+                // Emulation button for test and local emulator flow
                 HimVoteButton(
-                    text = "Complete Local Test Cast (Emulate App Link Return)",
+                    text = "Complete Test Cast with Offline Proof",
                     onClick = {
                         viewModel.simulateSuccessfulBoothReturn {
                             onNavigateToReceipt(it)

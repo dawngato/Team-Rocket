@@ -29,7 +29,7 @@ final class ReceiptViewModelTests: XCTestCase {
             status: .witnessed,
             witnessedAtUtc: "2026-10-30T15:00:00Z"
         )
-        try mockKeychain.saveCodable(receipt, forKey: "himvote_receipt_rcpt_987654")
+        try mockKeychain.saveReceipt(receipt)
         
         viewModel.loadReceipt(handle: "rcpt_987654", electionId: "elec_2026_stu_council")
         
@@ -37,6 +37,15 @@ final class ReceiptViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.receipt?.handle, "rcpt_987654")
         XCTAssertEqual(viewModel.receipt?.status, .witnessed)
         XCTAssertEqual(viewModel.receipt?.leafIndex, 17)
+    }
+    
+    func testLoadReceiptFallbackWhenNotInKeychain() {
+        viewModel.loadReceipt(handle: "rcpt_nonexistent", electionId: "elec_test_01")
+        
+        XCTAssertNotNil(viewModel.receipt)
+        XCTAssertEqual(viewModel.receipt?.handle, "rcpt_nonexistent")
+        XCTAssertEqual(viewModel.receipt?.status, .committedPendingWitness)
+        XCTAssertEqual(viewModel.receipt?.leafIndex, 0)
     }
     
     func testFormatReceiptJson() {
@@ -52,5 +61,13 @@ final class ReceiptViewModelTests: XCTestCase {
         XCTAssertNotNil(json)
         XCTAssertTrue(json?.contains("rcpt_test_01") == true)
         XCTAssertTrue(json?.contains("ANCHORED") == true)
+    }
+    
+    func testStopPollingCancelsTask() {
+        viewModel.startPollingReceiptStatus(electionId: "elec_test_01", handle: "rcpt_test_01")
+        XCTAssertTrue(viewModel.isPolling)
+        
+        viewModel.stopPolling()
+        XCTAssertFalse(viewModel.isPolling)
     }
 }

@@ -8,14 +8,11 @@ HimVote explicitly rejects marketing terms such as unhackable, completely anonym
 
 ___
 
-## 2. Properties Guaranteed by the System
+## 2. Properties exercised by the development prototype
 
-When deployed according to documented operational procedures, HimVote delivers the following verifiable properties:
+The local tests exercise identity and casting separation, duplicate nullifier rejection, canonical evidence, tamper detection, and report generation. These are development behaviors, not unconditional production guarantees. The current Profile VEEM engine is a development stand in and has not passed the required external engine review.
 
-* **Decoupled Identity and Ballot State**: The election authority cannot link a student identity to their cast ballot by inspecting server databases, log records, or public audit packages.
-* **Append Only Tamper Evidence**: No accepted ballot can be altered, inserted, deleted, or reordered without triggering cryptographic verification failures across witness nodes and independent verifier tools.
-* **Independent Tally Correctness**: Any observer can independently recompute and verify the final election tally from publicly available ciphertext and zero knowledge proofs without access to private decryption keys.
-* **Single Cast Enforcement**: A valid credential can be used to cast exactly one ballot. Duplicate attempts are permanently rejected.
+The final security status for an election must come from the standalone verifier and its independently supplied trust roots. A passing local fixture cannot prove that a real deployment has independent operators, complete anonymity, or correct external engine semantics.
 
 ___
 

@@ -75,4 +75,59 @@ final class KeychainServiceTests: XCTestCase {
         
         XCTAssertEqual(keychain.storage.count, 0)
     }
+    
+    func testSaveAndReadString() throws {
+        try keychain.saveString("himvote_secure_string", forKey: "str_key")
+        let result = try keychain.readString(forKey: "str_key")
+        XCTAssertEqual(result, "himvote_secure_string")
+    }
+    
+    func testExistsMethod() throws {
+        XCTAssertFalse(keychain.exists(forKey: "check_key"))
+        try keychain.saveString("sample", forKey: "check_key")
+        XCTAssertTrue(keychain.exists(forKey: "check_key"))
+    }
+    
+    func testSaveAndReadCredential() throws {
+        let cred = Credential(
+            electionId: "elec_test_99",
+            blindSignatureResponse: "sig_resp_test",
+            blindedSecret: "secret_test",
+            unblindedSignature: "sig_resp_test",
+            status: .delivered,
+            issuedAtUtc: "2026-10-30T10:00:00Z"
+        )
+        
+        try keychain.saveCredential(cred, forElectionId: "elec_test_99")
+        XCTAssertTrue(keychain.hasCredential(forElectionId: "elec_test_99"))
+        
+        let retrieved = try keychain.readCredential(forElectionId: "elec_test_99")
+        XCTAssertEqual(retrieved.electionId, "elec_test_99")
+        XCTAssertEqual(retrieved.status, .delivered)
+        
+        try keychain.deleteCredential(forElectionId: "elec_test_99")
+        XCTAssertFalse(keychain.hasCredential(forElectionId: "elec_test_99"))
+    }
+    
+    func testSaveAndReadReceipt() throws {
+        let receipt = Receipt(
+            electionId: "elec_test_99",
+            handle: "rcpt_test_handle",
+            leafIndex: 10,
+            status: .witnessed,
+            nullifierCommitment: "nullifier_hash",
+            witnessedAtUtc: "2026-10-30T12:00:00Z"
+        )
+        
+        try keychain.saveReceipt(receipt)
+        XCTAssertTrue(keychain.hasReceipt(handle: "rcpt_test_handle"))
+        
+        let retrieved = try keychain.readReceipt(handle: "rcpt_test_handle")
+        XCTAssertEqual(retrieved.handle, "rcpt_test_handle")
+        XCTAssertEqual(retrieved.status, .witnessed)
+        XCTAssertEqual(retrieved.leafIndex, 10)
+        
+        try keychain.deleteReceipt(handle: "rcpt_test_handle")
+        XCTAssertFalse(keychain.hasReceipt(handle: "rcpt_test_handle"))
+    }
 }

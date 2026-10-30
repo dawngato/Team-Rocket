@@ -77,7 +77,12 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <Link href="/auditor/trusted-pins" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+              <Link href="/super-admin" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                Super Administrator
+              </Link>
+            </li>
+            <li>
+              <Link href="/auditor" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
                 Independent Auditor Workspace
               </Link>
             </li>

@@ -12,24 +12,37 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     private string _currentPage = "login";
 
+    public LoginViewModel LoginVm { get; }
+    public ElectionsViewModel ElectionsVm { get; }
+    public CandidatesViewModel CandidatesVm { get; }
+    public ReceiptViewModel ReceiptVm { get; }
+    public EvidenceImportViewModel EvidenceImportVm { get; }
+    public AuditExplorerViewModel AuditExplorerVm { get; }
+    public AdminViewModel AdminVm { get; }
+    public SettingsViewModel SettingsVm { get; }
+
     public MainWindowViewModel(
         LoginViewModel loginVm,
         ElectionsViewModel electionsVm,
+        CandidatesViewModel candidatesVm,
+        ReceiptViewModel receiptVm,
+        EvidenceImportViewModel evidenceImportVm,
+        AuditExplorerViewModel auditExplorerVm,
         AdminViewModel adminVm,
-        AuditExplorerViewModel auditExplorerVm)
+        SettingsViewModel settingsVm)
     {
         LoginVm = loginVm;
         ElectionsVm = electionsVm;
-        AdminVm = adminVm;
+        CandidatesVm = candidatesVm;
+        ReceiptVm = receiptVm;
+        EvidenceImportVm = evidenceImportVm;
         AuditExplorerVm = auditExplorerVm;
-        CurrentViewModel = loginVm;
-        Title = "HimVote";
-    }
+        AdminVm = adminVm;
+        SettingsVm = settingsVm;
 
-    public LoginViewModel LoginVm { get; }
-    public ElectionsViewModel ElectionsVm { get; }
-    public AdminViewModel AdminVm { get; }
-    public AuditExplorerViewModel AuditExplorerVm { get; }
+        _currentViewModel = loginVm;
+        Title = "Sign in - HimVote";
+    }
 
     [RelayCommand]
     public void NavigateTo(string page)
@@ -38,15 +51,24 @@ public partial class MainWindowViewModel : ViewModelBase
         CurrentViewModel = page switch
         {
             "elections" => ElectionsVm,
-            "admin" => AdminVm,
+            "candidates" => CandidatesVm,
+            "receipt" => ReceiptVm,
+            "evidence" => EvidenceImportVm,
             "audit" => AuditExplorerVm,
+            "admin" => AdminVm,
+            "settings" => SettingsVm,
             _ => LoginVm
         };
+
         Title = page switch
         {
-            "elections" => "My Elections - HimVote",
-            "admin" => "Administrative Console - HimVote",
+            "elections" => "Elections - HimVote",
+            "candidates" => "Candidate Nominations - HimVote",
+            "receipt" => "Receipt Verification - HimVote",
+            "evidence" => "Offline Evidence Import - HimVote",
             "audit" => "Offline Audit Explorer - HimVote",
+            "admin" => "Administrative Console - HimVote",
+            "settings" => "System Settings - HimVote",
             _ => "Sign in - HimVote"
         };
     }

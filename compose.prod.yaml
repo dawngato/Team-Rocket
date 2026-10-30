@@ -52,6 +52,8 @@ services:
       APP_DEBUG: "false"
       LOG_LEVEL: info
       LOG_REDACTION_ENABLED: "true"
+      ALLOW_DEV_ACTOR_HEADERS: "false"
+      ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:?Set ADMIN_ALLOWED_ORIGINS to trusted HTTPS origins}
       IDENTITY_DB_SSL_MODE: verify-full
       CASTING_DB_SSL_MODE: verify-full
     deploy:
@@ -77,6 +79,7 @@ services:
       LOG_LEVEL: info
       LOG_REDACTION_ENABLED: "true"
       BOOTSTRAP_ALLOWED: "false"
+      IDENTITY_ALLOWED_ORIGINS: ${IDENTITY_ALLOWED_ORIGINS:?Set IDENTITY_ALLOWED_ORIGINS to trusted HTTPS origins}
       IDENTITY_DB_SSL_MODE: verify-full
       KMS_PROVIDER: ${KMS_PROVIDER:-aws_kms}
     deploy:
@@ -102,6 +105,8 @@ services:
       LOG_LEVEL: info
       LOG_REDACTION_ENABLED: "true"
       CASTING_DB_SSL_MODE: verify-full
+      CASTING_ALLOWED_ORIGINS: ${CASTING_ALLOWED_ORIGINS:?Set CASTING_ALLOWED_ORIGINS to trusted HTTPS origins}
+      INTERNAL_CONTROL_TOKEN: ${CASTING_INTERNAL_CONTROL_TOKEN:?Set CASTING_INTERNAL_CONTROL_TOKEN in the secret manager}
     deploy:
       resources:
         limits:

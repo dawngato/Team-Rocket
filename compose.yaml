@@ -69,6 +69,7 @@ services:
       - CASTING_DB_SSL_MODE=prefer
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
+      - IDENTITY_ALLOWED_ORIGINS=${IDENTITY_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       - AUDITOR_PUBLIC_KEY_FINGERPRINT=${AUDITOR_PUBLIC_KEY_FINGERPRINT:-CHANGE_ME}
     depends_on:
       identity_db:
@@ -122,6 +123,7 @@ services:
       - ELECTION_ENGINE_BASE=http://election_engine:8084
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
+      - CASTING_ALLOWED_ORIGINS=${CASTING_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
     depends_on:
       casting_db:
         condition: service_healthy

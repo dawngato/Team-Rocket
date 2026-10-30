@@ -1,5 +1,7 @@
 # HimVote Security Assumptions
 
+This document describes assumptions for the intended architecture. The current repository is an educational prototype. The assumptions below are not evidence that production infrastructure, independent operators, hardware key custody, or a vetted voting engine already exist.
+
 ## 1. Cryptographic Assumptions
 
 The security and integrity properties of HimVote depend on standard, mathematically vetted cryptographic hardness assumptions and reviewed algorithm specifications. No proprietary or experimental cryptographic primitives are used.

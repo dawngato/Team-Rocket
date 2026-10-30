@@ -23,8 +23,8 @@ The identity cluster schema includes the following models:
 * enrollment_sources: External registry sources such as SIS and CSV feeds
 * student_verifications: Department matching records confirming student eligibility
 * sessions: Stateful sessions storing SHA256 hashed session identifiers
-* mfa_credentials: TOTP and WebAuthn multi factor credential secrets
-* recovery_requests: Single use account recovery tokens
+* mfa_credentials: TOTP credential material. WebAuthn is not implemented in this prototype.
+* recovery_requests: Single use account recovery tokens with expiry, consumption state, session revocation, and a development only delivery handoff
 * admin_audit_events: Immutable append only security audit trail
 * election_roster_snapshots: Frozen roster snapshots with cryptographic digests
 * roster_members: Composite primary key records binding student to election roster

@@ -11,7 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Receipt
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -139,12 +139,34 @@ fun ReceiptScreen(
                             color = DesignTokens.SurfaceBg
                         )
 
-                        Text(
-                            text = "Ballot Hash (SHA 256)",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Ballot Hash (SHA_256)",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                            )
+                            IconButton(
+                                onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clip = ClipData.newPlainText("Ballot Hash", receipt.ballotHash)
+                                    clipboard.setPrimaryClip(clip)
+                                    viewModel.markCopied()
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.ContentCopy,
+                                    contentDescription = "Copy ballot hash",
+                                    tint = DesignTokens.Teal600,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        }
+
                         Text(
                             text = receipt.ballotHash,
                             fontSize = 13.sp,
@@ -169,7 +191,42 @@ fun ReceiptScreen(
                             fontWeight = FontWeight.Medium,
                             color = DesignTokens.Teal600
                         )
+
+                        if (state.isOfflineVerified) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = DesignTokens.SurfaceBg
+                            )
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.OfflinePin,
+                                    contentDescription = null,
+                                    tint = DesignTokens.Green600,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Text(
+                                    text = "Offline Cryptographic Verification: Valid",
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = DesignTokens.Green600
+                                )
+                            }
+                        }
                     }
+                }
+
+                if (state.isCopied) {
+                    StatusBanner(
+                        title = "Copied to Clipboard",
+                        message = "Cryptographic handle has been copied to your system clipboard.",
+                        icon = Icons.Default.CheckCircle,
+                        tintColor = DesignTokens.Teal600,
+                        backgroundColor = DesignTokens.Teal600.copy(alpha = 0.1f)
+                    )
                 }
 
                 StatusBanner(

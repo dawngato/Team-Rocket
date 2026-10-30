@@ -19,7 +19,7 @@ export async function leafHash(canonicalBytes: Uint8Array): Promise<Uint8Array> 
   return sha256(input);
 }
 
-async function nodeHash(left: Uint8Array, right: Uint8Array): Promise<Uint8Array> {
+export async function nodeHash(left: Uint8Array, right: Uint8Array): Promise<Uint8Array> {
   const input = new Uint8Array(left.length + right.length + 1);
   input[0] = 1;
   input.set(left, 1);

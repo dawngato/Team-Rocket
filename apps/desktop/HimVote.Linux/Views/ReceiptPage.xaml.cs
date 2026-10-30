@@ -13,6 +13,9 @@ public partial class ReceiptPage : UserControl
 
     private void InitializeComponent()
     {
-        AvaloniaXamlLoader.Load(this);
+        if (Application.Current != null)
+        {
+            AvaloniaXamlLoader.Load(this);
+        }
     }
 }

@@ -148,7 +148,8 @@ CREATE TABLE IF NOT EXISTS recovery_requests (
     token_hash TEXT NOT NULL UNIQUE,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    consumed_at TIMESTAMPTZ
 );
 
 CREATE TABLE IF NOT EXISTS admin_audit_events (

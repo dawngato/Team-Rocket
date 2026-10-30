@@ -11,9 +11,21 @@ class Settings(BaseModel):
     """Admin API environment configuration."""
     
     app_name: str = os.getenv("APP_NAME", "HimVote Admin API")
-    environment: str = os.getenv("ENVIRONMENT", "development")
+    environment: str = os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development"))
     log_level: str = os.getenv("LOG_LEVEL", "info")
     log_redaction_enabled: bool = os.getenv("LOG_REDACTION_ENABLED", "true").lower() == "true"
+    allow_dev_actor_headers: bool = os.getenv(
+        "ALLOW_DEV_ACTOR_HEADERS",
+        "true" if os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")) == "development" else "false",
+    ).lower() == "true"
+    allowed_origins: list[str] = [
+        item.strip()
+        for item in os.getenv(
+            "ALLOWED_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(",")
+        if item.strip()
+    ]
     
     identity_db_host: str = os.getenv("IDENTITY_DB_HOST", "localhost")
     identity_db_port: int = int(os.getenv("IDENTITY_DB_PORT", "5432"))

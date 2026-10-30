@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net8.0": {
-      "CommunityToolkit.Mvvm/8.3.2": {
+      "CommunityToolkit.Mvvm/8.4.0": {
         "type": "package",
         "compile": {
           "lib/net8.0/CommunityToolkit.Mvvm.dll": {
@@ -33,14 +33,27 @@
         "build": {
           "buildTransitive/net6.0/_._": {}
         }
+      },
+      "HimVote.Core/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v8.0",
+        "dependencies": {
+          "CommunityToolkit.Mvvm": "8.4.0"
+        },
+        "compile": {
+          "bin/placeholder/HimVote.Core.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/HimVote.Core.dll": {}
+        }
       }
     }
   },
   "libraries": {
-    "CommunityToolkit.Mvvm/8.3.2": {
-      "sha512": "m8EolE1A0Updj68WTsZSGI6VWb6mUqHPh7QFo0kt7+JPhYMNXRS1ch8TS/oITAdcxTLrwMOp3ku1KjeG1/Zdpg==",
+    "CommunityToolkit.Mvvm/8.4.0": {
+      "sha512": "tqVU8yc/ADO9oiTRyTnwhFN68hCwvkliMierptWOudIAvWY1mWCh5VFh+guwHJmpMwfg0J0rY+yyd5Oy7ty9Uw==",
       "type": "package",
-      "path": "communitytoolkit.mvvm/8.3.2",
+      "path": "communitytoolkit.mvvm/8.4.0",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
@@ -49,21 +62,22 @@
         "ThirdPartyNotices.txt",
         "analyzers/dotnet/roslyn4.0/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
         "analyzers/dotnet/roslyn4.0/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
+        "analyzers/dotnet/roslyn4.12/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
+        "analyzers/dotnet/roslyn4.12/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
         "analyzers/dotnet/roslyn4.3/cs/CommunityToolkit.Mvvm.CodeFixers.dll",
         "analyzers/dotnet/roslyn4.3/cs/CommunityToolkit.Mvvm.SourceGenerators.dll",
         "build/CommunityToolkit.Mvvm.FeatureSwitches.targets",
         "build/CommunityToolkit.Mvvm.SourceGenerators.targets",
+        "build/CommunityToolkit.Mvvm.Windows.targets",
         "build/CommunityToolkit.Mvvm.WindowsSdk.targets",
         "build/CommunityToolkit.Mvvm.targets",
         "buildTransitive/CommunityToolkit.Mvvm.FeatureSwitches.targets",
         "buildTransitive/CommunityToolkit.Mvvm.SourceGenerators.targets",
+        "buildTransitive/CommunityToolkit.Mvvm.Windows.targets",
         "buildTransitive/CommunityToolkit.Mvvm.WindowsSdk.targets",
         "buildTransitive/CommunityToolkit.Mvvm.targets",
-        "communitytoolkit.mvvm.8.3.2.nupkg.sha512",
+        "communitytoolkit.mvvm.8.4.0.nupkg.sha512",
         "communitytoolkit.mvvm.nuspec",
-        "lib/net6.0/CommunityToolkit.Mvvm.dll",
-        "lib/net6.0/CommunityToolkit.Mvvm.pdb",
-        "lib/net6.0/CommunityToolkit.Mvvm.xml",
         "lib/net8.0-windows10.0.17763/CommunityToolkit.Mvvm.dll",
         "lib/net8.0-windows10.0.17763/CommunityToolkit.Mvvm.pdb",
         "lib/net8.0-windows10.0.17763/CommunityToolkit.Mvvm.xml",
@@ -113,11 +127,17 @@
         "system.security.cryptography.protecteddata.nuspec",
         "useSharedDesignerContext.txt"
       ]
+    },
+    "HimVote.Core/1.0.0": {
+      "type": "project",
+      "path": "../HimVote.Core/HimVote.Core.csproj",
+      "msbuildProject": "../HimVote.Core/HimVote.Core.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net8.0": [
-      "CommunityToolkit.Mvvm >= 8.3.2",
+      "CommunityToolkit.Mvvm >= 8.4.0",
+      "HimVote.Core >= 1.0.0",
       "System.Security.Cryptography.ProtectedData >= 8.0.0"
     ]
   },
@@ -127,11 +147,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/home/Kali/Desktop/HPTU/HimVote/apps/desktop/HimVote.Windows/HimVote.Windows.csproj",
+      "projectUniqueName": "/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop/HimVote.Windows/HimVote.Windows.csproj",
       "projectName": "HimVote.Windows",
-      "projectPath": "/home/Kali/Desktop/HPTU/HimVote/apps/desktop/HimVote.Windows/HimVote.Windows.csproj",
+      "projectPath": "/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop/HimVote.Windows/HimVote.Windows.csproj",
       "packagesPath": "/home/Kali/.nuget/packages/",
-      "outputPath": "/home/Kali/Desktop/HPTU/HimVote/apps/desktop/HimVote.Windows/obj/",
+      "outputPath": "/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop/HimVote.Windows/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/home/Kali/.nuget/NuGet/NuGet.Config"
@@ -145,7 +165,11 @@
       "frameworks": {
         "net8.0": {
           "targetAlias": "net8.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop/HimVote.Core/HimVote.Core.csproj": {
+              "projectPath": "/home/Kali/Desktop/HPTU/Team-Rocket/apps/desktop/HimVote.Core/HimVote.Core.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
@@ -165,7 +189,7 @@
         "dependencies": {
           "CommunityToolkit.Mvvm": {
             "target": "Package",
-            "version": "[8.3.2, )"
+            "version": "[8.4.0, )"
           },
           "System.Security.Cryptography.ProtectedData": {
             "target": "Package",

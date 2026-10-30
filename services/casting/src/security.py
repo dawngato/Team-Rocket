@@ -4,10 +4,12 @@ According to Section 5.2 and Section 6.3 of the specification.
 """
 
 import logging
+import hmac
 from typing import Callable
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from src.config import settings
 
 logger = logging.getLogger("casting.security")
 
@@ -87,3 +89,23 @@ class CastingOriginSecurityMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "no-referrer"
 
         return response
+
+
+async def require_internal_control_token(request: Request) -> None:
+    """Protect lifecycle control routes in production.
+
+    Casting remains anonymous for voters. Open and close are internal control
+    operations and must use a secret injected by the service mesh or gateway.
+    Local development keeps the route available to the isolated test harness.
+    """
+    if settings.APP_ENV != "production":
+        return
+    supplied = request.headers.get("X-Internal-Control-Token")
+    expected = settings.INTERNAL_CONTROL_TOKEN
+    if not expected or not supplied or not hmac.compare_digest(supplied, expected):
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            status_code=403,
+            detail="Internal lifecycle control authentication failed",
+        )

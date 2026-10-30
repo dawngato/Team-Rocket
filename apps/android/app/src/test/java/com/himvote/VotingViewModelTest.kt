@@ -7,6 +7,7 @@ import com.himvote.data.repository.VotingRepository
 import com.himvote.data.storage.EncryptedStorage
 import com.himvote.ui.screens.VotingViewModel
 import com.himvote.util.SingleCastChecker
+import com.himvote.util.OfflineVerificationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
@@ -24,6 +25,7 @@ class VotingViewModelTest {
     private lateinit var votingRepository: VotingRepository
     private lateinit var credentialRepository: CredentialRepository
     private lateinit var singleCastChecker: SingleCastChecker
+    private lateinit var offlineVerificationHelper: OfflineVerificationHelper
     private lateinit var votingViewModel: VotingViewModel
 
     private val electionId = "elec_test_voting_01"
@@ -36,7 +38,8 @@ class VotingViewModelTest {
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
         votingRepository = VotingRepository(mockApiService, encryptedStorage)
         credentialRepository = CredentialRepository(mockApiService, encryptedStorage)
-        singleCastChecker = SingleCastChecker(encryptedStorage)
+        offlineVerificationHelper = OfflineVerificationHelper()
+        singleCastChecker = SingleCastChecker(encryptedStorage, offlineVerificationHelper)
 
         val savedStateHandle = SavedStateHandle(mapOf("electionId" to electionId))
         votingViewModel = VotingViewModel(

@@ -29,6 +29,7 @@ public enum BoothError: LocalizedError, Sendable, Equatable {
     case invalidBoothUrl
     case sessionCancelled
     case stateMismatch
+    case electionMismatch
     case missingArtifacts(detail: String)
     case presentationFailure
     case invalidReturnUrl
@@ -41,6 +42,8 @@ public enum BoothError: LocalizedError, Sendable, Equatable {
             return "The secure voting booth session was cancelled by the voter."
         case .stateMismatch:
             return "Booth return state token does not match the active session security challenge."
+        case .electionMismatch:
+            return "Returned election identifier does not match the active election session."
         case .missingArtifacts(let detail):
             return "Voting booth did not return the required cryptographic artifacts: \(detail)"
         case .presentationFailure:
@@ -59,6 +62,13 @@ public protocol BoothSessionHandling: Sendable {
     ) async throws -> BoothArtifacts
     
     func parseReturnUrl(_ url: URL, expectedState: String) throws -> BoothArtifacts
+    func parseReturnUrl(_ url: URL, expectedElectionId: String?, expectedState: String) throws -> BoothArtifacts
+}
+
+public extension BoothSessionHandling {
+    func parseReturnUrl(_ url: URL, expectedElectionId: String?, expectedState: String) throws -> BoothArtifacts {
+        try parseReturnUrl(url, expectedState: expectedState)
+    }
 }
 
 @MainActor
@@ -89,12 +99,28 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
         self.presentationAnchorWindow = window
     }
     
+    public func generateSecureStateToken() -> String {
+        var randomBytes = [UInt8](repeating: 0, count: 32)
+        let status = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)
+        if status == errSecSuccess {
+            return randomBytes.map { String(format: "%02x", $0) }.joined()
+        }
+        let fallback = UUID().uuidString
+        var sanitized = ""
+        for char in fallback {
+            if char != "-" {
+                sanitized.append(char)
+            }
+        }
+        return sanitized.lowercased()
+    }
+    
     public func launchBoothSession(
         boothBaseUrl: URL,
         electionId: String,
         credentialProof: String
     ) async throws -> BoothArtifacts {
-        let stateToken = UUID().uuidString.replacingOccurrences(of: "-", with: "")
+        let stateToken = generateSecureStateToken()
         
         var components = URLComponents(url: boothBaseUrl, resolvingAgainstBaseURL: false)
         var items = components?.queryItems ?? []
@@ -118,6 +144,8 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
                     return
                 }
                 
+                self.activeAuthSession = nil
+                
                 if let error = error {
                     if let authError = error as? ASWebAuthenticationSessionError,
                        authError.code == .canceledLogin {
@@ -134,7 +162,11 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
                 }
                 
                 do {
-                    let artifacts = try self.parseReturnUrl(callbackUrl, expectedState: stateToken)
+                    let artifacts = try self.parseReturnUrl(
+                        callbackUrl,
+                        expectedElectionId: electionId,
+                        expectedState: stateToken
+                    )
                     continuation.resume(returning: artifacts)
                 } catch {
                     continuation.resume(throwing: error)
@@ -147,20 +179,46 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
             
             let started = session.start()
             if !started {
+                self.activeAuthSession = nil
                 continuation.resume(throwing: BoothError.presentationFailure)
             }
         }
     }
     
     public func parseReturnUrl(_ url: URL, expectedState: String) throws -> BoothArtifacts {
-        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
-              let queryItems = components.queryItems else {
+        try parseReturnUrl(url, expectedElectionId: nil, expectedState: expectedState)
+    }
+    
+    public func parseReturnUrl(
+        _ url: URL,
+        expectedElectionId: String?,
+        expectedState: String
+    ) throws -> BoothArtifacts {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
             throw BoothError.invalidReturnUrl
         }
         
-        let queryDict = Dictionary(uniqueKeysWithValues: queryItems.compactMap { item in
-            item.value.map { (item.name, $0) }
-        })
+        var queryDict: [String: String] = [:]
+        
+        if let queryItems = components.queryItems {
+            for item in queryItems {
+                if let value = item.value {
+                    queryDict[item.name] = value
+                }
+            }
+        }
+        
+        if let fragment = components.fragment, !fragment.isEmpty {
+            let dummy = URL(string: "https://local.auth?" + fragment)
+            if let fragmentComponents = dummy.flatMap({ URLComponents(url: $0, resolvingAgainstBaseURL: false) }),
+               let fragmentItems = fragmentComponents.queryItems {
+                for item in fragmentItems {
+                    if let value = item.value {
+                        queryDict[item.name] = value
+                    }
+                }
+            }
+        }
         
         guard let returnedState = queryDict["state"], returnedState == expectedState else {
             throw BoothError.stateMismatch
@@ -168,6 +226,10 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
         
         guard let electionId = queryDict["election_id"] else {
             throw BoothError.missingArtifacts(detail: "missing election_id")
+        }
+        
+        if let expectedElectionId = expectedElectionId, electionId != expectedElectionId {
+            throw BoothError.electionMismatch
         }
         
         guard let credentialProof = queryDict["credential_proof_b64url"] ?? queryDict["credential_proof"] else {

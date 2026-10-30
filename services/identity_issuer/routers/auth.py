@@ -5,20 +5,28 @@ Handles Argon2id authentication, TOTP MFA validation, and session lifecycle.
 
 import uuid
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..config import SESSION_EXPIRE_HOURS, RECOVERY_EXPIRE_HOURS, MFA_ISSUER
+from ..config import (
+    APP_ENV,
+    RECOVERY_DELIVERY_MODE,
+    SESSION_EXPIRE_HOURS,
+    RECOVERY_EXPIRE_HOURS,
+    MFA_ISSUER,
+)
 from ..models import User, Session as UserSession, RecoveryRequest, MfaCredential, RoleAssignment, RoleDefinition
 from ..schemas import (
     LoginRequest,
     LoginResponse,
     RecoveryRequest as RecoveryReqSchema,
+    RecoveryResetRequest,
     MfaSetupResponse,
     MfaVerifyRequest,
 )
-from ..crypto.hashing import verify_password, dummy_verify
+from ..crypto.hashing import hash_password, verify_password, dummy_verify
 from ..crypto.totp import generate_totp_secret, get_totp_uri, verify_totp
 from .deps import get_current_user, get_user_roles, record_audit_event
 
@@ -174,14 +182,30 @@ def recover_account(
     db: Session = Depends(get_db),
 ):
     """Initiate account recovery via single use short lived token."""
+    if APP_ENV == "production":
+        # A token must travel through an independently controlled notification
+        # channel. This service does not silently fall back to returning it or
+        # logging it when that production adapter is absent.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Account recovery delivery is not configured",
+        )
+
     user = db.query(User).filter(User.email == req.email).first()
     if not user:
         # Uniform response without leaking account existence
         return {"status": "recovery_initiated"}
 
-    recovery_token = str(uuid.uuid4())
+    recovery_token = secrets.token_urlsafe(32)
     token_hash = hashlib.sha256(recovery_token.encode("utf-8")).hexdigest()
     expires_at = datetime.now(timezone.utc) + timedelta(hours=RECOVERY_EXPIRE_HOURS)
+
+    # Only the newest request remains redeemable. Older requests are never
+    # deleted because the audit trail must retain the recovery history.
+    db.query(RecoveryRequest).filter(
+        RecoveryRequest.user_id == user.id,
+        RecoveryRequest.status == "PENDING",
+    ).update({"status": "SUPERSEDED"}, synchronize_session=False)
 
     recovery = RecoveryRequest(
         user_id=user.id,
@@ -199,7 +223,72 @@ def recover_account(
     )
     db.commit()
 
-    return {"status": "recovery_initiated"}
+    response = {"status": "recovery_initiated"}
+    if APP_ENV == "development" and RECOVERY_DELIVERY_MODE == "development":
+        # This response field is intentionally unavailable outside local
+        # development. A production notification adapter must deliver the
+        # single use token through a separately controlled channel.
+        response["development_token"] = recovery_token
+    return response
+
+
+@router.post("/reset", status_code=status.HTTP_200_OK)
+def reset_password(
+    req: RecoveryResetRequest,
+    db: Session = Depends(get_db),
+):
+    """Redeem one short lived recovery token and revoke all user sessions."""
+    token_hash = hashlib.sha256(req.token.encode("utf-8")).hexdigest()
+    recovery = db.query(RecoveryRequest).filter(
+        RecoveryRequest.token_hash == token_hash,
+        RecoveryRequest.status == "PENDING",
+    ).first()
+    if not recovery:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery token is invalid or has already been used",
+        )
+
+    now = datetime.now(timezone.utc)
+    expires_at = recovery.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= now:
+        recovery.status = "EXPIRED"
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Recovery token is invalid or expired",
+        )
+
+    user = db.query(User).filter(User.id == recovery.user_id).first()
+    if not user or user.status in {"DEACTIVATED", "ARCHIVED"}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account cannot be recovered",
+        )
+
+    password_hash, password_params = hash_password(req.password)
+    user.password_hash = password_hash
+    user.password_algorithm = password_params["algorithm"]
+    user.password_params = password_params
+    user.updated_at = now
+    recovery.status = "CONSUMED"
+    recovery.consumed_at = now
+
+    # Recovery never creates or resets a voting credential. It only revokes
+    # active login sessions before allowing a later authenticated login.
+    db.query(UserSession).filter(UserSession.user_id == user.id).delete(
+        synchronize_session=False,
+    )
+    record_audit_event(
+        db=db,
+        action="auth.recovery.completed",
+        result="success",
+        actor_id=user.id,
+    )
+    db.commit()
+    return {"status": "password_reset", "sessions_revoked": True}
 
 
 @router.post("/mfa/setup", response_model=MfaSetupResponse, status_code=status.HTTP_200_OK)

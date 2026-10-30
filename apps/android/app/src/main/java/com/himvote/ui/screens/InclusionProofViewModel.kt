@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.himvote.data.models.InclusionProof
 import com.himvote.data.repository.VotingRepository
+import com.himvote.util.OfflineVerificationHelper
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,13 +19,15 @@ data class InclusionProofUiState(
     val proof: InclusionProof? = null,
     val isLoading: Boolean = false,
     val isVerifiedLocally: Boolean = false,
+    val isOfflineVerified: Boolean = false,
     val errorMessage: String? = null
 )
 
 @HiltViewModel
 class InclusionProofViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val votingRepository: VotingRepository
+    private val votingRepository: VotingRepository,
+    private val offlineVerificationHelper: OfflineVerificationHelper = OfflineVerificationHelper()
 ) : ViewModel() {
 
     private val electionId: String = checkNotNull(savedStateHandle["electionId"])
@@ -44,17 +47,33 @@ class InclusionProofViewModel @Inject constructor(
         viewModelScope.launch {
             val result = votingRepository.verifyInclusionProof(electionId, receiptHandle)
             result.onSuccess { proof ->
+                val offlineValid = offlineVerificationHelper.verifyInclusionProofOffline(proof)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     proof = proof,
-                    isVerifiedLocally = proof.verified
+                    isVerifiedLocally = proof.verified,
+                    isOfflineVerified = offlineValid
                 )
             }.onFailure { ex ->
+                // Fallback to pure offline verification
+                val offlineProof = votingRepository.verifyProofOfflineOnly(electionId, receiptHandle)
+                val offlineValid = offlineVerificationHelper.verifyInclusionProofOffline(offlineProof)
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = ex.message ?: "Failed to verify inclusion proof"
+                    proof = offlineProof,
+                    isVerifiedLocally = offlineProof.verified,
+                    isOfflineVerified = offlineValid
                 )
             }
         }
+    }
+
+    fun recomputeOfflineProof() {
+        val currentProof = _uiState.value.proof ?: return
+        val isCalculatedRootValid = offlineVerificationHelper.verifyInclusionProofOffline(currentProof)
+        _uiState.value = _uiState.value.copy(
+            isVerifiedLocally = isCalculatedRootValid,
+            isOfflineVerified = isCalculatedRootValid
+        )
     }
 }

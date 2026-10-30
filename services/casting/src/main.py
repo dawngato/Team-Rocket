@@ -12,6 +12,7 @@ from fastapi.responses import JSONResponse
 from src.database import close_db, init_db
 from src.routes import router
 from src.security import CastingOriginSecurityMiddleware
+from src.config import settings
 
 
 @asynccontextmanager
@@ -46,7 +47,7 @@ def create_app() -> FastAPI:
     # Attach CORS middleware
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=settings.ALLOWED_ORIGINS,
         allow_credentials=False,
         allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["Content-Type", "Accept"],

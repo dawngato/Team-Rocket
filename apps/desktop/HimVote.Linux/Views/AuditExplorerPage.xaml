@@ -3,37 +3,204 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:models="clr-namespace:HimVote.Core.Models;assembly=HimVote.Core"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="1200"
              x:DataType="vm:AuditExplorerViewModel"
              x:Class="HimVote.Linux.Views.AuditExplorerPage">
 
-    <DockPanel Margin="20">
-        <StackPanel DockPanel.Dock="Top" Spacing="10">
-            <TextBlock Text="Offline Audit Explorer" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-            <TextBlock Text="Verify election evidence without network access." Foreground="#666666" />
-        </StackPanel>
-
-        <Border Classes="card" Padding="20" DockPanel.Dock="Top" Margin="0,20,0,0">
-            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" RowSpacing="10" ColumnSpacing="10">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="Evidence archive path:" FontWeight="Medium" VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EvidencePath}" Watermark="Select evidence archive" MinHeight="44" />
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="Trust pins path:" FontWeight="Medium" VerticalAlignment="Center" />
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TrustPinsPath}" Watermark="Select trust pins file" MinHeight="44" />
-
-                <Button Grid.Row="2" Grid.ColumnSpan="2" Content="Run Verification" 
-                        Command="{Binding RunVerificationCommand}" MinHeight="44"
-                        Classes="primary-button" IsEnabled="{Binding !IsLoading}" HorizontalAlignment="Left" />
-            </Grid>
-        </Border>
-
-        <Border IsVisible="{Binding Report, Converter={x:Static ObjectToBoolConverter.IsNotNull}}" 
-                Classes="card" Padding="20" DockPanel.Dock="Bottom" Margin="0,20,0,0">
-            <StackPanel>
-                <TextBlock Text="Verification Report" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" Margin="0,0,0,10" />
-                <TextBlock Text="{Binding VerifierSha256, StringFormat='Verifier SHA256: {0}'}" FontFamily="monospace" FontSize="12" />
-                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource Teal600Brush}" Margin="0,10,0,0" />
+    <StackPanel Spacing="20">
+        <!-- Header -->
+        <Border Classes="card" Background="{StaticResource SurfaceBrush}">
+            <StackPanel Spacing="6">
+                <TextBlock Text="Offline Cryptographic Audit Explorer" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Independently verify Merkle history, anonymous credentials, roster attestations, homomorphic tally proofs, and chain finality without internet access."
+                           Foreground="#475569" TextWrapping="Wrap" />
             </StackPanel>
         </Border>
-    </DockPanel>
+
+        <!-- Verification Parameters Card -->
+        <Border Classes="card">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Verification Inputs &amp; Sandbox Settings" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+
+                <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="16">
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Evidence Directory:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EvidenceDirectoryPath}" Watermark="Select extracted evidence folder path" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="External Trust Pins:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TrustPinsFilePath}" Watermark="Select external trust pins JSON file" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Verifier Script / Binary:" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding VerifierScriptPath}" Watermark="Path to verify.py or native verifier executable" Classes="input-field" MinHeight="44" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Expected SHA256 (Optional):" VerticalAlignment="Center" FontWeight="Medium" />
+                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding ExpectedVerifierChecksum}" Watermark="SHA256 hex digest for integrity gate check" Classes="input-field" MinHeight="44" />
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,8,0,0">
+                    <Button Content="Execute Independent Verification"
+                            Command="{Binding RunVerificationCommand}"
+                            Classes="primary-button"
+                            MinHeight="44"
+                            MinWidth="220" />
+                </StackPanel>
+
+                <!-- Feedback Messages -->
+                <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                        Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontWeight="Medium" TextWrapping="Wrap" />
+                </Border>
+
+                <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                        Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="12">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontWeight="Medium" TextWrapping="Wrap" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <!-- Results Section (Visible after verification run) -->
+        <StackPanel Spacing="20" IsVisible="{Binding VerificationCompleted}">
+
+            <!-- Overall Status Banner -->
+            <Border Classes="card" Background="#F8FAFC">
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock Text="Verification Execution Outcome" FontSize="14" Foreground="#64748B" FontWeight="Medium" />
+                        <TextBlock Text="{Binding OverallStatus, StringFormat='Overall Status: {0}'}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                        <TextBlock Text="{Binding ActualVerifierChecksum, StringFormat='Verifier Checksum: {0}'}" FontFamily="monospace" FontSize="12" Foreground="#334155" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="4">
+                        <TextBlock Text="{Binding ExitCode, StringFormat='Process Exit Code: {0}'}" FontSize="14" FontWeight="SemiBold" Foreground="#334155" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Side by Side Merkle Root Card -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Merkle Root Integrity (RFC 9162)" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                        <Border Grid.Column="1" CornerRadius="4" Padding="8,4" Background="{Binding RootsMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#DCFCE7|#FEE2E2'}">
+                            <TextBlock Text="{Binding RootsMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='ROOTS MATCH|ROOT MISMATCH'}"
+                                       Foreground="{Binding RootsMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#C23C45'}"
+                                       FontWeight="Bold" FontSize="12" />
+                        </Border>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <Border Grid.Column="0" Background="#F1F5F9" CornerRadius="6" Padding="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Published Witness Merkle Root:" FontWeight="SemiBold" FontSize="13" Foreground="#475569" />
+                                <TextBlock Text="{Binding PublishedRoot}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="#F1F5F9" CornerRadius="6" Padding="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Computed RFC 9162 Merkle Root:" FontWeight="SemiBold" FontSize="13" Foreground="#475569" />
+                                <TextBlock Text="{Binding ComputedRoot}" FontFamily="monospace" FontSize="12" Foreground="#0F172A" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Side by Side Tally Verification Card -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="Ballot Tally Cryptographic Verification" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                        <Border Grid.Column="1" CornerRadius="4" Padding="8,4" Background="{Binding TalliesMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#DCFCE7|#FEE2E2'}">
+                            <TextBlock Text="{Binding TalliesMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='TALLY MATCH|TALLY DISCREPANCY'}"
+                                       Foreground="{Binding TalliesMatch, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#C23C45'}"
+                                       FontWeight="Bold" FontSize="12" />
+                        </Border>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="16">
+                        <Border Grid.Column="0" Background="#F1F5F9" CornerRadius="6" Padding="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Published Ballot Count:" FontWeight="SemiBold" FontSize="13" Foreground="#475569" />
+                                <TextBlock Text="{Binding PublishedTotalBallots}" FontSize="18" FontWeight="Bold" Foreground="#0F172A" />
+                            </StackPanel>
+                        </Border>
+
+                        <Border Grid.Column="1" Background="#F1F5F9" CornerRadius="6" Padding="12">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Computed Valid Ballot Count:" FontWeight="SemiBold" FontSize="13" Foreground="#475569" />
+                                <TextBlock Text="{Binding ComputedTotalBallots}" FontSize="18" FontWeight="Bold" Foreground="#0F172A" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!-- Candidate Tally Comparison Table -->
+                    <TextBlock Text="Candidate Breakdown Comparison" FontSize="14" FontWeight="SemiBold" Foreground="#334155" Margin="0,8,0,0" />
+                    <ItemsControl ItemsSource="{Binding CandidateTallyComparisons}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:CandidateTallyItem">
+                                <Border Background="#FAFAFA" BorderBrush="#E2E8F0" BorderThickness="0,0,0,1" Padding="8,8">
+                                    <Grid ColumnDefinitions="140,*,100,100,100">
+                                        <TextBlock Grid.Column="0" Text="{Binding CandidateId}" FontFamily="monospace" FontSize="12" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="1" Text="{Binding CandidateName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{Binding PublishedVotes, StringFormat='Pub: {0}'}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="3" Text="{Binding ComputedVotes, StringFormat='Calc: {0}'}" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="4" Text="{Binding Matches, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='MATCH|MISMATCH'}"
+                                                   Foreground="{Binding Matches, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#C23C45'}"
+                                                   FontWeight="Bold" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Verification Properties Evaluation Card -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Evaluated Cryptographic &amp; Security Properties" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                    <TextBlock Text="Individual assessment of all Section 6.8 mandatory verification properties." Foreground="#64748B" FontSize="12" />
+
+                    <ItemsControl ItemsSource="{Binding Properties}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:VerificationPropertyItem">
+                                <Border Background="#FAFAFA" BorderBrush="#E2E8F0" BorderThickness="1" CornerRadius="6" Margin="0,0,0,8" Padding="12">
+                                    <Grid ColumnDefinitions="260,110,140,*">
+                                        <TextBlock Grid.Column="0" Text="{Binding PropertyName}" FontWeight="Bold" FontSize="13" VerticalAlignment="Center" Foreground="{StaticResource Navy900Brush}" />
+                                        <Border Grid.Column="1" CornerRadius="4" Padding="6,2" HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                Background="{Binding IsPass, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#DCFCE7|#FEF3C7'}">
+                                            <TextBlock Text="{Binding Status}" FontWeight="Bold" FontSize="11"
+                                                       Foreground="{Binding IsPass, Converter={x:Static converters:BoolToStringConverter.TrueFalse}, ConverterParameter='#15805D|#B45309'}" />
+                                        </Border>
+                                        <TextBlock Grid.Column="2" Text="{Binding FailureCode}" FontFamily="monospace" FontSize="11" Foreground="#64748B" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="3" Text="{Binding Summary}" FontSize="12" Foreground="#334155" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- Report Exporting Card -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Export Deterministic Verification Reports" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                    <TextBlock Text="Export canonical RFC 8785 JSON or formatted plain text reports including verifier checksums for institutional audits." Foreground="#64748B" FontSize="12" />
+
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Button Content="Export JSON Report"
+                                Command="{Binding ExportJsonReportCommand}"
+                                Classes="primary-button"
+                                MinHeight="44" />
+                        <Button Content="Export Plain Text Report"
+                                Command="{Binding ExportTextReportCommand}"
+                                Classes="secondary-button"
+                                MinHeight="44" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </StackPanel>
 </UserControl>

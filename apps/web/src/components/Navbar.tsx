@@ -15,6 +15,7 @@ import {
   Award,
   GraduationCap,
   Users,
+  ShieldAlert,
 } from "lucide-react";
 import { useApp } from "../lib/query_provider";
 
@@ -33,12 +34,13 @@ export function Navbar() {
   ];
 
   const rolePortals = [
-    { role: "public", label: "Public Visitor", href: "/", icon: Vote },
-    { role: "student", label: "Student Portal", href: "/student/elections", icon: GraduationCap },
-    { role: "teacher", label: "Teacher Portal", href: "/teacher/verification-queue", icon: UserCheck },
-    { role: "admin", label: "Admin Portal", href: "/admin", icon: Users },
-    { role: "officer", label: "Election Officer", href: "/officer/create", icon: Award },
-    { role: "auditor", label: "Auditor Console", href: "/auditor/trusted-pins", icon: Shield },
+    { role: "public", label: "Public Observer", href: "/", icon: Vote },
+    { role: "student", label: "Student Portal", href: "/student", icon: GraduationCap },
+    { role: "teacher", label: "Teacher Portal", href: "/teacher", icon: UserCheck },
+    { role: "admin", label: "Administrator", href: "/admin", icon: Users },
+    { role: "superadmin", label: "Super Administrator", href: "/super-admin", icon: ShieldAlert },
+    { role: "officer", label: "Election Officer", href: "/officer/elections", icon: Award },
+    { role: "auditor", label: "Independent Auditor", href: "/auditor", icon: Shield },
   ];
 
   return (

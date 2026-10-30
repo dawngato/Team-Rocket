@@ -127,7 +127,7 @@ fun CandidateDetailScreen(
                             }
                         }
 
-                        // State-based actions
+                        // State based actions
                         item {
                             when {
                                 state.hasVoted -> {

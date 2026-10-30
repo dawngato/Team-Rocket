@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   ArrowRight,
   TrendingUp,
+  Award,
 } from "lucide-react";
 import { StateBadge } from "../../components/StateBadge";
 import { INITIAL_ELECTIONS, INITIAL_STUDENTS, INITIAL_TEACHERS, INITIAL_AUDIT_EVENTS } from "../../lib/mock_data";
@@ -26,6 +27,7 @@ export default function AdminOverviewPage() {
     { title: "Manage Teachers", href: "/admin/teachers", count: INITIAL_TEACHERS.length, icon: UserCheck },
     { title: "Roster Imports", href: "/admin/roster-imports", count: "Batch Upload", icon: FileSpreadsheet },
     { title: "Role Approvals", href: "/admin/approvals", count: "2 Pending", icon: CheckCircle2 },
+    { title: "Election Assignments", href: "/admin/assignments", count: "3 Assigned", icon: Award },
     { title: "Admin Invitations", href: "/admin/invitations", count: "Active", icon: Mail },
     { title: "Audit Event Logs", href: "/admin/audit-logs", count: INITIAL_AUDIT_EVENTS.length, icon: ShieldCheck },
   ];

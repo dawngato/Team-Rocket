@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .database import init_db
+from .config import ALLOWED_ORIGINS
 from .routers import (
     auth_router,
     bootstrap_router,
@@ -48,10 +49,10 @@ app = FastAPI(
 # Strict CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
 )
 
 # Mount API routers

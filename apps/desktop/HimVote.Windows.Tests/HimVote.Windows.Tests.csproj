@@ -18,6 +18,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HimVote.Windows\HimVote.Windows.csproj" />
+    <ProjectReference Include="..\HimVote.Core\HimVote.Core.csproj" />
+    <ProjectReference Include="..\HimVote.Linux\HimVote.Linux.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,5 +1,8 @@
 package com.himvote.ui.screens
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,15 +10,15 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assessment
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,8 @@ fun ResultsScreen(
     onNavigateHome: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
+    var copiedLabel by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
@@ -101,6 +106,62 @@ fun ResultsScreen(
                             )
                         }
 
+                        // Turnout statistics card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(DesignTokens.CardCornerRadius),
+                            colors = CardDefaults.cardColors(containerColor = DesignTokens.CardWhite),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(DesignTokens.SpacingMedium),
+                                horizontalArrangement = Arrangement.SpaceAround,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Total Cast",
+                                        fontSize = 12.sp,
+                                        color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = "${res.totalVotesCast}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DesignTokens.Navy900
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Eligible Voters",
+                                        fontSize = 12.sp,
+                                        color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = "${res.totalEligibleVoters}",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DesignTokens.Navy900
+                                    )
+                                }
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Text(
+                                        text = "Audited Status",
+                                        fontSize = 12.sp,
+                                        color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                                    )
+                                    Text(
+                                        text = "Verified",
+                                        fontSize = 18.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = DesignTokens.Green600
+                                    )
+                                }
+                            }
+                        }
+
                         if (res.privacyLimited) {
                             StatusBanner(
                                 title = "Privacy Limited Mode Enforced",
@@ -133,12 +194,19 @@ fun ResultsScreen(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.SpaceBetween
                                             ) {
-                                                Text(
-                                                    text = tally.candidateName,
-                                                    fontSize = 14.sp,
-                                                    fontWeight = FontWeight.SemiBold,
-                                                    color = DesignTokens.Navy900
-                                                )
+                                                Column {
+                                                    Text(
+                                                        text = tally.candidateName,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = DesignTokens.Navy900
+                                                    )
+                                                    Text(
+                                                        text = tally.department,
+                                                        fontSize = 11.sp,
+                                                        color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                                                    )
+                                                }
                                                 Text(
                                                     text = "${tally.votesReceived} votes (${"%.1f".format(tally.percentage)}%)",
                                                     fontSize = 13.sp,
@@ -173,21 +241,43 @@ fun ResultsScreen(
                                 verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingSmall)
                             ) {
                                 Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Shield,
-                                        contentDescription = null,
-                                        tint = DesignTokens.Green600,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Text(
-                                        text = "Auditor Hardware Attestation",
-                                        fontSize = 14.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        color = DesignTokens.Green600
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Shield,
+                                            contentDescription = null,
+                                            tint = DesignTokens.Green600,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Text(
+                                            text = "Auditor Hardware Attestation",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = DesignTokens.Green600
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                            val clip = ClipData.newPlainText("Attestation", res.auditAttestation ?: "")
+                                            clipboard.setPrimaryClip(clip)
+                                            copiedLabel = "Attestation"
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = "Copy auditor attestation",
+                                            tint = DesignTokens.Teal600,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
                                 }
 
                                 Text(
@@ -202,12 +292,35 @@ fun ResultsScreen(
                                     color = DesignTokens.SurfaceBg
                                 )
 
-                                Text(
-                                    text = "Chain Anchor Transaction Hash",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
-                                )
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Chain Anchor Transaction Hash",
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
+                                    )
+
+                                    IconButton(
+                                        onClick = {
+                                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                            val clip = ClipData.newPlainText("Anchor Tx", res.chainAnchorTx ?: "")
+                                            clipboard.setPrimaryClip(clip)
+                                            copiedLabel = "Anchor Transaction"
+                                        }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = "Copy chain anchor transaction",
+                                            tint = DesignTokens.Teal600,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+
                                 Text(
                                     text = res.chainAnchorTx ?: "0x89ab12cd34ef567890123456789abcdef0123456789abcdef0123456789abcdef",
                                     fontSize = 11.sp,
@@ -215,6 +328,16 @@ fun ResultsScreen(
                                     color = DesignTokens.Teal600
                                 )
                             }
+                        }
+
+                        if (copiedLabel != null) {
+                            StatusBanner(
+                                title = "Copied to Clipboard",
+                                message = "$copiedLabel has been copied to your system clipboard.",
+                                icon = Icons.Default.Verified,
+                                tintColor = DesignTokens.Teal600,
+                                backgroundColor = DesignTokens.Teal600.copy(alpha = 0.1f)
+                            )
                         }
 
                         HimVoteButton(

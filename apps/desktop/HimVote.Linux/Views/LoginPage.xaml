@@ -3,39 +3,66 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             xmlns:converters="clr-namespace:HimVote.Linux.Converters"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="700"
              x:DataType="vm:LoginViewModel"
              x:Class="HimVote.Linux.Views.LoginPage">
 
     <Grid RowDefinitions="Auto,*" Margin="40">
-        <Border Grid.Row="0" Classes="card" Padding="30" MaxWidth="400" HorizontalAlignment="Center">
-            <StackPanel Spacing="20">
+        <Border Grid.Row="0" Classes="card" Padding="30" MaxWidth="440" HorizontalAlignment="Center">
+            <StackPanel Spacing="16">
                 <TextBlock Text="Sign in to HimVote" FontSize="24" FontWeight="Bold" 
                            Foreground="{StaticResource Navy900Brush}" HorizontalAlignment="Center" />
-                
-                <TextBlock Text="Institutional email" FontSize="13" FontWeight="Medium" 
-                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
-                <TextBox Text="{Binding Email}" Watermark="student@university.edu" MinHeight="44" 
-                         Classes="input-field" />
+                <TextBlock Text="Institutional University SSO &amp; Credential Authentication"
+                           FontSize="12" Foreground="#64748B" HorizontalAlignment="Center" />
 
-                <TextBlock Text="Password" FontSize="13" FontWeight="Medium" 
-                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
-                <TextBox Text="{Binding Password}" PasswordChar="•" Watermark="Enter password" MinHeight="44" 
-                         Classes="input-field" />
-
-                <TextBlock Text="MFA token (if required)" FontSize="13" FontWeight="Medium" 
-                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
-                <TextBox Text="{Binding MfaToken}" Watermark="6-digit code" MinHeight="44" 
-                         Classes="input-field" />
-
-                <Border IsVisible="{Binding HasError}" Background="{StaticResource Red600Brush}" 
-                       CornerRadius="6" Padding="10" Margin="0,10,0,0">
-                    <TextBlock Text="{Binding ErrorMessage}" Foreground="White" FontSize="13" TextWrapping="Wrap" />
+                <!-- Authenticated state -->
+                <Border IsVisible="{Binding IsLoggedIn}" Background="#F0FDF4" BorderBrush="#86EFAC" BorderThickness="1" CornerRadius="6" Padding="14">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Authenticated Session Active" FontWeight="Bold" Foreground="{StaticResource Green600Brush}" />
+                        <TextBlock Text="{Binding CurrentUser.FullName, StringFormat='Logged in as: {0}'}" FontSize="13" Foreground="#0F172A" />
+                        <TextBlock Text="{Binding CurrentUser.Email, StringFormat='Email: {0}'}" FontSize="13" Foreground="#0F172A" />
+                        <TextBlock Text="{Binding CurrentUser.Role, StringFormat='Role: {0}'}" FontSize="13" Foreground="#0F172A" />
+                        <Button Content="Sign Out" Command="{Binding LogoutCommand}" Classes="secondary-button" MinHeight="44" Margin="0,8,0,0" />
+                    </StackPanel>
                 </Border>
 
-                <Button Content="{Binding IsLoading, Converter={x:Static BoolToStringConverter.TrueFalse}, ConverterParameter='Signing in...|Sign in'}"
-                        Command="{Binding LoginCommand}" MinHeight="44"
-                        Classes="primary-button" IsEnabled="{Binding !IsLoading}" />
+                <!-- Login form when not logged in -->
+                <StackPanel Spacing="14" IsVisible="{Binding !IsLoggedIn}">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Institutional Email:" FontSize="13" FontWeight="Medium" Foreground="{StaticResource TextBrush}" />
+                        <TextBox Text="{Binding Email}" Watermark="student@university.edu" MinHeight="44" Classes="input-field" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Password:" FontSize="13" FontWeight="Medium" Foreground="{StaticResource TextBrush}" />
+                        <TextBox Text="{Binding Password}" PasswordChar="•" Watermark="Enter institutional password" MinHeight="44" Classes="input-field" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="MFA Token (If configured):" FontSize="13" FontWeight="Medium" Foreground="{StaticResource TextBrush}" />
+                        <TextBox Text="{Binding MfaToken}" Watermark="6-digit authentication code" MinHeight="44" Classes="input-field" />
+                    </StackPanel>
+
+                    <Button Content="Sign in"
+                            Command="{Binding LoginCommand}" MinHeight="44"
+                            Classes="primary-button" IsEnabled="{Binding !IsBusy}" Margin="0,8,0,0" />
+
+                    <Button Content="Restore Saved Session"
+                            Command="{Binding RestoreSavedSessionCommand}" MinHeight="44"
+                            Classes="secondary-button" IsEnabled="{Binding !IsBusy}" />
+                </StackPanel>
+
+                <!-- Feedback alerts -->
+                <Border IsVisible="{Binding ErrorMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                        Background="#FEE2E2" BorderBrush="#EF4444" BorderThickness="1" CornerRadius="6" Padding="10">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="{StaticResource Red600Brush}" FontSize="13" TextWrapping="Wrap" />
+                </Border>
+
+                <Border IsVisible="{Binding StatusMessage, Converter={x:Static converters:ObjectToBoolConverter.IsNotNull}}"
+                        Background="#E0F2FE" BorderBrush="#0284C7" BorderThickness="1" CornerRadius="6" Padding="10">
+                    <TextBlock Text="{Binding StatusMessage}" Foreground="#0369A1" FontSize="13" TextWrapping="Wrap" />
+                </Border>
             </StackPanel>
         </Border>
     </Grid>

@@ -4,8 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,6 +27,7 @@ import com.himvote.util.AccessibilityHelpers.accessibleTouchTarget
 import com.himvote.util.AccessibilityHelpers.talkBackHeading
 import com.himvote.util.DesignTokens
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ElectionsScreen(
     viewModel: ElectionsViewModel,
@@ -46,8 +50,51 @@ fun ElectionsScreen(
                 .background(DesignTokens.SurfaceBg)
                 .padding(paddingValues)
         ) {
+            // Search field
+            OutlinedTextField(
+                value = state.searchQuery,
+                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = DesignTokens.SpacingMedium, vertical = DesignTokens.SpacingSmall)
+                    .accessibleTouchTarget()
+                    .semantics {
+                        contentDescription = "Search elections by title or department"
+                    },
+                placeholder = { Text("Search elections or department...") },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = DesignTokens.Teal600
+                    )
+                },
+                trailingIcon = {
+                    if (state.searchQuery.isNotEmpty()) {
+                        IconButton(
+                            onClick = { viewModel.onSearchQueryChanged("") },
+                            modifier = Modifier.accessibleTouchTarget()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear search query",
+                                tint = DesignTokens.TextPrimary
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(DesignTokens.CardCornerRadius),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = DesignTokens.CardWhite,
+                    unfocusedContainerColor = DesignTokens.CardWhite,
+                    focusedBorderColor = DesignTokens.Teal600,
+                    unfocusedBorderColor = DesignTokens.Teal600.copy(alpha = 0.3f)
+                )
+            )
+
             // Filter Tabs
-            PrimaryTabRow(
+            TabRow(
                 selectedTabIndex = state.selectedTab.ordinal,
                 containerColor = DesignTokens.CardWhite,
                 contentColor = DesignTokens.Teal600
@@ -55,19 +102,19 @@ fun ElectionsScreen(
                 Tab(
                     selected = state.selectedTab == ElectionFilterTab.ALL,
                     onClick = { viewModel.selectTab(ElectionFilterTab.ALL) },
-                    text = { Text("All") },
+                    text = { Text("All", fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.accessibleTouchTarget()
                 )
                 Tab(
                     selected = state.selectedTab == ElectionFilterTab.OPEN_ACTIVE,
                     onClick = { viewModel.selectTab(ElectionFilterTab.OPEN_ACTIVE) },
-                    text = { Text("Open to Vote") },
+                    text = { Text("Open to Vote", fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.accessibleTouchTarget()
                 )
                 Tab(
                     selected = state.selectedTab == ElectionFilterTab.COMPLETED,
                     onClick = { viewModel.selectTab(ElectionFilterTab.COMPLETED) },
-                    text = { Text("Audited / Past") },
+                    text = { Text("Audited", fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.accessibleTouchTarget()
                 )
             }
@@ -114,7 +161,7 @@ fun ElectionsScreen(
                     ) {
                         item {
                             Text(
-                                text = "Active Ballot Roster",
+                                text = "Eligible Elections Roster",
                                 fontSize = 18.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DesignTokens.Navy900,

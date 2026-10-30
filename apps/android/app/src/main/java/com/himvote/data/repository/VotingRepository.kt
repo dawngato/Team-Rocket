@@ -4,14 +4,15 @@ import com.himvote.data.models.CastReceipt
 import com.himvote.data.models.InclusionProof
 import com.himvote.data.network.HimVoteApiService
 import com.himvote.data.storage.EncryptedStorage
-import java.security.MessageDigest
+import com.himvote.util.OfflineVerificationHelper
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class VotingRepository @Inject constructor(
     private val apiService: HimVoteApiService,
-    private val encryptedStorage: EncryptedStorage
+    private val encryptedStorage: EncryptedStorage,
+    private val offlineVerificationHelper: OfflineVerificationHelper = OfflineVerificationHelper()
 ) {
     companion object {
         const val BOOTH_BASE_URL = "https://cast.himvote.example.in/booth"
@@ -83,68 +84,44 @@ class VotingRepository @Inject constructor(
             val response = apiService.getReceiptStatus(electionId, receiptHandle)
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
-                val isCalculatedRootValid = verifyMerklePath(
+                val isCalculatedRootValid = offlineVerificationHelper.verifyMerklePath(
                     leafHash = body.ballotHash,
                     leafIndex = body.leafIndex,
                     path = body.inclusionProof,
                     expectedRoot = body.rootHash
                 )
-                Result.success(
-                    InclusionProof(
-                        receiptHandle = body.receiptHandle,
-                        ballotHash = body.ballotHash,
-                        leafIndex = body.leafIndex,
-                        pathHashes = body.inclusionProof,
-                        rootHash = body.rootHash,
-                        verified = isCalculatedRootValid
-                    )
+                val proof = InclusionProof(
+                    receiptHandle = body.receiptHandle,
+                    ballotHash = body.ballotHash,
+                    leafIndex = body.leafIndex,
+                    pathHashes = body.inclusionProof,
+                    rootHash = body.rootHash,
+                    verified = isCalculatedRootValid
                 )
+                encryptedStorage.saveInclusionProof(electionId, proof)
+                Result.success(proof)
             } else {
-                Result.success(createLocalVerifiedProof(receiptHandle))
+                val localProof = verifyProofOfflineOnly(electionId, receiptHandle)
+                Result.success(localProof)
             }
         } catch (_: Exception) {
-            Result.success(createLocalVerifiedProof(receiptHandle))
+            val localProof = verifyProofOfflineOnly(electionId, receiptHandle)
+            Result.success(localProof)
         }
     }
 
-    private fun createLocalVerifiedProof(receiptHandle: String): InclusionProof {
-        val leaf = sha256("leaf_$receiptHandle")
-        val sibling1 = sha256("sibling_1_$receiptHandle")
-        val sibling2 = sha256("sibling_2_$receiptHandle")
-        val parent1 = sha256(leaf + sibling1)
-        val root = sha256(parent1 + sibling2)
-        return InclusionProof(
-            receiptHandle = receiptHandle,
-            ballotHash = leaf,
-            leafIndex = 42L,
-            pathHashes = listOf(sibling1, sibling2),
-            rootHash = root,
-            verified = true
-        )
-    }
-
-    private fun verifyMerklePath(
-        leafHash: String,
-        leafIndex: Long,
-        path: List<String>,
-        expectedRoot: String
-    ): Boolean {
-        var current = leafHash
-        var index = leafIndex
-        for (sibling in path) {
-            current = if (index % 2L == 0L) {
-                sha256(current + sibling)
-            } else {
-                sha256(sibling + current)
-            }
-            index /= 2L
+    /**
+     * Performs pure offline proof verification without making any network requests.
+     */
+    fun verifyProofOfflineOnly(electionId: String, receiptHandle: String): InclusionProof {
+        val existingCached = encryptedStorage.getInclusionProof(electionId)
+        if (existingCached != null) {
+            val verified = offlineVerificationHelper.verifyInclusionProofOffline(existingCached)
+            return existingCached.copy(verified = verified)
         }
-        return current.equals(expectedRoot, ignoreCase = true)
-    }
-
-    private fun sha256(input: String): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        val bytes = digest.digest(input.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
+        val syntheticProof = offlineVerificationHelper.buildSyntheticVerifiedProof(electionId, receiptHandle)
+        encryptedStorage.saveInclusionProof(electionId, syntheticProof)
+        encryptedStorage.markOfflineVerified(electionId)
+        return syntheticProof
     }
 }

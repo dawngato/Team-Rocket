@@ -1,4 +1,4 @@
-<Project Sdk="Avalonia.Sdk/0.10.28">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -6,21 +6,16 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>HimVote.Linux</RootNamespace>
-    <AvaloniaUseCompiledBindings>true</AvaloniaUseCompiledBindings>
   </PropertyGroup>
 
   <ItemGroup>
-    <AvaloniaResource Include="Assets\**" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\HimVote.Core\HimVote.Core.csproj" />
-    <PackageReference Include="Avalonia" Version="0.10.28" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.10.28" />
-    <PackageReference Include="Avalonia.Themes.Fluent" Version="0.10.28" />
-    <PackageReference Include="Avalonia.Fonts.Inter" Version="0.10.28" />
+    <PackageReference Include="Avalonia" Version="11.2.8" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.2.8" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.2.8" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.2.8" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.0" />
-    <PackageReference Include="SecretStore.Net.Native" Version="1.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
 
 </Project>

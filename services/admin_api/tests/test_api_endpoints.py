@@ -191,3 +191,26 @@ def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roste
     assert res.status_code == 200
     events_data = res.json()
     assert events_data["total"] >= 5
+
+
+def test_admin_rejects_caller_actor_headers_when_dev_mode_is_disabled(client):
+    """Production must not trust an actor identity supplied by the caller."""
+    original = settings.allow_dev_actor_headers
+    settings.allow_dev_actor_headers = False
+    try:
+        response = client.post(
+            "/v1/elections",
+            json={
+                "title": "Should be blocked",
+                "contest": "President",
+                "selection_rule": "plurality",
+                "opens_at_utc": "2026-12-01T09:00:00Z",
+                "closes_at_utc": "2026-12-01T17:00:00Z",
+                "issuance_cutoff_utc": "2026-12-01T08:00:00Z",
+            },
+            headers={"X-Actor-ID": "forged_actor"},
+        )
+    finally:
+        settings.allow_dev_actor_headers = original
+
+    assert response.status_code == 401

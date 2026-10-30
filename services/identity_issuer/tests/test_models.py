@@ -6,7 +6,7 @@ Validates table creation, relationships, unique constraints, and append only aud
 import pytest
 from datetime import datetime, timezone
 from sqlalchemy.exc import IntegrityError
-from HimVote.services.identity_issuer.models import (
+from services.identity_issuer.models import (
     Tenant,
     Campus,
     Department,

@@ -4,7 +4,7 @@ Verifies blinding, blind signing, unblinding, verification, and error conditions
 """
 
 import pytest
-from HimVote.services.identity_issuer.crypto.rfc9474 import (
+from services.identity_issuer.crypto.rfc9474 import (
     RsaBlindIssuer,
     client_blind,
     client_finalize,

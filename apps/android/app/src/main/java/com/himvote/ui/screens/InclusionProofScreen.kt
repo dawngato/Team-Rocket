@@ -8,7 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.OfflinePin
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -185,6 +185,31 @@ fun InclusionProofScreen(
                                     fontWeight = FontWeight.Bold,
                                     color = DesignTokens.Green600
                                 )
+
+                                if (state.isOfflineVerified) {
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(vertical = 4.dp),
+                                        color = DesignTokens.SurfaceBg
+                                    )
+
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.OfflinePin,
+                                            contentDescription = null,
+                                            tint = DesignTokens.Green600,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "Offline Mathematical Engine: Path Sound",
+                                            fontSize = 12.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = DesignTokens.Green600
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -197,6 +222,13 @@ fun InclusionProofScreen(
                                 backgroundColor = DesignTokens.Green600.copy(alpha = 0.1f)
                             )
                         }
+
+                        HimVoteButton(
+                            text = "Recompute Proof with Offline Engine",
+                            onClick = { viewModel.recomputeOfflineProof() },
+                            isSecondary = true,
+                            contentDesc = "Recompute cryptographic root using local mathematical verification engine"
+                        )
 
                         HimVoteButton(
                             text = "View Verified Election Tally",

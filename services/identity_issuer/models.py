@@ -283,6 +283,7 @@ class RecoveryRequest(Base):
     status = Column(String(50), nullable=False, default="PENDING")
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
 
 
 class AdminAuditEvent(Base):

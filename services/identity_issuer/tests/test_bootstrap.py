@@ -3,7 +3,7 @@ Unit tests for one time bootstrap claim endpoint.
 Verifies initial super admin creation, mandatory MFA enrollment, and permanent deactivation.
 """
 
-from HimVote.services.identity_issuer.config import BOOTSTRAP_INVITATION_TOKEN
+from services.identity_issuer.config import BOOTSTRAP_INVITATION_TOKEN
 
 
 def test_bootstrap_claim_success_and_permanent_disable(client):
@@ -37,3 +37,20 @@ def test_bootstrap_claim_invalid_invitation_token(client):
     resp = client.post("/v1/bootstrap/claim", json=payload)
     assert resp.status_code == 403
     assert "Invalid bootstrap invitation token" in resp.json()["detail"]
+
+
+def test_bootstrap_fails_closed_without_configured_token(client, monkeypatch):
+    """Production style configuration must never accept an empty token."""
+    from services.identity_issuer.routers import bootstrap as bootstrap_router
+
+    monkeypatch.setattr(bootstrap_router, "BOOTSTRAP_ALLOWED", True)
+    monkeypatch.setattr(bootstrap_router, "BOOTSTRAP_INVITATION_TOKEN", "")
+    resp = client.post(
+        "/v1/bootstrap/claim",
+        json={
+            "invitation_token": "",
+            "password": "SuperSecureAdminPassword2026!",
+        },
+    )
+    assert resp.status_code == 503
+    assert "not configured" in resp.json()["detail"]

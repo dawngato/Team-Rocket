@@ -19,7 +19,7 @@ Documentation Index:
 
 4. Cryptographic Voting Engine Review
    * File: docs/crypto_engine_review.md
-   * Description: Gate E1 empirical evaluation of Belenios and ElectionGuard, leading to Profile VEEM adoption.
+   * Description: Development engine review. Profile VEEM remains a stand in and no external engine adoption is claimed.
 
 5. Privacy Limitations and Security Boundaries
    * File: docs/privacy_limitations.md

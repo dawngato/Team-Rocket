@@ -9,7 +9,7 @@ Accepted
 ## Context
 Voter authorization in institutional elections requires that only eligible, registered students may cast ballots, while simultaneously ensuring that the system cannot trace which voter cast which ballot. Traditional approaches utilizing pseudonymous tokens, single use voting links, or direct bearer tokens fail to provide cryptographic unlinkability if the token generation service retains issuance logs.
 
-HimVote requires an open, mathematically proven protocol that guarantees unlinkability even if the credential issuing authority is fully compromised and retains all transaction logs.
+HimVote requires an open, mathematically specified credential protocol with documented unlinkability assumptions. No implementation can claim unlinkability against every compromised authority or every network correlation path.
 
 ## Decision
 We implement anonymous voting credentials using RSA Blind Signatures for Privacy per RFC 9474.
@@ -28,7 +28,7 @@ The issuance protocol operates as follows:
 ### Positive Consequences
 * Unconditional mathematical unlinkability: Even if the issuer database records every blinded message, timestamp, and IP address, it is mathematically impossible to link an unblinded credential presented at the casting origin with the blinded message signed during issuance.
 * Standardized cryptography: Utilizes reviewed RFC 9474 specification rather than proprietary zero knowledge credential constructions.
-* Strict one vote per student enforcement: The database unique constraint guarantees each student obtains at most one blind signature per election.
+* Development one cast enforcement: the database unique constraint limits one accepted nullifier in the current test harness. It does not by itself prove one student maps to one anonymous credential or prove external engine semantics.
 
 ### Negative Consequences and Mitigations
 * If a voter client loses the unblinded credential secret before casting, the system cannot reissue a new credential without violating the one token limit. Mitigated by persisting credentials in platform secure storage (Keychain, Keystore, DPAPI) and warning voters that credential issuance is irrevocable.

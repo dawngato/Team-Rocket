@@ -52,7 +52,19 @@ router = APIRouter(prefix="/v1/elections", tags=["elections"])
 
 
 def get_current_actor_id(request: Request) -> str:
-    """Extracts actor identity from request headers with fallback."""
+    """Extract a development actor only when explicitly enabled.
+
+    Production must receive a validated identity assertion from the identity
+    gateway. Accepting a caller supplied actor header in production would allow
+    audit records and lifecycle actions to be impersonated.
+    """
+    from src.config import settings
+
+    if not settings.allow_dev_actor_headers:
+        raise HTTPException(
+            status_code=401,
+            detail="Authenticated actor context is required in this environment",
+        )
     for header_name in ["X-Actor-ID", "x-actor-id", "X_Actor_ID", "x_actor_id", "actor_id"]:
         val = request.headers.get(header_name)
         if val:

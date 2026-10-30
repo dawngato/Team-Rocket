@@ -33,7 +33,7 @@ Command:
 ./gradlew test
 ```
 
-Status: BLOCKED locally. The installed Java runtime is version 25.0.4. The current Android Gradle plugin rejects that runtime before tests begin. Run on a Java 17 Android build runner before claiming Android delivery.
+Status: PASS locally. `./gradlew test` completed successfully after fixing Compose layout imports and opting into the Material 3 tab API. Instrumented device tests still require an Android device or emulator runner.
 
 ## iOS
 

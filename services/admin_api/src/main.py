@@ -33,7 +33,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -43,7 +43,8 @@ app.add_middleware(
 @app.middleware("http")
 async def request_context_middleware(request: Request, call_next):
     """Injects correlation request ID and logs request."""
-    request_id = request.headers.get("X_Request_ID") or uuid.uuid4().hex
+    # Never reflect a caller supplied identifier into trusted audit context.
+    request_id = uuid.uuid4().hex
     request.state.request_id = request_id
     response = await call_next(request)
     response.headers["X_Request_ID"] = request_id

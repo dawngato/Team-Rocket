@@ -11,7 +11,7 @@ export type ElectionState =
   | "FAILED"
   | "DISPUTED";
 
-export type Role = "public" | "student" | "teacher" | "admin" | "officer" | "auditor";
+export type Role = "public" | "student" | "teacher" | "admin" | "officer" | "auditor" | "superadmin";
 
 export interface Candidate {
   id: string;
@@ -127,3 +127,70 @@ export interface TrustedPin {
   pinned_at_utc: string;
   active: boolean;
 }
+
+export interface InstitutionRecord {
+  id: string;
+  name: string;
+  code: string;
+  campuses: string[];
+  active_elections_count: number;
+  total_students_enrolled: number;
+  primary_domain: string;
+  status: "ACTIVE" | "MAINTENANCE";
+}
+
+export interface DepartmentRecord {
+  id: string;
+  code: string;
+  name: string;
+  campus: string;
+  faculty_count: number;
+  student_count: number;
+  verification_threshold_percent: number;
+}
+
+export interface AdminUserRecord {
+  id: string;
+  email: string;
+  full_name: string;
+  role: "ADMINISTRATOR" | "SUPER_ADMINISTRATOR";
+  scope: string[];
+  mfa_enabled: boolean;
+  invited_by: string;
+  created_at_utc: string;
+  last_login_utc: string;
+}
+
+export interface RoleRequestRecord {
+  id: string;
+  requester_name: string;
+  requester_email: string;
+  requested_role: string;
+  scope: string;
+  justification: string;
+  requested_at_utc: string;
+  status: "PENDING_APPROVAL" | "APPROVED" | "REJECTED";
+  dual_control_approver?: string;
+}
+
+export interface PolicyConfigRecord {
+  id: string;
+  key: string;
+  title: string;
+  description: string;
+  value: string | number | boolean;
+  category: "SECURITY" | "GOVERNANCE" | "PRIVACY";
+  immutable_after_freeze: boolean;
+}
+
+export interface ElectionAssignment {
+  id: string;
+  election_id: string;
+  election_title: string;
+  faculty_id: string;
+  faculty_name: string;
+  role: "VERIFICATION_OFFICER" | "ROSTER_REVIEWER" | "SUPERVISOR";
+  assigned_department: string;
+  assigned_at_utc: string;
+}
+

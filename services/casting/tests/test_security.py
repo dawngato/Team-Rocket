@@ -4,6 +4,7 @@ Adheres to Section 5.2 and Section 6.3 of HimVote specification.
 """
 
 import pytest
+from src.config import settings
 
 
 @pytest.mark.anyio
@@ -124,3 +125,48 @@ async def test_security_response_headers(client):
     assert response.headers.get("X-Content-Type-Options") == "nosniff"
     assert response.headers.get("X-Frame-Options") == "DENY"
     assert "default-src 'none'" in response.headers.get("Content-Security-Policy", "")
+
+
+@pytest.mark.anyio
+async def test_production_lifecycle_routes_require_internal_control_token(
+    client,
+    open_election,
+    sample_election_id,
+):
+    """Internal open and close operations must not be publicly callable."""
+    original_env = settings.APP_ENV
+    original_token = settings.INTERNAL_CONTROL_TOKEN
+    settings.APP_ENV = "production"
+    settings.INTERNAL_CONTROL_TOKEN = "control_secret_for_test"
+    try:
+        rejected = await client.post(f"/v1/admin/elections/{sample_election_id}/open")
+        accepted = await client.post(
+            f"/v1/admin/elections/{sample_election_id}/open",
+            headers={"X-Internal-Control-Token": "control_secret_for_test"},
+        )
+    finally:
+        settings.APP_ENV = original_env
+        settings.INTERNAL_CONTROL_TOKEN = original_token
+
+    assert rejected.status_code == 403
+    assert accepted.status_code == 200
+
+
+@pytest.mark.anyio
+async def test_casting_cors_rejects_untrusted_origin(client):
+    """Anonymous casting still uses an explicit browser origin allowlist."""
+    original_origins = settings.ALLOWED_ORIGINS
+    settings.ALLOWED_ORIGINS = ["http://localhost:3000"]
+    try:
+        response = await client.options(
+            "/v1/health",
+            headers={
+                "Origin": "https://untrusted.example",
+                "Access-Control-Request-Method": "POST",
+            },
+        )
+    finally:
+        settings.ALLOWED_ORIGINS = original_origins
+
+    assert response.status_code == 400
+    assert "access-control-allow-origin" not in response.headers

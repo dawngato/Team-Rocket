@@ -3,6 +3,8 @@ Bootstrap endpoint for initial Super Administrator setup.
 One time execution only, permanently disabled in database after claim.
 """
 
+import hmac
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
@@ -32,6 +34,12 @@ def bootstrap_claim(
             detail="Bootstrap not permitted by configuration",
         )
 
+    if not BOOTSTRAP_INVITATION_TOKEN:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Bootstrap invitation token is not configured",
+        )
+
     # Check database permanent flag
     claimed_setting = db.query(SystemSetting).filter(SystemSetting.key == "bootstrap_claimed").first()
     if claimed_setting and claimed_setting.value == "true":
@@ -41,7 +49,7 @@ def bootstrap_claim(
         )
 
     # Verify invitation token
-    if BOOTSTRAP_INVITATION_TOKEN and req.invitation_token != BOOTSTRAP_INVITATION_TOKEN:
+    if not hmac.compare_digest(req.invitation_token, BOOTSTRAP_INVITATION_TOKEN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid bootstrap invitation token",
