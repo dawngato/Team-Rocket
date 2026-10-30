@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { QueryProvider } from "../lib/query_provider";
 import { SkipLink } from "../components/SkipLink";
@@ -9,6 +9,17 @@ export const metadata: Metadata = {
   title: "HimVote | Institutional Verifiable Election Platform",
   description:
     "Institutional campus election platform with inspectable cryptographic evidence and verifiable security boundaries.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#f5f5f7" },
+    { media: "(prefers-color-scheme: dark)", color: "#07111e" },
+  ],
 };
 
 export const dynamic = "force-dynamic";
