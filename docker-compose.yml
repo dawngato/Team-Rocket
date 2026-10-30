@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: campus-vault-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/dev.db
+      - NEXT_PUBLIC_APP_NAME=Campus Vault
+      - NEXT_PUBLIC_UNIVERSITY_NAME=Veritas Metropolitan University
+      - SESSION_SECRET=campus_vault_super_secret_session_key_2026_demo
+      - AUDITOR_KEY_ID=auditor-key-2026-v1
+    volumes:
+      - cv_data:/app/data
+
+volumes:
+  cv_data:

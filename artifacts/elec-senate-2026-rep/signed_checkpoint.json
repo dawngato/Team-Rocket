@@ -1,0 +1,11 @@
+{
+  "electionId": "elec-senate-2026-rep",
+  "sequenceNumber": 2,
+  "state": "PUBLISHED",
+  "merkleRoot": "0424a6b00e14a5e24ccd764cde21ef00fa4b7c5b54f0848fe765156c2fa3c4f0",
+  "ballotCount": 8,
+  "previousCheckpointHash": "0000000000000000000000000000000000000000000000000000000000000000",
+  "createdAt": "2026-10-29T12:30:53.136Z",
+  "keyId": "auditor-key-2026-v1",
+  "signature": "91e3cf169a629cc7ae6ad6297cec694289de556039fe8e7dff73295bdfb6929aa4f1b5a9b9242d7f4e3e03d7c72cf3952018b69b723a8607472087290b22d70d"
+}

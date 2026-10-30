@@ -1,0 +1,27 @@
+{
+  "electionId": "elec-senate-2026-rep",
+  "title": "University Senate Faculty-Student Representative 2026",
+  "category": "COUNCIL",
+  "department": "University Wide",
+  "academicSession": "2025-2026",
+  "protocolVersion": "1.0",
+  "ballotCount": 8,
+  "merkleRoot": "0424a6b00e14a5e24ccd764cde21ef00fa4b7c5b54f0848fe765156c2fa3c4f0",
+  "tally": {
+    "cand-senate-01": 5,
+    "cand-senate-02": 3
+  },
+  "candidates": [
+    {
+      "id": "cand-senate-01",
+      "name": "Dr. Alicia Morgan",
+      "department": "Computer Science & Engineering"
+    },
+    {
+      "id": "cand-senate-02",
+      "name": "Prof. Kenneth Brooks",
+      "department": "School of Law"
+    }
+  ],
+  "publishedAt": "2026-10-29T12:30:53.144Z"
+}

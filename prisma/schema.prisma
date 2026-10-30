@@ -1,0 +1,171 @@
+// Prisma Schema for Campus Vault
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String             @id @default(cuid())
+  studentId    String             @unique
+  email        String             @unique
+  name         String
+  role         String             @default("STUDENT") // STUDENT, ADMIN, AUDITOR
+  department   String
+  year         Int?
+  status       String             @default("ACTIVE")
+  passwordHash String?
+  createdAt    DateTime           @default(now())
+  
+  eligibilities VoterEligibility[]
+  auditEvents   AuditEvent[]
+}
+
+model Election {
+  id             String             @id @default(cuid())
+  title          String
+  description    String
+  department     String             @default("University Wide")
+  academicSession String            @default("2025-2026")
+  category       String             @default("STUDENT_GOVERNMENT") // PRESIDENTIAL, COUNCIL, FACULTY_REP, CLUB
+  status         String             @default("DRAFT") // DRAFT, SCHEDULED, OPEN, CLOSED, VERIFIED, PUBLISHED
+  startTime      DateTime
+  endTime        DateTime
+  timeZone       String             @default("America/New_York")
+  resultsPolicy  String             @default("RESTRICTED_UNTIL_CLOSED") // RESTRICTED_UNTIL_CLOSED, LIVE_TURNOUT_ONLY
+  merkleRoot     String?
+  checkpointSeq  Int                @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  candidates     Candidate[]
+  eligibilities  VoterEligibility[]
+  ballots        AcceptedBallot[]
+  checkpoints    SignedCheckpoint[]
+  manifest       ElectionManifest?
+  auditEvents    AuditEvent[]
+  verificationRuns VerificationRun[]
+}
+
+model Candidate {
+  id                 String           @id @default(cuid())
+  electionId         String
+  name               String
+  studentIdentifier  String?
+  department         String
+  academicYear       Int              @default(3)
+  photoUrl           String?
+  manifesto          String
+  shortBio           String
+  campaignPriorities String           // JSON array or text
+  websiteUrl         String?
+  ballotOrder        Int              @default(0)
+  createdAt          DateTime         @default(now())
+
+  election           Election         @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  ballots            AcceptedBallot[]
+}
+
+model VoterEligibility {
+  id               String    @id @default(cuid())
+  electionId       String
+  studentId        String    // Student identifier string
+  userId           String
+  isEligible       Boolean   @default(true)
+  hasVoted         Boolean   @default(false)
+  votedAt          DateTime?
+  receiptCode      String?   // Anonymous random tracking code given to student
+  createdAt        DateTime  @default(now())
+
+  election         Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, userId])
+  @@unique([electionId, studentId])
+}
+
+// PRIVACY BOUNDARY:
+// AcceptedBallot contains NO studentId, userId, or network IP.
+// The relation to VoterEligibility is deliberately omitted to prevent correlation.
+model AcceptedBallot {
+  id           String    @id @default(cuid())
+  electionId   String
+  candidateId  String
+  leafHash     String    // Cryptographic leaf hash
+  leafIndex    Int       // Deterministic order in Merkle tree
+  receiptHash  String    // SHA-256 of receipt code + salt for student inclusion proof
+  createdAt    DateTime  @default(now())
+
+  election     Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+  candidate    Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, leafIndex])
+  @@index([electionId])
+}
+
+model SignedCheckpoint {
+  id                     String    @id @default(cuid())
+  electionId             String
+  sequenceNumber         Int
+  state                  String
+  merkleRoot             String
+  ballotCount            Int
+  previousCheckpointHash String
+  keyId                  String
+  signature              String    // Ed25519 digital signature
+  publishedToAuditor     Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+
+  election               Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@unique([electionId, sequenceNumber])
+  @@index([electionId])
+}
+
+model ElectionManifest {
+  id                  String    @id @default(cuid())
+  electionId          String    @unique
+  canonicalManifestJson String
+  manifestHash        String
+  signature           String
+  publishedAt         DateTime  @default(now())
+
+  election            Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+}
+
+model AuditEvent {
+  id          String    @id @default(cuid())
+  eventType   String    // ELECTION_CREATED, STATE_CHANGED, BALLOT_SUBMITTED, CHECKPOINT_SIGNED, etc.
+  actorId     String?
+  actorRole   String?
+  electionId  String?
+  outcome     String    @default("SUCCESS") // SUCCESS, REJECTED, FAILURE
+  details     String    // JSON string
+  ipAddress   String?
+  createdAt   DateTime  @default(now())
+
+  user        User?     @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  election    Election? @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@index([electionId])
+  @@index([eventType])
+}
+
+model VerificationRun {
+  id            String    @id @default(cuid())
+  electionId    String
+  executedBy    String    // AUDITOR, ADMIN, SYSTEM
+  status        String    // PASS, FAIL
+  checksRun     Int       @default(0)
+  checksPassed  Int       @default(0)
+  detailsJson   String    // JSON breakdown of all checks
+  createdAt     DateTime  @default(now())
+
+  election      Election  @relation(fields: [electionId], references: [id], onDelete: Cascade)
+
+  @@index([electionId])
+}
