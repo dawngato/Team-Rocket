@@ -12,7 +12,7 @@ Command:
 python3 tools/run_all_tests.py
 ```
 
-Result: exit code 0, 273 passed, 1 skipped.
+Result: exit code 0, 274 passed, 1 skipped.
 
 The standalone verifier focused run also passed 37 tests. The strict command rejects the plaintext development fixture unless `--allow-development-profile` is supplied explicitly.
 

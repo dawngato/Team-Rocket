@@ -11,7 +11,7 @@ python3 tools/run_all_tests.py
 python3 tools/verify_integrations.py
 ```
 
-The recorded baseline is 273 passed and 1 skipped in the unified runner, followed by 79 integration checks. The exact output from the current run is recorded in `docs/TEST_EVIDENCE.md`.
+The recorded baseline is 274 passed and 1 skipped in the unified runner, followed by 79 integration checks. The exact output from the current run is recorded in `docs/TEST_EVIDENCE.md`.
 
 ## 2. Run the development election fixture
 

@@ -23,7 +23,7 @@ python3 packages/test_vectors/verify_vectors.py
 All ballot evidence, Merkle tree, blind signature, and checkpoint vectors passed
 
 python3 tools/run_all_tests.py
-273 passed and 1 skipped in isolated suite processes
+274 passed and 1 skipped in isolated suite processes
 
 apps/web npm run typecheck
 Passed

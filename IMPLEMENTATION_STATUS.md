@@ -25,4 +25,4 @@ Status Values: NOT_STARTED, IMPLEMENTING, IMPLEMENTED_UNTESTED, TESTED, LIMITED,
 <tr><td>Election Simulation Lifecycle</td><td>LIMITED</td><td>fixtures/simulate_election.py uses the explicit development profile and is not native encrypted engine evidence</td></tr>
 </table>
 
-Last Unified Test Run: `python3 tools/run_all_tests.py` returned exit code 0 with 273 passed and 1 skipped across all 11 suites. The current external engine gate remains blocked.
+Last Unified Test Run: `python3 tools/run_all_tests.py` returned exit code 0 with 274 passed and 1 skipped across all 11 suites. The current external engine gate remains blocked.
