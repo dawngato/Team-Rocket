@@ -1,6 +1,7 @@
 package com.himvote
 
 import com.himvote.data.network.HimVoteApiService
+import com.himvote.data.models.LoginRequest
 import com.himvote.data.repository.AuthRepository
 import com.himvote.data.storage.EncryptedStorage
 import com.himvote.ui.screens.LoginViewModel
@@ -27,8 +28,7 @@ class LoginViewModelTest {
         val mockContext = Mockito.mock(android.content.Context::class.java)
         val encryptedStorage = EncryptedStorage(mockContext, customPrefs = InMemorySharedPreferences())
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
-        kotlinx.coroutines.runBlocking {
-            Mockito.doReturn(Response.success(com.himvote.data.models.LoginResponse(
+        val loginResponse = Response.success(com.himvote.data.models.LoginResponse(
                 sessionToken = "session_token_from_identity_service",
                 role = "student",
                 userId = "student-1",
@@ -37,7 +37,14 @@ class LoginViewModelTest {
                     email = "student2026@hptu.ac.in",
                     name = "Synthetic Student"
                 )
-            ))).`when`(mockApiService).login(org.mockito.ArgumentMatchers.any())
+            ))
+        kotlinx.coroutines.runBlocking {
+            Mockito.doReturn(loginResponse).`when`(mockApiService).login(
+                LoginRequest(
+                    email = "student2026@hptu.ac.in",
+                    password = "securePassword123"
+                )
+            )
         }
         authRepository = AuthRepository(mockApiService, encryptedStorage)
         loginViewModel = LoginViewModel(authRepository)

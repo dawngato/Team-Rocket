@@ -16,7 +16,7 @@ passes.
 | E2-COMBINED | `pytest -q services/casting/tests tests/security/Q7-01_duplicate_cast_test.py` | 1 | Pytest collection collision: root and service `conftest.py` registered under conflicting names | `GAP_REGISTER_PROMPT2.md:P2-12` |
 | E2-FOUNDRY | `forge test` | not executed | `forge` unavailable in this environment | `GAP_REGISTER_PROMPT2.md:P2-09` |
 | E2-DEMO | `python3 demo_five_attacks.py` | 0 | All five mandatory Q7 attacks successfully verified and rejected with exit code 0 | `demo_five_attacks.py` |
-| E2-WEB-CURRENT | `npm --prefix apps/web test -- --run && npm --prefix apps/web run typecheck` | 0 | 77 Vitest tests passed; Next typecheck passed | `apps/web/tests/`, `apps/web/tsconfig.json` |
+| E2-WEB-CURRENT | `npm --prefix apps/web test -- --run && npm --prefix apps/web run typecheck` | 0 | 78 Vitest tests passed; Next typecheck passed | `apps/web/tests/`, `apps/web/tsconfig.json` |
 | E2-EVIDENCE-GATE | `python3 -m pytest -q services/admin_api/tests/test_evidence_export.py services/admin_api/tests/test_api_endpoints.py` | 0 | Evidence metadata and archive download are blocked before package release; published export remains covered | `services/admin_api/tests/test_evidence_export.py`, `test_api_endpoints.py` |
 | E2-COMPOSE | `docker compose config --quiet` | 0 | Compose configuration resolved successfully | `compose.yaml`, `compose.prod.yaml` |
 

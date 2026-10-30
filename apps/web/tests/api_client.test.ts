@@ -22,4 +22,11 @@ describe("HimVote authoritative API client", () => {
       status: 503,
     });
   });
+
+  it("does not generate a local evidence archive when the admin API is absent", async () => {
+    await expect(apiClient.downloadEvidence("elec_test")).rejects.toMatchObject({
+      code: "ADMIN_API_NOT_CONFIGURED",
+      status: 503,
+    });
+  });
 });

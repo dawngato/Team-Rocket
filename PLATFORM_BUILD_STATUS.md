@@ -2,7 +2,7 @@
 
 | Platform | Source | Evidence on 2026-10-31 | Status |
 |---|---|---|---|
-| Web | `apps/web` | Vitest 77 passed; `npm run typecheck` exit 0 | TESTED_PASS locally |
+| Web | `apps/web` | Vitest 78 passed; `npm run typecheck` exit 0 | TESTED_PASS locally |
 | Android | `apps/android` | `testDebugUnitTest` terminated with exit 137 during KAPT/resource-constrained compilation | TESTED_FAIL / no pass claim |
 | iOS | `apps/ios` | `swift test` could not start because `swift` is not installed; Xcode/macOS unavailable | BLOCKED; XCTest not claimed |
 | Windows Avalonia | `apps/desktop/HimVote.Windows` | existing .NET test evidence in repository status docs; re-run required for this iteration | LIMITED |

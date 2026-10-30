@@ -23,12 +23,12 @@
 | Gate | Requirement | Result | Block / Pass |
 |------|-------------|--------|--------------|
 | G-01 | Python test suite ≥ 200 tests, all pass | 301 pass (`python3 tools/run_all_tests.py`) | **PASS** |
-| G-02 | Web UI tests pass (Vitest) | 77 pass and typecheck exit 0 | **PASS** |
+| G-02 | Web UI tests pass (Vitest) | 78 pass and typecheck exit 0 | **PASS** |
 | G-03 | Desktop .NET tests pass | 101 pass | **PASS** |
 | G-04 | Android native tests pass (clean run) | UP-TO-DATE cached; prior clean run FAILED | **BLOCK** |
 | G-05 | iOS native tests pass | Blocked — no macOS | **BLOCK** |
 | G-06 | All 5 mandatory Q7 attack tests pass | 5/5 pass (54-test suite) | **PASS** |
-| G-07 | Standalone verifier verifies local evidence properties | 7 verifier tests pass in the isolated unified run | **PASS** |
+| G-07 | Standalone verifier verifies local evidence properties | 12 verifier tests pass in the isolated unified run; native tally is not checked | **PASS WITH LIMITS** |
 | G-08 | Crypto engine is Helios, Belenios, or ElectionGuard | Homegrown VEEM (Profile VEEM, ElGamal) | **BLOCK** |
 | G-09 | Trustee key ceremony implemented | No trustee ceremony; single operator holds keys | **BLOCK** |
 | G-10 | External witness structurally independent | Witness in same Compose stack as operator | **BLOCK** |
@@ -67,11 +67,11 @@ python3 demo_five_attacks.py
 
 # Verifier
 python3 tools/run_all_tests.py
-# Isolated verifier suite: 7 passed
+# Isolated verifier suite: 12 passed; native engine tally remains NOT_CHECKED
 
 # Web
 cd apps/web && npm run typecheck && npm test
-# Exit code: 0  |  typecheck passed; 77 Vitest tests passed
+# Exit code: 0  |  typecheck passed; 78 Vitest tests passed
 
 # Desktop
 cd apps/desktop && dotnet test
@@ -96,7 +96,7 @@ forge test --match-path chain/tests/
 
 | Area | Coverage |
 |------|----------|
-| Credential issuance (blind sig) | Fully tested |
+| Credential issuance primitive | Local RFC 9474 vectors are tested; complete established-engine issuance is not integrated |
 | Single-cast enforcement (nullifier) | Fully tested (including 100-concurrent load) |
 | State machine (20 states) | Fully tested |
 | Merkle log (RFC 9162) | Fully tested |
@@ -105,7 +105,7 @@ forge test --match-path chain/tests/
 | Anchor relayer (chain mock) | Fully tested |
 | 5 mandatory Q7 attacks | Fully tested |
 | Protocol integration (4 fault scenarios) | Fully tested |
-| Web UI (48 routes) | Fully tested |
+| Web UI | 78 Vitest tests and typecheck pass; full server-backed role coverage remains partial |
 | Desktop (101 .NET) | Fully tested |
 | Android (Jetpack Compose) | Not confirmed on clean build |
 | iOS (SwiftUI) | Not tested (no macOS) |
@@ -123,7 +123,7 @@ forge test --match-path chain/tests/
 
 | Platform | Implementation | Test Status | Notes |
 |----------|---------------|-------------|-------|
-| Web (Next.js) | `apps/web/` | **PASS** (77 Vitest and typecheck) | Authoritative API paths; external engine gate remains blocked |
+| Web (Next.js) | `apps/web/` | **PASS** (78 Vitest and typecheck) | Authoritative API paths; external engine gate remains blocked |
 | Android (Jetpack Compose) | `apps/android/` | **BLOCKED** | Clean build evidence is unavailable; prior run failed |
 | iOS (SwiftUI) | `apps/ios/` | **BLOCKED** | Requires macOS + Xcode |
 | Windows/Linux Desktop (Avalonia) | `apps/desktop/` | **PASS** (101 .NET) | Full |
