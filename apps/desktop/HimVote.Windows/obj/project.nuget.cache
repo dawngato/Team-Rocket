@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "DOF+mw1l4uQ=",
+  "success": true,
+  "projectFilePath": "/home/Kali/Desktop/HPTU/HimVote/apps/desktop/HimVote.Windows/HimVote.Windows.csproj",
+  "expectedPackageFiles": [
+    "/home/Kali/.nuget/packages/communitytoolkit.mvvm/8.3.2/communitytoolkit.mvvm.8.3.2.nupkg.sha512",
+    "/home/Kali/.nuget/packages/system.security.cryptography.protecteddata/8.0.0/system.security.cryptography.protecteddata.8.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

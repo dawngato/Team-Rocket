@@ -1,0 +1,14 @@
+{
+  "anchored_digest": "sha256:53cfc92b4731b776e1dcfdf6ae072e26b89e4a111496a6c6accc85fe8ae8ebab",
+  "block_hash": "0x3f5c71b1297e64bc81912a76db205731f824948a901f4c2e683e3e06180df145",
+  "block_number": 42,
+  "chain_id": 31337,
+  "code_hash": "sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "confirmations": 12,
+  "contract_address": "0x5FbDB2315678afecb367f032d93F642f64180aa3",
+  "election_id": "elec_hptu_sc_2026",
+  "is_final": true,
+  "relayer_address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+  "schema": "himvote.chain_pins.v1",
+  "sequence": 1
+}

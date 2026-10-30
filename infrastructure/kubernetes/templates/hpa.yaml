@@ -1,0 +1,65 @@
+{{- if .Values.casting.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: himvote-casting-hpa
+  namespace: himvote-casting
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: himvote-casting
+  minReplicas: {{ .Values.casting.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.casting.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.casting.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
+---
+{{- if .Values.identityIssuer.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: himvote-identity-issuer-hpa
+  namespace: himvote-identity
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: himvote-identity-issuer
+  minReplicas: {{ .Values.identityIssuer.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.identityIssuer.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.identityIssuer.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
+---
+{{- if .Values.web.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: himvote-web-hpa
+  namespace: himvote-edge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: himvote-web
+  minReplicas: {{ .Values.web.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.web.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.web.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}

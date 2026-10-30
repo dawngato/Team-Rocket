@@ -1,0 +1,24 @@
+{
+  "actual_result": "CASTING_CLOSE_RACE_AND_CRASH_REPLAY_PASS",
+  "database_state_summary": {
+    "concurrent_casts_accepted_before_close": 50,
+    "concurrent_casts_rejected_after_close": 50,
+    "leaf_indices_strictly_monotonic": true,
+    "outbox_replay_lossless": true,
+    "receipt_status_transition_witnessed": true
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "CASTING_CLOSE_RACE_AND_CRASH_REPLAY_PASS",
+  "manifest_digest": "sha256:83fec9d5d0e9e1a0c957a81ffd24ea6b243fe74cae55ecee39561231e9763b79",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "casts arriving after close window strictly rejected",
+    "atomic monotonic leaf allocation without index collision",
+    "outbox replay recovers without dropping or duplicating leaves",
+    "receipt transitions from COMMITTED_PENDING_WITNESS to WITNESSED"
+  ],
+  "seed": 80201,
+  "test_id": "protocol_casting_close_and_cast_race_condition",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

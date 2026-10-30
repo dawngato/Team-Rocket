@@ -1,0 +1,24 @@
+{
+  "actual_result": "EXACTLY_ONE_LEAF_AND_ONE_NULLIFIER_SAFE_RETRY_IDENTICAL_DIFFERING_REJECTED",
+  "database_state_summary": {
+    "rejection_count": 20,
+    "successful_safe_retries": 80,
+    "total_committed_leaves": 1,
+    "total_nullifiers": 1
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "EXACTLY_ONE_LEAF_AND_ONE_NULLIFIER_SAFE_RETRY_IDENTICAL_DIFFERING_REJECTED",
+  "manifest_digest": "sha256:15a6ef463e0fd055ab2a3afa850e4c7a80f204ec3b6e73221389a89c91fc9565",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "accepted_encrypted_ballots row count equals 1",
+    "nullifiers_to_leaf count equals 1",
+    "next_leaf_index equals 1",
+    "all differing ballot submissions rejected",
+    "all identical submissions returned identical handle"
+  ],
+  "seed": 70101,
+  "test_id": "Q7_01_duplicate_submission",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

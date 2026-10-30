@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: himvote-election-engine
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: election-engine
+spec:
+  replicas: {{ .Values.electionEngine.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: himvote
+      app.kubernetes.io/component: election-engine
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: himvote
+        app.kubernetes.io/component: election-engine
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: election-engine
+          image: "{{ .Values.electionEngine.image.repository }}:{{ .Values.electionEngine.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 8084
+          env:
+            - name: LOG_LEVEL
+              value: {{ .Values.electionEngine.env.logLevel | quote }}
+            - name: VOTING_ENGINE_PROVIDER
+              value: {{ .Values.electionEngine.env.votingEngineProvider | quote }}
+          resources:
+            {{- toYaml .Values.electionEngine.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

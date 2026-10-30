@@ -1,0 +1,25 @@
+{
+  "actual_result": "100_CONCURRENT_BALLOTS_PROCESSED_WITHOUT_COLLISION_VERIFIED_PASS",
+  "database_state_summary": {
+    "chain_anchored": true,
+    "committed_leaves": 100,
+    "concurrent_voters_count": 100,
+    "next_leaf_index": 100,
+    "witness_acknowledged_tree_size": 100
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "100_CONCURRENT_BALLOTS_PROCESSED_WITHOUT_COLLISION_VERIFIED_PASS",
+  "manifest_digest": "sha256:708345df7df43709beea32e969d57a4843e30675e55aa2e28b488550212ac750",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "100 distinct voters successfully cast concurrent ballots",
+    "zero leaf index collisions or duplicate nullifiers",
+    "outbox successfully drains into 100 leaf RFC 9162 Merkle tree",
+    "witness signs final checkpoint and chain anchors root",
+    "full independent audit verification passes with exit code 0"
+  ],
+  "seed": 90101,
+  "test_id": "load_concurrent_voting_100_voters",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

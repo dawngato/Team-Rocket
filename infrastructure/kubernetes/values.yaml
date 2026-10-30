@@ -1,0 +1,248 @@
+# HimVote Helm Values Configuration
+# Production grade configuration for institutional voting platform
+
+global:
+  environment: production
+  domain: himvote.edu
+  identityOrigin: identity.himvote.edu
+  castingOrigin: casting.himvote.edu
+  imageRegistry: ghcr.io/himvote
+  imageTag: 2.0.0
+  imagePullPolicy: IfNotPresent
+
+# Pod Security Standards: restricted configuration applied across all pods
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 10001
+  runAsGroup: 10001
+  fsGroup: 10001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+gateway:
+  replicaCount: 3
+  image:
+    repository: nginx
+    tag: 1.25-alpine
+  service:
+    type: ClusterIP
+    port: 8080
+    sslPort: 8443
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 128Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+web:
+  replicaCount: 3
+  image:
+    repository: himvote/web
+    tag: 2.0.0
+  service:
+    port: 3000
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 8
+    targetCPUUtilizationPercentage: 75
+
+identityIssuer:
+  replicaCount: 3
+  image:
+    repository: himvote/identity_issuer
+    tag: 2.0.0
+  service:
+    port: 8081
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 12
+    targetCPUUtilizationPercentage: 70
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+    bootstrapAllowed: "false"
+    kmsProvider: aws_kms
+
+casting:
+  replicaCount: 5
+  image:
+    repository: himvote/casting
+    tag: 2.0.0
+  service:
+    port: 8082
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2048Mi
+    requests:
+      cpu: 500m
+      memory: 512Mi
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 65
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+
+adminApi:
+  replicaCount: 2
+  image:
+    repository: himvote/admin_api
+    tag: 2.0.0
+  service:
+    port: 8083
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+
+electionEngine:
+  replicaCount: 3
+  image:
+    repository: himvote/election_engine
+    tag: 2.0.0
+  service:
+    port: 8084
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    logLevel: info
+    votingEngineProvider: vetted_engine
+
+checkpointWorker:
+  replicaCount: 1
+  image:
+    repository: himvote/checkpoint_worker
+    tag: 2.0.0
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+
+witness:
+  replicaCount: 2
+  image:
+    repository: himvote/witness
+    tag: 2.0.0
+  service:
+    port: 8086
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1024Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+
+anchorRelayer:
+  replicaCount: 1
+  image:
+    repository: himvote/anchor_relayer
+    tag: 2.0.0
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+  env:
+    logLevel: info
+    logRedactionEnabled: "true"
+    chainId: "1"
+
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: 7-alpine
+  service:
+    port: 6379
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+databases:
+  identity:
+    host: identity-db.internal
+    port: 5432
+    name: himvote_identity
+    user: himvote_identity
+    sslMode: verify-full
+  casting:
+    host: casting-db.internal
+    port: 5432
+    name: himvote_casting
+    user: himvote_casting
+    sslMode: verify-full
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.3"
+    nginx.ingress.kubernetes.io/proxy-body-size: "2m"
+  tls:
+    - secretName: himvote-identity-tls
+      hosts:
+        - identity.himvote.edu
+    - secretName: himvote-casting-tls
+      hosts:
+        - casting.himvote.edu

@@ -1,0 +1,10 @@
+<resources>
+    <color name="navy900">#10233F</color>
+    <color name="teal600">#157E92</color>
+    <color name="green600">#15805D</color>
+    <color name="amber600">#AA6C0B</color>
+    <color name="red600">#C23C45</color>
+    <color name="surface">#F3F6FA</color>
+    <color name="white">#FFFFFF</color>
+    <color name="text_primary">#17233B</color>
+</resources>

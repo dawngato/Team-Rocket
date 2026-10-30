@@ -1,0 +1,267 @@
+# HimVote Production Compose Configuration
+# Production single host topology with hardened security, resource limits, and log rotation
+# Applied via: docker compose -f compose.yaml -f compose.prod.yaml up -d
+
+services:
+  gateway:
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      GATEWAY_TLS_ENABLED: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  web:
+    restart: always
+    ports: []
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_DEV_MODE: "false"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  admin_api:
+    restart: always
+    ports: []
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+      IDENTITY_DB_SSL_MODE: verify-full
+      CASTING_DB_SSL_MODE: verify-full
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  identity_issuer:
+    restart: always
+    ports: []
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+      BOOTSTRAP_ALLOWED: "false"
+      IDENTITY_DB_SSL_MODE: verify-full
+      KMS_PROVIDER: ${KMS_PROVIDER:-aws_kms}
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4096M
+        reservations:
+          cpus: "1.0"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  casting:
+    restart: always
+    ports: []
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+      CASTING_DB_SSL_MODE: verify-full
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 4096M
+        reservations:
+          cpus: "1.0"
+          memory: 1024M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  election_engine:
+    restart: always
+    ports: []
+    environment:
+      APP_ENV: production
+      LOG_LEVEL: info
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  checkpoint_worker:
+    restart: always
+    environment:
+      APP_ENV: production
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+      CASTING_DB_SSL_MODE: verify-full
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  witness:
+    restart: always
+    ports: []
+    environment:
+      APP_ENV: production
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  anchor_relayer:
+    restart: always
+    environment:
+      APP_ENV: production
+      LOG_LEVEL: info
+      LOG_REDACTION_ENABLED: "true"
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  chain_node:
+    restart: always
+    ports: []
+    deploy:
+      resources:
+        limits:
+          cpus: "2.0"
+          memory: 2048M
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  identity_db:
+    restart: always
+    ports: []
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8192M
+        reservations:
+          cpus: "1.0"
+          memory: 2048M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  casting_db:
+    restart: always
+    ports: []
+    deploy:
+      resources:
+        limits:
+          cpus: "4.0"
+          memory: 8192M
+        reservations:
+          cpus: "1.0"
+          memory: 2048M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "5"
+
+  redis:
+    restart: always
+    ports: []
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1024M
+        reservations:
+          cpus: "0.2"
+          memory: 256M
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"

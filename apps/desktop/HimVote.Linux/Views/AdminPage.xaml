@@ -1,0 +1,29 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:DataType="vm:AdminViewModel"
+             x:Class="HimVote.Linux.Views.AdminPage">
+
+    <Grid Margin="20">
+        <TextBlock Text="Administrative Console" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+        <TextBlock Text="Manage elections, teachers, students, and approvals." Foreground="#666666" Margin="0,10,0,20" />
+
+        <Grid ColumnDefinitions="*,*" RowDefinitions="*,*" Margin="0,20,0,0">
+            <Border Grid.Row="0" Grid.Column="0" Classes="card" Padding="20" Margin="0,0,10,10">
+                <TextBlock Text="Elections" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+            </Border>
+            <Border Grid.Row="0" Grid.Column="1" Classes="card" Padding="20" Margin="10,0,0,10">
+                <TextBlock Text="Teachers" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+            </Border>
+            <Border Grid.Row="1" Grid.Column="0" Classes="card" Padding="20" Margin="0,10,10,0">
+                <TextBlock Text="Students" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+            </Border>
+            <Border Grid.Row="1" Grid.Column="1" Classes="card" Padding="20" Margin="10,10,0,0">
+                <TextBlock Text="Approvals" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

@@ -1,0 +1,14 @@
+{
+  "contest_tallies": {
+    "cand_aarav_sharma": 35,
+    "cand_ananya_verma": 30,
+    "cand_rohit_thakur": 20,
+    "cand_priya_dogra": 15
+  },
+  "election_id": "elec_hptu_sc_2026",
+  "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
+  "privacy_limited": false,
+  "published_at": "2026-10-30T13:50:46.785028+00:00",
+  "schema": "himvote.results.v1",
+  "total_ballots": 100
+}

@@ -1,0 +1,35 @@
+# Default Deny All Ingress and Egress for Edge Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: himvote-edge
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Default Deny All Ingress and Egress for Identity Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: himvote-identity
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Default Deny All Ingress and Egress for Casting Namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: himvote-casting
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress

@@ -1,0 +1,24 @@
+{
+  "actual_result": "ALL_UNAUTHORIZED_INSERTIONS_REJECTED_DIRECT_WRITE_DENIED",
+  "database_state_summary": {
+    "database_leaves_count": 0,
+    "nullifiers_count": 0,
+    "unauthorized_attempts_rejected": 5
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "ALL_UNAUTHORIZED_INSERTIONS_REJECTED_DIRECT_WRITE_DENIED",
+  "manifest_digest": "sha256:2d0fe75f97e2e50f825e9ce5e029eeb5d7a802cbc3107736b68d46b9fdbd0006",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "unapproved student issuance blocked",
+    "forged credential rejected",
+    "wrong election credential rejected",
+    "corrupt engine ballot rejected",
+    "direct write trigger blocked unauthorized insertion",
+    "database state unchanged"
+  ],
+  "seed": 70201,
+  "test_id": "Q7_02_unauthorized_insertion",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

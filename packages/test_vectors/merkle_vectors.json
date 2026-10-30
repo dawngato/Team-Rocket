@@ -1,0 +1,97 @@
+{
+  "description": "RFC 9162 binary Merkle Tree test vectors (7 leaves)",
+  "leaf_hashes": [
+    "944f97982b684062af1729655477a35e04aa1f03993e491b13d90b5d6df7d4f2",
+    "7f9468c8d7f79ce30acced009262870f9a06d36954dd4e78ca1c1c51f2967009",
+    "d0d9e21a5eae4a4154b07cb07aaef6a7a3a26382d287f0184de17eee6c138145",
+    "bf658319a0ef3cf83a5ba6d3c4e80a2aae43e4da0ea49baa1cd42ec234b4b24d",
+    "1dcaf0d713460b07a99ec79b0ace28f0c908ba339da17325a6f0b1304e756a8e",
+    "1c55399a32ead65c2f334c4935eb5e54b4e73a0c2e2dad64a9453e5a684b7dad",
+    "07b289abf51e41be5f53d3c55781b78afa7cdc138083af8335b292eb4f974c42"
+  ],
+  "tree_heads": {
+    "size_0": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "size_1": "944f97982b684062af1729655477a35e04aa1f03993e491b13d90b5d6df7d4f2",
+    "size_2": "f3dce00797f900e0c7420e92d88cbb78ecf5cd47039f01061a0e692e7688c159",
+    "size_3": "99450a89b162e1a8698fe0f953c2800a7beb2ca9a97e84e8bd9889417f4a6d6c",
+    "size_4": "66661992910a0a41f670b6867be52fe30e9983f771e774a52a0c0283b16f571f",
+    "size_5": "cc0de5c5af17ee4540d94b0dfcb5aa8e5692e1b2040393797405611382a26f94",
+    "size_6": "33f24ed8725361413b5b95fade6be8c2e4dc9456b7334ce790d15aa360c750d7",
+    "size_7": "91846e3ad624de3f5d6b38b85b050405b16790e533fb1e26550e1114a0f5cf6e"
+  },
+  "inclusion_proofs": {
+    "leaf_0_in_7": {
+      "leaf_index": 0,
+      "tree_size": 7,
+      "leaf_hash": "944f97982b684062af1729655477a35e04aa1f03993e491b13d90b5d6df7d4f2",
+      "proof": [
+        "7f9468c8d7f79ce30acced009262870f9a06d36954dd4e78ca1c1c51f2967009",
+        "b12e70bcb3de464c593bf7eade3c15ab7ae2d24c9a9e248cf2ebbbdaf23b4fe5",
+        "374c5c500cb896a31a8e5c923e04a7ab3f6e54b7e62d4362e9e8085cb34ca720"
+      ]
+    },
+    "leaf_3_in_7": {
+      "leaf_index": 3,
+      "tree_size": 7,
+      "leaf_hash": "bf658319a0ef3cf83a5ba6d3c4e80a2aae43e4da0ea49baa1cd42ec234b4b24d",
+      "proof": [
+        "d0d9e21a5eae4a4154b07cb07aaef6a7a3a26382d287f0184de17eee6c138145",
+        "f3dce00797f900e0c7420e92d88cbb78ecf5cd47039f01061a0e692e7688c159",
+        "374c5c500cb896a31a8e5c923e04a7ab3f6e54b7e62d4362e9e8085cb34ca720"
+      ]
+    },
+    "leaf_4_in_7": {
+      "leaf_index": 4,
+      "tree_size": 7,
+      "leaf_hash": "1dcaf0d713460b07a99ec79b0ace28f0c908ba339da17325a6f0b1304e756a8e",
+      "proof": [
+        "1c55399a32ead65c2f334c4935eb5e54b4e73a0c2e2dad64a9453e5a684b7dad",
+        "07b289abf51e41be5f53d3c55781b78afa7cdc138083af8335b292eb4f974c42",
+        "66661992910a0a41f670b6867be52fe30e9983f771e774a52a0c0283b16f571f"
+      ]
+    },
+    "leaf_6_in_7": {
+      "leaf_index": 6,
+      "tree_size": 7,
+      "leaf_hash": "07b289abf51e41be5f53d3c55781b78afa7cdc138083af8335b292eb4f974c42",
+      "proof": [
+        "0da765dfc12133713f9c58c8fea0dac1d8453514c5456b9205e175954f3c63d7",
+        "66661992910a0a41f670b6867be52fe30e9983f771e774a52a0c0283b16f571f"
+      ]
+    }
+  },
+  "consistency_proofs": {
+    "size_3_to_7": {
+      "first_size": 3,
+      "second_size": 7,
+      "first_root": "99450a89b162e1a8698fe0f953c2800a7beb2ca9a97e84e8bd9889417f4a6d6c",
+      "second_root": "91846e3ad624de3f5d6b38b85b050405b16790e533fb1e26550e1114a0f5cf6e",
+      "proof": [
+        "d0d9e21a5eae4a4154b07cb07aaef6a7a3a26382d287f0184de17eee6c138145",
+        "bf658319a0ef3cf83a5ba6d3c4e80a2aae43e4da0ea49baa1cd42ec234b4b24d",
+        "f3dce00797f900e0c7420e92d88cbb78ecf5cd47039f01061a0e692e7688c159",
+        "374c5c500cb896a31a8e5c923e04a7ab3f6e54b7e62d4362e9e8085cb34ca720"
+      ]
+    },
+    "size_4_to_7": {
+      "first_size": 4,
+      "second_size": 7,
+      "first_root": "66661992910a0a41f670b6867be52fe30e9983f771e774a52a0c0283b16f571f",
+      "second_root": "91846e3ad624de3f5d6b38b85b050405b16790e533fb1e26550e1114a0f5cf6e",
+      "proof": [
+        "374c5c500cb896a31a8e5c923e04a7ab3f6e54b7e62d4362e9e8085cb34ca720"
+      ]
+    },
+    "size_6_to_7": {
+      "first_size": 6,
+      "second_size": 7,
+      "first_root": "33f24ed8725361413b5b95fade6be8c2e4dc9456b7334ce790d15aa360c750d7",
+      "second_root": "91846e3ad624de3f5d6b38b85b050405b16790e533fb1e26550e1114a0f5cf6e",
+      "proof": [
+        "0da765dfc12133713f9c58c8fea0dac1d8453514c5456b9205e175954f3c63d7",
+        "07b289abf51e41be5f53d3c55781b78afa7cdc138083af8335b292eb4f974c42",
+        "66661992910a0a41f670b6867be52fe30e9983f771e774a52a0c0283b16f571f"
+      ]
+    }
+  }
+}

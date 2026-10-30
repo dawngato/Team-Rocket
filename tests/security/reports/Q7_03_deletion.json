@@ -1,0 +1,23 @@
+{
+  "actual_result": "VERIFIER_FAILS_ON_DELETED_BALLOT_AND_TRUNCATED_FINAL",
+  "database_state_summary": {
+    "chain_anchored_digest": "sha256:a4c6c34824594bb7452a4e24db0e05f521872e20619891aa1263003fec2f3d35",
+    "deletion_detected": true,
+    "truncated_final_rejected": true,
+    "witnessed_ballots": 10
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "VERIFIER_FAILS_ON_DELETED_BALLOT_AND_TRUNCATED_FINAL",
+  "manifest_digest": "sha256:52eeec8c834ba33ae4af5d2870d6b7f19f5b15ce200910143f98fb88d27d72ec",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "honest export verified with exit code 0",
+    "removal of single ballot detected and rejected with exit code 2",
+    "truncated partial checkpoint rejected against witness final",
+    "chain anchor finality check enforced"
+  ],
+  "seed": 70301,
+  "test_id": "Q7_03_deletion",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

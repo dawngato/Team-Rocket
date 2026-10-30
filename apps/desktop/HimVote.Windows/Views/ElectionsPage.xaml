@@ -1,0 +1,57 @@
+<Page
+    x:Class="HimVote.Windows.Views.ElectionsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:HimVote.Windows.Models"
+    xmlns:vm="using:HimVote.Windows.ViewModels"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock Text="Campus Elections" Style="{ThemeResource TitleTextBlockStyle}" />
+            <TextBlock Text="Browse available contests and launch secure browser voting booth"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+
+        <CommandBar Grid.Row="1" DefaultLabelPosition="Right">
+            <AppBarButton Icon="Refresh" Label="Refresh" Command="{x:Bind ViewModel.LoadElectionsCommand}" />
+            <AppBarSeparator />
+            <AppBarButton Icon="Play" Label="Cast Ballot in Booth" Command="{x:Bind ViewModel.OpenBoothCommand}" />
+        </CommandBar>
+
+        <ListView Grid.Row="2"
+                  ItemsSource="{x:Bind ViewModel.FilteredElections, Mode=OneWay}"
+                  SelectedItem="{x:Bind ViewModel.SelectedElection, Mode=TwoWay}"
+                  SelectionMode="Single">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:ElectionSummary">
+                    <Grid Padding="12" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Spacing="4">
+                            <TextBlock Text="{x:Bind Title}" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind Id}" Style="{ThemeResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                            <TextBlock Text="{x:Bind State}" Style="{ThemeResource BodyStrongTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind OpensAtUtc}" Style="{ThemeResource CaptionTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ClosesAtUtc}" Style="{ThemeResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

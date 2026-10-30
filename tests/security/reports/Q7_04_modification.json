@@ -1,0 +1,23 @@
+{
+  "actual_result": "ALL_MODIFICATIONS_DETECTED_MERKLE_AND_PROOF_MISMATCH",
+  "database_state_summary": {
+    "ciphertext_modification_detected": true,
+    "index_modification_detected": true,
+    "nullifier_modification_detected": true,
+    "proof_modification_detected": true
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "ALL_MODIFICATIONS_DETECTED_MERKLE_AND_PROOF_MISMATCH",
+  "manifest_digest": "sha256:cc4191f3c3d9e185a6e1e0285da4ef14f3d09ee57fdc8ff9a285214f1a8ccce3",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "ciphertext alteration causes Merkle root mismatch",
+    "proof alteration fails zero knowledge verification",
+    "nullifier alteration causes Merkle root mismatch",
+    "leaf index alteration causes sequence gap failure"
+  ],
+  "seed": 70401,
+  "test_id": "Q7_04_modification",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

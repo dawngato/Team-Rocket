@@ -1,0 +1,13 @@
+apiVersion: v2
+name: himvote
+description: Production institutional election platform Helm chart
+type: application
+version: 1.0.0
+appVersion: "2.0.0"
+keywords:
+  - himvote
+  - election
+  - voting
+  - security
+maintainers:
+  - name: HimVote Platform Engineering

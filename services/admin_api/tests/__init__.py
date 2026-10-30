@@ -1,0 +1,3 @@
+"""
+Admin API test suite.
+"""

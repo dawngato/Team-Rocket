@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HimVote.Windows", "HimVote.Windows\HimVote.Windows.csproj", "{D03E2B76-1670-4863-A089-40B21D03B529}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HimVote.Windows.Tests", "HimVote.Windows.Tests\HimVote.Windows.Tests.csproj", "{397453C5-47D6-4B55-99B5-6BA3DD0DEDAC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D03E2B76-1670-4863-A089-40B21D03B529}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D03E2B76-1670-4863-A089-40B21D03B529}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D03E2B76-1670-4863-A089-40B21D03B529}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D03E2B76-1670-4863-A089-40B21D03B529}.Release|Any CPU.Build.0 = Release|Any CPU
+		{397453C5-47D6-4B55-99B5-6BA3DD0DEDAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{397453C5-47D6-4B55-99B5-6BA3DD0DEDAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{397453C5-47D6-4B55-99B5-6BA3DD0DEDAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{397453C5-47D6-4B55-99B5-6BA3DD0DEDAC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,7 @@
+cloud_provider       = "aws"
+environment          = "production"
+aws_region           = "us-east-1"
+gcp_project          = "himvote-production"
+gcp_region           = "us-central1"
+db_instance_class    = "db.r6g.large"
+db_allocated_storage = 100

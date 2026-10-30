@@ -1,0 +1,15 @@
+{
+  "checkpoint_kind": "FINAL",
+  "checkpoint_sequence": 1,
+  "election_id": "elec_hptu_sc_2026",
+  "issued_count": 100,
+  "last_leaf_digest": "sha256:8751f8e39e6b96be456c852c3a645ae9e7d0e892799ada898004d94d0e336b54",
+  "last_leaf_index": 99,
+  "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
+  "merkle_root": "sha256:53cfc92b4731b776e1dcfdf6ae072e26b89e4a111496a6c6accc85fe8ae8ebab",
+  "previous_checkpoint_digest": null,
+  "protocol_version": "himvote_2.0.0",
+  "roster_commitment": "sha256:a6f7d081979e0155f77fd9a5cafdba5922820f8ae16ca355e20ce95af450cfd9",
+  "tree_size": 100,
+  "signature": "ZSORTPf2/U3Xk9TGlQwgh0dXYnD0agIkMzYN8xQf3Hvc68laV1h2nNiHNsi77xUzmhukxTYQq6feSsQXSlGiDA=="
+}

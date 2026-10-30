@@ -1,0 +1,166 @@
+import Foundation
+import Security
+
+public enum KeychainError: LocalizedError, Sendable, Equatable {
+    case duplicateItem
+    case itemNotFound
+    case unexpectedData
+    case unhandledError(status: OSStatus)
+    
+    public var errorDescription: String? {
+        switch self {
+        case .duplicateItem:
+            return "The requested item already exists in the secure keychain store."
+        case .itemNotFound:
+            return "The requested cryptographic item was not found in the keychain."
+        case .unexpectedData:
+            return "The retrieved data format does not match the expected structure."
+        case .unhandledError(let status):
+            return "Encountered an unhandled Keychain status code \(status)."
+        }
+    }
+}
+
+public protocol KeychainServiceProtocol: Sendable {
+    func save(data: Data, forKey key: String) throws
+    func read(forKey key: String) throws -> Data
+    func delete(forKey key: String) throws
+    func clearAll() throws
+}
+
+public final class KeychainService: KeychainServiceProtocol, @unchecked Sendable {
+    public static let shared = KeychainService()
+    
+    public let serviceIdentifier: String
+    private let accessGroup: String?
+    
+    public init(serviceIdentifier: String = "in.example.himvote.ios", accessGroup: String? = nil) {
+        self.serviceIdentifier = serviceIdentifier
+        self.accessGroup = accessGroup
+    }
+    
+    public func save(data: Data, forKey key: String) throws {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceIdentifier,
+            kSecAttrAccount as String: key,
+            kSecValueData as String: data,
+            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+        ]
+        
+        if let accessGroup = accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        
+        let status = SecItemAdd(query as CFDictionary, nil)
+        
+        if status == errSecDuplicateItem {
+            let updateQuery: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrService as String: serviceIdentifier,
+                kSecAttrAccount as String: key
+            ]
+            let attributesToUpdate: [String: Any] = [
+                kSecValueData as String: data,
+                kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly
+            ]
+            let updateStatus = SecItemUpdate(updateQuery as CFDictionary, attributesToUpdate as CFDictionary)
+            guard updateStatus == errSecSuccess else {
+                throw KeychainError.unhandledError(status: updateStatus)
+            }
+        } else if status != errSecSuccess {
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    public func read(forKey key: String) throws -> Data {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceIdentifier,
+            kSecAttrAccount as String: key,
+            kSecReturnData as String: kCFBooleanTrue as Any,
+            kSecMatchLimit as String: kSecMatchLimitOne
+        ]
+        
+        if let accessGroup = accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        
+        var dataTypeRef: AnyObject?
+        let status = SecItemCopyMatching(query as CFDictionary, &dataTypeRef)
+        
+        guard status != errSecItemNotFound else {
+            throw KeychainError.itemNotFound
+        }
+        
+        guard status == errSecSuccess else {
+            throw KeychainError.unhandledError(status: status)
+        }
+        
+        guard let data = dataTypeRef as? Data else {
+            throw KeychainError.unexpectedData
+        }
+        
+        return data
+    }
+    
+    public func delete(forKey key: String) throws {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceIdentifier,
+            kSecAttrAccount as String: key
+        ]
+        
+        if let accessGroup = accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    public func clearAll() throws {
+        var query: [String: Any] = [
+            kSecClass as String: kSecClassGenericPassword,
+            kSecAttrService as String: serviceIdentifier
+        ]
+        
+        if let accessGroup = accessGroup {
+            query[kSecAttrAccessGroup as String] = accessGroup
+        }
+        
+        let status = SecItemDelete(query as CFDictionary)
+        guard status == errSecSuccess || status == errSecItemNotFound else {
+            throw KeychainError.unhandledError(status: status)
+        }
+    }
+    
+    public func saveString(_ value: String, forKey key: String) throws {
+        guard let data = value.data(using: .utf8) else {
+            throw KeychainError.unexpectedData
+        }
+        try save(data: data, forKey: key)
+    }
+    
+    public func readString(forKey key: String) throws -> String {
+        let data = try read(forKey: key)
+        guard let string = String(data: data, encoding: .utf8) else {
+            throw KeychainError.unexpectedData
+        }
+        return string
+    }
+    
+    public func saveCodable<T: Encodable>(_ object: T, forKey key: String) throws {
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(object)
+        try save(data: data, forKey: key)
+    }
+    
+    public func readCodable<T: Decodable>(_ type: T.Type, forKey key: String) throws -> T {
+        let data = try read(forKey: key)
+        let decoder = JSONDecoder()
+        return try decoder.decode(type, from: data)
+    }
+}

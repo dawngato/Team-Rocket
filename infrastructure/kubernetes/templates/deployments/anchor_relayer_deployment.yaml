@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: himvote-anchor-relayer
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: anchor-relayer
+spec:
+  replicas: {{ .Values.anchorRelayer.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: himvote
+      app.kubernetes.io/component: anchor-relayer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: himvote
+        app.kubernetes.io/component: anchor-relayer
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: anchor-relayer
+          image: "{{ .Values.anchorRelayer.image.repository }}:{{ .Values.anchorRelayer.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: WITNESS_BASE
+              value: "http://himvote-witness:8086"
+            - name: CHAIN_ID
+              value: {{ .Values.anchorRelayer.env.chainId | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.anchorRelayer.env.logLevel | quote }}
+            - name: LOG_REDACTION_ENABLED
+              value: {{ .Values.anchorRelayer.env.logRedactionEnabled | quote }}
+          resources:
+            {{- toYaml .Values.anchorRelayer.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

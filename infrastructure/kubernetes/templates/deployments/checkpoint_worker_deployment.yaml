@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: himvote-checkpoint-worker
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: checkpoint-worker
+spec:
+  replicas: {{ .Values.checkpointWorker.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: himvote
+      app.kubernetes.io/component: checkpoint-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: himvote
+        app.kubernetes.io/component: checkpoint-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: checkpoint-worker
+          image: "{{ .Values.checkpointWorker.image.repository }}:{{ .Values.checkpointWorker.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            - name: CASTING_DB_HOST
+              value: {{ .Values.databases.casting.host | quote }}
+            - name: CASTING_DB_PORT
+              value: {{ .Values.databases.casting.port | quote }}
+            - name: CASTING_DB_NAME
+              value: {{ .Values.databases.casting.name | quote }}
+            - name: CASTING_DB_USER
+              value: {{ .Values.databases.casting.user | quote }}
+            - name: CASTING_DB_SSL_MODE
+              value: {{ .Values.databases.casting.sslMode | quote }}
+            - name: WITNESS_BASE
+              value: "http://himvote-witness:8086"
+            - name: LOG_LEVEL
+              value: {{ .Values.checkpointWorker.env.logLevel | quote }}
+            - name: LOG_REDACTION_ENABLED
+              value: {{ .Values.checkpointWorker.env.logRedactionEnabled | quote }}
+            - name: CASTING_DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: himvote-casting-secrets
+                  key: database-password
+          resources:
+            {{- toYaml .Values.checkpointWorker.resources | nindent 12 }}
+          volumeMounts:
+            - name: tmp-volume
+              mountPath: /tmp
+      volumes:
+        - name: tmp-volume
+          emptyDir: {}

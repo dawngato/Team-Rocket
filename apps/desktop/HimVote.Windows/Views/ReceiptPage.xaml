@@ -1,0 +1,73 @@
+<Page
+    x:Class="HimVote.Windows.Views.ReceiptPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:HimVote.Windows.ViewModels"
+    mc:Ignorable="d">
+
+    <Grid Padding="24">
+        <Border MaxWidth="580"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Margin="0,24,0,0"
+                Padding="32"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+            <StackPanel Spacing="16">
+                <TextBlock Text="Ballot Receipt Tracker" Style="{ThemeResource TitleTextBlockStyle}" />
+                <TextBlock Text="Verify your encrypted ballot status on the public witness log"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+                <TextBox Header="Election ID"
+                         Text="{x:Bind ViewModel.ElectionId, Mode=TwoWay}"
+                         PlaceholderText="e.g. elec_0000000000000001" />
+
+                <TextBox Header="Receipt Handle"
+                         Text="{x:Bind ViewModel.ReceiptHandle, Mode=TwoWay}"
+                         PlaceholderText="Enter receipt handle received after voting" />
+
+                <Button Content="Verify Receipt Status"
+                        Command="{x:Bind ViewModel.TrackReceiptCommand}"
+                        Style="{ThemeResource AccentButtonStyle}"
+                        HorizontalAlignment="Stretch" />
+
+                <ProgressRing IsActive="{x:Bind ViewModel.IsBusy, Mode=OneWay}"
+                              HorizontalAlignment="Center" />
+
+                <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.IsFound, Mode=OneWay}">
+                    <TextBlock Text="Receipt Verification Details" Style="{ThemeResource SubtitleTextBlockStyle}" />
+                    <Grid RowSpacing="8" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Status:" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.Status, Mode=OneWay}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Leaf Index:" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.LeafIndex, Mode=OneWay}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Witnessed At:" Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.WitnessedAtUtc, Mode=OneWay}" />
+                    </Grid>
+                </StackPanel>
+
+                <InfoBar IsOpen="True"
+                         Severity="Error"
+                         Title="Tracking Error"
+                         Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                         Visibility="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource StringToVisibilityConverter}}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</Page>

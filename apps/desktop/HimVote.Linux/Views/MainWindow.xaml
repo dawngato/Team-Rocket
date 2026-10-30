@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:v="clr-namespace:HimVote.Linux.Views"
+        xmlns:vm="clr-namespace:HimVote.Linux.ViewModels"
+        mc:Ignorable="d" d:DesignWidth="1200" d:DesignHeight="800"
+        x:Class="HimVote.Linux.Views.MainWindow"
+        Title="HimVote - Institutional Election Platform"
+        MinWidth="800"
+        MinHeight="600"
+        WindowStartupLocation="CenterScreen">
+
+    <Grid ColumnDefinitions="240,*" RowDefinitions="60,*">
+        <!-- Sidebar -->
+        <Border Grid.Row="0" Grid.RowSpan="2" Classes="sidebar">
+            <StackPanel Spacing="10" Margin="20">
+                <TextBlock Text="HimVote" FontSize="20" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" Margin="0,0,0,20" />
+                
+                <Button Content="Sign In" Command="{Binding NavigateTo}" CommandParameter="login" 
+                        HorizontalAlignment="Stretch" MinHeight="44" />
+                <Button Content="My Elections" Command="{Binding NavigateTo}" CommandParameter="elections" 
+                        HorizontalAlignment="Stretch" MinHeight="44" />
+                <Button Content="Admin Console" Command="{Binding NavigateTo}" CommandParameter="admin" 
+                        HorizontalAlignment="Stretch" MinHeight="44" />
+                <Button Content="Audit Explorer" Command="{Binding NavigateTo}" CommandParameter="audit" 
+                        HorizontalAlignment="Stretch" MinHeight="44" />
+                <Button Content="Settings" HorizontalAlignment="Stretch" MinHeight="44" />
+                
+                <TextBlock Text="English / Hindi" FontSize="12" Foreground="{DynamicResource SystemControlContextFillColorSecondaryBrush}" Margin="0,30,0,0" />
+            </StackPanel>
+        </Border>
+
+        <!-- Top bar -->
+        <Border Grid.Row="0" Grid.Column="1" Classes="topbar">
+            <TextBlock Text="{Binding Title}" FontSize="16" FontWeight="SemiBold" 
+                       VerticalAlignment="Center" Margin="20,0" Foreground="{StaticResource Navy900Brush}" />
+        </Border>
+
+        <!-- Content area -->
+        <ContentControl Grid.Row="1" Grid.Column="1" Content="{Binding CurrentViewModel}" Margin="20" />
+    </Grid>
+</Window>

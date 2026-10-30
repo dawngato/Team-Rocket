@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">HimVote</string>
+    <string name="title_login">Sign In to HimVote</string>
+    <string name="title_elections">Elections</string>
+    <string name="title_candidates">Candidates</string>
+    <string name="title_credential">Voting Credential</string>
+    <string name="title_voting">Cast Ballot</string>
+    <string name="title_receipt">Ballot Receipt</string>
+    <string name="title_inclusion">Inclusion Proof</string>
+    <string name="title_results">Election Results</string>
+</resources>

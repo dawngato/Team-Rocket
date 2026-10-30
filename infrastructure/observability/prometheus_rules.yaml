@@ -1,0 +1,38 @@
+groups:
+  - name: himvote_alerts
+    rules:
+      - alert: HighOutboxBacklog
+        expr: himvote_casting_outbox_unwitnessed_count > 100
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Casting outbox backlog exceeds threshold"
+          description: "Unwitnessed ballots backlog is accumulating"
+
+      - alert: HighWitnessLag
+        expr: himvote_witness_lag_seconds > 60
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Independent witness latency elevated"
+          description: "Witness response latency exceeds SLA target"
+
+      - alert: AnchorRelayLag
+        expr: himvote_anchor_unfinalized_seconds > 300
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Blockchain anchor finality delayed"
+          description: "Witness checkpoints awaiting blockchain transaction finality"
+
+      - alert: HighCastingErrorRate
+        expr: rate(himvote_casting_requests_total{status=~"5.."}[5m]) > 0.01
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elevated failure rate on casting intake"
+          description: "Casting endpoint returning 5xx responses"

@@ -1,0 +1,48 @@
+# Production configuration for HimVote Helm chart
+global:
+  environment: production
+  domain: himvote.edu
+  identityOrigin: identity.himvote.edu
+  castingOrigin: casting.himvote.edu
+
+gateway:
+  replicaCount: 5
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 20
+
+web:
+  replicaCount: 5
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 15
+
+identityIssuer:
+  replicaCount: 5
+  autoscaling:
+    enabled: true
+    minReplicas: 5
+    maxReplicas: 25
+  env:
+    logLevel: info
+    bootstrapAllowed: "false"
+    kmsProvider: aws_kms
+
+casting:
+  replicaCount: 10
+  autoscaling:
+    enabled: true
+    minReplicas: 10
+    maxReplicas: 50
+  env:
+    logLevel: info
+
+databases:
+  identity:
+    host: identity-rds.internal.himvote.edu
+    sslMode: verify-full
+  casting:
+    host: casting-rds.internal.himvote.edu
+    sslMode: verify-full

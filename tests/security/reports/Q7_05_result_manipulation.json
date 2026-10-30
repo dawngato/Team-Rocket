@@ -1,0 +1,33 @@
+{
+  "actual_result": "ALTERED_ANNOUNCED_TOTAL_REJECTED_TALLY_VERIFIER_FAILS",
+  "database_state_summary": {
+    "honest_tally": {
+      "cand_alice": 6,
+      "cand_bob": 4
+    },
+    "manipulated_tally_deflated": {
+      "cand_alice": 5,
+      "cand_bob": 4
+    },
+    "manipulated_tally_inflated": {
+      "cand_alice": 7,
+      "cand_bob": 4
+    },
+    "tally_manipulation_detected": true,
+    "true_leaf_count": 10
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "ALTERED_ANNOUNCED_TOTAL_REJECTED_TALLY_VERIFIER_FAILS",
+  "manifest_digest": "sha256:14c907a027081cb7d12500816dffdbadca2fe69a4e0d6cd18078b4dac1232e05",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "honest tally verified successfully",
+    "inflated tally rejected with exit code 2",
+    "deflated tally rejected with exit code 2",
+    "TALLY_PROOF marked FAIL on mismatch"
+  ],
+  "seed": 70501,
+  "test_id": "Q7_05_result_manipulation",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

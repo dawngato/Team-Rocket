@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:DataType="vm:ElectionsViewModel"
+             x:Class="HimVote.Linux.Views.ElectionsPage">
+
+    <DockPanel Margin="20">
+        <StackPanel DockPanel.Dock="Top" Spacing="10">
+            <TextBlock Text="My Elections" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+            <TextBlock Text="View your eligible elections and casting status." Foreground="#666666" />
+        </StackPanel>
+
+        <ItemsControl DockPanel.Dock="Top" Items="{Binding Elections}" Margin="0,20,0,0">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Classes="card" Margin="0,0,0,12" Padding="20">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                                <TextBlock Text="{Binding CandidateCount, StringFormat='{0} candidates'}" Foreground="#666666" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Vote now" Classes="primary-button" MinHeight="44" MinWidth="100" />
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Button Content="Refresh" Command="{Binding LoadElectionsCommand}" 
+                DockPanel.Dock="Bottom" HorizontalAlignment="Right" MinHeight="44" IsEnabled="{Binding !IsLoading}" />
+    </DockPanel>
+</UserControl>

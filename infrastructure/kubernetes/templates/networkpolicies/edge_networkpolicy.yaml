@@ -1,0 +1,108 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: edge-gateway-policy
+  namespace: himvote-edge
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: gateway
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Accept ingress from internet via ingress controller or external load balancer
+    - ports:
+        - protocol: TCP
+          port: 8080
+        - protocol: TCP
+          port: 8443
+  egress:
+    # Egress to DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Egress to Web portal in edge namespace
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: web
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Egress to Identity Issuer in identity namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: identity
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: identity-issuer
+      ports:
+        - protocol: TCP
+          port: 8081
+    # Egress to Admin API in identity namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: identity
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: admin-api
+      ports:
+        - protocol: TCP
+          port: 8083
+    # Egress to Casting Service in casting namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: casting
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: casting
+      ports:
+        - protocol: TCP
+          port: 8082
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: edge-web-policy
+  namespace: himvote-edge
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: web
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

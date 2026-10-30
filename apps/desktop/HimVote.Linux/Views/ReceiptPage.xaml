@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:DataType="vm:ReceiptViewModel"
+             x:Class="HimVote.Linux.Views.ReceiptPage">
+
+    <Grid RowDefinitions="Auto,*" Margin="40">
+        <Border Grid.Row="0" Classes="card" Padding="30" MaxWidth="500" HorizontalAlignment="Center">
+            <StackPanel Spacing="20">
+                <TextBlock Text="My Receipt" FontSize="24" FontWeight="Bold" 
+                           Foreground="{StaticResource Navy900Brush}" HorizontalAlignment="Center" />
+                
+                <TextBlock Text="Receipt handle" FontSize="13" FontWeight="Medium" Foreground="{StaticResource TextBrush}" />
+                <TextBox Text="{Binding Handle}" Watermark="Enter receipt handle" MinHeight="44" Classes="input-field" />
+
+                <Button Content="Check status" Command="{Binding CheckReceiptStatusCommand}" MinHeight="44"
+                        Classes="primary-button" IsEnabled="{Binding !IsLoading}" />
+
+                <Border IsVisible="{Binding Receipt, Converter={x:Static ObjectToBoolConverter.IsNotNull}}" 
+                        Background="{StaticResource SurfaceBrush}" CornerRadius="6" Padding="15" Margin="0,10,0,0">
+                    <StackPanel Spacing="8">
+                        <TextBlock Text="Receipt Details" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
+                        <TextBlock Text="{Binding Receipt.Status}" FontSize="14" />
+                        <TextBlock Text="{Binding Receipt.Handle}" FontFamily="monospace" FontSize="12" />
+                        <TextBlock Text="{Binding Receipt.LeafIndex, StringFormat='Leaf index: {0}'}" FontSize="14" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

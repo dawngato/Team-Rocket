@@ -1,0 +1,42 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:HimVote.Core.ViewModels;assembly=HimVote.Core"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="600"
+             x:DataType="vm:LoginViewModel"
+             x:Class="HimVote.Linux.Views.LoginPage">
+
+    <Grid RowDefinitions="Auto,*" Margin="40">
+        <Border Grid.Row="0" Classes="card" Padding="30" MaxWidth="400" HorizontalAlignment="Center">
+            <StackPanel Spacing="20">
+                <TextBlock Text="Sign in to HimVote" FontSize="24" FontWeight="Bold" 
+                           Foreground="{StaticResource Navy900Brush}" HorizontalAlignment="Center" />
+                
+                <TextBlock Text="Institutional email" FontSize="13" FontWeight="Medium" 
+                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
+                <TextBox Text="{Binding Email}" Watermark="student@university.edu" MinHeight="44" 
+                         Classes="input-field" />
+
+                <TextBlock Text="Password" FontSize="13" FontWeight="Medium" 
+                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
+                <TextBox Text="{Binding Password}" PasswordChar="•" Watermark="Enter password" MinHeight="44" 
+                         Classes="input-field" />
+
+                <TextBlock Text="MFA token (if required)" FontSize="13" FontWeight="Medium" 
+                           Foreground="{StaticResource TextBrush}" Margin="0,10,0,5" />
+                <TextBox Text="{Binding MfaToken}" Watermark="6-digit code" MinHeight="44" 
+                         Classes="input-field" />
+
+                <Border IsVisible="{Binding HasError}" Background="{StaticResource Red600Brush}" 
+                       CornerRadius="6" Padding="10" Margin="0,10,0,0">
+                    <TextBlock Text="{Binding ErrorMessage}" Foreground="White" FontSize="13" TextWrapping="Wrap" />
+                </Border>
+
+                <Button Content="{Binding IsLoading, Converter={x:Static BoolToStringConverter.TrueFalse}, ConverterParameter='Signing in...|Sign in'}"
+                        Command="{Binding LoginCommand}" MinHeight="44"
+                        Classes="primary-button" IsEnabled="{Binding !IsLoading}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

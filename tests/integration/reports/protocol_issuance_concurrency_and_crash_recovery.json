@@ -1,0 +1,26 @@
+{
+  "actual_result": "ISSUANCE_PROTOCOL_CONCURRENCY_AND_CRASH_RECOVERY_PASS",
+  "database_state_summary": {
+    "concurrent_race_resolved": true,
+    "crash_after_sign_recovered": true,
+    "crash_before_sign_recovered": true,
+    "cutoff_enforced": true,
+    "idempotent_replay_verified": true,
+    "lost_secret_reissue_blocked": true
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "ISSUANCE_PROTOCOL_CONCURRENCY_AND_CRASH_RECOVERY_PASS",
+  "manifest_digest": "sha256:17acc3af45a9f494c7696e7bbf376689f5a69c1ebf1bd9121a585328427d5d1f",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "concurrent blinded requests resolve to single reservation",
+    "crash before sign allows reprocessing only persisted request",
+    "crash after sign reuses stored signature without double signing",
+    "lost secret cannot bypass spent slot",
+    "issuance past cutoff strictly forbidden"
+  ],
+  "seed": 80101,
+  "test_id": "protocol_issuance_concurrency_and_crash_recovery",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

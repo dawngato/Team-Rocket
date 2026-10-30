@@ -1,0 +1,91 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: himvote-nginx-config
+  namespace: himvote-edge
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: gateway
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    events {
+        worker_connections 2048;
+    }
+    http {
+        include /etc/nginx/mime.types;
+        default_type application/octet-stream;
+        log_format standard '$remote_addr [$time_local] "$request" $status $body_bytes_sent';
+        log_format casting_redacted '[CASTING] [$time_local] "$request_method $uri" $status $body_bytes_sent';
+        access_log /var/log/nginx/access.log standard;
+        server_tokens off;
+        sendfile on;
+        keepalive_timeout 65;
+
+        upstream web_svc {
+            server himvote-web.himvote-edge.svc.cluster.local:3000;
+        }
+        upstream identity_svc {
+            server himvote-identity-issuer.himvote-identity.svc.cluster.local:8081;
+        }
+        upstream casting_svc {
+            server himvote-casting.himvote-casting.svc.cluster.local:8082;
+        }
+        upstream admin_svc {
+            server himvote-admin-api.himvote-identity.svc.cluster.local:8083;
+        }
+
+        # Identity Origin
+        server {
+            listen 8080;
+            server_name identity.himvote.edu;
+            add_header X_Content_Type_Options "nosniff" always;
+            add_header X_Frame_Options "DENY" always;
+            add_header Referrer_Policy "no-referrer" always;
+
+            location ~ ^/(v1/auth|v1/credentials|v1/students|v1/roster)/ {
+                proxy_pass http://identity_svc;
+                proxy_set_header Host $host;
+            }
+            location /v1/admin/ {
+                proxy_pass http://admin_svc;
+                proxy_set_header Host $host;
+            }
+            location / {
+                proxy_pass http://web_svc;
+                proxy_set_header Host $host;
+            }
+        }
+
+        # Casting Origin
+        server {
+            listen 8080;
+            server_name casting.himvote.edu;
+            add_header X_Content_Type_Options "nosniff" always;
+            add_header X_Frame_Options "DENY" always;
+            add_header Referrer_Policy "no-referrer" always;
+
+            location ~ ^/v1/cast/ {
+                access_log off;
+                proxy_set_header Cookie "";
+                proxy_set_header Authorization "";
+                proxy_set_header X-Request-ID "";
+                proxy_set_header X-B3-TraceId "";
+                proxy_set_header traceparent "";
+                proxy_pass http://casting_svc;
+                proxy_set_header Host $host;
+            }
+            location ~ ^/v1/receipts/ {
+                proxy_set_header Cookie "";
+                proxy_set_header Authorization "";
+                proxy_pass http://casting_svc;
+                proxy_set_header Host $host;
+            }
+            location / {
+                return 404 '{"error": "not_found"}';
+            }
+        }
+    }

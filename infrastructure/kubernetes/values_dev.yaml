@@ -1,0 +1,57 @@
+# Development overrides for HimVote Helm chart
+global:
+  environment: development
+  domain: himvote.local
+  identityOrigin: identity.himvote.local
+  castingOrigin: casting.himvote.local
+
+gateway:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+web:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+identityIssuer:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  env:
+    logLevel: debug
+    bootstrapAllowed: "true"
+    kmsProvider: local
+
+casting:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  env:
+    logLevel: debug
+
+adminApi:
+  replicaCount: 1
+  env:
+    logLevel: debug
+
+electionEngine:
+  replicaCount: 1
+
+checkpointWorker:
+  replicaCount: 1
+
+witness:
+  replicaCount: 1
+
+anchorRelayer:
+  replicaCount: 1
+
+databases:
+  identity:
+    host: himvote-identity-db.himvote-identity.svc.cluster.local
+    sslMode: prefer
+  casting:
+    host: himvote-casting-db.himvote-casting.svc.cluster.local
+    sslMode: prefer

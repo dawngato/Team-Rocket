@@ -1,0 +1,73 @@
+# Cross Cluster Traffic Isolation Policy
+# Strictly prevents any direct network connectivity between Identity and Casting domains
+# Enforces Section 0.1 Rule 4 and Section 11 of HimVote specification
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: isolate-identity-from-casting
+  namespace: himvote-identity
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress only from edge namespace or internal identity pods
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: edge
+        - podSelector: {}
+  egress:
+    # Allow egress only to kube-system DNS, edge namespace, or internal identity pods
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: identity
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: isolate-casting-from-identity
+  namespace: himvote-casting
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow ingress only from edge namespace or internal casting pods
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: edge
+        - podSelector: {}
+  egress:
+    # Allow egress only to kube-system DNS or internal casting pods
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: casting
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

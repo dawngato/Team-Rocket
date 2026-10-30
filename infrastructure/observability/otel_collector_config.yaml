@@ -1,0 +1,56 @@
+# OpenTelemetry Collector Configuration for HimVote
+# Implements strict attribute and header redaction to protect voter privacy
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 256
+
+  # Redaction processor to filter sensitive identity and ballot data
+  attributes/redaction:
+    actions:
+      - key: student_id
+        action: delete
+      - key: voter_id
+        action: delete
+      - key: ballot_choice
+        action: delete
+      - key: password
+        action: delete
+      - key: token
+        action: delete
+      - key: authorization
+        action: delete
+      - key: cookie
+        action: delete
+      - key: nullifier
+        action: hash
+      - pattern: "(?i)(password|secret|bearer|token)"
+        action: delete
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: himvote
+
+  logging:
+    verbosity: basic
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [attributes/redaction, batch]
+      exporters: [logging]
+    metrics:
+      receivers: [otlp]
+      processors: [attributes/redaction, batch]
+      exporters: [prometheus]

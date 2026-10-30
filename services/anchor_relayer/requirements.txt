@@ -1,0 +1,4 @@
+web3>=7.0.0
+eth_account>=0.13.0
+requests>=2.31.0
+hexbytes>=1.2.0

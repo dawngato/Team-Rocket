@@ -1,0 +1,42 @@
+{
+  "description": "RFC 8785 JSON Canonicalization Scheme test vectors",
+  "unicode_sorting_test": {
+    "input": {
+      "\u20ac": "Euro Sign",
+      "\r": "Carriage Return",
+      "\ufb33": "Hebrew Letter Dalet With Dagesh",
+      "1": "One",
+      "\ud83d\ude00": "Emoji: Grinning Face",
+      "\u0080": "Control",
+      "\u00f6": "Latin Small Letter O With Diaeresis"
+    },
+    "expected_key_order": [
+      "\r",
+      "1",
+      "\u0080",
+      "\u00f6",
+      "\u20ac",
+      "\ud83d\ude00",
+      "\ufb33"
+    ],
+    "expected_canonical_json": "{\"\\r\":\"Carriage Return\",\"1\":\"One\",\"\u0080\":\"Control\",\"\u00f6\":\"Latin Small Letter O With Diaeresis\",\"\u20ac\":\"Euro Sign\",\"\ud83d\ude00\":\"Emoji: Grinning Face\",\"\ufb33\":\"Hebrew Letter Dalet With Dagesh\"}"
+  },
+  "string_escaping_test": {
+    "input": {
+      "str": "\u20ac$\u000f\nA'B\"\\\"/"
+    },
+    "expected_canonical_hex": "7b22737472223a22e282ac245c75303030665c6e4127425c225c5c5c222f227d"
+  },
+  "duplicate_key_test": {
+    "raw_json": "{\"key\": 1, \"other\": 2, \"key\": 3}",
+    "expected_error": "DuplicateKeyError",
+    "duplicate_key": "key"
+  },
+  "float_rejection_test": {
+    "input": {
+      "count": 10,
+      "score": 98.5
+    },
+    "expected_error": "FloatNotPermittedError"
+  }
+}

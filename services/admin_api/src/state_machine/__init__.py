@@ -1,0 +1,3 @@
+"""
+State machine package initialization.
+"""

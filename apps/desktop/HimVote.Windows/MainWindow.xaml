@@ -1,0 +1,32 @@
+<Window
+    x:Class="HimVote.Windows.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="HimVote Institutional Election Platform">
+
+    <Grid>
+        <NavigationView x:Name="NavView"
+                        IsBackButtonVisible="Collapsed"
+                        PaneDisplayMode="Left"
+                        Header="HimVote Election Platform">
+            <NavigationView.MenuItems>
+                <NavigationViewItem Content="Sign In" Tag="Login" Icon="Contact" />
+                <NavigationViewItem Content="Elections" Tag="Elections" Icon="Globe" />
+                <NavigationViewItem Content="Receipt Tracker" Tag="Receipt" Icon="Bookmarks" />
+                <NavigationViewItem Content="Administration" Tag="Admin" Icon="Permissions" />
+                <NavigationViewItemSeparator />
+                <NavigationViewItem Content="Evidence Import" Tag="EvidenceImport" Icon="OpenFile" />
+                <NavigationViewItem Content="Audit Explorer" Tag="AuditExplorer" Icon="Document" />
+            </NavigationView.MenuItems>
+
+            <NavigationView.FooterMenuItems>
+                <NavigationViewItem Content="Settings" Tag="Settings" Icon="Setting" />
+            </NavigationView.FooterMenuItems>
+
+            <Frame x:Name="ContentFrame" />
+        </NavigationView>
+    </Grid>
+</Window>

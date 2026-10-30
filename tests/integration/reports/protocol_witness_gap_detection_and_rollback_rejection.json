@@ -1,0 +1,25 @@
+{
+  "actual_result": "WITNESS_GAPS_AND_ROLLBACKS_REJECTED_OUTAGE_UNVERIFIABLE",
+  "database_state_summary": {
+    "gap_rejected": true,
+    "incompatible_final_rejected": true,
+    "outage_unverifiable_detected": true,
+    "rollback_rejected": true,
+    "wrong_election_rejected": true
+  },
+  "engine_version": "electionguard_1.0.0",
+  "expected_result": "WITNESS_GAPS_AND_ROLLBACKS_REJECTED_OUTAGE_UNVERIFIABLE",
+  "manifest_digest": "sha256:d6b217b1def8f1b365cf1ec659c93cdba9c8b8eebb9d4cdf369119d2ee5910d3",
+  "notes": "",
+  "passed": true,
+  "postconditions": [
+    "wrong election rejected by witness",
+    "smaller tree size rollback rejected",
+    "gap in tree index sequence rejected",
+    "conflicting second final rejected",
+    "permanent witness outage produces UNVERIFIABLE outcome"
+  ],
+  "seed": 80301,
+  "test_id": "protocol_witness_gap_detection_and_rollback_rejection",
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+}

@@ -1,0 +1,2129 @@
+openapi: 3.1.0
+info:
+  title: HimVote Platform API Specification
+  version: 2.0.0
+  description: Production grade institutional election platform API specification
+    covering identity issuer, admin API, casting, witness, and verifier services.
+  contact:
+    name: HimVote Platform Engineering Team
+    email: security@himvote.university.edu
+  license:
+    name: Proprietary
+    url: https://himvote.university.edu/license
+servers:
+- url: http://localhost:8080
+  description: Local development gateway
+- url: https://identity.himvote.university.edu
+  description: Production identity origin
+- url: https://cast.himvote.university.edu
+  description: Production casting origin
+- url: https://witness.independent_auditor.org
+  description: Independent witness origin
+tags:
+- name: auth
+  description: Authentication and session operations
+- name: bootstrap
+  description: Initial system setup operations
+- name: admin_governance
+  description: Administrator invitations and role authorizations
+- name: students
+  description: Student registration and identity verification
+- name: roster
+  description: Roster snapshot and eligibility verification
+- name: credentials
+  description: Blind signature credential issuance per RFC 9474
+- name: admin_elections
+  description: Election lifecycle management and candidate configuration
+- name: casting
+  description: Anonymous ballot casting origin operations
+- name: receipt
+  description: Voter receipt polling and inclusion verification
+- name: witness
+  description: Independent witness log cosigning and final checkpoints
+- name: verifier
+  description: Auditor verification CLI and attestation endpoints
+- name: results
+  description: Public manifests and finalized election results
+paths:
+  /v1/auth/login:
+    post:
+      tags:
+      - auth
+      summary: Authenticate user credentials and initiate session
+      operationId: authLogin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Authentication successful with session token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials or unauthorized account status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Too many failed attempts resulting in rate limit lockout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/auth/logout:
+    post:
+      tags:
+      - auth
+      summary: Invalidate current session
+      operationId: authLogout
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: Session invalidated successfully
+        '401':
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/auth/recover:
+    post:
+      tags:
+      - auth
+      summary: Initiate password recovery with secure token
+      operationId: authRecover
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecoveryRequest'
+      responses:
+        '202':
+          description: Recovery token dispatched if account exists
+        '429':
+          description: Rate limit exceeded on recovery requests
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/bootstrap/claim:
+    post:
+      tags:
+      - bootstrap
+      summary: Single use bootstrap claim for initial Super Administrator setup
+      operationId: bootstrapClaim
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BootstrapClaimRequest'
+      responses:
+        '200':
+          description: Bootstrap successfully claimed and permanently disabled
+        '403':
+          description: Bootstrap disallowed or previously claimed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/invitations:
+    post:
+      tags:
+      - admin_governance
+      summary: Create scoped administrator or teacher invitation
+      operationId: createAdminInvitation
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminInvitationRequest'
+      responses:
+        '201':
+          description: Invitation created successfully
+        '403':
+          description: Insufficient privileges to invite specified role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/role_grant_requests:
+    post:
+      tags:
+      - admin_governance
+      summary: Submit request for privileged role grant requiring two person rule
+        approval
+      operationId: requestRoleGrant
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleGrantRequest'
+      responses:
+        '202':
+          description: Role grant request submitted into pending approval queue
+        '403':
+          description: Forbidden self promotion or unauthorized requester
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/role-grant-requests:
+    post:
+      tags:
+      - admin_governance
+      summary: Submit request for privileged role grant requiring two person rule
+        approval
+      operationId: requestRoleGrantKebab
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RoleGrantRequest'
+      responses:
+        '202':
+          description: Role grant request submitted into pending approval queue
+        '403':
+          description: Forbidden self promotion or unauthorized requester
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/approvals/{id}/decision:
+    post:
+      tags:
+      - admin_governance
+      summary: Record approval or rejection decision enforcing distinct approver constraint
+      operationId: submitApprovalDecision
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+        description: Approval request identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalDecisionRequest'
+      responses:
+        '200':
+          description: Approval decision registered and applied
+        '403':
+          description: Self approval prohibited or invalid approver role
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/audit_events:
+    get:
+      tags:
+      - admin_governance
+      summary: Query immutable append only audit event trail
+      operationId: getAdminAuditEvents
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of immutable audit log records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventList'
+  /v1/admin/audit-events:
+    get:
+      tags:
+      - admin_governance
+      summary: Query immutable append only audit event trail
+      operationId: getAdminAuditEventsKebab
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: limit
+        in: query
+        schema:
+          type: integer
+          default: 50
+      - name: offset
+        in: query
+        schema:
+          type: integer
+          default: 0
+      - name: actor_id
+        in: query
+        schema:
+          type: string
+      responses:
+        '200':
+          description: List of immutable audit log records
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditEventList'
+  /v1/students/register:
+    post:
+      tags:
+      - students
+      summary: Student self registration with institutional credentials
+      operationId: studentRegister
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentRegisterRequest'
+      responses:
+        '201':
+          description: Registration created in pending verification status
+        '409':
+          description: Duplicate student identifier or email registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/students/import:
+    post:
+      tags:
+      - students
+      summary: Bulk student import from student information system
+      operationId: studentImport
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentImportRequest'
+      responses:
+        '200':
+          description: Import completed with count of inserted and updated records
+  /v1/students/{id}/verify:
+    post:
+      tags:
+      - students
+      summary: Verify student enrollment record by authorized teacher or admin
+      operationId: studentVerify
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StudentVerifyRequest'
+      responses:
+        '200':
+          description: Student status transitioned to active
+  /v1/roster/me:
+    get:
+      tags:
+      - roster
+      summary: Fetch authenticated student eligibility and frozen roster status
+      operationId: rosterMe
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: Eligibility report for caller across current elections
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RosterMeResponse'
+  /v1/credentials/issue:
+    post:
+      tags:
+      - credentials
+      summary: Issue blind signature on voter request per RFC 9474
+      operationId: issueBlindCredential
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlindedIssuanceRequest'
+      responses:
+        '200':
+          description: Blind signature response issued or retrieved from idempotency
+            slot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlindedIssuanceResponse'
+        '403':
+          description: Caller ineligible or issuance window closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Second credential request with divergent blinded message rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/credentials/issuance_status:
+    get:
+      tags:
+      - credentials
+      summary: Check status of voter issuance slot without revealing secrets
+      operationId: getIssuanceStatus
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      parameters:
+      - name: election_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Issuance state for the requested election
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuanceStatusResponse'
+  /v1/credentials/issuance-status:
+    get:
+      tags:
+      - credentials
+      summary: Check status of voter issuance slot without revealing secrets
+      operationId: getIssuanceStatusKebab
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      parameters:
+      - name: election_id
+        in: query
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Issuance state for the requested election
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IssuanceStatusResponse'
+  /v1/admin/elections:
+    get:
+      tags:
+      - admin_elections
+      summary: List elections filtered by institutional scope and lifecycle state
+      operationId: adminListElections
+      security:
+      - bearerAuth: []
+      responses:
+        '200':
+          description: Array of election summaries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ElectionList'
+    post:
+      tags:
+      - admin_elections
+      summary: Create draft election
+      operationId: adminCreateElection
+      security:
+      - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateElectionRequest'
+      responses:
+        '201':
+          description: Election created in DRAFT state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Election'
+  /v1/admin/elections/{election_id}:
+    get:
+      tags:
+      - admin_elections
+      summary: Get full details of specified election
+      operationId: adminGetElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Election record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Election'
+    put:
+      tags:
+      - admin_elections
+      summary: Update election parameters while in DRAFT state
+      operationId: adminUpdateElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateElectionRequest'
+      responses:
+        '200':
+          description: Election updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Election'
+        '409':
+          description: Cannot modify election once frozen or active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/elections/{election_id}/candidates:
+    get:
+      tags:
+      - admin_elections
+      summary: List candidates for election contest
+      operationId: adminListCandidates
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Array of candidate records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Candidate'
+    post:
+      tags:
+      - admin_elections
+      summary: Add candidate to election draft contest
+      operationId: adminAddCandidate
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Candidate'
+      responses:
+        '201':
+          description: Candidate registered in contest
+  /v1/admin/elections/{election_id}/candidates/{candidate_id}:
+    put:
+      tags:
+      - admin_elections
+      summary: Update candidate details while election is in DRAFT state
+      operationId: adminUpdateCandidate
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: candidate_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Candidate'
+      responses:
+        '200':
+          description: Candidate updated
+    delete:
+      tags:
+      - admin_elections
+      summary: Remove candidate from election draft
+      operationId: adminDeleteCandidate
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: candidate_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '204':
+          description: Candidate deleted
+  /v1/admin/elections/{election_id}/roster/submit:
+    post:
+      tags:
+      - admin_elections
+      summary: Submit prepared roster snapshot for formal review
+      operationId: adminSubmitRoster
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RosterSubmitRequest'
+      responses:
+        '200':
+          description: Roster submitted for independent approval
+  /v1/admin/elections/{election_id}/roster/approve:
+    post:
+      tags:
+      - admin_elections
+      summary: Roster Approver signs digest and count under strict role separation
+      operationId: adminApproveRoster
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RosterApprovalRequest'
+      responses:
+        '200':
+          description: Roster snapshot approved and committed
+        '403':
+          description: Forbidden roster importer cannot approve own roster submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/elections/{election_id}/freeze:
+    post:
+      tags:
+      - admin_elections
+      summary: Freeze election manifest creating immutable canonical manifest digest
+      operationId: adminFreezeElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Manifest frozen with computed SHA256 digest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Election'
+  /v1/admin/elections/{election_id}/open:
+    post:
+      tags:
+      - admin_elections
+      summary: Transition election state to OPEN after issuance window cutoff
+      operationId: adminOpenElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Election opened for voting
+  /v1/admin/elections/{election_id}/close:
+    post:
+      tags:
+      - admin_elections
+      summary: Acquire row lock, close casting, and set final tree size
+      operationId: adminCloseElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Casting closed and final leaf size recorded
+  /v1/admin/elections/{election_id}/request_publication:
+    post:
+      tags:
+      - admin_elections
+      summary: Submit publication request once final witness and on chain anchor complete
+      operationId: adminRequestPublication
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationRequest'
+      responses:
+        '202':
+          description: Publication request logged pending independent auditor signature
+  /v1/admin/elections/{election_id}/request-publication:
+    post:
+      tags:
+      - admin_elections
+      summary: Submit publication request once final witness and on chain anchor complete
+      operationId: adminRequestPublicationKebab
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationRequest'
+      responses:
+        '202':
+          description: Publication request logged pending independent auditor signature
+  /v1/admin/elections/{election_id}/publish:
+    post:
+      tags:
+      - admin_elections
+      summary: Publish final results gated by verified auditor cryptographic signature
+      operationId: adminPublishElection
+      security:
+      - bearerAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublicationDecisionRequest'
+      responses:
+        '200':
+          description: Results successfully published and unsealed
+        '403':
+          description: Auditor signature verification failed against pinned public
+            key
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/admin/elections/{election_id}/evidence:
+    get:
+      tags:
+      - admin_elections
+      summary: Export complete verifiable evidence archive package
+      operationId: adminGetEvidencePackage
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Evidence package metadata and download locator
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidencePackage'
+  /v1/elections/{election_id}/manifest:
+    get:
+      tags:
+      - results
+      summary: Fetch public immutable frozen manifest
+      operationId: getPublicManifest
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Public election manifest
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Election'
+  /v1/elections/{election_id}/results:
+    get:
+      tags:
+      - results
+      summary: Fetch verified published election tally and proofs
+      operationId: getPublicResults
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Published results and mathematical tally proofs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishedResults'
+        '403':
+          description: Results unreleased prior to auditor attested publication gate
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/cast/{election_id}/ballots:
+    post:
+      tags:
+      - casting
+      summary: Submit encrypted ballot anonymously with credential proof and nullifier
+      operationId: castBallot
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: Idempotency_Key
+        in: header
+        required: true
+        schema:
+          type: string
+          format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CastBallotRequest'
+      responses:
+        '200':
+          description: Ballot inserted at leaf index and committed pending witness
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CastBallotResponse'
+        '400':
+          description: Invalid credential proof or malformed engine ciphertext
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Casting window closed or unauthorized origin headers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Duplicate nullifier detected double casting forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Casting backlog exceeds safe witness queue threshold
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/cast/{election_id}/receipt/{handle}:
+    get:
+      tags:
+      - receipt
+      summary: Poll ballot confirmation status by unguessable receipt handle
+      operationId: getReceiptStatus
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: handle
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Receipt status and leaf index inclusion details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptStatusResponse'
+        '404':
+          description: Receipt handle unknown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/cast/{election_id}/receipts/{handle}:
+    get:
+      tags:
+      - receipt
+      summary: Poll ballot confirmation status by unguessable receipt handle
+      operationId: getReceiptStatusPlural
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: handle
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Receipt status and leaf index inclusion details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReceiptStatusResponse'
+        '404':
+          description: Receipt handle unknown
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/cast/{election_id}/status:
+    get:
+      tags:
+      - casting
+      summary: Check casting service health and witness processing backlog
+      operationId: getCastingStatus
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Casting service operating health
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CastingServiceStatus'
+  /v1/witness/checkpoints:
+    post:
+      tags:
+      - witness
+      summary: Submit incremental Merkle log checkpoint for independent witness cosigning
+      operationId: witnessSubmitCheckpoint
+      security:
+      - witnessAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WitnessCheckpointRequest'
+      responses:
+        '200':
+          description: Checkpoint accepted and cosigned by witness
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WitnessCheckpointResponse'
+        '409':
+          description: Tree size non monotonic or Merkle consistency proof invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/witness/elections/{election_id}/final:
+    post:
+      tags:
+      - witness
+      summary: Submit final closed checkpoint for permanent election finality cosigning
+      operationId: witnessSubmitFinal
+      security:
+      - witnessAuth: []
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WitnessFinalRequest'
+      responses:
+        '200':
+          description: Final checkpoint recorded and sealed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WitnessFinalResponse'
+        '409':
+          description: Election already finalized with divergent root
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+      - witness
+      summary: Retrieve independent final witnessed checkpoint for auditor verification
+      operationId: witnessGetFinal
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Independent witness final checkpoint record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WitnessFinalResponse'
+        '404':
+          description: Final checkpoint unobserved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/witness/elections/{election_id}/checkpoints:
+    get:
+      tags:
+      - witness
+      summary: List witnessed checkpoint history sequence for consistency verification
+      operationId: witnessListCheckpoints
+      parameters:
+      - name: election_id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Ordered sequence of witnessed checkpoints
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WitnessCheckpointsList'
+  /v1/verifier/audit_evidence:
+    post:
+      tags:
+      - verifier
+      summary: Run standalone auditor verification across cryptographic evidence bundle
+      operationId: verifierAuditEvidence
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifierAuditRequest'
+      responses:
+        '200':
+          description: Deterministic audit evaluation report with exit code and property
+            statuses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifierAuditReport'
+  /v1/verifier/audit-evidence:
+    post:
+      tags:
+      - verifier
+      summary: Run standalone auditor verification across cryptographic evidence bundle
+      operationId: verifierAuditEvidenceKebab
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifierAuditRequest'
+      responses:
+        '200':
+          description: Deterministic audit evaluation report with exit code and property
+            statuses
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifierAuditReport'
+  /v1/verifier/verify_attestation:
+    post:
+      tags:
+      - verifier
+      summary: Verify independent auditor signature over verification report
+      operationId: verifierVerifyAttestation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifierAttestationRequest'
+      responses:
+        '200':
+          description: Attestation validity confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifierAttestationResponse'
+  /v1/verifier/verify-attestation:
+    post:
+      tags:
+      - verifier
+      summary: Verify independent auditor signature over verification report
+      operationId: verifierVerifyAttestationKebab
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifierAttestationRequest'
+      responses:
+        '200':
+          description: Attestation validity confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifierAttestationResponse'
+  /v1/verifier/properties:
+    get:
+      tags:
+      - verifier
+      summary: List formal verifiable properties evaluated during audit
+      operationId: verifierListProperties
+      responses:
+        '200':
+          description: List of verifiable election security properties
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifierPropertiesList'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Bearer token authorization header for identity and administration
+        operations
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: session_id
+      description: HttpOnly Secure SameSite session cookie for identity web portal
+    witnessAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Mutual TLS or Bearer token identifying authenticated checkpoint
+        submitters
+    auditorSignature:
+      type: apiKey
+      in: header
+      name: X_Auditor_Signature
+      description: Detached cryptographic signature from independent auditor private
+        key
+  headers:
+    Idempotency_Key:
+      description: Unique client generated UUID preventing duplicate transaction execution
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    LoginRequest:
+      type: object
+      required:
+      - email
+      - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: Institutional email address
+        password:
+          type: string
+          minLength: 8
+          description: Account password string
+        mfa_token:
+          type: string
+          description: Optional MFA token for privileged roles
+    LoginResponse:
+      type: object
+      required:
+      - session_token
+      - user_id
+      - role
+      - mfa_required
+      properties:
+        session_token:
+          type: string
+          description: Signed session bearer token
+        user_id:
+          type: string
+          description: Unique user identifier
+        role:
+          type: string
+          enum:
+          - super_admin
+          - administrator
+          - election_officer
+          - teacher
+          - student
+          - roster_approver
+          - auditor
+        mfa_required:
+          type: boolean
+          description: Flag indicating if MFA challenge must be answered
+    RecoveryRequest:
+      type: object
+      required:
+      - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: Institutional recovery email address
+    BootstrapClaimRequest:
+      type: object
+      required:
+      - invitation_token
+      - password
+      properties:
+        invitation_token:
+          type: string
+          description: Single use bootstrap secret token
+        password:
+          type: string
+          minLength: 16
+          description: Super admin password string
+    AdminInvitationRequest:
+      type: object
+      required:
+      - email
+      - role
+      - scope
+      properties:
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum:
+          - administrator
+          - election_officer
+          - teacher
+          - roster_approver
+        scope:
+          type: string
+          description: Department campus or tenant authorization boundary
+    RoleGrantRequest:
+      type: object
+      required:
+      - user_id
+      - role
+      - scope
+      - justification
+      properties:
+        user_id:
+          type: string
+        role:
+          type: string
+        scope:
+          type: string
+        justification:
+          type: string
+    ApprovalDecisionRequest:
+      type: object
+      required:
+      - decision
+      - reason
+      properties:
+        decision:
+          type: string
+          enum:
+          - approved
+          - rejected
+        reason:
+          type: string
+    AuditEvent:
+      type: object
+      required:
+      - id
+      - timestamp
+      - actor_id
+      - action
+      - result
+      properties:
+        id:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        actor_id:
+          type: string
+        action:
+          type: string
+        result:
+          type: string
+        details:
+          type: object
+    AuditEventList:
+      type: object
+      required:
+      - events
+      - total
+      properties:
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditEvent'
+        total:
+          type: integer
+    StudentRegisterRequest:
+      type: object
+      required:
+      - student_id
+      - email
+      - full_name
+      properties:
+        student_id:
+          type: string
+          pattern: ^[A-Za-z0-9_]+$
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+          minLength: 1
+    StudentRecord:
+      type: object
+      required:
+      - student_id
+      - email
+      - full_name
+      - department
+      properties:
+        student_id:
+          type: string
+        email:
+          type: string
+          format: email
+        full_name:
+          type: string
+        department:
+          type: string
+    StudentImportRequest:
+      type: object
+      required:
+      - source
+      - records
+      properties:
+        source:
+          type: string
+          enum:
+          - sis
+          - csv
+          - api
+        records:
+          type: array
+          items:
+            $ref: '#/components/schemas/StudentRecord'
+    StudentVerifyRequest:
+      type: object
+      required:
+      - verified_by
+      - department
+      properties:
+        verified_by:
+          type: string
+        department:
+          type: string
+    RosterElection:
+      type: object
+      required:
+      - election_id
+      - state
+      - eligible
+      properties:
+        election_id:
+          type: string
+        state:
+          type: string
+        eligible:
+          type: boolean
+        credential_status:
+          type: string
+    RosterMeResponse:
+      type: object
+      required:
+      - eligible
+      - elections
+      properties:
+        eligible:
+          type: boolean
+        elections:
+          type: array
+          items:
+            $ref: '#/components/schemas/RosterElection'
+    BlindedIssuanceRequest:
+      type: object
+      required:
+      - election_id
+      - blinded_request
+      properties:
+        election_id:
+          type: string
+          description: Election identifier binding
+        blinded_request:
+          type: string
+          description: base64url encoded RFC 9474 blinded message integer
+    BlindedIssuanceResponse:
+      type: object
+      required:
+      - blind_signature_response
+      - status
+      - issuer_key_id
+      properties:
+        blind_signature_response:
+          type: string
+          description: base64url encoded RFC 9474 blind signature integer
+        status:
+          type: string
+          enum:
+          - RESERVED
+          - SIGNING
+          - SIGNED
+          - DELIVERED
+        issuer_key_id:
+          type: string
+          description: Key identifier for issuer public key
+    IssuanceStatusResponse:
+      type: object
+      required:
+      - election_id
+      - status
+      - delivered
+      properties:
+        election_id:
+          type: string
+        status:
+          type: string
+        delivered:
+          type: boolean
+    Candidate:
+      type: object
+      required:
+      - id
+      - name
+      - contest
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        contest:
+          type: string
+    ElectionSummary:
+      type: object
+      required:
+      - id
+      - title
+      - state
+      - opens_at_utc
+      - closes_at_utc
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        state:
+          type: string
+        opens_at_utc:
+          type: string
+          format: date-time
+        closes_at_utc:
+          type: string
+          format: date-time
+    ElectionList:
+      type: object
+      required:
+      - elections
+      properties:
+        elections:
+          type: array
+          items:
+            $ref: '#/components/schemas/ElectionSummary'
+    Election:
+      type: object
+      required:
+      - id
+      - title
+      - state
+      - manifest_digest
+      - opens_at_utc
+      - closes_at_utc
+      - issuance_cutoff_utc
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        state:
+          type: string
+        manifest_digest:
+          type: string
+        opens_at_utc:
+          type: string
+          format: date-time
+        closes_at_utc:
+          type: string
+          format: date-time
+        issuance_cutoff_utc:
+          type: string
+          format: date-time
+        eligible_count:
+          type: integer
+        candidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+    CreateElectionRequest:
+      type: object
+      required:
+      - title
+      - contest
+      - selection_rule
+      - opens_at_utc
+      - closes_at_utc
+      - issuance_cutoff_utc
+      properties:
+        title:
+          type: string
+        contest:
+          type: string
+        selection_rule:
+          type: string
+        opens_at_utc:
+          type: string
+          format: date-time
+        closes_at_utc:
+          type: string
+          format: date-time
+        issuance_cutoff_utc:
+          type: string
+          format: date-time
+        min_anonymous_turnout:
+          type: integer
+    UpdateElectionRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        contest:
+          type: string
+        selection_rule:
+          type: string
+        opens_at_utc:
+          type: string
+          format: date-time
+        closes_at_utc:
+          type: string
+          format: date-time
+        issuance_cutoff_utc:
+          type: string
+          format: date-time
+        min_anonymous_turnout:
+          type: integer
+    RosterSubmitRequest:
+      type: object
+      required:
+      - roster_version
+      - roster_commitment
+      - eligible_count
+      properties:
+        roster_version:
+          type: string
+        roster_commitment:
+          type: string
+        eligible_count:
+          type: integer
+    RosterApprovalRequest:
+      type: object
+      required:
+      - roster_version
+      - approver_signature
+      properties:
+        roster_version:
+          type: string
+        approver_signature:
+          type: string
+    PublicationRequest:
+      type: object
+      required:
+      - final_checkpoint_digest
+      - anchor_tx_hash
+      properties:
+        final_checkpoint_digest:
+          type: string
+        anchor_tx_hash:
+          type: string
+    PublicationDecisionRequest:
+      type: object
+      required:
+      - auditor_signature
+      - attestation_digest
+      properties:
+        auditor_signature:
+          type: string
+        attestation_digest:
+          type: string
+    BallotEvidenceRecord:
+      type: object
+      required:
+      - schema
+      - election_id
+      - manifest_digest
+      - ballot_id
+      - leaf_index
+      - credential_nullifier
+      - credential_proof_b64url
+      - engine_ballot_b64url
+      - engine_proofs_b64url
+      - engine_record_version
+      properties:
+        schema:
+          type: string
+          enum:
+          - himvote.ballot-evidence.v1
+        election_id:
+          type: string
+        manifest_digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        ballot_id:
+          type: string
+        leaf_index:
+          type: integer
+          minimum: 0
+        credential_nullifier:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        credential_proof_b64url:
+          type: string
+        engine_ballot_b64url:
+          type: string
+        engine_proofs_b64url:
+          type: string
+        engine_record_version:
+          type: string
+    CastBallotRequest:
+      type: object
+      required:
+      - election_id
+      - credential_proof_b64url
+      - engine_ballot_b64url
+      - engine_proofs_b64url
+      - idempotency_key
+      properties:
+        election_id:
+          type: string
+        credential_proof_b64url:
+          type: string
+          description: Anonymous unblinded credential proof string
+        engine_ballot_b64url:
+          type: string
+          description: Encrypted ballot payload from voting engine
+        engine_proofs_b64url:
+          type: string
+          description: Engine zero knowledge correctness proofs
+        idempotency_key:
+          type: string
+          format: uuid
+    CastBallotResponse:
+      type: object
+      required:
+      - status
+      - handle
+      - leaf_index
+      - nullifier_commitment
+      properties:
+        status:
+          type: string
+          enum:
+          - COMMITTED_PENDING_WITNESS
+          - WITNESSED
+        handle:
+          type: string
+          description: Opaque receipt tracking handle
+        leaf_index:
+          type: integer
+        nullifier_commitment:
+          type: string
+    ReceiptStatusResponse:
+      type: object
+      required:
+      - status
+      - handle
+      - leaf_index
+      properties:
+        status:
+          type: string
+          enum:
+          - COMMITTED_PENDING_WITNESS
+          - WITNESSED
+          - ANCHORED
+          - REJECTED
+        handle:
+          type: string
+        leaf_index:
+          type: integer
+        witnessed_at_utc:
+          type: string
+          format: date-time
+    CastingServiceStatus:
+      type: object
+      required:
+      - service_state
+      - unwitnessed_backlog
+      - accepting_casts
+      properties:
+        service_state:
+          type: string
+          enum:
+          - ONLINE
+          - PAUSED
+          - DRAINING
+        unwitnessed_backlog:
+          type: integer
+        accepting_casts:
+          type: boolean
+    CheckpointRecord:
+      type: object
+      required:
+      - schema
+      - election_id
+      - manifest_digest
+      - tree_size
+      - merkle_root
+      - previous_checkpoint_digest
+      - last_leaf_index
+      - last_leaf_digest
+      - issued_count
+      - issuance_ledger_digest
+      - roster_commitment
+      - protocol_version
+      - checkpoint_kind
+      - checkpoint_sequence
+      properties:
+        schema:
+          type: string
+          enum:
+          - himvote.checkpoint.v1
+        election_id:
+          type: string
+        manifest_digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        tree_size:
+          type: integer
+          minimum: 0
+        merkle_root:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        previous_checkpoint_digest:
+          type: string
+        last_leaf_index:
+          type: integer
+        last_leaf_digest:
+          type: string
+        issued_count:
+          type: integer
+          minimum: 0
+        issuance_ledger_digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        roster_commitment:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        protocol_version:
+          type: string
+        checkpoint_kind:
+          type: string
+          enum:
+          - INCREMENTAL
+          - FINAL
+        checkpoint_sequence:
+          type: integer
+          minimum: 1
+    WitnessCheckpointRequest:
+      type: object
+      required:
+      - checkpoint
+      - consistency_proof
+      properties:
+        checkpoint:
+          $ref: '#/components/schemas/CheckpointRecord'
+        consistency_proof:
+          type: array
+          items:
+            type: string
+            pattern: ^[0-9a-f]{64}$
+    WitnessCheckpointResponse:
+      type: object
+      required:
+      - checkpoint_digest
+      - witness_signature_b64url
+      - witness_sequence
+      - witness_public_key_id
+      properties:
+        checkpoint_digest:
+          type: string
+          pattern: ^[0-9a-f]{64}$
+        witness_signature_b64url:
+          type: string
+        witness_sequence:
+          type: integer
+        witness_public_key_id:
+          type: string
+    WitnessFinalRequest:
+      type: object
+      required:
+      - checkpoint
+      - final_proofs
+      properties:
+        checkpoint:
+          $ref: '#/components/schemas/CheckpointRecord'
+        final_proofs:
+          type: object
+          required:
+          - consistency_proof
+          - closure_digest
+          properties:
+            consistency_proof:
+              type: array
+              items:
+                type: string
+            closure_digest:
+              type: string
+    WitnessFinalResponse:
+      type: object
+      required:
+      - election_id
+      - checkpoint_digest
+      - witness_signature_b64url
+      - final_tree_size
+      properties:
+        election_id:
+          type: string
+        checkpoint_digest:
+          type: string
+        witness_signature_b64url:
+          type: string
+        final_tree_size:
+          type: integer
+    WitnessCheckpointsList:
+      type: object
+      required:
+      - election_id
+      - checkpoints
+      properties:
+        election_id:
+          type: string
+        checkpoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/CheckpointRecord'
+    VerifierAuditRequest:
+      type: object
+      required:
+      - export_directory_url
+      - trust_pins
+      properties:
+        export_directory_url:
+          type: string
+          format: uri
+        trust_pins:
+          type: object
+          required:
+          - witness_keys
+          - issuer_keys
+          - chain_id
+          - anchor_contract_address
+          properties:
+            witness_keys:
+              type: array
+              items:
+                type: string
+            issuer_keys:
+              type: array
+              items:
+                type: string
+            chain_id:
+              type: integer
+            anchor_contract_address:
+              type: string
+    PropertyVerificationStatus:
+      type: object
+      required:
+      - property_name
+      - status
+      - details
+      properties:
+        property_name:
+          type: string
+          enum:
+          - RECORD_INTEGRITY
+          - CREDENTIAL_UNIQUENESS
+          - ROSTER_ATTESTATION
+          - TALLY_PROOF
+          - ANCHOR_FINALITY
+          - BALLOT_SECRECY_ASSUMPTIONS
+          - CAST_AS_INTENDED
+          - RECEIPT_FREENESS
+          - COMPROMISED_ENDPOINT_RESISTANCE
+          - INDEPENDENT_OPERATORS
+          - REAL_WORLD_ELIGIBILITY
+        status:
+          type: string
+          enum:
+          - PASS
+          - FAIL
+          - LIMITED
+          - ASSUMED
+          - NOT_SUPPORTED
+          - UNVERIFIABLE
+        details:
+          type: string
+    VerifierAuditReport:
+      type: object
+      required:
+      - election_id
+      - exit_code
+      - properties
+      - computed_root
+      - verified_at_utc
+      properties:
+        election_id:
+          type: string
+        exit_code:
+          type: integer
+          enum:
+          - 0
+          - 2
+          - 3
+          - 4
+          description: Verification exit code 0 success 2 crypto failure 3 unverifiable
+            4 bad archive
+        properties:
+          type: array
+          items:
+            $ref: '#/components/schemas/PropertyVerificationStatus'
+        computed_root:
+          type: string
+        verified_at_utc:
+          type: string
+          format: date-time
+    VerifierAttestationRequest:
+      type: object
+      required:
+      - report_digest
+      - auditor_signature
+      - auditor_public_key
+      properties:
+        report_digest:
+          type: string
+        auditor_signature:
+          type: string
+        auditor_public_key:
+          type: string
+    VerifierAttestationResponse:
+      type: object
+      required:
+      - attestation_valid
+      - fingerprint
+      - verified_at_utc
+      properties:
+        attestation_valid:
+          type: boolean
+        fingerprint:
+          type: string
+        verified_at_utc:
+          type: string
+          format: date-time
+    VerifierPropertiesList:
+      type: object
+      required:
+      - properties
+      properties:
+        properties:
+          type: array
+          items:
+            type: string
+    PublishedResults:
+      type: object
+      required:
+      - election_id
+      - manifest_digest
+      - tally
+      - total_ballots
+      - published_at_utc
+      properties:
+        election_id:
+          type: string
+        manifest_digest:
+          type: string
+        tally:
+          type: object
+        total_ballots:
+          type: integer
+        published_at_utc:
+          type: string
+          format: date-time
+        privacy_limited:
+          type: boolean
+    EvidencePackage:
+      type: object
+      required:
+      - election_id
+      - manifest_digest
+      - final_checkpoint_digest
+      - anchor_tx_hash
+      - auditor_signature
+      properties:
+        election_id:
+          type: string
+        manifest_digest:
+          type: string
+        final_checkpoint_digest:
+          type: string
+        anchor_tx_hash:
+          type: string
+        auditor_signature:
+          type: string
+        evidence_url:
+          type: string
+          format: uri
+    ErrorResponse:
+      type: object
+      required:
+      - error_code
+      - message
+      - request_id
+      properties:
+        error_code:
+          type: string
+        message:
+          type: string
+        request_id:
+          type: string
+        details:
+          type: object

@@ -1,0 +1,130 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: casting-service-policy
+  namespace: himvote-casting
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: casting
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Accept ingress strictly from edge gateway
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              himvote.edu/domain: edge
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/component: gateway
+      ports:
+        - protocol: TCP
+          port: 8082
+  egress:
+    # Egress to DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Egress to election engine adapter
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: election-engine
+      ports:
+        - protocol: TCP
+          port: 8084
+    # Egress to casting database
+    - ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: checkpoint-worker-policy
+  namespace: himvote-casting
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: checkpoint-worker
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Egress to witness service
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: witness
+      ports:
+        - protocol: TCP
+          port: 8086
+    # Egress to casting database
+    - ports:
+        - protocol: TCP
+          port: 5432
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: anchor-relayer-policy
+  namespace: himvote-casting
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/component: anchor-relayer
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress: []
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    # Egress to witness
+    - to:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: witness
+      ports:
+        - protocol: TCP
+          port: 8086
+    # External egress to EVM RPC nodes
+    - ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 8545

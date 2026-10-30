@@ -1,0 +1,10 @@
+{
+  "test_id": "PHASE6_FOUNDRY",
+  "date_utc": "2026-10-30",
+  "command": "forge test -vv",
+  "cwd": "chain",
+  "result": "PASS",
+  "passed": 17,
+  "failed": 0,
+  "suite": "test/HimVoteAnchor.t.sol:HimVoteAnchorTest"
+}

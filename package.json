@@ -1,0 +1,24 @@
+{
+  "name": "himvote_orchestrator",
+  "version": "2.0.0",
+  "description": "HimVote institutional election platform root build orchestrator",
+  "private": true,
+  "scripts": {
+    "verify_integrations": "python3 tools/verify_integrations.py",
+    "verify_env": "python3 tools/env_loader.py check",
+    "generate_env": "python3 tools/env_loader.py generate_dev",
+    "test_tools": "python3 -m unittest discover tests/unit",
+    "test_all": "python3 tests/run_tests.py",
+    "dev_up": "docker compose up",
+    "dev_down": "docker compose down",
+    "help": "make help"
+  },
+  "keywords": [
+    "himvote",
+    "elections",
+    "voting",
+    "orchestrator"
+  ],
+  "author": "HimVote Core Architecture Team",
+  "license": "UNLICENSED"
+}
