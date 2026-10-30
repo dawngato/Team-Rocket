@@ -11,16 +11,28 @@ jobs:
     name: Deploy to EC2 Server
     runs-on: ubuntu-latest
     steps:
+      - name: Validate Secrets
+        run: |
+          DEPLOY_KEY="${{ secrets.EC2_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.EC2_PRIVATE_KEY }}"
+          if [ -z "$DEPLOY_KEY" ]; then
+            echo "::error::EC2_SSH_KEY secret is not configured in GitHub repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          echo "Deployment secrets validated successfully."
+
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
+          host: ${{ secrets.EC2_HOST || '13.232.47.32' }}
           username: ${{ secrets.EC2_USER || 'ubuntu' }}
-          key: ${{ secrets.EC2_SSH_KEY }}
+          key: ${{ secrets.EC2_SSH_KEY || secrets.SSH_PRIVATE_KEY || secrets.EC2_PRIVATE_KEY }}
           port: 22
           script_stop: true
           script: |
             APP_DIR="/opt/himvote"
+            sudo chown -R $USER:$USER "$APP_DIR" 2>/dev/null || true
+            git config --global --add safe.directory "$APP_DIR"
+
             if [ ! -d "$APP_DIR/.git" ]; then
               echo "Repository not found at $APP_DIR. Running initial setup..."
               sudo mkdir -p "$APP_DIR"
