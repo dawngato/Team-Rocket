@@ -5,14 +5,14 @@ Validates RFC 9474 issuance algorithm, independent roster approval, and slot uni
 
 from datetime import datetime, timedelta, timezone
 import hashlib
-from HimVote.services.identity_issuer.models import User, Session as UserSession
-from HimVote.services.identity_issuer.crypto.rfc9474 import (
+from services.identity_issuer.models import User, Session as UserSession
+from services.identity_issuer.crypto.rfc9474 import (
     get_default_issuer,
     client_blind,
     client_finalize,
     client_verify,
 )
-from HimVote.services.identity_issuer.tests.test_admin_and_approvals import create_authenticated_user
+from services.identity_issuer.tests.test_admin_and_approvals import create_authenticated_user
 
 
 def test_student_registration_and_verification(client, db_session):

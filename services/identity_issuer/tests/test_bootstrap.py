@@ -3,7 +3,7 @@ Unit tests for one time bootstrap claim endpoint.
 Verifies initial super admin creation, mandatory MFA enrollment, and permanent deactivation.
 """
 
-from HimVote.services.identity_issuer.config import BOOTSTRAP_INVITATION_TOKEN
+from services.identity_issuer.config import BOOTSTRAP_INVITATION_TOKEN
 
 
 def test_bootstrap_claim_success_and_permanent_disable(client):

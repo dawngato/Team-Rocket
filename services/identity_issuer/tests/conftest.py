@@ -8,9 +8,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-from HimVote.services.identity_issuer.database import Base, get_db
-import HimVote.services.identity_issuer.models
-from HimVote.services.identity_issuer.main import app
+from ..database import Base, get_db
+from .. import models
+from ..main import app
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 

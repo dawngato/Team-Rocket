@@ -3,8 +3,8 @@ Unit tests for authentication, session handling, recovery, and TOTP MFA flows.
 """
 
 import pyotp
-from HimVote.services.identity_issuer.models import User, MfaCredential, RoleDefinition, RoleAssignment
-from HimVote.services.identity_issuer.crypto.hashing import hash_password
+from services.identity_issuer.models import User, MfaCredential, RoleDefinition, RoleAssignment
+from services.identity_issuer.crypto.hashing import hash_password
 
 
 def test_user_login_logout_and_session(client, db_session):
