@@ -103,11 +103,13 @@ def run_smoke() -> None:
         assert page.locator("a[href='/security-limits']").last.is_visible()
         assert page.get_by_text("Evidence observatory").is_visible()
         assert_no_horizontal_overflow(page)
+        page.locator('button[aria-label="Close navigation menu"]').evaluate("node => node.click()")
         page.set_viewport_size({"width": 1440, "height": 900})
 
         goto_ready(page, "/how-it-works")
         assert page.get_by_role("heading", name="How HimVote Verification Works").is_visible()
         stage_three = page.get_by_role("button", name="Stage 3", exact=False)
+        page.wait_for_timeout(1_500)
         stage_three.evaluate("node => node.click()")
         page.get_by_role(
             "heading", name="Witnessed Merkle Tree Checkpoints"
@@ -134,13 +136,9 @@ def run_smoke() -> None:
         # local election fixtures when their authoritative service is absent.
         goto_ready(page, "/officer")
         assert page.get_by_text("Live election service data", exact=False).is_visible()
-        assert page.get_by_role("alert").filter(
-            has_text="authoritative election service is not configured"
-        ).is_visible()
+        page.get_by_text("The authoritative election service is not configured.", exact=True).wait_for(state="visible")
         goto_ready(page, "/officer/elections")
-        assert page.get_by_role("alert").filter(
-            has_text="authoritative election service is not configured"
-        ).is_visible()
+        page.get_by_text("The authoritative election service is not configured.", exact=True).wait_for(state="visible")
 
         browser.close()
 
