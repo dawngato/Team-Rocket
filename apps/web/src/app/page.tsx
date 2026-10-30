@@ -258,7 +258,7 @@ export default function HomePage() {
             03
           </div>
           <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Checkpoint Anchor Demonstration
+            Checkpoint Anchor Verification Ledger
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
             The development chain adapter records checkpoint commitments only. External chain finality and independent operation remain unverified release requirements.

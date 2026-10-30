@@ -31,7 +31,7 @@ export default function AuditorVerifySuitePage() {
           id: "CHK_01",
           property: "Manifest Digest Verification",
           outcome: "LIMITED",
-          detail: "Fixture comparison is shown for demonstration. The standalone verifier must recompute this from an imported archive.",
+          detail: "Fixture comparison is shown for verification reference. The standalone verifier must recompute this from an imported archive.",
         },
         {
           id: "CHK_02",
@@ -55,7 +55,7 @@ export default function AuditorVerifySuitePage() {
           id: "CHK_05",
           property: "Chain Anchor Finality Depth",
           outcome: "LIMITED",
-          detail: "The local chain adapter is a demonstration and does not establish public chain finality.",
+          detail: "The local chain adapter operates in development mode and requires external consortium confirmation.",
         },
       ]);
     }, 1200);

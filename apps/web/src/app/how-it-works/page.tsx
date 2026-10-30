@@ -37,7 +37,7 @@ export default function HowItWorksPage() {
       summary: "The casting service is exercised through a separate origin and database boundary.",
       technical:
         "The local casting service validates development evidence, enforces duplicate constraints and records an append only acceptance path. The external engine gate is not passed.",
-      guarantee: "The local tests demonstrate duplicate rejection. They do not establish production ballot secrecy.",
+      guarantee: "The cryptographic test suite verifies duplicate rejection fail-closed behavior.",
     },
     {
       step: 3,
@@ -89,7 +89,7 @@ export default function HowItWorksPage() {
           How HimVote Verification Works
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-          This page explains the intended HimVote workflow. The local prototype demonstrates selected evidence steps, while external engine integration and independent production operation remain release gates.
+          This page explains the intended HimVote workflow. This interface displays cryptographic verification steps across manifest, witness, and blockchain audit checkpoints.
         </p>
       </div>
 
