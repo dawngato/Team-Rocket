@@ -373,8 +373,8 @@ export default function AdminOverviewPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-teal-500 shrink-0">
-                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#E0F2FE"/><circle cx="50" cy="38" r="20" fill="#0D9488"/><circle cx="43" cy="36" r="3" fill="#FFF"/><circle cx="57" cy="36" r="3" fill="#FFF"/><path d="M40 46 Q50 52 60 46" stroke="#FFF" stroke-width="2" fill="none"/><path d="M22 88 C22 66 35 62 50 62 C65 62 78 66 78 88 Z" fill="#0F172A"/></svg>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-teal-500 shrink-0 shadow-sm bg-slate-100">
+                <img src="/candidates/suzi.jpg" alt="Suzi" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">PRESIDENT</span>
@@ -388,8 +388,8 @@ export default function AdminOverviewPage() {
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-500 shrink-0">
-                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#FEE2E2"/><circle cx="50" cy="38" r="20" fill="#E11D48"/><circle cx="44" cy="36" r="2.5" fill="#FFF"/><circle cx="56" cy="36" r="2.5" fill="#FFF"/><path d="M42 45 Q50 50 58 45" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#4C1D95"/></svg>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-500 shrink-0 shadow-sm bg-slate-100">
+                <img src="/candidates/priya.jpg" alt="Priya Patel" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-500/10 text-rose-600">VICE-PRESIDENT</span>
@@ -403,8 +403,8 @@ export default function AdminOverviewPage() {
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 shrink-0">
-                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#FEF3C7"/><circle cx="50" cy="38" r="20" fill="#D97706"/><circle cx="44" cy="36" r="3" fill="#FFF"/><circle cx="56" cy="36" r="3" fill="#FFF"/><path d="M42 46 Q50 50 58 46" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#1E293B"/></svg>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 shrink-0 shadow-sm bg-slate-100">
+                <img src="/candidates/kabir.jpg" alt="Kabir Mehta" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/10 text-amber-600">GEN SECRETARY</span>
@@ -418,8 +418,8 @@ export default function AdminOverviewPage() {
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-500 shrink-0">
-                <svg viewBox="0 0 100 100" width="100%" height="100"><circle cx="50" cy="50" r="50" fill="#DCFCE7"/><circle cx="50" cy="38" r="20" fill="#15803D"/><circle cx="44" cy="36" r="2.5" fill="#FFF"/><circle cx="56" cy="36" r="2.5" fill="#FFF"/><path d="M42 45 Q50 50 58 45" stroke="#FFF" stroke-width="2" fill="none"/><path d="M24 88 C24 66 36 62 50 62 C64 62 76 66 76 88 Z" fill="#064E3B"/></svg>
+              <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-500 shrink-0 shadow-sm bg-slate-100">
+                <img src="/candidates/ananya.jpg" alt="Ananya Iyer" className="w-full h-full object-cover object-top" />
               </div>
               <div>
                 <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">CULT SECRETARY</span>

@@ -3,6 +3,7 @@
 import type { Candidate } from "./types";
 
 export interface RichCandidate extends Candidate {
+  photo_url?: string;
   position: string;
   department: string;
   roll_number: string;
@@ -13,11 +14,12 @@ export interface RichCandidate extends Candidate {
   status?: "VERIFIED" | "NOMINATED" | "PENDING";
 }
 
-const STORAGE_KEY = "himvote_admin_candidates_v2";
+const STORAGE_KEY = "himvote_admin_candidates_v4_v4";
 
 export const DEFAULT_CANDIDATES: RichCandidate[] = [
   {
     id: "cand_suzi",
+    photo_url: "/candidates/suzi.jpg",
     election_id: "demo_union_2026",
     name: "Suzi",
     contest: "Student Union Council 2026",
@@ -46,6 +48,7 @@ export const DEFAULT_CANDIDATES: RichCandidate[] = [
   },
   {
     id: "cand_priya_patel",
+    photo_url: "/candidates/priya.jpg",
     election_id: "demo_union_2026",
     name: "Priya Patel",
     contest: "Student Union Council 2026",
@@ -73,6 +76,7 @@ export const DEFAULT_CANDIDATES: RichCandidate[] = [
   },
   {
     id: "cand_kabir_mehta",
+    photo_url: "/candidates/kabir.jpg",
     election_id: "demo_union_2026",
     name: "Kabir Mehta",
     contest: "Student Union Council 2026",
@@ -100,6 +104,7 @@ export const DEFAULT_CANDIDATES: RichCandidate[] = [
   },
   {
     id: "cand_ananya_iyer",
+    photo_url: "/candidates/ananya.jpg",
     election_id: "demo_union_2026",
     name: "Ananya Iyer",
     contest: "Student Union Council 2026",

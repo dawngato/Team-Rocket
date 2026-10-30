@@ -132,16 +132,24 @@ export default function ElectionDetailPage() {
                         className="flex flex-col justify-between p-4 border border-slate-200 dark:border-[#1E3352] bg-slate-50/50 dark:bg-slate-900/30 rounded-xl space-y-3"
                       >
                         <div className="flex items-start gap-3">
-                          {rich?.avatar_svg ? (
-                            <div
-                              className="size-12 rounded-full overflow-hidden border-2 border-[#157E92] shrink-0 shadow-sm"
-                              dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
-                            />
-                          ) : (
-                            <div className="flex size-12 items-center justify-center rounded-full bg-[#157E92]/10 font-bold text-base text-[#157E92] shrink-0">
-                              {candidate.name.charAt(0)}
-                            </div>
-                          )}
+                          <div className="relative size-14 rounded-xl overflow-hidden border-2 border-[#157E92] shrink-0 shadow-md bg-slate-100 dark:bg-slate-800">
+                            {rich?.photo_url ? (
+                              <img
+                                src={rich.photo_url}
+                                alt={candidate.name}
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : rich?.avatar_svg ? (
+                              <div
+                                className="w-full h-full"
+                                dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
+                              />
+                            ) : (
+                              <div className="flex size-full items-center justify-center bg-[#157E92]/10 font-bold text-base text-[#157E92]">
+                                {candidate.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <h3 className="font-bold text-sm text-[#10233F] dark:text-white truncate">
                               {candidate.name}

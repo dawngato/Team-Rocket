@@ -42,6 +42,7 @@ export default function AdminCandidatesPage() {
   const [statement, setStatement] = useState("");
   const [manifestoInput, setManifestoInput] = useState("");
   const [avatarTheme, setAvatarTheme] = useState<"teal" | "rose" | "amber" | "green" | "blue">("teal");
+  const [photoUrl, setPhotoUrl] = useState("/candidates/suzi.jpg");
 
   useEffect(() => {
     setCandidates(getStoredCandidates());
@@ -117,6 +118,7 @@ export default function AdminCandidatesPage() {
       slate,
       statement: statement.trim() || `Contesting for ${position} to serve the student body.`,
       manifesto_points: manifestoList.length > 0 ? manifestoList : [statement.trim()],
+      photo_url: photoUrl.trim() || "/candidates/suzi.jpg",
       avatar_svg: generatedSvg,
       status: "VERIFIED",
     });
@@ -242,16 +244,29 @@ export default function AdminCandidatesPage() {
             <div className="space-y-4">
               {/* Header: Photo Avatar & Name */}
               <div className="flex items-start gap-4">
-                <div
-                  className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#157E92] shrink-0 shadow-sm"
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      candidate.avatar_svg ||
-                      `<div style="width:100%;height:100%;background:#E2E8F0;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#1E293B;">${candidate.name.charAt(
-                        0
-                      )}</div>`,
-                  }}
-                />
+                <div className="relative w-20 h-24 rounded-xl overflow-hidden border-2 border-[#157E92] shrink-0 shadow-md bg-slate-100 dark:bg-slate-800">
+                  {candidate.photo_url ? (
+                    <img
+                      src={candidate.photo_url}
+                      alt={candidate.name}
+                      className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      dangerouslySetInnerHTML={{
+                        __html:
+                          candidate.avatar_svg ||
+                          `<div style="width:100%;height:100%;background:#E2E8F0;display:flex;align-items:center;justify-content:center;font-weight:bold;color:#1E293B;">${candidate.name.charAt(
+                            0
+                          )}</div>`,
+                      }}
+                    />
+                  )}
+                  <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded text-[8px] font-bold bg-[#157E92] text-white uppercase tracking-wider">
+                    Official
+                  </div>
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-1">
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -447,7 +462,42 @@ export default function AdminCandidatesPage() {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Avatar Portrait Color
+                  Select Official Candidate Portrait
+                </label>
+                <div className="grid grid-cols-4 gap-2 mb-2">
+                  {[
+                    { label: "Suzi (Pres)", url: "/candidates/suzi.jpg" },
+                    { label: "Priya (VP)", url: "/candidates/priya.jpg" },
+                    { label: "Kabir (GenSec)", url: "/candidates/kabir.jpg" },
+                    { label: "Ananya (CultSec)", url: "/candidates/ananya.jpg" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => setPhotoUrl(preset.url)}
+                      className={`flex flex-col items-center gap-1 p-1.5 rounded-lg border text-[10px] font-semibold transition-all ${
+                        photoUrl === preset.url
+                          ? "border-[#157E92] bg-[#157E92]/10 text-[#157E92] ring-2 ring-[#157E92]"
+                          : "border-slate-200 dark:border-slate-700 hover:bg-slate-50 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      <img src={preset.url} alt={preset.label} className="w-10 h-12 object-cover object-top rounded" />
+                      <span>{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Or enter custom image URL (e.g. /candidates/name.jpg or https://...)"
+                  value={photoUrl}
+                  onChange={(e) => setPhotoUrl(e.target.value)}
+                  className="w-full px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-transparent text-xs font-mono focus:ring-2 focus:ring-[#157E92] outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Avatar Portrait Fallback Color
                 </label>
                 <div className="flex gap-3">
                   {(["teal", "rose", "amber", "green", "blue"] as const).map((color) => (

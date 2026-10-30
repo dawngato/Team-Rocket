@@ -78,16 +78,27 @@ export default function CandidateReviewPage() {
                       className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"
                     >
                       <div className="flex items-start gap-4">
-                        {rich?.avatar_svg ? (
-                          <div
-                            className="size-14 rounded-full overflow-hidden border-2 border-[#157E92] shrink-0 shadow-sm"
-                            dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
-                          />
-                        ) : (
-                          <div className="flex size-14 items-center justify-center rounded-full bg-[#157E92]/10 font-bold text-lg text-[#157E92] shrink-0">
-                            {candidate.name.charAt(0)}
+                        <div className="relative size-16 rounded-xl overflow-hidden border-2 border-[#157E92] shrink-0 shadow-md bg-slate-100 dark:bg-slate-800">
+                          {rich?.photo_url ? (
+                            <img
+                              src={rich.photo_url}
+                              alt={candidate.name}
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : rich?.avatar_svg ? (
+                            <div
+                              className="w-full h-full"
+                              dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
+                            />
+                          ) : (
+                            <div className="flex size-full items-center justify-center bg-[#157E92]/10 font-bold text-lg text-[#157E92]">
+                              {candidate.name.charAt(0)}
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 right-0 px-1 py-0.2 rounded text-[7px] font-bold bg-[#157E92] text-white">
+                            Candidate
                           </div>
-                        )}
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <h3 className="font-bold text-base text-[#10233F] dark:text-white truncate">
