@@ -6,7 +6,7 @@ Audit date: 2026-10-31. Status values use the repository contract:
 
 | Q7 requirement | Source evidence | Test evidence | Status |
 |---|---|---|---|
-| Election administration | `services/admin_api/`, `services/election_engine/`, `apps/web/src/app/officer/` | admin API and lifecycle tests; web unit tests pass, typecheck currently blocked by generated auditor route import | LIMITED |
+| Election administration | `services/admin_api/`, `services/election_engine/`, `apps/web/src/app/officer/` | admin API and lifecycle tests; web unit tests, typecheck, production build, and browser smoke pass | LIMITED |
 | One accepted ballot | `services/casting/src/service.py`, `services/casting/src/models.py` unique nullifier and leaf constraints | casting concurrency/idempotency/integration tests | TESTED_PASS locally, LIMITED for external engine |
 | Privacy separation | `services/casting/src/security.py`, `services/casting/src/models.py`, web casting client | identity-header/cookie rejection and protocol tests | LIMITED: deployment/operator separation not proven |
 | Tamper evidence | `services/checkpoint_worker/`, `witness/`, `verifier/` | verifier and attack fixtures | TESTED_PASS locally, LIMITED custody |

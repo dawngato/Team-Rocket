@@ -40,7 +40,7 @@ it must have an executable implementation and an observed test result.
 
 ## Evidence currently available
 
-- Python unified suites: 301 passed, 0 failed, 0 skipped in the latest run.
+- Python unified suites: 302 passed, 0 failed, 0 skipped in the latest run.
 - Web Vitest suite: 78 passed; Next production build, typecheck, and browser
   smoke test pass on this host.
 - Desktop .NET suite: 101 passed; Linux client tests: 84 passed.

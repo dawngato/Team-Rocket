@@ -14,5 +14,6 @@ No unsupported native build claim should be shown in the product UI. Toolchain
 absence is a status, not a success.
 
 Additional repository-wide evidence: `python3 tools/run_all_tests.py` completed
-with 301 passed, 0 failed, and 0 skipped. Android remains `TESTED_FAIL` for this
-iteration because Gradle was terminated before producing the unit-test report.
+with 302 passed, 0 failed, and 0 skipped. Android unit tests completed with 59
+tests and 0 failures. This is `TESTED_PASS` for the unit-test task; device or
+emulator UI validation is not claimed.

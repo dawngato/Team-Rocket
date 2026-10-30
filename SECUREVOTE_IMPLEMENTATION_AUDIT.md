@@ -30,7 +30,7 @@ repository-local, and the external tally-proof gate remains blocked.
 | P0 | Five attack demonstrations | `tests/security/`, `apps/desktop/verifier/fixture.py` | TESTED locally | Preserve run artifacts with independent final checkpoint |
 | P1 | Role and scope enforcement | identity/admin service tests and web role surfaces | LIMITED | Replace remaining fixture/localStorage admin mutations with authenticated APIs |
 | P1 | Public/private UI boundary | web public/student routes and API clients | LIMITED | Add server-backed auth/session checks to every private route |
-| P1 | Android booth return privacy | `apps/android/.../VotingRepository.kt`, `BoothReturnValidator.kt` | IMPLEMENTED_UNTESTED in this iteration | Complete Android unit-test execution in a stable build environment |
+| P1 | Android booth return privacy | `apps/android/.../VotingRepository.kt`, `BoothReturnValidator.kt` | TESTED_PASS in this iteration | Device/emulator UI validation and production handoff integration remain |
 | P1 | iOS anonymous receipt and proof boundary | `apps/ios/HimVote/ViewModels/ReceiptViewModel.swift`, `MerkleProofVerifier.swift`, `ApiClient.swift` | IMPLEMENTED_UNTESTED | Run XCTest on macOS/Xcode and validate against the selected engine |
 | P2 | Premium 3D/accessibility polish | `apps/web/src/components/EvidenceOrbit.tsx`, `apps/ios/HimVote/DesignSystem/BallotBoxHero.swift`, CSS tokens, Compose components | LIMITED | Capture responsive screenshots and run automated accessibility checks |
 | P2 | Native platform parity | Android/iOS/Avalonia source | BLOCKED/LIMITED by toolchains | Run each platform build with its supported toolchain |
@@ -80,7 +80,11 @@ privacy, cast-as-intended, coercion resistance, or tally correctness.
 ## Additional execution evidence from this implementation iteration
 
 `python3 tools/run_all_tests.py` was rerun after the Android privacy changes and
-completed with **301 passed, 0 failed, 0 skipped** across 11 suites, exit code 0.
-The Android debug build reached unit-test compilation after the `BuildConfig`
-configuration fix; subsequent Gradle attempts were terminated by the execution
-environment before a test report, so Android remains unverified here.
+completed with **302 passed, 0 failed, 0 skipped** across 11 suites, exit code 0.
+The following Android command completed successfully with **59 tests, 0
+failures**, exit code 0:
+
+`./gradlew testDebugUnitTest --no-daemon --max-workers=1 -Dorg.gradle.jvmargs='-Xmx512m -XX:MaxMetaspaceSize=256m -Dfile.encoding=UTF-8' --console=plain`
+
+This verifies the Android unit-test task. Device/emulator UI validation is still
+not claimed.

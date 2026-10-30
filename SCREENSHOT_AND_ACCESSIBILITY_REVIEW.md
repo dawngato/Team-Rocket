@@ -4,9 +4,8 @@
 
 The web client has semantic buttons/links, skip navigation, accessible dialogs,
 tabs, status labels, reduced-motion CSS, explicit icon labels/hidden decorative
-icons, and responsive tokenized surfaces. `npm test` passes; web typecheck is
-currently blocked by a generated route import for the modified auditor evidence
-page. The
+icons, and responsive tokenized surfaces. `npm test`, web typecheck, and the
+production build pass on this host. The
 Android client contains Compose accessibility helpers, semantic status banners,
 and touch-target-oriented components. The iOS client now has a contained native
 SwiftUI `BallotBoxHero` with capped `rotation3DEffect` tilt, a reduced-motion
