@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Vote, Clock, Sparkles, Activity, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
+import { Users, Vote, Clock, Sparkles, Activity, CheckCircle2, ShieldCheck, ArrowRight, Hourglass, UserCheck } from "lucide-react";
 import Link from "next/link";
-import { getStoredTotalStudents } from "../lib/college_voter_store";
+import { getStoredElectionConfig, type ElectionConfig } from "../lib/college_voter_store";
 
 interface LiveBallotEvent {
   id: string;
@@ -12,13 +12,21 @@ interface LiveBallotEvent {
 }
 
 export function LiveTurnoutHeroWidget() {
-  // Total college student body (persisted from Admin Panel)
-  const [totalStudents, setTotalStudents] = useState<number>(4800);
+  // Config state (Total Students, End Time, Candidates)
+  const [config, setConfig] = useState<ElectionConfig>({
+    totalStudents: 4800,
+    endTimeIso: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
+    candidatesCount: 6,
+  });
   
   // Starting live votes cast
   const [votesCast, setVotesCast] = useState<number>(3412);
   const [isLive, setIsLive] = useState<boolean>(true);
   
+  // Countdown state
+  const [timeLeftStr, setTimeLeftStr] = useState<string>("Calculating...");
+  const [isElectionEnded, setIsElectionEnded] = useState<boolean>(false);
+
   // Live anonymous incoming ballot stream
   const [recentEvents, setRecentEvents] = useState<LiveBallotEvent[]>([
     { id: "1", ballotNumber: 3412, timeAgo: "Just now" },
@@ -28,30 +36,61 @@ export function LiveTurnoutHeroWidget() {
 
   // Sync with Admin Panel updates
   useEffect(() => {
-    setTotalStudents(getStoredTotalStudents());
+    setConfig(getStoredElectionConfig());
 
     const handleSync = (e: Event) => {
-      const customEvent = e as CustomEvent<{ count: number }>;
-      if (customEvent.detail?.count) {
-        setTotalStudents(customEvent.detail.count);
+      const customEvent = e as CustomEvent<Partial<ElectionConfig>>;
+      if (customEvent.detail) {
+        setConfig((prev) => ({
+          ...prev,
+          ...customEvent.detail,
+        }));
       }
     };
 
-    window.addEventListener("himvote_total_students_updated", handleSync);
-    return () => window.removeEventListener("himvote_total_students_updated", handleSync);
+    window.addEventListener("himvote_election_config_updated", handleSync);
+    return () => window.removeEventListener("himvote_election_config_updated", handleSync);
   }, []);
 
+  // Countdown timer effect
+  useEffect(() => {
+    const updateCountdown = () => {
+      const endMs = new Date(config.endTimeIso).getTime();
+      const nowMs = Date.now();
+      const diffMs = endMs - nowMs;
+
+      if (diffMs <= 0) {
+        setTimeLeftStr("Polls Closed");
+        setIsElectionEnded(true);
+        setIsLive(false);
+        return;
+      }
+
+      setIsElectionEnded(false);
+      const hours = Math.floor(diffMs / (1000 * 60 * 60));
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+
+      const pad = (n: number) => String(n).padStart(2, "0");
+      setTimeLeftStr(`${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+    };
+
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000);
+    return () => clearInterval(timer);
+  }, [config.endTimeIso]);
+
   // Derived calculations
-  const remainingStudents = Math.max(0, totalStudents - votesCast);
-  const turnoutPercent = totalStudents > 0 ? ((votesCast / totalStudents) * 100).toFixed(1) : "0.0";
+  const remainingStudents = Math.max(0, config.totalStudents - votesCast);
+  const turnoutPercent = config.totalStudents > 0 ? ((votesCast / config.totalStudents) * 100).toFixed(1) : "0.0";
 
   // Real-time live vote increments
   useEffect(() => {
-    if (!isLive) return;
+    if (!isLive || isElectionEnded) return;
 
     const interval = setInterval(() => {
       setVotesCast((prev) => {
-        if (prev >= totalStudents) return prev;
+        if (prev >= config.totalStudents) return prev;
         const nextNum = prev + 1;
 
         setRecentEvents((old) => [
@@ -64,7 +103,7 @@ export function LiveTurnoutHeroWidget() {
     }, 4500);
 
     return () => clearInterval(interval);
-  }, [isLive, totalStudents]);
+  }, [isLive, isElectionEnded, config.totalStudents]);
 
   return (
     <div className="w-full relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0a1829] to-[#040c17] border border-cyan-500/30 p-5 sm:p-6 shadow-2xl shadow-cyan-950/50">
@@ -88,14 +127,51 @@ export function LiveTurnoutHeroWidget() {
           </div>
         </div>
 
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold">
-          <span className="size-1.5 rounded-full bg-emerald-400 animate-ping" />
-          Polling Live
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+          isElectionEnded
+            ? "bg-amber-500/15 border-amber-500/30 text-amber-300"
+            : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
+        }`}>
+          <span className={`size-1.5 rounded-full ${isElectionEnded ? "bg-amber-400" : "bg-emerald-400 animate-ping"}`} />
+          {isElectionEnded ? "Election Closed" : "Polling Live"}
         </span>
       </div>
 
+      {/* ADMIN CONTROLLED DYNAMIC BANNER: TIME LEFT & CANDIDATES */}
+      <div className="relative z-10 grid grid-cols-2 gap-2.5 my-3">
+        {/* Countdown to Election Close */}
+        <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-2.5 px-3 flex items-center gap-2.5">
+          <div className="size-7 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
+            <Hourglass className="size-3.5 animate-spin" style={{ animationDuration: "6s" }} />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-bold text-amber-300/80 block tracking-wider">
+              Voting Closes In
+            </span>
+            <span className="text-xs sm:text-sm font-mono font-extrabold text-amber-200 tracking-tight block truncate">
+              {timeLeftStr}
+            </span>
+          </div>
+        </div>
+
+        {/* Candidates Available */}
+        <div className="rounded-2xl bg-cyan-500/10 border border-cyan-500/30 p-2.5 px-3 flex items-center gap-2.5">
+          <div className="size-7 rounded-xl bg-cyan-500/20 flex items-center justify-center text-cyan-400 shrink-0">
+            <UserCheck className="size-3.5" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-[10px] uppercase font-bold text-cyan-300/80 block tracking-wider">
+              Contesting Candidates
+            </span>
+            <span className="text-xs sm:text-sm font-mono font-extrabold text-cyan-200 tracking-tight block">
+              {config.candidatesCount} Nominees
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* 3 Main Stat Cards */}
-      <div className="relative z-10 grid grid-cols-3 gap-2.5 my-4">
+      <div className="relative z-10 grid grid-cols-3 gap-2.5 my-3">
         {/* Total Students */}
         <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3.5 text-center">
           <div className="flex items-center justify-center gap-1 text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">
@@ -103,7 +179,7 @@ export function LiveTurnoutHeroWidget() {
             <span>Total</span>
           </div>
           <div className="text-xl sm:text-2xl font-black text-white font-mono">
-            {totalStudents.toLocaleString()}
+            {config.totalStudents.toLocaleString()}
           </div>
           <p className="text-[10px] text-slate-400 mt-0.5">Students</p>
         </div>
@@ -153,7 +229,7 @@ export function LiveTurnoutHeroWidget() {
         </div>
         <div className="flex justify-between text-[10px] text-slate-400 mt-1.5">
           <span>Target: 80% turnout</span>
-          <span>{votesCast} of {totalStudents} cast</span>
+          <span>{votesCast} of {config.totalStudents} cast</span>
         </div>
       </div>
 
@@ -191,7 +267,7 @@ export function LiveTurnoutHeroWidget() {
       <div className="relative z-10 mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px]">
         <span className="text-slate-400 flex items-center gap-1 text-[10px]">
           <ShieldCheck className="size-3 text-emerald-400" />
-          <span>Admin editable in Console</span>
+          <span>Configured by Election Commission</span>
         </span>
         <Link
           href="/admin"
