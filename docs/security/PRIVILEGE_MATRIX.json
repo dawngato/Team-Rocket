@@ -1,0 +1,247 @@
+{
+  "schema_version": "1.0.0",
+  "generated_at": "2026-10-31",
+  "description": "Machine-readable privilege matrix for HimVote platform. Covers 11 principals, resources, operations, approval prerequisites, logging policy, and prohibited escalations.",
+  "trust_boundaries": {
+    "identity_origin": "services/identity_issuer — manages accounts, roles, credentials, rosters",
+    "casting_origin": "services/casting — anonymous ballot acceptance; NEVER receives identity tokens",
+    "admin_boundary": "services/admin_api — election lifecycle, manifest signing, result publication",
+    "witness_boundary": "witness/ — independently keyed checkpoint cosigning",
+    "blockchain_boundary": "chain/ — immutable EVM anchor; relayer has RELAYER_ROLE only",
+    "verifier_boundary": "verifier/ — fully offline; trusts only supplied external pins"
+  },
+  "principals": [
+    {
+      "id": "SUPER_ADMIN",
+      "display": "University Super Administrator",
+      "created_by": "bootstrap_claim endpoint (one-time, token-gated, permanently disabled after use)",
+      "mfa_required": true,
+      "code_ref": "services/identity_issuer/routers/bootstrap.py"
+    },
+    {
+      "id": "ADMINISTRATOR",
+      "display": "Administrator",
+      "created_by": "Invitation from SUPER_ADMIN; two-person approval required for sensitive ops",
+      "mfa_required": false,
+      "code_ref": "services/identity_issuer/routers/admin.py"
+    },
+    {
+      "id": "ELECTION_OFFICER",
+      "display": "Election Officer",
+      "created_by": "Invitation from ADMINISTRATOR",
+      "mfa_required": false,
+      "code_ref": "services/identity_issuer/routers/admin.py"
+    },
+    {
+      "id": "TEACHER",
+      "display": "Department Teacher / Faculty",
+      "created_by": "Invitation from ADMINISTRATOR; department-scoped",
+      "mfa_required": false,
+      "code_ref": "services/identity_issuer/models.py StaffProfile"
+    },
+    {
+      "id": "STUDENT",
+      "display": "Enrolled Student",
+      "created_by": "Roster import (CSV, teacher-approved) then account creation",
+      "mfa_required": false,
+      "code_ref": "services/identity_issuer/models.py StudentProfile"
+    },
+    {
+      "id": "CREDENTIAL_ISSUER",
+      "display": "Credential Issuer Service",
+      "created_by": "Internal service; private RSA blind-signature key held by identity_issuer only",
+      "mfa_required": false,
+      "code_ref": "services/identity_issuer/routers/credentials.py; packages/himvote_crypto/rsa_blind.py"
+    },
+    {
+      "id": "BALLOT_SERVICE",
+      "display": "Casting Service",
+      "created_by": "Internal service; accepts anonymous credentials, never receives identity tokens",
+      "mfa_required": false,
+      "code_ref": "services/casting/src/security.py (identity header rejection middleware)"
+    },
+    {
+      "id": "TRUSTEE",
+      "display": "Decryption Trustee",
+      "created_by": "Election officer registration; per ADR-003 design, trustee key ceremony documented but simulated in prototype",
+      "mfa_required": true,
+      "code_ref": "docs/adr/003_blind_signature_anonymous_credentials.md; docs/key_management.md",
+      "limitation": "Profile VEEM (homegrown ElGamal) does not use full threshold trustee key ceremony; single operator in prototype"
+    },
+    {
+      "id": "WITNESS",
+      "display": "Independent Witness",
+      "created_by": "Separately keyed service; signing key never shared with identity/casting/admin",
+      "mfa_required": false,
+      "code_ref": "witness/",
+      "limitation": "In local Compose deployment, witness and election server share same operator — independence is SIMULATED"
+    },
+    {
+      "id": "BLOCKCHAIN_RELAYER",
+      "display": "Blockchain Relayer",
+      "created_by": "Internal service; holds RELAYER_ROLE on HimVoteAnchor contract only",
+      "mfa_required": false,
+      "code_ref": "services/anchor_relayer/; chain/contracts/HimVoteAnchor.sol"
+    },
+    {
+      "id": "INDEPENDENT_AUDITOR",
+      "display": "Independent Auditor",
+      "created_by": "Receives exported election archive and separate trust pins; runs verifier/verify.py offline",
+      "mfa_required": false,
+      "code_ref": "verifier/verify.py",
+      "limitation": "In prototype, auditor keys are demo-generated. Production requires separately owned signing key pair."
+    }
+  ],
+  "privilege_matrix": [
+    {
+      "resource": "bootstrap_claim",
+      "operation": "POST /v1/bootstrap/claim",
+      "allowed": ["SUPER_ADMIN"],
+      "prerequisite": "BOOTSTRAP_ALLOWED env=true; one-time token; no prior super_admin in DB",
+      "logging": "APPEND_ONLY audit event bootstrap.claim",
+      "prohibited_escalation": "Cannot be called again after bootstrap_claimed=true in system_settings",
+      "code_ref": "services/identity_issuer/routers/bootstrap.py"
+    },
+    {
+      "resource": "admin_invitations",
+      "operation": "POST /v1/admin/invitations",
+      "allowed": ["SUPER_ADMIN", "ADMINISTRATOR"],
+      "prerequisite": "Authenticated session; invitation token hashed SHA-256; expires in INVITATION_EXPIRE_DAYS",
+      "logging": "admin.invitation.created audit event",
+      "prohibited_escalation": "ADMINISTRATOR cannot invite SUPER_ADMIN",
+      "code_ref": "services/identity_issuer/routers/admin.py create_admin_invitation"
+    },
+    {
+      "resource": "role_grant_requests",
+      "operation": "POST /v1/admin/role-grant-requests",
+      "allowed": ["SUPER_ADMIN", "ADMINISTRATOR"],
+      "prerequisite": "Approval required from second admin (cannot self-approve); ApprovalRequest model",
+      "logging": "admin.role_grant.requested audit event",
+      "prohibited_escalation": "Creator cannot approve their own request (checked in approval endpoint)",
+      "code_ref": "services/identity_issuer/routers/admin.py request_role_grant"
+    },
+    {
+      "resource": "role_grant_approval",
+      "operation": "POST /v1/admin/role-grant-requests/{id}/decide",
+      "allowed": ["SUPER_ADMIN", "ADMINISTRATOR"],
+      "prerequisite": "Approver != creator of request",
+      "logging": "admin.role_grant.approved / admin.role_grant.rejected",
+      "prohibited_escalation": "Self-approval rejected with 403",
+      "code_ref": "services/identity_issuer/routers/admin.py decide_role_grant"
+    },
+    {
+      "resource": "student_roster",
+      "operation": "POST /v1/roster/import",
+      "allowed": ["ADMINISTRATOR", "ELECTION_OFFICER", "TEACHER"],
+      "prerequisite": "Election in DRAFT or REVIEW state; CSV validated for duplicates and format errors",
+      "logging": "roster.import audit event",
+      "prohibited_escalation": "STUDENT cannot import roster; TEACHER scope limited to own department",
+      "code_ref": "services/identity_issuer/routers/roster.py"
+    },
+    {
+      "resource": "roster_approval",
+      "operation": "POST /v1/roster/approve",
+      "allowed": ["ADMINISTRATOR", "ELECTION_OFFICER"],
+      "prerequisite": "Roster snapshot in SUBMITTED state",
+      "logging": "roster.approved audit event",
+      "prohibited_escalation": "TEACHER cannot approve their own submitted roster (two-role separation encouraged)",
+      "code_ref": "services/identity_issuer/routers/roster.py"
+    },
+    {
+      "resource": "credential_issuance",
+      "operation": "POST /v1/credentials/issue",
+      "allowed": ["CREDENTIAL_ISSUER service (on behalf of authenticated STUDENT)"],
+      "prerequisite": "Student in approved roster; election in ISSUING state; not previously issued",
+      "logging": "credential.issued audit event (no nullifier logged)",
+      "prohibited_escalation": "No admin can request credential issuance for another student; issuance is idempotent per student-election pair",
+      "code_ref": "services/identity_issuer/routers/credentials.py; packages/himvote_crypto/rsa_blind.py"
+    },
+    {
+      "resource": "election_create",
+      "operation": "POST /v1/elections",
+      "allowed": ["ELECTION_OFFICER", "ADMINISTRATOR"],
+      "prerequisite": "Authenticated with required role",
+      "logging": "election.created",
+      "prohibited_escalation": "STUDENT/TEACHER cannot create elections",
+      "code_ref": "services/admin_api/src/routers/elections.py"
+    },
+    {
+      "resource": "election_freeze",
+      "operation": "POST /v1/elections/{id}/freeze",
+      "allowed": ["ELECTION_OFFICER", "ADMINISTRATOR"],
+      "prerequisite": "State=APPROVED; manifest, candidates, roster, keys committed",
+      "logging": "election.frozen transition event",
+      "prohibited_escalation": "Freeze is irreversible for manifest/candidates/keys",
+      "code_ref": "services/admin_api/src/state_machine/lifecycle.py"
+    },
+    {
+      "resource": "election_open",
+      "operation": "POST /v1/elections/{id}/open",
+      "allowed": ["ELECTION_OFFICER", "ADMINISTRATOR"],
+      "prerequisite": "State=SCHEDULED or FROZEN; manifest_digest pinned; roster frozen",
+      "logging": "election.opened transition event",
+      "prohibited_escalation": "Cannot reopen a CLOSED election",
+      "code_ref": "services/admin_api/src/state_machine/lifecycle.py"
+    },
+    {
+      "resource": "ballot_cast",
+      "operation": "POST /v1/cast/{election_id}/ballots",
+      "allowed": ["BALLOT_SERVICE (anonymous — no identity token)"],
+      "prerequisite": "Anonymous credential proof valid; election OPEN; nullifier not spent; no Authorization/Cookie headers",
+      "logging": "Leaf index and nullifier commitment only (no choice logged)",
+      "prohibited_escalation": "Identity headers strictly rejected by CastingOriginSecurityMiddleware",
+      "code_ref": "services/casting/src/service.py; services/casting/src/security.py"
+    },
+    {
+      "resource": "results_publish",
+      "operation": "POST /v1/elections/{id}/publish",
+      "allowed": ["ADMINISTRATOR", "ELECTION_OFFICER"],
+      "prerequisite": "State=AUDIT_PASSED or AUDITOR_ATTESTED; tally proof verified; witness signed final checkpoint",
+      "logging": "results.published transition event",
+      "prohibited_escalation": "Cannot publish without witness signature and proof verification",
+      "code_ref": "services/admin_api/src/services/publication_service.py"
+    },
+    {
+      "resource": "audit_export",
+      "operation": "GET /v1/elections/{id}/audit-export",
+      "allowed": ["ADMINISTRATOR", "INDEPENDENT_AUDITOR"],
+      "prerequisite": "Election in CLOSED or later state",
+      "logging": "audit.export",
+      "prohibited_escalation": "Archive contains no plaintext votes or identity-ballot links",
+      "code_ref": "services/admin_api/src/services/evidence_service.py"
+    },
+    {
+      "resource": "blockchain_anchor",
+      "operation": "HimVoteAnchor.anchor() on-chain",
+      "allowed": ["BLOCKCHAIN_RELAYER (RELAYER_ROLE on contract)"],
+      "prerequisite": "Monotonic sequence; non-zero digest; matching previous digest",
+      "logging": "CheckpointAnchored event emitted on-chain",
+      "prohibited_escalation": "Only RELAYER_ROLE can anchor; finalized elections cannot be re-anchored",
+      "code_ref": "chain/contracts/HimVoteAnchor.sol"
+    },
+    {
+      "resource": "witness_cosign",
+      "operation": "POST /v1/witness/cosign",
+      "allowed": ["WITNESS service (separately keyed)"],
+      "prerequisite": "Sequential leaf validation; monotonic tree size; prior checkpoint continuity",
+      "logging": "Signed checkpoint stored independently",
+      "prohibited_escalation": "Witness private key must NOT be accessible to election server admin",
+      "code_ref": "witness/"
+    }
+  ],
+  "prohibited_escalations_summary": [
+    "No ADMINISTRATOR role inherits TRUSTEE decryption shares or WITNESS signing key",
+    "No ADMINISTRATOR can access casting origin or read ballot choices",
+    "STUDENT cannot import rosters, create elections, or issue credentials",
+    "TEACHER scope is department-limited; cannot approve their own roster submissions",
+    "CREDENTIAL_ISSUER key is not accessible to ADMINISTRATOR or ELECTION_OFFICER",
+    "BLOCKCHAIN_RELAYER holds only RELAYER_ROLE — cannot modify contract admin",
+    "INDEPENDENT_AUDITOR verifies from separate, externally supplied trust pins — cannot modify results"
+  ],
+  "independence_limitations": [
+    "In local docker-compose deployment, WITNESS and BLOCKCHAIN_RELAYER share the same host operator — independence is SIMULATED",
+    "For real independence, WITNESS must be operated by a separate institution with air-gapped key management",
+    "Profile VEEM trustee key ceremony is simulated; full threshold decryption with M-of-N trustees requires production deployment",
+    "INDEPENDENT_AUDITOR role is exercised offline via verifier/verify.py with externally pinned keys"
+  ]
+}
