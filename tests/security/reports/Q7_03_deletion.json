@@ -1,7 +1,7 @@
 {
   "actual_result": "VERIFIER_FAILS_ON_DELETED_BALLOT_AND_TRUNCATED_FINAL",
   "database_state_summary": {
-    "chain_anchored_digest": "sha256:739ebb2718e4e0e1794a89d3cde425b58f7e0a80b97ae2cae0d7880bd19cd2b2",
+    "chain_anchored_digest": "sha256:4e0267e587dd2d8348fcc71e17ad92643422c86b0e4292e65db71e0c58d6350d",
     "deletion_detected": true,
     "truncated_final_rejected": true,
     "witnessed_ballots": 10
@@ -19,5 +19,5 @@
   ],
   "seed": 70301,
   "test_id": "Q7_03_deletion",
-  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
+  "verifier_sha256": "sha256:c97aae72e0fcdeaba5d1b82013e1bee3771bbbf4fb6190db00fa9113192127c2"
 }
