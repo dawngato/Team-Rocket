@@ -10,6 +10,7 @@ dist/
 out/
 build/
 .build/
+*.tsbuildinfo
 
 # Python test / coverage
 .pytest_cache/

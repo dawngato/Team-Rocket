@@ -9,7 +9,7 @@
   },
   "engine_version": "electionguard_1.0.0",
   "expected_result": "WITNESS_GAPS_AND_ROLLBACKS_REJECTED_OUTAGE_UNVERIFIABLE",
-  "manifest_digest": "sha256:cc393434ac8ba52e52e7d1f728c5152c86dab8be8f0d9476d92ae70be046ab3e",
+  "manifest_digest": "sha256:73568558339c94eb3e92e22f73b942a5e6ed1441b18f5fad3d6fe8422e9d0832",
   "notes": "",
   "passed": true,
   "postconditions": [

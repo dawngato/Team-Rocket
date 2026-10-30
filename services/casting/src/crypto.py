@@ -32,15 +32,39 @@ def base64url_encode(data: bytes) -> str:
 
 def canonical_json_bytes(obj: Any) -> bytes:
     """
-    Serialize Python dictionary to RFC 8785 canonical JSON UTF 8 bytes.
-    Ensures keys are lexicographically sorted and whitespace is stripped.
+    Serialize Python dictionary to RFC 8785 canonical JSON UTF-8 bytes.
+    Ensures keys are lexicographically sorted by UTF-16 code units,
+    whitespace is stripped, and floats are disallowed per HimVote specification.
     """
-    return json.dumps(
-        obj,
-        sort_keys=True,
-        separators=(",", ":"),
-        ensure_ascii=False
-    ).encode("utf-8")
+    def serialize(item: Any) -> str:
+        if isinstance(item, dict):
+            def utf16_sort_key(key_str: Any) -> bytes:
+                if not isinstance(key_str, str):
+                    raise TypeError("JSON object keys must be strings")
+                return key_str.encode("utf-16-be")
+
+            parts = []
+            for k in sorted(item.keys(), key=utf16_sort_key):
+                val_str = serialize(item[k])
+                parts.append(json.dumps(k, ensure_ascii=False) + ":" + val_str)
+            return "{" + ",".join(parts) + "}"
+        elif isinstance(item, list):
+            parts = [serialize(x) for x in item]
+            return "[" + ",".join(parts) + "]"
+        elif isinstance(item, str):
+            return json.dumps(item, ensure_ascii=False)
+        elif isinstance(item, bool):
+            return "true" if item else "false"
+        elif isinstance(item, int):
+            return str(item)
+        elif item is None:
+            return "null"
+        elif isinstance(item, float):
+            raise TypeError("Floating point numbers are disallowed in HimVote canonical records")
+        else:
+            raise TypeError(f"Unsupported data type for canonical serialization: {type(item)}")
+
+    return serialize(obj).encode("utf-8")
 
 
 def compute_leaf_digest(canonical_leaf_bytes: bytes) -> str:

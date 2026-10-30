@@ -39,7 +39,14 @@ try:
     engine = create_engine(DATABASE_URL, **engine_kwargs)
     with engine.connect() as conn:
         pass
-except Exception:
+except Exception as exc:
+    # TR-004: Fail loudly in production and staging; do not silently fallback to in-memory SQLite
+    if settings.environment.lower() in ("production", "staging"):
+        raise RuntimeError(
+            f"Database connection failed in production/staging environment ({settings.environment}): {exc}. "
+            "Silent fallback to in-memory SQLite is disabled."
+        ) from exc
+    
     DATABASE_URL = "sqlite:///:memory:"
     engine = create_engine(
         DATABASE_URL,
