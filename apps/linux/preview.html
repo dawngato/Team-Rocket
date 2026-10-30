@@ -226,6 +226,39 @@
       border: 1px solid var(--teal-border);
     }
 
+    /* Floating Toast Notifications */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: #FFFFFF;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-pill);
+      padding: 10px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      font-size: 13px;
+      font-weight: 600;
+      animation: slideInToast 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast-success { background: #ECFDF5; color: #065F46; border-color: #A7F3D0; }
+    .toast-info { background: #F0FDFA; color: #0F766E; border-color: #99F6E4; }
+    .toast-warning { background: #FFFBEB; color: #92400E; border-color: #FDE68A; }
+    @keyframes slideInToast {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
     /* Content Body */
     .view-container {
       flex: 1;
@@ -482,9 +515,13 @@
     <!-- Main Workspace -->
     <main id="main-content">
       <header id="top-bar">
-        <div class="page-title" id="view-heading">Election Overview</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 13px; color: var(--text-muted); font-weight: 500;">✦ HimVote &nbsp;/</span>
+          <div class="page-title" id="view-heading">Election Overview</div>
+        </div>
         <div class="action-group">
-          <span class="chip chip-green">● ELECTION COMPLETED</span>
+          <span class="chip chip-green">● API ONLINE</span>
+          <span class="chip chip-teal">👤 STUDENT (DEMO)</span>
           <button class="btn btn-secondary" onclick="openComparisonModal()">📊 Split-View Delta</button>
           <button class="btn btn-teal" onclick="copyReproduction()">⚡ Copy CLI Command</button>
         </div>
@@ -985,8 +1022,25 @@
       lastX = e.touches[0].clientX;
     });
 
+    // Floating toast notifications
+    function showToast(msg, variant = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${variant}`;
+      const icon = variant === 'success' ? '✓' : (variant === 'warning' ? '⚠' : 'ℹ');
+      toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
     // Initial render
     render3D();
   </script>
+  <div id="toast-container"></div>
 </body>
 </html>

@@ -1225,6 +1225,104 @@ class StatusChip(tk.Frame):
         return super().cget(key)
 
 
+class ToastNotification(tk.Frame):
+    """Modern floating SaaS toast notification with smooth auto-dismiss and pill styling."""
+
+    ICONS = {
+        "success": "✓",
+        "warning": "⚠",
+        "danger": "✕",
+        "info": "ℹ",
+        "neutral": "●",
+    }
+
+    PALETTES = {
+        "success": (CHIP_SUCCESS_BG, CHIP_SUCCESS_FG, CHIP_SUCCESS_BORDER),
+        "warning": (CHIP_WARNING_BG, CHIP_WARNING_FG, CHIP_WARNING_BORDER),
+        "danger": (CHIP_DANGER_BG, CHIP_DANGER_FG, CHIP_DANGER_BORDER),
+        "info": (CHIP_INFO_BG, CHIP_INFO_FG, CHIP_INFO_BORDER),
+        "neutral": (CHIP_NEUTRAL_BG, CHIP_NEUTRAL_FG, CHIP_NEUTRAL_BORDER),
+    }
+
+    def __init__(
+        self,
+        parent: Any,
+        message: str,
+        variant: str = "info",
+        duration_ms: int = 3500,
+    ) -> None:
+        self.variant = variant if variant in self.PALETTES else "info"
+        bg_col, fg_col, border_col = self.PALETTES[self.variant]
+        super().__init__(
+            parent,
+            bg=bg_col,
+            bd=0,
+            relief="flat",
+            highlightthickness=1,
+            highlightbackground=border_col,
+            padx=14,
+            pady=8,
+        )
+        self.message = message
+        self.duration_ms = duration_ms
+        self._timer_id: str | None = None
+
+        icon_char = self.ICONS.get(self.variant, "ℹ")
+        self.icon_label = tk.Label(
+            self,
+            text=icon_char,
+            font=("DejaVu Sans", 11, "bold"),
+            bg=bg_col,
+            fg=fg_col,
+        )
+        self.icon_label.pack(side="left", padx=(0, 8))
+
+        self.msg_label = tk.Label(
+            self,
+            text=message,
+            font=("DejaVu Sans", 9, "bold"),
+            bg=bg_col,
+            fg=fg_col,
+        )
+        self.msg_label.pack(side="left", padx=(0, 10))
+
+        self.close_btn = tk.Button(
+            self,
+            text="×",
+            font=("DejaVu Sans", 11, "bold"),
+            bg=bg_col,
+            fg=fg_col,
+            bd=0,
+            relief="flat",
+            activebackground=bg_col,
+            activeforeground=fg_col,
+            cursor="hand2",
+            command=self.dismiss,
+        )
+        self.close_btn.pack(side="right")
+
+        try:
+            self.place(relx=0.98, rely=0.96, anchor="se")
+            self.lift()
+        except Exception:
+            pass
+
+        if duration_ms > 0:
+            self._timer_id = self.after(duration_ms, self.dismiss)
+
+    def dismiss(self) -> None:
+        if self._timer_id:
+            try:
+                self.after_cancel(self._timer_id)
+            except Exception:
+                pass
+            self._timer_id = None
+        try:
+            self.destroy()
+        except Exception:
+            pass
+
+
 class ReceiptInspectionModal(tk.Toplevel):
     """Cryptographic receipt inspection modal dialog."""
 
@@ -3025,6 +3123,18 @@ class HimVoteLinuxApp(tk.Tk):
             self.current_archive = None
         super().destroy()
 
+    def show_toast(self, message: str, variant: str = "info", duration_ms: int = 3500) -> None:
+        """Display an elevated modern floating toast notification."""
+        try:
+            if hasattr(self, "_active_toast") and self._active_toast:
+                try:
+                    self._active_toast.dismiss()
+                except Exception:
+                    pass
+            self._active_toast = ToastNotification(self, message, variant=variant, duration_ms=duration_ms)
+        except Exception:
+            pass
+
     def _configure_styles(self) -> None:
         style = ttk.Style(self)
         try:
@@ -3045,12 +3155,18 @@ class HimVoteLinuxApp(tk.Tk):
             style.configure("CardMuted.TLabel", background=HC_CARD, foreground=HC_MUTED, font=("DejaVu Sans", 9))
             style.configure("NavTitle.TLabel", background="#111111", foreground=HC_TEXT, font=("DejaVu Sans", 18, "bold"))
             style.configure("NavBody.TLabel", background="#111111", foreground=HC_MUTED, font=("DejaVu Sans", 10))
+            style.configure("NavSection.TLabel", background="#111111", foreground=HC_MUTED, font=("DejaVu Sans", 7, "bold"))
             style.configure("Action.TButton", background=HC_ACCENT, foreground="#000000", padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
             style.map("Action.TButton", background=[("active", "#FFFFFF")])
             style.configure("Secondary.TButton", background="#FFFFFF", foreground="#000000", padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
             style.map("Secondary.TButton", background=[("active", "#E2E8F0")])
             style.configure("Nav.TButton", background="#111111", foreground=HC_TEXT, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
             style.map("Nav.TButton", background=[("active", "#222222")])
+            style.configure("NavActive.TButton", background=HC_ACCENT, foreground="#000000", padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
+            style.map("NavActive.TButton", background=[("active", "#FFFFFF")])
+            style.configure("TopBar.TFrame", background=HC_BG)
+            style.configure("Breadcrumb.TLabel", background=HC_BG, foreground=HC_MUTED, font=("DejaVu Sans", 9))
+            style.configure("BreadcrumbActive.TLabel", background=HC_BG, foreground=HC_TEXT, font=("DejaVu Sans", 9, "bold"))
             style.configure("Status.TLabel", background=HC_CARD, foreground=HC_ACCENT, font=("DejaVu Sans", 9, "bold"))
             style.configure("Mode.TLabel", background="#1E293B", foreground=HC_ACCENT, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("DemoMode.TLabel", background="#1E293B", foreground=HC_ACCENT, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
@@ -3070,12 +3186,20 @@ class HimVoteLinuxApp(tk.Tk):
             style.configure("CardMuted.TLabel", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9))
             style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 17, "bold"))
             style.configure("NavBody.TLabel", background=NAVY, foreground="#94A3B8", font=("DejaVu Sans", 9))
+            style.configure("NavSection.TLabel", background=NAVY, foreground="#64748B", font=("DejaVu Sans", 7, "bold"))
             style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(16, 8), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
             style.map("Action.TButton", background=[("active", NAVY_SOFT), ("disabled", "#94A3B8")])
             style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(12, 7), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
             style.map("Secondary.TButton", background=[("active", "#CBD5E1"), ("disabled", "#F1F5F9")])
+            style.configure("Danger.TButton", background="#FEE2E2", foreground="#991B1B", padding=(12, 7), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Danger.TButton", background=[("active", "#FECACA")])
             style.configure("Nav.TButton", background=NAVY, foreground="#94A3B8", padding=(14, 9), anchor="w", font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
             style.map("Nav.TButton", background=[("active", NAVY_SOFT), ("focus", NAVY_SOFT)], foreground=[("active", WHITE), ("focus", WHITE)])
+            style.configure("NavActive.TButton", background=NAVY_SOFT, foreground=WHITE, padding=(14, 9), anchor="w", font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("NavActive.TButton", background=[("active", NAVY_SOFT)], foreground=[("active", WHITE)])
+            style.configure("TopBar.TFrame", background=WHITE, relief="flat", borderwidth=0)
+            style.configure("Breadcrumb.TLabel", background=WHITE, foreground="#64748B", font=("DejaVu Sans", 9))
+            style.configure("BreadcrumbActive.TLabel", background=WHITE, foreground=NAVY, font=("DejaVu Sans", 9, "bold"))
             style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
             style.configure("Mode.TLabel", background=LIGHT_BG, foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("DemoMode.TLabel", background="#FEF3C7", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
@@ -3088,17 +3212,22 @@ class HimVoteLinuxApp(tk.Tk):
             style.configure("TNotebook.Tab", background="#E2E8F0", foreground="#475569", padding=(18, 8), font=("DejaVu Sans", 9, "bold"), borderwidth=0, relief="flat")
             style.map("TNotebook.Tab", background=[("selected", WHITE), ("active", "#CBD5E1")], foreground=[("selected", TEAL), ("active", NAVY)])
 
+            # Modern Flat Treeview
+            style.configure("Treeview", background=WHITE, foreground=TEXT, fieldbackground=WHITE, rowheight=30, borderwidth=1, relief="solid")
+            style.configure("Treeview.Heading", background="#F8FAFC", foreground="#475569", font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Treeview", background=[("selected", "#CCFBF1")], foreground=[("selected", "#0F766E")])
+
     def _build_shell(self) -> None:
         root = ttk.Frame(self, style="App.TFrame")
         root.pack(fill="both", expand=True)
 
-        navigation = ttk.Frame(root, style="Nav.TFrame", width=230)
+        navigation = ttk.Frame(root, style="Nav.TFrame", width=235)
         navigation.pack(side="left", fill="y")
         navigation.pack_propagate(False)
 
         # Modern Sidebar Brand Badge
         brand_frame = ttk.Frame(navigation, style="Nav.TFrame")
-        brand_frame.pack(fill="x", padx=16, pady=(22, 16))
+        brand_frame.pack(fill="x", padx=16, pady=(20, 14))
 
         logo_row = ttk.Frame(brand_frame, style="Nav.TFrame")
         logo_row.pack(anchor="w")
@@ -3108,39 +3237,100 @@ class HimVoteLinuxApp(tk.Tk):
 
         # Thin divider
         div = tk.Frame(navigation, height=1, bg=NAVY_SOFT, bd=0)
-        div.pack(fill="x", padx=16, pady=(0, 14))
+        div.pack(fill="x", padx=16, pady=(0, 10))
 
-        self._nav_button(navigation, "🏛  Elections Portal [Ctrl+1]", self._show_elections)
-        self._nav_button(navigation, "🛡  Receipt Verifier [Ctrl+2]", self._show_receipt)
-        self._nav_button(navigation, "🔍  Offline Audit [Ctrl+3]", self._show_audit)
-        self._nav_button(navigation, "📐  How It Works [Ctrl+4]", self._show_how_it_works)
-        self._nav_button(navigation, "🔒  Security Limits [Ctrl+5]", self._show_security_limits)
-        self._nav_button(navigation, "👤  Session & SSO [Ctrl+6]", self._show_login)
-        self._nav_button(navigation, "⚙  System Settings [Ctrl+7]", self._show_settings)
-        self._nav_button(navigation, "📜  Audit Trail Logs [Ctrl+8]", self._show_admin)
-        self._nav_button(navigation, "⚡  High Contrast [Ctrl+H]", self.toggle_high_contrast)
-        self._nav_button(navigation, "⌨  Shortcuts Guide [Ctrl+K]", self.show_shortcuts_modal)
+        self.nav_buttons: dict[str, ttk.Button] = {}
+
+        # Section 1: Portals & Audit
+        self._nav_section_label(navigation, "PORTALS & TOOLS")
+        self.nav_buttons["elections"] = self._nav_button(navigation, "🏛  Elections Portal", self._show_elections)
+        self.nav_buttons["receipt"] = self._nav_button(navigation, "🛡  Receipt Verifier", self._show_receipt)
+        self.nav_buttons["audit"] = self._nav_button(navigation, "🔍  Offline Audit", self._show_audit)
+
+        # Section 2: Architecture & Security
+        self._nav_section_label(navigation, "SECURITY & ENGINE")
+        self.nav_buttons["how_it_works"] = self._nav_button(navigation, "📐  How It Works", self._show_how_it_works)
+        self.nav_buttons["security_limits"] = self._nav_button(navigation, "🔒  Security Limits", self._show_security_limits)
+
+        # Section 3: Session & Preferences
+        self._nav_section_label(navigation, "SESSION & ADMIN")
+        self.nav_buttons["login"] = self._nav_button(navigation, "👤  Session & SSO", self._show_login)
+        self.nav_buttons["settings"] = self._nav_button(navigation, "⚙  System Settings", self._show_settings)
+        self.nav_buttons["admin"] = self._nav_button(navigation, "📜  Audit Trail Logs", self._show_admin)
 
         ttk.Frame(navigation, style="Nav.TFrame").pack(fill="both", expand=True)
-        self.mode_label = ttk.Label(navigation, text="", style="NavBody.TLabel", wraplength=185)
-        self.mode_label.pack(anchor="w", padx=22, pady=(0, 24))
 
-        self.content = ttk.Frame(root, style="App.TFrame")
-        self.content.pack(side="left", fill="both", expand=True)
+        self.mode_label = ttk.Label(navigation, text="", style="NavBody.TLabel", wraplength=190)
+        self.mode_label.pack(anchor="w", padx=20, pady=(0, 20))
 
-    def _nav_button(self, parent: ttk.Frame, label: str, command: Callable[[], None]) -> None:
-        ttk.Button(parent, text=label, command=command, style="Nav.TButton").pack(fill="x", padx=12, pady=2)
+        # Main area with Top Bar & Content
+        self.main_area = ttk.Frame(root, style="App.TFrame")
+        self.main_area.pack(side="left", fill="both", expand=True)
+
+        # Top Bar
+        self.top_bar = ttk.Frame(self.main_area, style="TopBar.TFrame", height=50)
+        self.top_bar.pack(fill="x")
+        self.top_bar.pack_propagate(False)
+
+        top_inner = ttk.Frame(self.top_bar, style="TopBar.TFrame")
+        top_inner.pack(fill="both", expand=True, padx=24)
+
+        b_frame = ttk.Frame(top_inner, style="TopBar.TFrame")
+        b_frame.pack(side="left", fill="y")
+        ttk.Label(b_frame, text="✦ HimVote  / ", style="Breadcrumb.TLabel").pack(side="left", pady=14)
+        self.breadcrumb_current = ttk.Label(b_frame, text="Elections Directory", style="BreadcrumbActive.TLabel")
+        self.breadcrumb_current.pack(side="left", pady=14)
+
+        top_right = ttk.Frame(top_inner, style="TopBar.TFrame")
+        top_right.pack(side="right", fill="y", pady=8)
+
+        self.top_status_chip = StatusChip(top_right, text="LOCAL DEMO", variant="warning", font_size=8)
+        self.top_status_chip.pack(side="left", padx=(0, 8))
+
+        self.top_session_pill = StatusChip(top_right, text="GUEST OBSERVER", variant="neutral", font_size=8)
+        self.top_session_pill.pack(side="left", padx=(0, 10))
+
+        ttk.Button(top_right, text="⚡ Contrast", command=self.toggle_high_contrast, style="Secondary.TButton").pack(side="left", padx=(0, 6))
+        ttk.Button(top_right, text="⌨ Shortcuts", command=self.show_shortcuts_modal, style="Secondary.TButton").pack(side="left")
+
+        # Top bar border divider
+        self.top_divider = tk.Frame(self.main_area, height=1, bg=LINE, bd=0)
+        self.top_divider.pack(fill="x")
+
+        # Content view container
+        self.content = ttk.Frame(self.main_area, style="App.TFrame")
+        self.content.pack(fill="both", expand=True)
+
+    def _nav_button(self, parent: ttk.Frame, label: str, command: Callable[[], None]) -> ttk.Button:
+        btn = ttk.Button(parent, text=label, command=command, style="Nav.TButton")
+        btn.pack(fill="x", padx=12, pady=2)
+        return btn
+
+    def _nav_section_label(self, parent: ttk.Frame, text: str) -> None:
+        ttk.Label(parent, text=text, style="NavSection.TLabel").pack(anchor="w", padx=16, pady=(12, 3))
+
+    def _update_active_nav(self, active_key: str) -> None:
+        if not hasattr(self, "nav_buttons"):
+            return
+        for key, btn in self.nav_buttons.items():
+            if key == active_key:
+                btn.configure(style="NavActive.TButton")
+            else:
+                btn.configure(style="Nav.TButton")
 
     def _clear_content(self) -> None:
         for child in self.content.winfo_children():
             child.destroy()
 
     def _header(self, eyebrow: str, title: str, detail: str) -> None:
+        if hasattr(self, "breadcrumb_current"):
+            self.breadcrumb_current.configure(text=f"{eyebrow}  /  {title}")
+        self._update_active_nav(self.current_view_name)
         header = ttk.Frame(self.content, style="App.TFrame")
-        header.pack(fill="x", padx=36, pady=(24, 16))
+        header.pack(fill="x", padx=36, pady=(20, 14))
         ttk.Label(header, text=eyebrow.upper(), style="Muted.TLabel").pack(anchor="w")
-        ttk.Label(header, text=title, style="Title.TLabel").pack(anchor="w", pady=(4, 4))
-        ttk.Label(header, text=detail, style="Body.TLabel", wraplength=800).pack(anchor="w")
+        ttk.Label(header, text=title, style="Title.TLabel").pack(anchor="w", pady=(3, 3))
+        ttk.Label(header, text=detail, style="Body.TLabel", wraplength=820).pack(anchor="w")
 
     def _show_elections(self) -> None:
         self.current_view_name = "elections"
@@ -3247,6 +3437,8 @@ class HimVoteLinuxApp(tk.Tk):
             chip_text = "CONNECTED API" if self.api_client else "LOCAL DEMO MODE"
             self.mode_chip.set_status(chip_text, chip_var)
             self.election_status.configure(text=f"{len(self.elections)} elections loaded")
+            if hasattr(self, "top_status_chip"):
+                self.top_status_chip.set_status("CONNECTED API" if self.api_client else "LOCAL DEMO", "info" if self.api_client else "warning")
         except ApiError as exc:
             self.elections = demo_elections()
             self.mode_label.configure(text="API unavailable. Showing local demo data only.")
@@ -3568,6 +3760,9 @@ class HimVoteLinuxApp(tk.Tk):
 
     def _apply_session(self, session: UserSession) -> None:
         self.user_session = session
+        if hasattr(self, "top_session_pill"):
+            self.top_session_pill.set_status(f"{session.role.upper()}: {session.full_name}", "info")
+        self.show_toast(f"Authenticated as {session.full_name} ({session.role.title()})", variant="success")
         self._show_login()
 
     def _show_settings(self) -> None:
@@ -3975,6 +4170,7 @@ class HimVoteLinuxApp(tk.Tk):
             self.current_inspection = self.current_archive.inspect()
             if hasattr(self, "archive_path_label"):
                 self.archive_path_label.configure(text=f"Loaded: {target_path.name}")
+            self.show_toast(f"Archive loaded: {target_path.name}", variant="success")
             self._render_inspection_views()
         except Exception as exc:
             messagebox.showerror("Archive Inspection Failed", f"Could not inspect archive: {exc}")
@@ -4535,6 +4731,7 @@ class HimVoteLinuxApp(tk.Tk):
         self.current_inspection = None
         if hasattr(self, "archive_path_label"):
             self.archive_path_label.configure(text="No archive loaded")
+        self.show_toast("Archive discarded and memory reset", variant="neutral")
         self._render_placeholder_views()
 
     def _copy_cli_reproduction(self) -> None:
@@ -4543,6 +4740,7 @@ class HimVoteLinuxApp(tk.Tk):
         cmd = f"python3 apps/linux/himvote_linux.py --headless --archive \"{target}\" --export-md report.md --export-json report.json"
         self.clipboard_clear()
         self.clipboard_append(cmd)
+        self.show_toast("Reproduction command copied to clipboard", variant="info")
         if hasattr(self, "archive_path_label"):
             self.archive_path_label.configure(text="CLI command copied to clipboard!", foreground=GREEN)
             self.after(3000, lambda: self.archive_path_label.configure(text=str(target)[:40] if self.current_archive else "No archive loaded", foreground=MUTED))
