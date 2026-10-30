@@ -1,12 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { INITIAL_ELECTIONS } from "../../../../lib/mock_data";
-import { StateBadge } from "../../../../components/StateBadge";
-import { AccessibleDialog } from "../../../../components/AccessibleDialog";
+import { INITIAL_ELECTIONS } from "@/lib/mock_data";
+import { StateBadge } from "@/components/StateBadge";
+import { AccessibleDialog } from "@/components/AccessibleDialog";
 import { Vote, ArrowRight, ShieldCheck, CheckCircle2, Lock, AlertCircle } from "lucide-react";
-import { apiClient } from "../../../../lib/api_client";
+import {
+  castingClient,
+  getEngineHandoffStorageKey,
+  parseEngineBallotHandoff,
+  type EngineBallotHandoff,
+} from "@/lib/casting_client";
 
 export default function CastBallotPage() {
   const params = useParams();
@@ -17,22 +22,40 @@ export default function CastBallotPage() {
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [engineHandoff, setEngineHandoff] = useState<EngineBallotHandoff | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!electionId) return;
+    try {
+      const raw = window.sessionStorage.getItem(getEngineHandoffStorageKey(electionId));
+      if (!raw) return;
+      const parsed = parseEngineBallotHandoff(JSON.parse(raw), electionId);
+      if (parsed) {
+        setEngineHandoff(parsed);
+        setHandoffError(null);
+      } else {
+        setHandoffError("The engine handoff is invalid or belongs to another election.");
+      }
+    } catch {
+      setHandoffError("The engine handoff could not be read. Return to the supported booth and try again.");
+    }
+  }, [electionId]);
 
   const selectedCandidate = election.candidates?.find((c) => c.id === selectedCandidateId);
 
   const handleConfirmVote = async () => {
+    if (!engineHandoff) {
+      setHandoffError("An approved encrypted-ballot booth must complete the handoff before submission.");
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const response = await apiClient.castBallot({
-        election_id: election.id,
-        credential_proof_b64url: "dGVzdF9jcmVkZW50aWFsX3Byb29m",
-        engine_ballot_b64url: "ZW5jcnlwdGVkX2JhbGxvdF9jaXBoZXJ0ZXh0",
-        engine_proofs_b64url: "emVyb19rbm93bGVkZ2VfcHJvb2ZfY29uc3RyYWludHM",
-        idempotency_key: `key_${Date.now()}`,
-      });
+      const response = await castingClient.castBallot(engineHandoff);
       setIsReviewOpen(false);
       router.push(`/student/elections/${election.id}/pending?handle=${encodeURIComponent(response.handle)}`);
-    } catch {
+    } catch (error) {
+      setHandoffError(error instanceof Error ? error.message : "The ballot could not be submitted.");
       setIsSubmitting(false);
     }
   };
@@ -59,7 +82,7 @@ export default function CastBallotPage() {
             Official Ballot Choice
           </h2>
           <p className="text-xs text-slate-500">
-            Select one candidate. The voting booth wraps your selection with verified engine encryption and generates an inclusion proof.
+            Select one candidate, then return from the supported engine booth with an encrypted ballot handoff. This page never invents ciphertext or proofs.
           </p>
         </div>
 
@@ -102,15 +125,38 @@ export default function CastBallotPage() {
           })}
         </fieldset>
 
-        <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs text-slate-500 flex items-center gap-1.5">
-            <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-            <span>Anonymous Credential Attached</span>
+        <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] space-y-4">
+          <div
+            className={`rounded-lg border px-3.5 py-3 text-xs ${
+              engineHandoff
+                ? "border-[#15805D]/30 bg-[#15805D]/10 text-[#0F5B43] dark:text-[#86EFAC]"
+                : "border-[#AA6C0B]/30 bg-[#AA6C0B]/10 text-[#6B4707] dark:text-[#FCD34D]"
+            }`}
+            role="status"
+          >
+            <div className="flex items-start gap-2">
+              {engineHandoff ? (
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              ) : (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              )}
+              <span>
+                {engineHandoff
+                  ? "Approved engine handoff received. The casting origin will receive only protocol artifacts."
+                  : "No approved engine handoff is available. Casting is blocked until the supported encrypted-ballot booth returns one."}
+              </span>
+            </div>
           </div>
+
+          {handoffError && (
+            <p className="text-xs font-medium text-[#C23C45]" role="alert">
+              {handoffError}
+            </p>
+          )}
 
           <button
             type="button"
-            disabled={!selectedCandidateId}
+            disabled={!selectedCandidateId || !engineHandoff}
             onClick={() => setIsReviewOpen(true)}
             className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] shadow-sm transition-all duration-75 ease-out select-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
           >

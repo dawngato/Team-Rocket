@@ -10,26 +10,6 @@ describe("HimVote API Client and Local Store", () => {
     expect(csElec?.state).toBe("WITNESSED");
   });
 
-  it("casts a ballot and receives committed pending witness status", async () => {
-    const response = await apiClient.castBallot({
-      election_id: "elec_su_2026",
-      credential_proof_b64url: "dGVzdF9wcm9vZg",
-      engine_ballot_b64url: "ZW5jX2JhbGxvdA",
-      engine_proofs_b64url: "emtwX3Byb29m",
-      idempotency_key: "key_test_123",
-    });
-
-    expect(response.status).toBe("COMMITTED_PENDING_WITNESS");
-    expect(response.handle).toMatch(/^HV_[A-Z0-9]+_[A-Z0-9]+$/);
-    expect(response.leaf_index).toBeGreaterThan(0);
-  });
-
-  it("retrieves receipt status and Merkle proof", async () => {
-    const receipt = await apiClient.getReceiptStatus("elec_cs_2026", "HV_24F8_19C2");
-    expect(receipt.handle).toBe("HV_24F8_19C2");
-    expect(receipt.merkle_proof?.length).toBeGreaterThan(0);
-  });
-
   it("retrieves audit events", async () => {
     const events = await apiClient.getAuditEvents();
     expect(events.length).toBeGreaterThan(0);

@@ -10,6 +10,7 @@ import {
   CastBallotResponse,
   ReceiptStatusResponse,
 } from "./types";
+import { castingClient } from "./casting_client";
 import {
   INITIAL_ELECTIONS,
   INITIAL_RESULTS,
@@ -116,52 +117,11 @@ export const apiClient = {
 
   // Casting
   async castBallot(req: CastBallotRequest): Promise<CastBallotResponse> {
-    const receiptHandle = `HV_${Math.random().toString(36).substring(2, 6).toUpperCase()}_${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-    const leafIndex = Math.floor(Math.random() * 5000) + 1;
-    const response: CastBallotResponse = {
-      status: "COMMITTED_PENDING_WITNESS",
-      handle: receiptHandle,
-      leaf_index: leafIndex,
-      nullifier_commitment: `comm_${Math.random().toString(36).substring(2, 15)}`,
-    };
-
-    // Store in receipts cache
-    const existingReceipts = safeGetItem<Record<string, ReceiptStatusResponse>>("himvote_receipts", {});
-    existingReceipts[receiptHandle] = {
-      status: "COMMITTED_PENDING_WITNESS",
-      handle: receiptHandle,
-      leaf_index: leafIndex,
-      witnessed_at_utc: undefined,
-      merkle_root: "sha256_live_root_batch_pending",
-      merkle_proof: [
-        "sha256_hash_sibling_level0_a81b2c",
-        "sha256_hash_sibling_level1_f4e3d2",
-        "sha256_hash_sibling_level2_1098ab",
-      ],
-    };
-    safeSetItem("himvote_receipts", existingReceipts);
-    return response;
+    return castingClient.castBallot(req);
   },
 
   async getReceiptStatus(electionId: string, handle: string): Promise<ReceiptStatusResponse> {
-    const existing = safeGetItem<Record<string, ReceiptStatusResponse>>("himvote_receipts", {});
-    if (existing[handle]) {
-      return existing[handle];
-    }
-    // Default simulated receipt
-    return {
-      status: "WITNESSED",
-      handle,
-      leaf_index: 1428,
-      witnessed_at_utc: "2026-10-30T10:14:02Z",
-      chain_tx_hash: "0x89ab12cd34ef567890123456789abcdef0123456789abcdef0123456789abcdef",
-      merkle_root: "sha256_4b9e28f1c8a4d701e65b2a3f9c78d5e0a1b2c3d4e5f60718293a4b5c6d7e8f90",
-      merkle_proof: [
-        "sha256_sibling_leaf_0_d3f45a",
-        "sha256_sibling_leaf_1_b1c2e3",
-        "sha256_sibling_subroot_2_9a8b7c",
-      ],
-    };
+    return castingClient.getReceiptStatus(electionId, handle);
   },
 
   // Students & Roster

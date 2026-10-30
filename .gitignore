@@ -18,3 +18,7 @@ chain/cache/
 chain/out/
 *.sqlite3
 *.sqlite
+bin/
+obj/
+*.dll
+*.pdb
