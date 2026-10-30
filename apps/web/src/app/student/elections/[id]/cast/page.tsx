@@ -13,6 +13,9 @@ import {
   parseEngineBallotHandoff,
   type EngineBallotHandoff,
 } from "@/lib/casting_client";
+import { getCredentialProofStorageKey } from "@/lib/identity_client";
+import { getEnginePublicParameters } from "@/lib/engine_client";
+import { createEncryptedBallot } from "@/lib/engine_crypto";
 
 export default function CastBallotPage() {
   const params = useParams();
@@ -26,6 +29,8 @@ export default function CastBallotPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [engineHandoff, setEngineHandoff] = useState<EngineBallotHandoff | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
+  const [selectedCandidateId, setSelectedCandidateId] = useState<string | null>(null);
+  const [isPreparing, setIsPreparing] = useState(false);
 
   useEffect(() => {
     if (!electionId) return;
@@ -73,11 +78,51 @@ export default function CastBallotPage() {
     setIsSubmitting(true);
     try {
       const response = await castingClient.castBallot(engineHandoff);
+      try {
+        const stored = JSON.parse(window.localStorage.getItem("himvote_receipts") || "[]");
+        stored.unshift({ electionId: election.id, title: election.title, handle: response.handle, timestamp: new Date().toISOString() });
+        window.localStorage.setItem("himvote_receipts", JSON.stringify(stored.slice(0, 20)));
+      } catch {}
       setIsReviewOpen(false);
       router.push(`/student/elections/${election.id}/pending?handle=${encodeURIComponent(response.handle)}`);
     } catch (error) {
       setHandoffError(error instanceof Error ? error.message : "The ballot could not be submitted.");
       setIsSubmitting(false);
+    }
+  };
+
+  const prepareEncryptedBallot = async () => {
+    if (!election || !selectedCandidateId) {
+      setHandoffError("Select one candidate before creating the encrypted ballot.");
+      return;
+    }
+    setIsPreparing(true);
+    setHandoffError(null);
+    try {
+      const credentialProof = window.sessionStorage.getItem(getCredentialProofStorageKey(election.id));
+      if (!credentialProof) throw new Error("No verified credential proof is present in this browser session. Complete credential issuance first.");
+      const parameters = await getEnginePublicParameters();
+      const encrypted = await createEncryptedBallot({
+        electionId: election.id,
+        manifestDigest: election.manifest_digest,
+        candidates: (election.candidates || []).map((candidate) => candidate.id),
+        selectedCandidateId,
+        jointPublicKey: parameters.joint_public_key,
+      });
+      const nextHandoff: EngineBallotHandoff = {
+        type: "himvote.engine.ballot.v1",
+        election_id: election.id,
+        credential_proof_b64url: credentialProof,
+        engine_ballot_b64url: encrypted.engine_ballot_b64url,
+        engine_proofs_b64url: encrypted.engine_proofs_b64url,
+        idempotency_key: `cast_${crypto.randomUUID()}`,
+      };
+      window.sessionStorage.setItem(getEngineHandoffStorageKey(election.id), JSON.stringify(nextHandoff));
+      setEngineHandoff(nextHandoff);
+    } catch (error) {
+      setHandoffError(error instanceof Error ? error.message : "The encrypted ballot could not be created.");
+    } finally {
+      setIsPreparing(false);
     }
   };
 
@@ -132,13 +177,18 @@ export default function CastBallotPage() {
             Official Ballot Choice
           </h2>
           <p className="text-xs text-slate-500">
-            Select one candidate, then return from the supported engine booth with an encrypted ballot handoff. This page never invents ciphertext or proofs.
+            Select one candidate. The browser will encrypt the choice and generate the proof artifacts before anything reaches the casting service.
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs leading-relaxed text-slate-600 dark:border-[#1E3352] dark:bg-slate-900/40 dark:text-slate-300" role="status">
-          <strong className="block text-sm text-[#10233F] dark:text-white">Selection is controlled by the supported voting engine</strong>
-          <span className="mt-1 block">This page deliberately does not turn a local candidate click into a ballot. The approved engine must create the encrypted ballot and proofs after the voter reviews the authoritative manifest.</span>
+        <div className="space-y-3" role="radiogroup" aria-label="Official ballot choices">
+          {(election.candidates || []).map((candidate) => (
+            <label key={candidate.id} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${selectedCandidateId === candidate.id ? "border-[#157E92] bg-[#157E92]/10" : "border-slate-200 bg-slate-50 dark:border-[#1E3352] dark:bg-slate-900/40"}`}>
+              <input type="radio" name="candidate" value={candidate.id} checked={selectedCandidateId === candidate.id} onChange={() => { setSelectedCandidateId(candidate.id); setEngineHandoff(null); }} className="mt-1 size-4 accent-[#157E92]" />
+              <span><strong className="block text-sm text-[#10233F] dark:text-white">{candidate.name}</strong><span className="mt-1 block text-xs text-slate-500">{candidate.statement || candidate.contest}</span></span>
+            </label>
+          ))}
+          {(!election.candidates || election.candidates.length < 2) && <p className="text-xs text-[#C23C45]" role="alert">The authoritative election manifest does not contain at least two candidates.</p>}
         </div>
 
         <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] space-y-4">
@@ -158,8 +208,8 @@ export default function CastBallotPage() {
               )}
               <span>
                 {engineHandoff
-                  ? "Approved engine handoff received. The casting origin will receive only protocol artifacts."
-                  : "No approved engine handoff is available. Casting is blocked until the supported encrypted-ballot booth returns one."}
+                  ? "Encrypted ballot and proofs are ready. The casting origin will receive only protocol artifacts."
+                  : "No encrypted ballot is ready. Create one locally from the selected authoritative candidate."}
               </span>
             </div>
           </div>
@@ -170,15 +220,16 @@ export default function CastBallotPage() {
             </p>
           )}
 
-          <button
+          {!engineHandoff && <button
             type="button"
-            disabled={!engineHandoff}
-            onClick={() => setIsReviewOpen(true)}
+            disabled={!selectedCandidateId || isPreparing}
+            onClick={prepareEncryptedBallot}
             className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] shadow-sm transition-all duration-75 ease-out select-none flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
           >
-            <span>Review and Confirm Selection</span>
+            <span>{isPreparing ? "Encrypting ballot and proving selection…" : "Encrypt and prepare ballot"}</span>
             <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </button>
+          </button>}
+          {engineHandoff && <button type="button" onClick={() => setIsReviewOpen(true)} className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 rounded-xl font-bold text-white bg-[#157E92] hover:bg-[#0E6273] shadow-sm transition-colors flex items-center justify-center gap-2"><span>Review and Confirm Selection</span><ArrowRight className="w-4 h-4" aria-hidden="true" /></button>}
         </div>
       </div>
 
@@ -192,8 +243,8 @@ export default function CastBallotPage() {
         <div className="space-y-4">
           <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] space-y-2">
             <span className="text-xs font-mono uppercase text-slate-500 block">Engine handoff</span>
-            <strong className="text-lg text-[#10233F] dark:text-white block">Encrypted ballot ready for review</strong>
-            <span className="text-xs text-slate-600 dark:text-slate-400 block">The supported engine supplied the election-bound ciphertext and proof artifacts.</span>
+            <strong className="text-lg text-[#10233F] dark:text-white block">{election.candidates?.find((candidate) => candidate.id === selectedCandidateId)?.name || "Encrypted ballot ready"}</strong>
+            <span className="text-xs text-slate-600 dark:text-slate-400 block">The browser generated the election-bound ciphertext and zero knowledge proof artifacts.</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">

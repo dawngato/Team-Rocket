@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Shield,
@@ -14,9 +14,21 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { INITIAL_ELECTIONS, INITIAL_TRUSTED_PINS } from "@/lib/mock_data";
+import { electionClient } from "@/lib/api_client";
+import { Election } from "@/lib/types";
 
 export default function AuditorOverviewPage() {
-  const attestedCount = INITIAL_ELECTIONS.filter((e) => e.state === "AUDITOR_ATTESTED").length;
+  const [elections, setElections] = useState<Election[]>(INITIAL_ELECTIONS);
+
+  useEffect(() => {
+    electionClient.getElections()
+      .then((data) => {
+        if (data && data.length > 0) setElections(data);
+      })
+      .catch(() => {});
+  }, []);
+
+  const attestedCount = elections.filter((e) => e.state === "AUDITOR_ATTESTED").length;
 
   const auditorWorkspaces = [
     {

@@ -1,151 +1,33 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { StateBadge } from "../../components/StateBadge";
-import { INITIAL_ELECTIONS } from "../../lib/mock_data";
-import { ShieldCheck, CheckCircle2, Key, ArrowRight, FileCheck } from "lucide-react";
+import { FileCheck, Key, Send } from "lucide-react";
+import { StateBadge } from "../../../components/StateBadge";
+import { apiClient } from "../../../lib/api_client";
+import type { Election } from "../../../lib/types";
 
 export default function AuditorSignReportPage() {
-  const [selectedElectionId, setSelectedElectionId] = useState("elec_cs_2026");
-  const [auditorKey, setAuditorKey] = useState("");
-  const [isSigning, setIsSigning] = useState(false);
-  const [signingMessage, setSigningMessage] = useState<string | null>(null);
-  const [signedAttestation, setSignedAttestation] = useState<{
-    signature: string;
-    timestamp: string;
-    attestationHash: string;
-  } | null>(null);
-
-  const election = INITIAL_ELECTIONS.find((e) => e.id === selectedElectionId) || INITIAL_ELECTIONS[1];
-
-  const handleSign = () => {
-    setIsSigning(false);
-    setSigningMessage(
-      "Signing is handled out-of-band by the independent auditor. Use the standalone verifier and an auditor-controlled key or hardware token outside this application."
-    );
+  const [elections, setElections] = useState<Election[]>([]);
+  const [election, setElection] = useState<Election | null>(null);
+  const [publicKey, setPublicKey] = useState("");
+  const [signature, setSignature] = useState("");
+  const [attestationJson, setAttestationJson] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { void apiClient.getElections().then((rows) => { setElections(rows); if (rows[0]) void apiClient.getElection(rows[0].id).then(setElection); }).catch((cause) => setError(cause instanceof Error ? cause.message : "Election evidence unavailable.")); }, []);
+  const submit = async () => {
+    if (!election) return;
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      const parsed = JSON.parse(attestationJson) as unknown;
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Attestation must be a JSON object.");
+      const updated = await apiClient.requestPublication(election.id, { auditor_public_key: publicKey.trim(), auditor_signature: signature.trim(), attestation_data: parsed as Record<string, unknown> });
+      setElection(updated); setMessage(`The admin service verified and recorded the attestation. Current state: ${updated.state}.`);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Signed attestation was rejected."); }
+    finally { setBusy(false); }
   };
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
-            <Key className="w-3.5 h-3.5" aria-hidden="true" />
-            Client Side Auditor Signing
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Sign Auditor Attestation Report
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            This web interface does not generate auditor signatures. An external auditor must use a separately controlled key or hardware security module.
-          </p>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="sign-elec" className="block text-xs font-bold text-[#10233F] dark:text-white mb-1">
-              Select Evidence Package
-            </label>
-            <select
-              id="sign-elec"
-              value={selectedElectionId}
-              onChange={(e) => {
-                setSelectedElectionId(e.target.value);
-                setSignedAttestation(null);
-                setSigningMessage(null);
-              }}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            >
-              {INITIAL_ELECTIONS.map((elec) => (
-                <option key={elec.id} value={elec.id}>
-                  {elec.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] space-y-2 text-xs">
-            <span className="font-bold text-[#10233F] dark:text-white block">
-              Attestation Statement Formulation
-            </span>
-            <p className="text-slate-600 dark:text-slate-400 leading-relaxed italic">
-              "I have independently reviewed the evidence archive for {election.title}. The final statement must be written and signed by the external auditor after the standalone verifier completes."
-            </p>
-          </div>
-
-          <div>
-            <label htmlFor="auditor-key" className="block text-xs font-bold text-[#10233F] dark:text-white mb-1">
-              Local Signing Key or Hardware Token Identifier
-            </label>
-            <input
-              id="auditor-key"
-              type="text"
-              required
-              value={auditorKey}
-              onChange={(e) => setAuditorKey(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg font-mono text-xs border border-slate-300 dark:border-[#1E3352] bg-transparent focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            />
-            <span className="text-[11px] text-slate-500 mt-1 block">
-              This field is a reference only. Private keys are not accepted, generated, or stored by this web platform.
-            </span>
-          </div>
-
-          {signedAttestation ? (
-            <div className="p-5 rounded-xl bg-[#15805D]/10 border border-[#15805D]/40 space-y-3 animate-fadeIn">
-              <div className="flex items-center gap-2 text-[#15805D] font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                <span>Attestation Signed and Published (AUDITOR_ATTESTED)</span>
-              </div>
-              <div className="text-xs font-mono text-slate-700 dark:text-slate-300 space-y-1">
-                <div>
-                  <span className="text-slate-500 font-sans block text-[11px]">Signature:</span>
-                  <span className="break-all">{signedAttestation.signature}</span>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-sans block text-[11px]">Timestamp:</span>
-                  <span>{new Date(signedAttestation.timestamp).toLocaleString()}</span>
-                </div>
-              </div>
-              <div className="pt-2">
-                <StateBadge state="AUDITOR_ATTESTED" size="md" showDescription />
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="w-full min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#15805D]"
-            >
-              <FileCheck className="w-4 h-4" aria-hidden="true" />
-              <span>Independent External Key Required</span>
-            </button>
-          )}
-
-          {signingMessage && (
-            <div role="status" className="p-4 rounded-xl bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 text-xs text-[#6B4707] dark:text-[#FBBF24]">
-              {signingMessage}
-            </div>
-          )}
-
-          <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex justify-between items-center text-xs">
-            <Link
-              href="/audit"
-              className="font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline flex items-center gap-1"
-            >
-              <span>Back to Audit Explorer</span>
-            </Link>
-            <Link
-              href="/results"
-              className="font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
-            >
-              View Published Results
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  if (!election) return <main className="mx-auto max-w-4xl px-4 py-12 text-sm" role="status">{error || "Loading authoritative evidence…"}</main>;
+  return <main className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#15805D]"><Key className="size-4" aria-hidden="true" />Auditor attestation import</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Verify and submit signed report</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Private keys remain outside this web application. Import the public key, signature and JSON produced by the independently operated verifier.</p></header><div className="flex items-center gap-3"><select value={election.id} onChange={(event) => { const row = elections.find((item) => item.id === event.target.value); if (row) void apiClient.getElection(row.id).then(setElection); }} className="min-h-11 flex-1 rounded-lg border border-slate-300 bg-transparent px-3 text-sm">{elections.map((row) => <option key={row.id} value={row.id}>{row.title}</option>)}</select><StateBadge state={election.state} size="md" /></div>{error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}{message && <div className="rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-sm text-[#0F5B43]" role="status">{message}</div>}<section className="space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="flex items-center gap-2 font-bold text-[#10233F] dark:text-white"><FileCheck className="size-5 text-[#157E92]" aria-hidden="true" />External signature package</div><input required value={publicKey} onChange={(event) => setPublicKey(event.target.value)} placeholder="Auditor public key" className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><input required value={signature} onChange={(event) => setSignature(event.target.value)} placeholder="Ed25519 signature" className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><textarea required rows={12} value={attestationJson} onChange={(event) => setAttestationJson(event.target.value)} placeholder="Signed attestation JSON" className="w-full rounded-lg border border-slate-300 bg-transparent px-3 py-2 font-mono text-xs" /><button type="button" disabled={busy} onClick={() => void submit()} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#15805D] px-5 text-sm font-bold text-white disabled:opacity-50"><Send className="size-4" aria-hidden="true" />{busy ? "Verifying package…" : "Import and submit attestation"}</button></section><Link href={`/audit?election=${encodeURIComponent(election.id)}`} className="font-semibold text-[#157E92]">Return to audit explorer</Link></main>;
 }

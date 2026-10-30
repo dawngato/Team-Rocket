@@ -1,89 +1,17 @@
 "use client";
 
-import React, { useState } from "react";
-import { Blocks, CheckCircle2, RefreshCw, ExternalLink } from "lucide-react";
-import { INITIAL_ELECTIONS, INITIAL_EVIDENCE } from "@/lib/mock_data";
-import { Election } from "@/lib/types";
+import React, { useEffect, useState } from "react";
+import { Blocks, RefreshCw } from "lucide-react";
+import { apiClient } from "../../../lib/api_client";
+import type { Election, EvidencePackage } from "../../../lib/types";
 
 export default function AuditorChainAnchorPage() {
-  const [selectedElectionId, setSelectedElectionId] = useState("elec_cs_2026");
-  const [querying, setQuerying] = useState(false);
-
-  const evidence = INITIAL_EVIDENCE[selectedElectionId];
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
-            <Blocks className="w-3.5 h-3.5" aria-hidden="true" />
-            Independent Chain Verification
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Verify Chain Anchor Finality
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Inspect the local chain adapter record. This does not establish public chain finality or permanent immutability.
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3 bg-white dark:bg-[#132135] p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] shadow-sm">
-        <label htmlFor="chain-elec-select" className="text-xs font-semibold text-slate-500 whitespace-nowrap">
-          Target Contest:
-        </label>
-        <select
-          id="chain-elec-select"
-          value={selectedElectionId}
-          onChange={(e) => setSelectedElectionId(e.target.value)}
-          className="min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-        >
-          {INITIAL_ELECTIONS.map((elec: Election) => (
-            <option key={elec.id} value={elec.id}>
-              {elec.title}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {evidence && evidence.anchor_tx_hash ? (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6">
-          <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-[#1E3352]">
-            <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-              Local Anchor Record
-            </h2>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-[#15805D]/10 text-[#15805D]">
-              <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Fixture Record Present</span>
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-sans">Anchor Contract Address</span>
-              <span className="text-[#10233F] dark:text-white break-all">
-                0x157E92A0bC8eD48625EAfA59d04221c97B28a994
-              </span>
-            </div>
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-sans">Fixture Confirmation Metadata</span>
-              <span className="text-[#15805D] font-bold">
-                Block #{evidence.block_number || 19842103} (64+ confirmations)
-              </span>
-            </div>
-            <div className="sm:col-span-2 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-sans">Transaction Hash</span>
-              <span className="text-[#157E92] break-all">
-                {evidence.anchor_tx_hash}
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="p-8 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-center text-slate-500 text-xs">
-          No chain anchor recorded yet for this election. Anchor relay executes following election close and witness cosigning.
-        </div>
-      )}
-    </div>
-  );
+  const [elections, setElections] = useState<Election[]>([]);
+  const [selected, setSelected] = useState("");
+  const [evidence, setEvidence] = useState<EvidencePackage | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  useEffect(() => { void apiClient.getElections().then((rows) => { setElections(rows); if (rows[0]) setSelected(rows[0].id); }).catch((cause) => setError(cause instanceof Error ? cause.message : "Election list unavailable.")); }, []);
+  const query = async () => { if (!selected) return; setLoading(true); setError(null); try { setEvidence(await apiClient.getEvidence(selected)); } catch (cause) { setEvidence(null); setError(cause instanceof Error ? cause.message : "Authoritative evidence unavailable."); } finally { setLoading(false); } };
+  return <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#15805D]"><Blocks className="size-4" aria-hidden="true" />Chain evidence</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Inspect anchor receipt</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Values come from the authoritative evidence API. They are not described as public-chain finality unless a separately configured chain verifier confirms them.</p></header><div className="flex flex-wrap gap-3 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><select value={selected} onChange={(event) => setSelected(event.target.value)} className="min-h-11 flex-1 rounded-lg border border-slate-300 bg-transparent px-3 text-sm"><option value="">Select election</option>{elections.map((election) => <option key={election.id} value={election.id}>{election.title}</option>)}</select><button type="button" disabled={!selected || loading} onClick={() => void query()} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white disabled:opacity-50"><RefreshCw className={`size-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />{loading ? "Querying…" : "Query evidence"}</button></div>{error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707]" role="alert">{error}</div>}{evidence ? <section className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><h2 className="font-bold text-[#10233F] dark:text-white">Authoritative anchor metadata</h2><dl className="grid gap-4 text-xs sm:grid-cols-2"><div><dt className="text-slate-500">Final checkpoint</dt><dd className="break-all font-mono">{evidence.final_checkpoint_digest}</dd></div><div><dt className="text-slate-500">Transaction hash</dt><dd className="break-all font-mono text-[#157E92]">{evidence.anchor_tx_hash}</dd></div><div><dt className="text-slate-500">Auditor signature</dt><dd className="break-all font-mono">{evidence.auditor_signature}</dd></div><div><dt className="text-slate-500">Manifest</dt><dd className="break-all font-mono">{evidence.manifest_digest}</dd></div></dl><p className="text-xs text-[#6B4707]">This record is available. Independent chain finality remains LIMITED until the chain ID, contract, confirmations and trust pin are verified out of band.</p></section> : <div className="rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-500">No released evidence record was returned.</div>}</main>;
 }

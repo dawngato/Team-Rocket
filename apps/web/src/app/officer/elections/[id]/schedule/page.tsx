@@ -1,85 +1,19 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { StateBadge } from "../../../../components/StateBadge";
-import { INITIAL_ELECTIONS } from "../../../../lib/mock_data";
-import { Calendar, Clock, ArrowRight, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Calendar } from "lucide-react";
+import { StateBadge } from "@/components/StateBadge";
+import { apiClient } from "@/lib/api_client";
+import type { Election } from "@/lib/types";
 
 export default function OfficerSchedulePage() {
-  const params = useParams();
-  const electionId = params?.id as string;
-  const election = INITIAL_ELECTIONS.find((e) => e.id === electionId) || INITIAL_ELECTIONS[0];
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            Timeline Authority
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Election Schedule and Cutoffs
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            {election.title} | Strict timing guarantees privacy separation.
-          </p>
-        </div>
-        <StateBadge state={election.state} size="md" />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="space-y-4">
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50 dark:bg-slate-900/40 flex items-start gap-3">
-            <Clock className="w-5 h-5 text-[#AA6C0B] flex-shrink-0 mt-0.5" aria-hidden="true" />
-            <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1">
-              <strong className="text-sm text-[#10233F] dark:text-white block">
-                Section 10 Protocol Timing Rule
-              </strong>
-              <p>
-                Credential issuance cutoff occurs prior to the opening of casting. This architectural restriction breaks network timing correlation between student credential requests and ballot submissions.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] space-y-1">
-              <span className="text-xs text-slate-400 block font-mono">1. Issuance Cutoff</span>
-              <strong className="text-sm text-[#10233F] dark:text-white block">
-                {new Date(election.issuance_cutoff_utc).toLocaleString()}
-              </strong>
-              <span className="text-[11px] text-[#AA6C0B] font-semibold">Registration Ends</span>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] space-y-1">
-              <span className="text-xs text-slate-400 block font-mono">2. Voting Booth Opens</span>
-              <strong className="text-sm text-[#10233F] dark:text-white block">
-                {new Date(election.opens_at_utc).toLocaleString()}
-              </strong>
-              <span className="text-[11px] text-[#157E92] font-semibold">Casting Active</span>
-            </div>
-
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] space-y-1">
-              <span className="text-xs text-slate-400 block font-mono">3. Voting Closes</span>
-              <strong className="text-sm text-[#10233F] dark:text-white block">
-                {new Date(election.closes_at_utc).toLocaleString()}
-              </strong>
-              <span className="text-[11px] text-[#15805D] font-semibold">Tally Finalization</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex justify-end">
-          <Link
-            href={`/officer/elections/${election.id}/freeze`}
-            className="min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-          >
-            <span>Next: Freeze Election Manifest</span>
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  const electionId = useParams()?.id as string;
+  const [election, setElection] = useState<Election | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { void apiClient.getElection(electionId).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election schedule unavailable.")); }, [electionId]);
+  if (!election) return <main className="mx-auto max-w-4xl px-4 py-12 text-sm" role="status">{error || "Loading authoritative schedule…"}</main>;
+  const dates = [["Issuance cutoff", election.issuance_cutoff_utc], ["Voting opens", election.opens_at_utc], ["Voting closes", election.closes_at_utc]];
+  return <main className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="flex items-center justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352]"><div><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#157E92]"><Calendar className="size-4" aria-hidden="true" />Timeline authority</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Election schedule and cutoffs</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{election.title}</p></div><StateBadge state={election.state} size="md" /></header><section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><p className="text-sm text-slate-600 dark:text-slate-300">These timestamps are read from the server-authoritative election record. Credential issuance must close before casting opens.</p><div className="mt-6 grid gap-4 sm:grid-cols-3">{dates.map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 p-4 dark:border-[#1E3352]"><span className="text-xs text-slate-500">{label}</span><strong className="mt-2 block text-sm text-[#10233F] dark:text-white">{value ? new Date(value).toLocaleString() : "Not configured"}</strong></div>)}</div></section><Link href={`/officer/elections/${election.id}/freeze`} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white">Freeze manifest <ArrowRight className="size-4" aria-hidden="true" /></Link></main>;
 }

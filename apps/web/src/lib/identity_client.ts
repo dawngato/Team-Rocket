@@ -1,4 +1,5 @@
 import type { Election } from "./types";
+import type { IssuerPublicKey } from "./credential_crypto";
 
 export interface IdentityClientOptions {
   baseUrl?: string;
@@ -15,6 +16,8 @@ export interface CredentialIssuanceResponse {
   blind_signature_response: string;
   status: "RESERVED" | "SIGNING" | "SIGNED" | "DELIVERED";
 }
+
+export type CredentialIssuerPublicKey = IssuerPublicKey;
 
 export interface LoginResponse {
   session_token: string;
@@ -148,6 +151,15 @@ function isCredentialIssuanceResponse(value: unknown): value is CredentialIssuan
     (value.status === "RESERVED" || value.status === "SIGNING" || value.status === "SIGNED" || value.status === "DELIVERED");
 }
 
+function isCredentialIssuerPublicKey(value: unknown): value is CredentialIssuerPublicKey {
+  return isRecord(value) &&
+    typeof value.key_id === "string" &&
+    typeof value.algorithm === "string" &&
+    typeof value.n === "string" && /^([0-9a-f]+|0x[0-9a-f]+)$/i.test(value.n) &&
+    typeof value.e === "number" && Number.isSafeInteger(value.e) && value.e > 1 &&
+    typeof value.modulus_len === "number" && Number.isSafeInteger(value.modulus_len) && value.modulus_len >= 128;
+}
+
 function isLoginResponse(value: unknown): value is LoginResponse {
   return isRecord(value) &&
     typeof value.session_token === "string" &&
@@ -186,6 +198,14 @@ export const CREDENTIAL_ENGINE_HANDOFF_TYPE = "himvote.engine.credential.v1" as 
 
 export function getCredentialHandoffStorageKey(electionId: string): string {
   return `himvote.engine.credential.handoff.v1:${electionId}`;
+}
+
+export function getCredentialStateStorageKey(electionId: string): string {
+  return `himvote.credential.private-state.v1:${electionId}`;
+}
+
+export function getCredentialProofStorageKey(electionId: string): string {
+  return `himvote.credential.proof.v1:${electionId}`;
 }
 
 export function parseCredentialEngineHandoff(value: unknown, expectedElectionId: string): CredentialEngineHandoff | null {
@@ -294,6 +314,10 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
         throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service returned status for a different election.", status: 502, retryable: false });
       }
       return response;
+    },
+
+    async getIssuerPublicKey(): Promise<CredentialIssuerPublicKey> {
+      return request("/v1/credentials/public-key", {}, isCredentialIssuerPublicKey, "The identity service returned an invalid issuer public key.");
     },
 
     async issueCredential(handoff: CredentialEngineHandoff): Promise<CredentialIssuanceResponse> {

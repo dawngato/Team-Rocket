@@ -8,6 +8,8 @@ import hashlib
 import json
 from typing import Any, Dict, List, Sequence, Tuple
 
+from src.config import settings
+
 
 SHA256_DIGEST_BYTES = 32
 
@@ -191,37 +193,53 @@ def verify_credential_proof(
     except Exception as exc:
         return False, "", f"Credential proof base64url decoding failed: {str(exc)}"
 
-    # Attempt parsing as JSON proof structure
+    # The syntax-only branch is deliberately restricted to non-production
+    # transaction fixtures. It lets unit tests exercise replay and persistence
+    # behavior without pretending that a synthetic credential is authentic.
     try:
         proof_obj = json.loads(raw_bytes.decode("utf-8"))
-        if isinstance(proof_obj, dict):
-            # Verify election binding
-            proof_election = proof_obj.get("election_id")
-            if proof_election and proof_election != election_id:
-                return False, "", "Credential proof is bound to a different election"
+        if not isinstance(proof_obj, dict):
+            return False, "", "Credential proof must be a JSON object"
+    except Exception as exc:
+        return False, "", f"Credential proof JSON decoding failed: {exc}"
 
-            # Verify manifest digest binding if present
-            proof_manifest = proof_obj.get("manifest_digest")
-            if proof_manifest and proof_manifest != expected_manifest_digest:
-                return False, "", "Credential proof manifest digest does not match election"
+    if settings.ENGINE_VALIDATION_MODE.strip().lower() == "syntax_only" and settings.APP_ENV.strip().lower() != "production":
+        proof_election = proof_obj.get("election_id")
+        proof_manifest = proof_obj.get("manifest_digest")
+        nullifier = proof_obj.get("nullifier")
+        if proof_election != election_id or proof_manifest != expected_manifest_digest or not isinstance(nullifier, str):
+            return False, "", "Synthetic fixture credential binding is invalid"
+        return True, nullifier, ""
 
-            nullifier = proof_obj.get("nullifier")
-            if not nullifier:
-                # Deterministic derivation from proof seed
-                seed = proof_obj.get("seed") or str(proof_obj)
-                nullifier = hashlib.sha256(f"derived_nullifier:{election_id}:{seed}".encode("utf-8")).hexdigest()
+    proof_election = proof_obj.get("election_id")
+    proof_manifest = proof_obj.get("manifest_digest")
+    voter_token = proof_obj.get("voter_token")
+    signature = proof_obj.get("signature")
+    if proof_election != election_id:
+        return False, "", "Credential proof is bound to a different election"
+    if proof_manifest != expected_manifest_digest:
+        return False, "", "Credential proof manifest digest does not match election"
+    if not isinstance(voter_token, str) or not 1 <= len(voter_token) <= 512:
+        return False, "", "Credential voter token is invalid"
+    if not isinstance(signature, (str, int)):
+        return False, "", "Credential signature is missing"
+    if not settings.ISSUER_PUBLIC_KEY_N:
+        return False, "", "Credential issuer public key is not configured"
+    try:
+        modulus = int(settings.ISSUER_PUBLIC_KEY_N, 16)
+        signature_int = int(signature, 16) if isinstance(signature, str) else int(signature)
+        message_int = int.from_bytes(hashlib.sha256(voter_token.encode("utf-8")).digest(), "big") % modulus
+    except (TypeError, ValueError) as exc:
+        return False, "", f"Credential signature encoding is invalid: {exc}"
+    if modulus <= 0 or signature_int <= 0 or signature_int >= modulus:
+        return False, "", "Credential signature is outside the issuer modulus"
+    if pow(signature_int, settings.ISSUER_PUBLIC_KEY_E, modulus) != message_int:
+        return False, "", "Credential signature verification failed"
 
-            return True, str(nullifier), ""
-    except Exception:
-        # If not JSON, treat raw payload as deterministic proof token
-        pass
-
-    # For binary proof tokens, derive nullifier securely
-    derived_nullifier = hashlib.sha256(
-        b"himvote_nullifier:" + election_id.encode("utf-8") + b":" + raw_bytes
+    nullifier = hashlib.sha256(
+        f"himvote_nullifier_v1:{election_id}:{voter_token}".encode("utf-8")
     ).hexdigest()
-
-    return True, derived_nullifier, ""
+    return True, nullifier, ""
 
 
 def validate_engine_ballot(engine_ballot_b64url: str, engine_proofs_b64url: str) -> Tuple[bool, str]:

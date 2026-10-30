@@ -15,10 +15,10 @@ BASE_DIR = Path(__file__).resolve().parent
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 
 # Database configuration
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    f"sqlite:///{BASE_DIR}/identity.db",
-)
+_configured_database_url = os.getenv("DATABASE_URL", "").strip()
+if APP_ENV == "production" and not _configured_database_url:
+    raise RuntimeError("DATABASE_URL must be explicitly configured in production; refusing a local SQLite identity database")
+DATABASE_URL = _configured_database_url or f"sqlite:///{BASE_DIR}/identity.db"
 
 # Bootstrap configuration
 BOOTSTRAP_ALLOWED = os.getenv(
@@ -55,6 +55,8 @@ INVITATION_EXPIRE_DAYS = int(os.getenv("INVITATION_EXPIRE_DAYS", "7"))
 # Cryptography and Key Management
 ISSUER_KEY_ID = os.getenv("ISSUER_KEY_ID", "himvote_rsa_issuer_key_v1")
 ISSUER_PRIVATE_KEY_PEM = os.getenv("ISSUER_PRIVATE_KEY_PEM", "")
+if APP_ENV == "production" and not ISSUER_PRIVATE_KEY_PEM.strip():
+    raise RuntimeError("ISSUER_PRIVATE_KEY_PEM must be provided by the production key custody system")
 MFA_ISSUER = os.getenv("MFA_ISSUER", "HimVote")
 
 # Argon2id parameters

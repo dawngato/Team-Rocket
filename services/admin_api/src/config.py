@@ -48,6 +48,17 @@ class Settings(BaseModel):
         "CHANGE_ME"
     )
     pinned_auditor_public_key: Optional[str] = os.getenv("PINNED_AUDITOR_PUBLIC_KEY", None)
+    identity_service_url: str = os.getenv(
+        "IDENTITY_SERVICE_URL",
+        "http://localhost:8081" if os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")) != "production" else "",
+    ).rstrip("/")
+    identity_request_timeout_seconds: float = float(os.getenv("IDENTITY_REQUEST_TIMEOUT_SECONDS", "3"))
+
+    def model_post_init(self, __context) -> None:
+        if self.environment == "production" and not self.casting_db_url:
+            raise RuntimeError("CASTING_DB_URL must be explicitly configured in production")
+        if self.environment == "production" and not self.identity_service_url:
+            raise RuntimeError("IDENTITY_SERVICE_URL must be explicitly configured in production")
 
 
 settings = Settings()

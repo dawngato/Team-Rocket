@@ -378,3 +378,21 @@ class SystemSetting(Base):
     key = Column(String(100), primary_key=True)
     value = Column(String(255), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utcnow, onupdate=utcnow, nullable=False)
+
+
+class RosterCorrection(Base):
+    """Persisted correction requests; the web client never treats local state as a decision."""
+
+    __tablename__ = "roster_corrections"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    student_id = Column(String(255), nullable=False, index=True)
+    student_name = Column(String(255), nullable=False)
+    department = Column(String(255), nullable=False)
+    correction_type = Column(String(100), nullable=False)
+    reason = Column(Text, nullable=False)
+    status = Column(String(50), nullable=False, default="PENDING")
+    submitted_by = Column(String, ForeignKey("users.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    decided_by = Column(String, ForeignKey("users.id"), nullable=True)
+    decided_at = Column(DateTime(timezone=True), nullable=True)

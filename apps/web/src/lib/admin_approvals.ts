@@ -84,17 +84,39 @@ function validateDecisionResponse(value: unknown): ApprovalDecisionResponse {
 }
 
 export const adminApprovalsClient = {
-  /**
-   * The identity service currently has no read/list contract for approval
-   * requests. Keeping this explicit prevents the UI from inventing a queue
-   * from fixtures or from an unrelated audit-event stream.
-   */
   async getPendingApprovals(): Promise<RoleApproval[]> {
-    throw new AdminApprovalApiError({
-      code: "ADMIN_APPROVAL_LIST_UNAVAILABLE",
-      message: "Pending role approvals are unavailable because the identity service does not expose an authorized approval list endpoint.",
-      status: 501,
-      retryable: false,
+    const baseUrl = configuredBaseUrl();
+    if (!baseUrl) {
+      throw new AdminApprovalApiError({
+        code: "ADMIN_APPROVAL_LIST_UNAVAILABLE",
+        message: "Pending role approvals are unavailable because the identity service does not expose an authorized approval list endpoint.",
+        status: 501,
+        retryable: false,
+      });
+    }
+    let response: Response;
+    try {
+      response = await fetch(`${baseUrl}/v1/admin/approvals?status=pending`, { headers: { Accept: "application/json" }, credentials: "include", redirect: "error", referrerPolicy: "no-referrer" });
+    } catch {
+      throw new AdminApprovalApiError({ code: "IDENTITY_NETWORK_ERROR", message: "The identity service could not be reached.", status: 503 });
+    }
+    const body = await responseBody(response);
+    if (!response.ok) throw errorFromResponse(response.status, body);
+    if (!Array.isArray(body)) throw new AdminApprovalApiError({ code: "ADMIN_APPROVAL_RESPONSE_INVALID", message: "The identity service returned an invalid approval queue.", status: 502, retryable: false });
+    return body.map((value) => {
+      if (!isRecord(value) || typeof value.id !== "string" || typeof value.requested_role !== "string" || typeof value.requested_scope !== "string") {
+        throw new AdminApprovalApiError({ code: "ADMIN_APPROVAL_RESPONSE_INVALID", message: "The identity service returned an invalid approval record.", status: 502, retryable: false });
+      }
+      return {
+        id: value.id,
+        applicant: String(value.requester_id || ""),
+        email: String(value.requester_email || ""),
+        requestedRole: value.requested_role,
+        scope: value.requested_scope,
+        justification: String(value.justification || ""),
+        status: value.status === "approved" ? "APPROVED" : value.status === "rejected" ? "REJECTED" : "PENDING",
+        requestedAt: String(value.requested_at || ""),
+      };
     });
   },
 

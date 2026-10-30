@@ -31,6 +31,19 @@ export default function StudentPortalOverviewPage() {
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [latestReceipt, setLatestReceipt] = useState<{ handle: string; title: string; timestamp: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("himvote_receipts");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.handle) {
+          setLatestReceipt(parsed[0]);
+        }
+      }
+    } catch {}
+  }, []);
   const activeElections = useMemo(
     () => elections.filter((election) => election.state === "OPEN"),
     [elections],
@@ -134,8 +147,20 @@ export default function StudentPortalOverviewPage() {
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Last cast receipt</span>
-          <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
-          <span className="text-xs text-slate-500">No live receipt loaded in this session</span>
+          {latestReceipt ? (
+            <Link
+              href={`/student/receipts/${encodeURIComponent(latestReceipt.handle)}`}
+              className="text-xs font-mono font-bold text-[#15805D] hover:underline dark:text-[#34D399] truncate block"
+              title={latestReceipt.handle}
+            >
+              {latestReceipt.handle.substring(0, 16)}…
+            </Link>
+          ) : (
+            <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
+          )}
+          <span className="text-xs text-slate-500">
+            {latestReceipt ? `Cast in ${latestReceipt.title}` : "No live receipt loaded in this session"}
+          </span>
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Privacy status</span>

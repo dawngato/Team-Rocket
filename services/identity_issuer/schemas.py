@@ -78,6 +78,56 @@ class AdminInvitationRequest(BaseModel):
     scope: str
 
 
+class AdminInvitationRecord(BaseModel):
+    id: str
+    email: EmailStr
+    role: str
+    scope: str
+    status: str
+    expires_at: datetime
+    created_at: datetime
+
+
+class TeacherDirectoryRecord(BaseModel):
+    user_id: str
+    email: EmailStr
+    external_id: str
+    status: str
+    role: str
+    scope: str
+    invitation_id: Optional[str] = None
+
+
+class CreateTeacherRequest(BaseModel):
+    full_name: str = Field(min_length=1)
+    faculty_id: str = Field(min_length=1)
+    email: EmailStr
+    department: str = Field(min_length=1)
+    initial_password: Optional[str] = "TeacherSecurePass123!"
+
+
+class RosterCorrectionRequest(BaseModel):
+    student_id: str = Field(min_length=1)
+    student_name: str = Field(min_length=1)
+    department: str = Field(min_length=1)
+    correction_type: str = Field(min_length=1)
+    reason: str = Field(min_length=1)
+
+
+class RosterCorrectionRecord(BaseModel):
+    id: str
+    student_id: str
+    student_name: str
+    department: str
+    correction_type: str
+    reason: str
+    status: str
+    submitted_by: str
+    created_at: datetime
+    decided_by: Optional[str] = None
+    decided_at: Optional[datetime] = None
+
+
 class RoleGrantRequest(BaseModel):
     user_id: str
     role: str

@@ -1,22 +1,41 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Award, UserCheck, Plus, CheckCircle2, ArrowLeft, Shield } from "lucide-react";
 import { INITIAL_ASSIGNMENTS, INITIAL_TEACHERS, INITIAL_ELECTIONS } from "@/lib/mock_data";
-import { ElectionAssignment } from "@/lib/types";
+import { ElectionAssignment, TeacherRecord, Election } from "@/lib/types";
+import { apiClient, electionClient } from "@/lib/api_client";
 
 export default function AdminAssignmentsPage() {
   const [assignments, setAssignments] = useState<ElectionAssignment[]>(INITIAL_ASSIGNMENTS);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>(INITIAL_TEACHERS);
+  const [elections, setElections] = useState<Election[]>(INITIAL_ELECTIONS);
   const [selectedFaculty, setSelectedFaculty] = useState(INITIAL_TEACHERS[0].faculty_id);
   const [selectedElection, setSelectedElection] = useState(INITIAL_ELECTIONS[0].id);
   const [selectedRole, setSelectedRole] = useState<"VERIFICATION_OFFICER" | "ROSTER_REVIEWER" | "SUPERVISOR">("VERIFICATION_OFFICER");
   const [feedback, setFeedback] = useState<string | null>(null);
 
+  useEffect(() => {
+    Promise.all([
+      apiClient.getTeachers().catch(() => []),
+      electionClient.getElections().catch(() => []),
+    ]).then(([liveTeachers, liveElections]) => {
+      if (liveTeachers && liveTeachers.length > 0) {
+        setTeachers(liveTeachers);
+        setSelectedFaculty(liveTeachers[0].faculty_id);
+      }
+      if (liveElections && liveElections.length > 0) {
+        setElections(liveElections);
+        setSelectedElection(liveElections[0].id);
+      }
+    });
+  }, []);
+
   const handleAssign = (e: React.FormEvent) => {
     e.preventDefault();
-    const faculty = INITIAL_TEACHERS.find((t) => t.faculty_id === selectedFaculty);
-    const election = INITIAL_ELECTIONS.find((el) => el.id === selectedElection);
+    const faculty = teachers.find((t) => t.faculty_id === selectedFaculty);
+    const election = elections.find((el) => el.id === selectedElection);
     if (!faculty || !election) return;
 
     const newAssignment: ElectionAssignment = {
@@ -83,7 +102,7 @@ export default function AdminAssignmentsPage() {
               onChange={(e) => setSelectedFaculty(e.target.value)}
               className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
             >
-              {INITIAL_TEACHERS.map((t) => (
+              {teachers.map((t) => (
                 <option key={t.faculty_id} value={t.faculty_id}>
                   {t.full_name} ({t.department})
                 </option>
@@ -101,7 +120,7 @@ export default function AdminAssignmentsPage() {
               onChange={(e) => setSelectedElection(e.target.value)}
               className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
             >
-              {INITIAL_ELECTIONS.map((el) => (
+              {elections.map((el) => (
                 <option key={el.id} value={el.id}>
                   {el.title}
                 </option>

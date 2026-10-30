@@ -21,6 +21,13 @@ export function middleware(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
+  const privateRoute = /^\/(student|teacher|admin|officer|super-admin|auditor)(\/|$)/.test(request.nextUrl.pathname);
+  if (process.env.NODE_ENV === "production" && privateRoute && !request.cookies.get("session_id")) {
+    const login = new URL("/auth/login", request.url);
+    login.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(login);
+  }
+
   const response = NextResponse.next({
     request: { headers: requestHeaders },
   });

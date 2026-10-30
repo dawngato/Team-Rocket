@@ -3,6 +3,7 @@ Append only admin audit event logger and query service.
 """
 
 from typing import List, Optional, Dict, Any
+import json
 from sqlalchemy.orm import Session
 from src.models.database import AdminAuditEventModel, utcnow_str
 from src.crypto.hashing import sha256_digest
@@ -32,7 +33,7 @@ class AuditService:
             actor_id=actor_id,
             action=action,
             result=result,
-            details_json=str(details) if details else None
+            details_json=json.dumps(details or {}, sort_keys=True, separators=(",", ":"))
         )
         db.add(event)
         db.commit()

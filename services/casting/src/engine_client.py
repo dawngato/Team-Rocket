@@ -53,6 +53,13 @@ async def validate_ballot_with_engine(
             headers={"Accept": "application/json", "Content-Type": "application/json"},
             follow_redirects=False,
         ) as client:
+            if settings.REQUIRE_ESTABLISHED_ENGINE:
+                protocol_response = await client.get(f"{base_url}/v1/engine/protocol_version")
+                if protocol_response.status_code != 200:
+                    raise EngineValidationUnavailable("CRYPTO_ENGINE_PROTOCOL_UNAVAILABLE")
+                protocol = protocol_response.json()
+                if not isinstance(protocol, dict) or protocol.get("established_protocol") is not True:
+                    return False, "CRYPTO_ENGINE_NOT_VALIDATED: configured engine is not an established protocol provider"
             response = await client.post(f"{base_url}/v1/engine/validate_ballot", json=payload)
     except (httpx.TimeoutException, httpx.NetworkError, httpx.HTTPError) as exc:
         raise EngineValidationUnavailable("CRYPTO_ENGINE_UNAVAILABLE") from exc

@@ -1,11 +1,8 @@
-"""
-Database connection and session factory for HimVote Admin API.
-Supports PostgreSQL with transparent SQLite fallback for testing environments.
-"""
+"""Database connection and session factory for HimVote Admin API."""
 
 import os
 from typing import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from src.config import settings
@@ -19,6 +16,11 @@ def build_database_url() -> str:
     
     if os.getenv("TESTING", "false").lower() == "true":
         return "sqlite:///:memory:"
+
+    if settings.environment != "production":
+        # Development has an explicit, persistent local database default. It
+        # is never selected in production, where CASTING_DB_URL is required.
+        return "sqlite:///./himvote_admin_development.db"
 
     user = settings.casting_db_user
     pwd = settings.casting_db_password
@@ -35,17 +37,7 @@ if DATABASE_URL.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
     engine_kwargs["poolclass"] = StaticPool
 
-try:
-    engine = create_engine(DATABASE_URL, **engine_kwargs)
-    with engine.connect() as conn:
-        pass
-except Exception:
-    DATABASE_URL = "sqlite:///:memory:"
-    engine = create_engine(
-        DATABASE_URL,
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool
-    )
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -53,6 +45,10 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 def init_db() -> None:
     """Initializes tables in database schema."""
     Base.metadata.create_all(bind=engine)
+    columns = {column["name"] for column in inspect(engine).get_columns("candidates")}
+    if "statement" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE candidates ADD COLUMN statement TEXT"))
 
 
 def get_db() -> Generator[Session, None, None]:

@@ -30,6 +30,20 @@ logger = logging.getLogger("identity_issuer.credentials")
 router = APIRouter(prefix="/v1/credentials", tags=["credentials"])
 
 
+@router.get("/public-key", status_code=status.HTTP_200_OK)
+def get_issuer_public_key(current_user: User = Depends(get_current_user)):
+    """Expose only the public blind-signing parameters to an authenticated voter."""
+    issuer = get_default_issuer()
+    parameters = issuer.public_parameters
+    return {
+        "key_id": ISSUER_KEY_ID,
+        "algorithm": "RSA-BLIND-SHA256-MOD-RAW-V1",
+        "n": format(parameters["n"], "x"),
+        "e": parameters["e"],
+        "modulus_len": parameters["modulus_len"],
+    }
+
+
 @router.post("/issue", response_model=BlindedIssuanceResponse, status_code=status.HTTP_200_OK)
 def issue_credential(
     req: BlindedIssuanceRequest,
@@ -275,3 +289,19 @@ def get_issuance_status(
         status=record.status,
         delivered=record.status == "DELIVERED",
     )
+
+
+@router.get("/public-key", status_code=status.HTTP_200_OK)
+def get_issuer_public_key():
+    """
+    Return the RFC 9474 RSA blind signature public key parameters.
+    Allows clients and verifiers to blind messages and verify unblinded credential signatures.
+    """
+    issuer = get_default_issuer()
+    return {
+        "key_id": ISSUER_KEY_ID,
+        "algorithm": "RSABSSA-SHA256",
+        "n": hex(issuer.n),
+        "e": issuer.e,
+        "modulus_len": issuer.modulus_len,
+    }

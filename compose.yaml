@@ -142,7 +142,7 @@ services:
       - "8084:8084"
     environment:
       - LOG_LEVEL=info
-      - VOTING_ENGINE_PROVIDER=local_vetted
+      - VOTING_ENGINE_PROVIDER=custom_development_unverified
     networks:
       - himvote_casting_net
     restart: unless-stopped

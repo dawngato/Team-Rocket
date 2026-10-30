@@ -81,6 +81,18 @@ class Settings(BaseModel):
     ENGINE_VALIDATION_TIMEOUT_SECONDS: float = Field(
         default_factory=lambda: float(os.getenv("ENGINE_VALIDATION_TIMEOUT_SECONDS", "5"))
     )
+    ISSUER_PUBLIC_KEY_N: Optional[str] = Field(
+        default_factory=lambda: os.getenv("ISSUER_PUBLIC_KEY_N")
+    )
+    ISSUER_PUBLIC_KEY_E: int = Field(
+        default_factory=lambda: int(os.getenv("ISSUER_PUBLIC_KEY_E", "65537"))
+    )
+    REQUIRE_ESTABLISHED_ENGINE: bool = Field(
+        default_factory=lambda: os.getenv(
+            "REQUIRE_ESTABLISHED_ENGINE",
+            "true" if os.getenv("APP_ENV", "development") == "production" else "false",
+        ).lower() in ("true", "1", "yes")
+    )
 
     def get_database_url(self) -> str:
         """

@@ -1,96 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { StateBadge } from "../../../../components/StateBadge";
-import { INITIAL_ELECTIONS } from "../../../../lib/mock_data";
-import { apiClient } from "../../../../lib/api_client";
-import { Vote, ArrowRight, Play, Square, CheckCircle2 } from "lucide-react";
+import { ArrowRight, Play, Square } from "lucide-react";
+import { StateBadge } from "@/components/StateBadge";
+import { apiClient } from "@/lib/api_client";
+import type { Election } from "@/lib/types";
 
 export default function OfficerLifecyclePage() {
-  const params = useParams();
-  const electionId = params?.id as string;
-  const [election, setElection] = useState(
-    INITIAL_ELECTIONS.find((e) => e.id === electionId) || INITIAL_ELECTIONS[0]
-  );
-  const [updating, setUpdating] = useState(false);
-
-  const handleOpen = async () => {
-    setUpdating(true);
-    const updated = await apiClient.openElection(election.id);
-    setElection(updated);
-    setUpdating(false);
-  };
-
-  const handleClose = async () => {
-    setUpdating(true);
-    const updated = await apiClient.closeElection(election.id);
-    setElection(updated);
-    setUpdating(false);
-  };
-
-  return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            Voting Window Controls
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Election Lifecycle Management
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            {election.title} | Open voting booth gateways and close balloting for tallying.
-          </p>
-        </div>
-        <StateBadge state={election.state} size="md" />
-      </div>
-
-      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="space-y-2">
-          <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-            Current Election Status: {election.state}
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            State transitions are irreversibly logged across the independent witness network. Opening enables casting origin ingestion. Closing halts ballot acceptance and initiates witness checkpoint finalization.
-          </p>
-        </div>
-
-        <div className="flex flex-col sm:flex-row gap-4 pt-4 border-t border-slate-100 dark:border-[#1E3352]">
-          {election.state === "FROZEN" && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={handleOpen}
-              className="min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              <Play className="w-4 h-4" aria-hidden="true" />
-              <span>Open Election for Ballot Ingestion</span>
-            </button>
-          )}
-
-          {election.state === "OPEN" && (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={handleClose}
-              className="min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#C23C45] hover:bg-[#A32A32] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              <Square className="w-4 h-4" aria-hidden="true" />
-              <span>Close Election and Initiate Final Checkpoint</span>
-            </button>
-          )}
-
-          <Link
-            href={`/officer/elections/${election.id}/publication`}
-            className="min-h-[44px] px-6 py-2.5 font-bold text-[#10233F] dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm ml-auto"
-          >
-            <span>Proceed to Publication Requests</span>
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  const electionId = useParams()?.id as string;
+  const [election, setElection] = useState<Election | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => void apiClient.getElection(electionId).then(setElection).catch((cause) => setError(cause instanceof Error ? cause.message : "Election status unavailable."));
+  useEffect(load, [electionId]);
+  const transition = async (action: "open" | "close") => { if (!election) return; setBusy(true); setError(null); try { setElection(action === "open" ? await apiClient.openElection(election.id) : await apiClient.closeElection(election.id)); } catch (cause) { setError(cause instanceof Error ? cause.message : "Lifecycle transition rejected."); } finally { setBusy(false); } };
+  if (!election) return <main className="mx-auto max-w-4xl px-4 py-12 text-sm" role="status">{error || "Loading authoritative election…"}</main>;
+  return <main className="mx-auto max-w-4xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="flex items-center justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352]"><div><p className="text-xs font-semibold uppercase tracking-wide text-[#157E92]">Voting window controls</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Election lifecycle management</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{election.title}</p></div><StateBadge state={election.state} size="md" /></header>{error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}<section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><p className="text-sm text-slate-600 dark:text-slate-300">The state shown here is read from the server after every transition. A rejected request never updates this page optimistically.</p><div className="flex flex-wrap gap-3">{election.state === "FROZEN" && <button type="button" disabled={busy} onClick={() => void transition("open")} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white disabled:opacity-50"><Play className="size-4" aria-hidden="true" />Open election</button>}{election.state === "OPEN" && <button type="button" disabled={busy} onClick={() => void transition("close")} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#C23C45] px-4 text-sm font-bold text-white disabled:opacity-50"><Square className="size-4" aria-hidden="true" />Close election</button>}<Link href={`/officer/elections/${election.id}/publication`} className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold">Publication workflow <ArrowRight className="size-4" aria-hidden="true" /></Link></div></section></main>;
 }
