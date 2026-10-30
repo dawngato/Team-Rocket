@@ -1398,7 +1398,7 @@ def test_cli_main_rejects_plaintext_development_profile_without_opt_in(
 
     assert ret == EXIT_UNVERIFIABLE
     report = safe_json_loads(open(bundle["report"], "rb").read())
-    assert report["status"] == STATUS_UNVERIFIABLE
+    assert report["overall_status"] == STATUS_UNVERIFIABLE
     assert report["properties"][PROPERTY_TALLY_PROOF]["status"] == STATUS_LIMITED
     assert "native" in report["properties"][PROPERTY_TALLY_PROOF]["details"]
 
