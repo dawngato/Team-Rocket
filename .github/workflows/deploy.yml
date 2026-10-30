@@ -1,0 +1,40 @@
+name: HimVote EC2 Continuous Deployment
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to EC2 Server
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER || 'ubuntu' }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          port: 22
+          script_stop: true
+          script: |
+            APP_DIR="/opt/himvote"
+            if [ ! -d "$APP_DIR/.git" ]; then
+              echo "Repository not found at $APP_DIR. Running initial setup..."
+              sudo mkdir -p "$APP_DIR"
+              sudo chown -R $USER:$USER "$APP_DIR"
+              git clone https://github.com/dawngato/Team-Rocket.git "$APP_DIR"
+            fi
+            
+            cd "$APP_DIR"
+            echo "Pulling latest changes from main..."
+            git fetch origin main
+            git reset --hard origin/main
+            
+            echo "Rebuilding and restarting services..."
+            docker compose -f compose.yaml -f compose.dev.yaml up -d --build --remove-orphans
+            
+            echo "Checking container status..."
+            docker compose ps

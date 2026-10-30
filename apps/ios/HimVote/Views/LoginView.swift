@@ -104,19 +104,10 @@ public struct LoginView: View {
     
     private var headerView: some View {
         VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(ColorTokens.brandPrimary.opacity(0.1))
-                    .frame(width: headerCircleSize, height: headerCircleSize)
-                
-                Image(systemName: "checkmark.seal.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: headerIconSize, height: headerIconSize)
-                    .foregroundStyle(ColorTokens.brandAccent)
-            }
-            .accessibilityHidden(true)
-            .padding(.top, 36)
+            BallotBoxHero()
+                .scaleEffect(headerCircleSize / 88)
+                .accessibilityHidden(true)
+                .padding(.top, 36)
             
             Text("Campus Elections")
                 .font(Typography.appTitle)

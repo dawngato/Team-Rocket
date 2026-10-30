@@ -4,8 +4,8 @@
 services:
   gateway:
     ports:
-      - "80:80"
-      - "443:443"
+      - "80:8080"
+      - "443:8443"
 
   web:
     environment:
@@ -45,6 +45,8 @@ services:
       - APP_DEBUG=true
       - LOG_LEVEL=debug
       - CASTING_DB_SSL_MODE=disable
+      - ENGINE_VALIDATION_MODE=syntax_only
+      - ELECTION_ENGINE_BASE=http://election_engine:8084
     volumes:
       - ./services/casting:/app:ro
 

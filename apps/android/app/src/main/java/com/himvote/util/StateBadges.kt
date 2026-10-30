@@ -100,6 +100,18 @@ object StateBadges {
                 icon = Icons.Default.Warning,
                 accessibilityLabel = "Status: Disputed tally or witness anomaly"
             )
+            ElectionStatus.PUBLISHED -> StateVisualConfig(
+                backgroundColor = DesignTokens.Green600.copy(alpha = 0.14f),
+                textColor = DesignTokens.Green600,
+                icon = Icons.Default.Public,
+                accessibilityLabel = "Status: Published"
+            )
+            else -> StateVisualConfig(
+                backgroundColor = DesignTokens.Navy900.copy(alpha = 0.12f),
+                textColor = DesignTokens.Navy900,
+                icon = Icons.Default.Info,
+                accessibilityLabel = "Status: ${status.label}"
+            )
         }
     }
 }

@@ -1,0 +1,32 @@
+[Desktop Entry]
+Version=1.5
+Type=Application
+Name=HimVote
+GenericName=Cryptographic Election Client
+Comment=Institutional desktop voting client and independent election verifier
+Exec=himvote %u
+Icon=himvote
+Terminal=false
+Categories=Office;Security;Utility;
+Keywords=election;voting;cryptography;merkle;audit;verification;
+StartupNotify=true
+StartupWMClass=HimVote Linux
+MimeType=application/x-himvote-archive;application/zip;application/gzip;
+
+Actions=AuditArchive;VerifyReceipt;Settings;Session;
+
+[Desktop Action AuditArchive]
+Name=Open Election Archive
+Exec=himvote --archive %f
+
+[Desktop Action VerifyReceipt]
+Name=Check Receipt Status
+Exec=himvote --view receipt
+
+[Desktop Action Settings]
+Name=System Settings & Origins
+Exec=himvote --view settings
+
+[Desktop Action Session]
+Name=Session & Identity Sign In
+Exec=himvote --view session

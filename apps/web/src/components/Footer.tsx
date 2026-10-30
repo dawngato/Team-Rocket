@@ -6,45 +6,45 @@ import { Vote, Shield, Lock, ExternalLink } from "lucide-react";
 
 export function Footer() {
   return (
-    <footer className="w-full border-t border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#10233F] transition-colors py-12 px-4 sm:px-6 lg:px-8 text-sm">
-      <div className="w-full max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+    <footer className="apple-footer w-full py-14 px-5 sm:px-8 text-sm">
+      <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         <div className="space-y-4">
-          <div className="flex items-center gap-2 font-bold text-lg text-[#10233F] dark:text-white">
-            <span className="w-7 h-7 rounded-lg bg-[#157E92] flex items-center justify-center text-white">
-              <Vote className="w-4 h-4" aria-hidden="true" />
+          <div className="apple-brand">
+            <span className="apple-brand-mark">
+              <Vote className="w-3.5 h-3.5" aria-hidden="true" />
             </span>
             <span>HimVote</span>
           </div>
-          <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-            Educational campus election prototype for inspectable workflows, evidence review, and honest security limits.
+          <p className="text-[#6e6e73] dark:text-[#a1a1a6] text-xs leading-relaxed">
+            Institutional campus election platform for inspectable workflows, cryptographic evidence review, and strict boundary controls.
           </p>
-          <div className="text-xs text-slate-500 dark:text-slate-500">
+          <div className="text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
             Accessibility support is implemented in the tested web scope. Platform audits remain in progress.
           </div>
         </div>
 
         <div>
-          <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-500 dark:text-slate-400 mb-3">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-[#6e6e73] dark:text-[#a1a1a6] mb-3">
             Public Audits
           </h3>
-          <ul className="space-y-2">
+          <ul className="flex flex-col gap-2">
             <li>
-              <Link href="/audit" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                <Link href="/audit" className="apple-footer-link">
                 Public Audit Explorer
               </Link>
             </li>
             <li>
-              <Link href="/how-it-works" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                <Link href="/how-it-works" className="apple-footer-link">
                 Verification Architecture
               </Link>
             </li>
             <li>
-              <Link href="/results" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                <Link href="/results" className="apple-footer-link">
                 Published Results
               </Link>
             </li>
             <li>
-              <Link href="/security-limits" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                <Link href="/security-limits" className="apple-footer-link">
                 Security Limits and Assumptions
               </Link>
             </li>
@@ -52,65 +52,45 @@ export function Footer() {
         </div>
 
         <div>
-          <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-500 dark:text-slate-400 mb-3">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-[#6e6e73] dark:text-[#a1a1a6] mb-3">
             Institutional Portals
           </h3>
-          <ul className="space-y-2">
+          <ul className="flex flex-col gap-2">
             <li>
-              <Link href="/student/elections" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Student Voting Portal
+                <Link href="/auth/login" className="apple-footer-link">
+                Sign in to institutional workspace
               </Link>
             </li>
             <li>
-              <Link href="/teacher/verification-queue" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Teacher Verification Queue
-              </Link>
-            </li>
-            <li>
-              <Link href="/officer/create" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Election Officer Desk
-              </Link>
-            </li>
-            <li>
-              <Link href="/admin" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Administrative Console
-              </Link>
-            </li>
-            <li>
-              <Link href="/super-admin" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Super Administrator
-              </Link>
-            </li>
-            <li>
-              <Link href="/auditor" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Independent Auditor Workspace
+                <Link href="/security-limits" className="apple-footer-link">
+                Review access boundaries
               </Link>
             </li>
           </ul>
         </div>
 
         <div>
-          <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-500 dark:text-slate-400 mb-3">
+          <h3 className="font-semibold text-xs tracking-wider uppercase text-[#6e6e73] dark:text-[#a1a1a6] mb-3">
             Standards and Compliance
           </h3>
-          <ul className="space-y-2">
+          <ul className="flex flex-col gap-2">
             <li>
-              <Link href="/accessibility" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                <Link href="/accessibility" className="apple-footer-link">
                 Accessibility Statement
               </Link>
             </li>
             <li>
-              <span className="text-slate-500 dark:text-slate-500 text-xs block">
+                <span className="text-[#6e6e73] dark:text-[#a1a1a6] text-xs block">
                 Languages: English and Hindi
               </span>
             </li>
             <li>
-              <span className="text-slate-500 dark:text-slate-500 text-xs block">
+                <span className="text-[#6e6e73] dark:text-[#a1a1a6] text-xs block">
                 Zero third party tracking cookies
               </span>
             </li>
             <li>
-              <span className="text-slate-500 dark:text-slate-500 text-xs block">
+                <span className="text-[#6e6e73] dark:text-[#a1a1a6] text-xs block">
                 Separate Identity and Casting Origins
               </span>
             </li>
@@ -118,9 +98,9 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1800px] mx-auto mt-10 pt-6 border-t border-slate-200 dark:border-[#1E3352] flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-slate-500">
+      <div className="w-full max-w-[1280px] mx-auto mt-12 pt-6 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
         <div>HimVote Institutional Election System. Open Standards Verification.</div>
-        <div className="mt-2 sm:mt-0">All cryptographic proofs reproducible offline.</div>
+        <div className="mt-2 sm:mt-0">Offline verification applies only to released evidence with trusted pins.</div>
       </div>
     </footer>
   );

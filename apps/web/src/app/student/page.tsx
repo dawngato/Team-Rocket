@@ -1,223 +1,210 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
-  GraduationCap,
-  Vote,
-  FileCheck,
-  Layers,
-  HelpCircle,
   ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
+  FileCheck,
+  GraduationCap,
+  HelpCircle,
+  Layers,
   Lock,
+  ShieldCheck,
+  Vote,
 } from "lucide-react";
-import { INITIAL_ELECTIONS } from "@/lib/mock_data";
 import { StateBadge } from "@/components/StateBadge";
+import { electionClient } from "@/lib/election_client";
+import type { Election } from "@/lib/types";
+
+function formatUtc(value: string): string {
+  if (!value) return "Not published";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Invalid server timestamp";
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZoneName: "short",
+  }).format(parsed);
+}
 
 export default function StudentPortalOverviewPage() {
-  const activeElections = INITIAL_ELECTIONS.filter((e) => e.state === "OPEN");
+  const [elections, setElections] = useState<Election[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const activeElections = useMemo(
+    () => elections.filter((election) => election.state === "OPEN"),
+    [elections],
+  );
 
-  const studentActions = [
+  useEffect(() => {
+    let cancelled = false;
+    void electionClient
+      .getElections()
+      .then((nextElections) => {
+        if (!cancelled) {
+          setElections(nextElections);
+          setError(null);
+        }
+      })
+      .catch((cause) => {
+        if (!cancelled) {
+          setElections([]);
+          setError(cause instanceof Error ? cause.message : "Elections could not be loaded.");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const actions = [
     {
-      kicker: "Voting Booth",
-      title: "Active Contests",
+      kicker: "Voting booth",
+      title: "Eligible elections",
       href: "/student/elections",
-      desc: "Browse eligible student government contests and cast your encrypted vote.",
+      desc: "Browse elections returned by the authoritative service. Casting remains blocked until an approved engine handoff exists.",
       icon: Vote,
-      badge: `${activeElections.length} Active`,
-      highlight: true,
+      badge: loading ? "Loading" : `${activeElections.length} open`,
     },
     {
-      kicker: "Cryptographic Receipt",
-      title: "My Receipt Tracker",
-      href: "/student/receipts/HV_24F8_19C2",
-      desc: "Check status of your cast ballot receipt across witness and chain checkpoints.",
+      kicker: "Receipt status",
+      title: "My receipt timeline",
+      desc: "Open a receipt from a real cast response to inspect accepted, witnessed, and anchored states.",
       icon: FileCheck,
-      badge: "HV_24F8_19C2",
-      highlight: false,
+      badge: "Needs live receipt",
     },
     {
-      kicker: "Proof Verification",
-      title: "Merkle Inclusion Proof",
-      href: "/student/receipts/HV_24F8_19C2/inclusion",
-      desc: "Check whether your receipt hash exists in the displayed witness root. This does not reveal your selection.",
+      kicker: "Inclusion evidence",
+      title: "Merkle inclusion proof",
+      desc: "A proof is evaluated only when the casting service returns the complete leaf, root, tree size, and path.",
       icon: Layers,
-      badge: "Interactive Verifier",
-      highlight: false,
+      badge: "Fail closed",
     },
     {
-      kicker: "Civic Rights",
-      title: "Voter Help and Rights",
+      kicker: "Civic rights",
+      title: "Voter help and limits",
       href: "/student/help",
-      desc: "Understand your ballot secrecy guarantees, coercion resistance, and voting rules.",
+      desc: "Review privacy boundaries, receipt semantics, coercion limits, and the educational-only scope.",
       icon: HelpCircle,
-      badge: "Privacy Guide",
-      highlight: false,
+      badge: "Privacy guide",
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Header with Institutional Scope */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
+    <main className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
+      <header className="flex flex-col gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            <GraduationCap className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Student Voter Workspace</span>
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#157E92]/10 px-2.5 py-1 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+            <GraduationCap className="size-3.5" aria-hidden="true" />
+            Student voter workspace
           </div>
-          <h1 className="text-3xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
             Student Voting Hub
           </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
-            Cast private ballots, obtain anonymous credentials, track receipts, and mathematically verify election inclusion.
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            Election state and receipt status come from configured services. This page does not substitute synthetic elections or claim that a local badge proves a security property.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-            <CheckCircle2 className="w-4 h-4" aria-hidden="true" />
-            <span>Roster Identity Verified</span>
-          </span>
+        <div className="inline-flex items-center gap-2 rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 px-3 py-2 text-xs font-semibold text-[#6B4707] dark:text-[#FCD34D]" role="status">
+          <ShieldCheck className="size-4" aria-hidden="true" />
+          Identity and eligibility are service supplied
         </div>
-      </div>
+      </header>
 
-      {/* Institutional Status & Metric Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-            Eligible Contests
-          </span>
-          <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
-            {activeElections.length} Active
-          </div>
-          <span className="text-xs text-slate-500 block">
-            CS and Campus Council open
-          </span>
+      {error && (
+        <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="alert">
+          {error} Synthetic elections and fake receipts are not substituted.
         </div>
+      )}
 
-        <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-            Credential Token
-          </span>
-          <div className="text-2xl font-extrabold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
-            <ShieldCheck className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <span>ISSUED</span>
-          </div>
-          <span className="text-xs text-slate-500 block truncate">
-            Blind signature verified
-          </span>
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Live student status">
+        <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Eligible elections</span>
+          <strong className="font-mono text-2xl text-[#157E92] dark:text-[#38BDF8]">{loading ? "…" : elections.length}</strong>
+          <span className="text-xs text-slate-500">Returned by the election service</span>
         </div>
-
-        <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-            Last Cast Receipt
-          </span>
-          <div className="text-lg font-extrabold text-[#10233F] dark:text-white font-mono truncate">
-            HV_24F8_19C2
-          </div>
-          <span className="text-xs text-slate-500 block">
-            Witnessed in batch checkpoint
-          </span>
+        <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Engine authorization</span>
+          <strong className="flex items-center gap-1.5 text-2xl text-[#AA6C0B] dark:text-[#FCD34D]"><Lock className="size-5" aria-hidden="true" />Not loaded</strong>
+          <span className="text-xs text-slate-500">No credential is minted by this UI</span>
         </div>
-
-        <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1.5">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-            Ballot Secrecy Invariant
-          </span>
-          <div className="text-2xl font-extrabold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
-            <Lock className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <span>ENFORCED</span>
-          </div>
-          <span className="text-xs text-slate-500 block">
-            Zero selection trace in receipt
-          </span>
+        <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Last cast receipt</span>
+          <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
+          <span className="text-xs text-slate-500">No live receipt loaded in this session</span>
         </div>
-      </div>
+        <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Privacy status</span>
+          <strong className="flex items-center gap-1.5 text-2xl text-[#AA6C0B] dark:text-[#FCD34D]"><ShieldCheck className="size-5" aria-hidden="true" />Limited</strong>
+          <span className="text-xs text-slate-500">Not a secrecy or tally proof</span>
+        </div>
+      </section>
 
-      {/* Action Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {studentActions.map((action) => {
+      <section className="grid grid-cols-1 gap-6 md:grid-cols-2" aria-label="Student actions">
+        {actions.map((action) => {
           const Icon = action.icon;
-          return (
-            <Link
-              key={action.title}
-              href={action.href}
-              className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
-            >
+          const content = (
+            <>
               <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center flex-shrink-0 mt-1">
-                  <Icon className="w-6 h-6" aria-hidden="true" />
+                <div className="mt-1 flex size-12 shrink-0 items-center justify-center rounded-xl bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8]">
+                  <Icon className="size-6" aria-hidden="true" />
                 </div>
-                <div className="space-y-1">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                    {action.kicker}
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <h2 className="font-bold text-lg text-[#10233F] dark:text-white tracking-tight">
-                      {action.title}
-                    </h2>
-                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
-                      {action.badge}
-                    </span>
+                <div className="min-w-0">
+                  <span className="block text-[11px] font-bold uppercase tracking-wider text-slate-400">{action.kicker}</span>
+                  <div className="mt-1 flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-bold tracking-tight text-[#10233F] dark:text-white">{action.title}</h2>
+                    <span className="rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-700 dark:border-[#1E3352] dark:bg-slate-800 dark:text-slate-300">{action.badge}</span>
                   </div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed pt-0.5">
-                    {action.desc}
-                  </p>
+                  <p className="pt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">{action.desc}</p>
                 </div>
               </div>
-              <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
-                <span>Open Workspace</span>
-                <ArrowRight className="w-4 h-4" aria-hidden="true" />
+              <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs font-bold text-[#157E92] dark:border-[#1E3352] dark:text-[#38BDF8]">
+                <span>{action.href ? "Open workspace" : "Unavailable until live evidence exists"}</span>
+                {action.href && <ArrowRight className="size-4" aria-hidden="true" />}
               </div>
+            </>
+          );
+          return action.href ? (
+            <Link key={action.title} href={action.href} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-colors hover:border-[#157E92] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] dark:border-[#1E3352] dark:bg-[#132135]">
+              {content}
             </Link>
+          ) : (
+            <article key={action.title} className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-6 opacity-80 dark:border-[#1E3352] dark:bg-slate-900/30">
+              {content}
+            </article>
           );
         })}
-      </div>
+      </section>
 
-      {/* Active Elections Quick Peek */}
-      <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+      <section className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]" aria-labelledby="active-elections-heading">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-lg font-bold text-[#10233F] dark:text-white tracking-tight">
-              Active Student Elections
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Encrypted submissions currently accepted by the campus voting booth.
-            </p>
+            <h2 id="active-elections-heading" className="text-lg font-bold tracking-tight text-[#10233F] dark:text-white">Active student elections</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Only service-returned elections are shown here.</p>
           </div>
-          <span className="text-xs font-mono font-semibold text-slate-500">
-            {activeElections.length} Active
-          </span>
+          <span className="font-mono text-xs font-semibold text-slate-500">{loading ? "Loading" : `${activeElections.length} open`}</span>
         </div>
-        <div className="space-y-3">
-          {activeElections.map((el) => (
-            <div
-              key={el.id}
-              className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-slate-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-            >
-              <div>
-                <h3 className="font-bold text-sm text-[#10233F] dark:text-white tracking-tight">
-                  {el.title}
-                </h3>
-                <p className="text-xs text-slate-500 font-mono mt-0.5">
-                  Contest: {el.contest} | Cutoff: {new Date(el.issuance_cutoff_utc).toLocaleDateString()}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <StateBadge state={el.state} size="sm" />
-                <Link
-                  href={`/student/elections/${el.id}`}
-                  className="min-h-[36px] px-3.5 py-1.5 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] rounded-lg transition-all duration-75 ease-out text-xs flex items-center gap-1.5 shadow-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
-                >
-                  <span>Vote Now</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-              </div>
+        {loading && <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-[#1E3352] dark:text-slate-300" role="status">Loading election state…</div>}
+        {!loading && !error && activeElections.length === 0 && <div className="rounded-xl border border-slate-200 p-4 text-sm text-slate-600 dark:border-[#1E3352] dark:text-slate-300" role="status">No open elections were returned by the authoritative service.</div>}
+        {activeElections.map((election) => (
+          <article key={election.id} className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-[#1E3352] dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-bold tracking-tight text-[#10233F] dark:text-white">{election.title}</h3>
+              <p className="mt-0.5 text-xs text-slate-500">Opens {formatUtc(election.opens_at_utc)} · Closes {formatUtc(election.closes_at_utc)}</p>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
+            <div className="flex items-center gap-3">
+              <StateBadge state={election.state} size="sm" />
+              <Link href={`/student/elections/${encodeURIComponent(election.id)}`} className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-[#157E92] px-3.5 py-2 text-xs font-bold text-white transition-colors hover:bg-[#0E6273] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]">
+                View election <ArrowRight className="size-3.5" aria-hidden="true" />
+              </Link>
+            </div>
+          </article>
+        ))}
+      </section>
+    </main>
   );
 }

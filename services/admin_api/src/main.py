@@ -58,7 +58,7 @@ async def state_machine_error_handler(request: Request, exc: StateMachineError):
     status_code = status.HTTP_409_CONFLICT
     if exc.error_code == "ROSTER_APPROVER_NOT_INDEPENDENT":
         status_code = status.HTTP_403_FORBIDDEN
-    elif exc.error_code == "NOT_FOUND":
+    elif exc.error_code in {"NOT_FOUND", "EVIDENCE_NOT_RELEASED"}:
         status_code = status.HTTP_404_NOT_FOUND
 
     return JSONResponse(

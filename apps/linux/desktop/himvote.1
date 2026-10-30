@@ -1,0 +1,88 @@
+.TH HIMVOTE 1 "October 2026" "HimVote 1.0" "HimVote User Manual"
+.SH NAME
+himvote \- Institutional verifiable election client and offline audit explorer for Linux
+.SH SYNOPSIS
+.B himvote
+[\fB\-\-api\-base\fR \fIURL\fR]
+[\fB\-\-verifier\fR \fIPATH\fR]
+[\fB\-\-archive\fR \fIPATH\fR]
+[\fB\-\-headless\fR]
+[\fB\-\-verify\-receipt\fR \fIHANDLE\fR]
+[\fB\-\-export\-report\fR \fIPATH\fR]
+[\fB\-\-check\-origins\fR]
+.SH DESCRIPTION
+.B himvote
+is the native Linux desktop client and cryptographic verifier for the HimVote
+verifiable election platform. It allows student voters to browse active elections,
+verify individual ballot inclusion receipts using RFC 9162 Merkle tree proofs,
+and empowers independent auditors to inspect offline election archives (.zip,
+\&.tar.gz, or directory) without trusted server assumptions.
+.SH OPTIONS
+.TP
+\fB\-\-api\-base\fR \fIURL\fR
+Set the institutional API base URL (default: http://localhost:8080).
+.TP
+\fB\-\-verifier\fR \fIPATH\fR
+Specify path to the external standalone verifier script (default: verifier/verify.py).
+.TP
+\fB\-\-archive\fR \fIPATH\fR
+Path to an offline election archive file (.zip, .tar.gz) or exported evidence directory.
+.TP
+\fB\-\-headless\fR
+Execute in headless CLI mode without initializing an X11 or Wayland GUI display.
+Useful for automated CI/CD and server verification pipelines.
+.TP
+\fB\-\-verify\-receipt\fR \fIHANDLE\fR
+Verify inclusion proof for a specific receipt handle within the loaded archive.
+.TP
+\fB\-\-export\-report\fR \fIPATH\fR
+Export reproducible audit report in Markdown (.md) or JSON (.json) format.
+.TP
+\fB\-\-check\-origins\fR
+Perform connectivity and latency diagnostic health checks against configured origins.
+.TP
+\fB\-h\fR, \fB\-\-help\fR
+Display command-line help message and exit.
+.SH KEYBOARD SHORTCUTS
+.TP
+.B Ctrl+1 / Alt+1
+Navigate to Elections Portal.
+.TP
+.B Ctrl+2 / Alt+2
+Navigate to Cryptographic Receipt Verifier.
+.TP
+.B Ctrl+3 / Alt+3
+Navigate to Offline Election Archive Audit Explorer.
+.TP
+.B Ctrl+4 / Alt+4
+Navigate to Verification Architecture Explainer.
+.TP
+.B Ctrl+5 / Alt+5
+Navigate to Security Limits & Institutional Trust Model.
+.TP
+.B Ctrl+6 / Alt+6
+Navigate to Session & Identity Authentication Portal.
+.TP
+.B Ctrl+7 / Alt+7
+Navigate to System Settings & Origin Endpoints.
+.TP
+.B Ctrl+8 / Alt+8
+Navigate to Administrative Audit Log & Evidence Explorer.
+.TP
+.B Ctrl+H
+Toggle WCAG 2.1 AAA High-Contrast Theme.
+.TP
+.B Ctrl+K / F1
+Display Keyboard Shortcuts dialog.
+.SH STANDARDS CONFORMANCE
+HimVote adheres strictly to:
+.IP \(bu 2
+\fBRFC 9162\fR: Certificate Transparency / Merkle Tree Inclusion Proofs
+.IP \(bu 2
+\fBRFC 8785\fR: JSON Canonicalization Scheme (JCS)
+.IP \(bu 2
+\fBRFC 9474\fR: Blind Signatures for Privacy-Preserving Voting Credentials
+.IP \(bu 2
+\fBFreeDesktop.org\fR: XDG Base Directory Specification
+.SH AUTHOR
+HimVote Institutional Engineering Team <dev@himvote.org>

@@ -10,13 +10,13 @@ HimVote Android follows modern Android development standards with single activit
 
 * data/models: OpenAPI contract data structures for authentication, elections, candidates, credentials, ballot receipts, and results
 * data/storage: Hardware Keystore encrypted storage backed by AES256 GCM to secure sessions and unblinded credentials
-* data/network: OkHttp client configured with strict Certificate Pinning, security interceptors, and local emulator fallback
+* data/network: OkHttp client configured with strict certificate pinning, security interceptors, and an explicit debug host alias
 * data/repository: Repositories managing authentication state, ballot roster, blind credential issuance, and Merkle inclusion proofs
 * di: Hilt modules injecting encrypted storage, network services, and application repositories
 * ui/theme: Design system color palettes, typography, and light plus dark themes
 * ui/components: Accessible UI components with 44 point touch target minimums and TalkBack semantics
 * ui/navigation: Jetpack Compose NavHost managing routing and App Link deep link returns
-* ui/screens: Eight role screens for student authentication, election browsing, candidate manifesto review, blind credentials, voting booth handoff, receipt verification, Merkle inclusion audit, and published election results
+* ui/screens: Student authentication, election browsing, candidate manifesto review, issuer-backed blind credentials, voting booth handoff, receipt verification, Merkle inclusion audit, and published election results
 * util: Design system tokens, Section 8.2 visible state badges, TalkBack accessibility helpers, and single cast enforcement
 
 ## Security Architecture
@@ -68,6 +68,6 @@ Test coverage includes:
 * SingleCastCheckerTest: Verifies that double voting is blocked and revoting prohibited
 * CertificatePinningTest: Confirms required domain pins and emulator routing
 * InclusionProofTest: Validates Merkle tree path computation and tamper rejection
-* LoginViewModelTest: Tests credential validation, demo population, and session state
+* LoginViewModelTest: Tests credential validation and session state
 * ElectionsViewModelTest: Tests summary loading and tab filtering
 * VotingViewModelTest: Tests Custom Tabs handoff and App Link return recording

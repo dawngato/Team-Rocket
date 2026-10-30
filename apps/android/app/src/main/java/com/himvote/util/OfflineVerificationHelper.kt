@@ -57,9 +57,10 @@ class OfflineVerificationHelper @Inject constructor() {
         path: List<String>,
         expectedRoot: String
     ): Boolean {
-        if (leafHash.isBlank() || expectedRoot.isBlank()) {
+        if (leafIndex < 0L || !isSha256Hex(leafHash) || !isSha256Hex(expectedRoot)) {
             return false
         }
+        if (path.any { !isSha256Hex(it) }) return false
         val computedRoot = computeMerkleRoot(leafHash, leafIndex, path)
         return computedRoot.equals(expectedRoot, ignoreCase = true)
     }
@@ -86,9 +87,7 @@ class OfflineVerificationHelper @Inject constructor() {
         if (receiptHandle.length < 8) {
             return false
         }
-        // Ballot hash should be valid hex representation of at least 32 characters
-        val hexRegex = Regex("^[a-fA-F0-9_]+$")
-        return hexRegex.matches(ballotHash) || ballotHash.length >= 32
+        return isSha256Hex(ballotHash)
     }
 
     /**
@@ -105,28 +104,12 @@ class OfflineVerificationHelper @Inject constructor() {
         if (attestation.isBlank() || rootHash.isBlank()) {
             return false
         }
-        // Attestation format verification
-        return attestation.contains("valid") || attestation.length >= 24
+        // A signature cannot be authenticated without the independently pinned
+        // auditor key and canonical signed bytes. Shape alone is not evidence.
+        return false
     }
 
-    /**
-     * Constructs a verified local proof structure for offline demonstration and testing.
-     */
-    fun buildSyntheticVerifiedProof(electionId: String, receiptHandle: String): InclusionProof {
-        val leaf = sha256("leaf_${electionId}_${receiptHandle}")
-        val sibling1 = sha256("sibling_1_${receiptHandle}")
-        val sibling2 = sha256("sibling_2_${receiptHandle}")
-        val path = listOf(sibling1, sibling2)
-        val leafIndex = 0L
-        val computedRoot = computeMerkleRoot(leaf, leafIndex, path)
-
-        return InclusionProof(
-            receiptHandle = receiptHandle,
-            ballotHash = leaf,
-            leafIndex = leafIndex,
-            pathHashes = path,
-            rootHash = computedRoot,
-            verified = true
-        )
+    private fun isSha256Hex(value: String): Boolean {
+        return value.length == 64 && value.matches(Regex("^[a-fA-F0-9]{64}$"))
     }
 }

@@ -13,6 +13,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ResultsViewModelTest {
@@ -25,6 +26,16 @@ class ResultsViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
+        kotlinx.coroutines.runBlocking {
+            Mockito.doReturn(Response.success(com.himvote.data.models.PublishedResultsResponse(
+                electionId = electionId,
+                manifestDigest = "a".repeat(64),
+                tally = mapOf("candidate-1" to 3.0, "candidate-2" to 2.0),
+                totalBallots = 5,
+                publishedAtUtc = "2026-10-31T12:00:00Z",
+                privacyLimited = false
+            ))).`when`(mockApiService).getElectionResults(electionId)
+        }
         val resultsRepository = ResultsRepository(mockApiService)
         val savedStateHandle = SavedStateHandle(mapOf("electionId" to electionId))
         resultsViewModel = ResultsViewModel(savedStateHandle, resultsRepository)
@@ -43,9 +54,9 @@ class ResultsViewModelTest {
         assertFalse(state.isLoading)
         assertNotNull("Results should be populated", state.results)
         assertEquals(electionId, state.results?.electionId)
-        assertEquals(ElectionStatus.AUDIT_PASSED, state.results?.status)
-        assertTrue("Turnout percentage should be greater than 0", (state.results?.turnoutPercentage ?: 0.0) > 0)
-        assertFalse("Privacy limited should be false for default high turnout fallback", state.results?.privacyLimited ?: true)
+        assertEquals(ElectionStatus.PUBLISHED, state.results?.status)
+        assertEquals(5, state.results?.totalVotesCast)
+        assertFalse("Privacy limited should reflect the service response", state.results?.privacyLimited ?: true)
         assertTrue("Tallies should not be empty when not privacy limited", state.results?.tallies?.isNotEmpty() ?: false)
     }
 }

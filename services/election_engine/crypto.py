@@ -9,7 +9,10 @@ import secrets
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple
 
-from .constants import G, P, Q
+try:
+    from .constants import G, P, Q
+except (ImportError, ValueError):
+    from constants import G, P, Q
 
 
 def canonical_json(data: Any) -> bytes:

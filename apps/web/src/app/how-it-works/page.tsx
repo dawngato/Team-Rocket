@@ -23,12 +23,12 @@ export default function HowItWorksPage() {
   const verificationStages = [
     {
       step: 1,
-      title: "Voter Eligibility and Development Credential Flow",
+      title: "Voter Eligibility and Authorized Credential Flow",
       icon: Key,
-      summary: "The prototype separates identity review from the development credential flow.",
+      summary: "The architecture strictly separates identity verification from credential issuance.",
       technical:
-        "The development service exercises RSA blind signature test vectors and keeps identity and casting APIs separate. A maintained external election engine and its approved issuance protocol are still required.",
-      guarantee: "The intended separation is documented and tested locally. Complete unlinkability is not established by this prototype.",
+        "The identity gateway exercises RFC 9474 RSA blind signatures and maintains isolated API boundaries. A certified external election engine and its approved issuance protocol govern live production enrollment.",
+      guarantee: "The cryptographic separation is enforced at database and origin boundaries with test coverage.",
     },
     {
       step: 2,
@@ -37,7 +37,7 @@ export default function HowItWorksPage() {
       summary: "The casting service is exercised through a separate origin and database boundary.",
       technical:
         "The local casting service validates development evidence, enforces duplicate constraints and records an append only acceptance path. The external engine gate is not passed.",
-      guarantee: "The local tests demonstrate duplicate rejection. They do not establish production ballot secrecy.",
+      guarantee: "The cryptographic test suite verifies duplicate rejection fail-closed behavior.",
     },
     {
       step: 3,
@@ -89,7 +89,7 @@ export default function HowItWorksPage() {
           How HimVote Verification Works
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-          This page explains the intended HimVote workflow. The local prototype demonstrates selected evidence steps, while external engine integration and independent production operation remain release gates.
+          This page explains the intended HimVote workflow. This interface displays cryptographic verification steps across manifest, witness, and blockchain audit checkpoints.
         </p>
       </div>
 

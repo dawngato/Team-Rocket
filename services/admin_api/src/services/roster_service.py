@@ -151,6 +151,11 @@ class RosterService:
                 "ROSTER_APPROVER_NOT_INDEPENDENT"
             )
 
+        if not approval_request.approver_public_key or not approval_request.approver_signature:
+            raise StatePreconditionError(
+                "Roster approval requires an independent approver signature"
+            )
+
         if snapshot.status == "APPROVED":
             return {
                 "election_id": election_id,

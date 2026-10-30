@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.lifecycle.lifecycleScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,7 +15,9 @@ import com.himvote.data.repository.VotingRepository
 import com.himvote.ui.navigation.HimVoteNavHost
 import com.himvote.ui.navigation.Screen
 import com.himvote.ui.theme.HimVoteTheme
+import com.himvote.util.BoothReturnValidator
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
@@ -62,18 +65,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleBoothReturnUri(uri: Uri): String? {
-        val electionId = uri.getQueryParameter("election_id")
-        val receiptHandle = uri.getQueryParameter("receipt_handle")
-        val ballotHash = uri.getQueryParameter("ballot_hash")
+        val payload = BoothReturnValidator.parse(uri) ?: return null
 
-        if (!electionId.isNullOrBlank() && !receiptHandle.isNullOrBlank() && !ballotHash.isNullOrBlank()) {
+        lifecycleScope.launch {
             votingRepository.handleBoothReturn(
-                electionId = electionId,
-                receiptHandle = receiptHandle,
-                ballotHash = ballotHash
+                electionId = payload.electionId,
+                receiptHandle = payload.receiptHandle,
+                ballotHash = payload.ballotHash
             )
-            return electionId
         }
-        return null
+        return payload.electionId
     }
 }

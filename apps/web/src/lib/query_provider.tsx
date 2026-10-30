@@ -2,13 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Role } from "./types";
-
 interface AppContextType {
   theme: "light" | "dark";
   toggleTheme: () => void;
-  currentRole: Role;
-  setCurrentRole: (role: Role) => void;
   locale: "en" | "hi";
   setLocale: (l: "en" | "hi") => void;
 }
@@ -37,7 +33,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
   );
 
   const [theme, setTheme] = useState<"light" | "dark">("light");
-  const [currentRole, setCurrentRole] = useState<Role>("public");
   const [locale, setLocale] = useState<"en" | "hi">("en");
 
   useEffect(() => {
@@ -82,8 +77,6 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         value={{
           theme,
           toggleTheme,
-          currentRole,
-          setCurrentRole,
           locale,
           setLocale,
         }}

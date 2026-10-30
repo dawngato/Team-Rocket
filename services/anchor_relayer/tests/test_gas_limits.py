@@ -104,6 +104,7 @@ def test_kms_signer_spending_limit():
         key_id="test_key_1",
         address="0x1111111111111111111111111111111111111111",
         max_daily_spend_wei=3000000,
+        signing_provider=lambda _tx: b"provider signed transaction",
     )
 
     tx_dict = {
@@ -116,7 +117,7 @@ def test_kms_signer_spending_limit():
         "chainId": 31337,
     }
 
-    kms_signer.sign_transaction(tx_dict)
+    assert kms_signer.sign_transaction(tx_dict) == b"provider signed transaction"
 
     with pytest.raises(ValueError, match="spending limit exceeded"):
         kms_signer.sign_transaction(tx_dict)

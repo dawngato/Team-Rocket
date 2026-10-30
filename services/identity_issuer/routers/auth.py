@@ -8,6 +8,7 @@ import hashlib
 import secrets
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..config import (
@@ -16,21 +17,161 @@ from ..config import (
     SESSION_EXPIRE_HOURS,
     RECOVERY_EXPIRE_HOURS,
     MFA_ISSUER,
+    INVITATION_DELIVERY_MODE,
 )
-from ..models import User, Session as UserSession, RecoveryRequest, MfaCredential, RoleAssignment, RoleDefinition
+from ..models import (
+    User,
+    Session as UserSession,
+    RecoveryRequest,
+    MfaCredential,
+    RoleAssignment,
+    RoleDefinition,
+    Invitation,
+)
 from ..schemas import (
     LoginRequest,
     LoginResponse,
+    InvitationRedeemRequest,
+    InvitationRedeemResponse,
     RecoveryRequest as RecoveryReqSchema,
     RecoveryResetRequest,
     MfaSetupResponse,
     MfaVerifyRequest,
+    SessionProfile,
+    SessionScope,
 )
 from ..crypto.hashing import hash_password, verify_password, dummy_verify
 from ..crypto.totp import generate_totp_secret, get_totp_uri, verify_totp
-from .deps import get_current_user, get_user_roles, record_audit_event
+from .deps import get_current_user, get_user_roles, record_audit_event, INVITABLE_ROLES
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
+
+
+@router.post(
+    "/invitations/redeem",
+    response_model=InvitationRedeemResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def redeem_invitation(
+    req: InvitationRedeemRequest,
+    db: Session = Depends(get_db),
+):
+    """Redeem a single-use staff invitation and provision its scoped role.
+
+    The invitation token is only accepted while pending and before expiry. The
+    account is activated with a freshly generated TOTP credential so a
+    privileged invite cannot be redeemed into a password-only account.
+    """
+    if APP_ENV == "production":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Invitation delivery requires an independently configured notification adapter",
+        )
+
+    token_hash = hashlib.sha256(req.invitation_token.encode("utf-8")).hexdigest()
+    invitation = (
+        db.query(Invitation)
+        .filter(
+            Invitation.token_hash == token_hash,
+            Invitation.status == "PENDING",
+        )
+        .first()
+    )
+    if not invitation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation token is invalid or has already been redeemed",
+        )
+
+    expires_at = invitation.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= datetime.now(timezone.utc):
+        invitation.status = "EXPIRED"
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invitation token is expired",
+        )
+
+    if invitation.role not in INVITABLE_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="This role must be provisioned through an independent approval process",
+        )
+
+    email = invitation.email.lower()
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account already exists for this invitation",
+        )
+
+    password_hash, password_params = hash_password(req.password)
+    totp_secret = generate_totp_secret()
+    totp_uri = get_totp_uri(totp_secret, email, issuer=MFA_ISSUER)
+    user = User(
+        external_id=f"invitation:{invitation.id}",
+        email=email,
+        password_hash=password_hash,
+        password_algorithm=password_params["algorithm"],
+        password_params=password_params,
+        status="ACTIVE",
+        mfa_enrolled=True,
+    )
+    db.add(user)
+    db.flush()
+
+    role = db.query(RoleDefinition).filter(RoleDefinition.name == invitation.role).first()
+    if not role:
+        role = RoleDefinition(name=invitation.role, description=f"{invitation.role} delegated role")
+        db.add(role)
+        db.flush()
+
+    db.add(
+        RoleAssignment(
+            user_id=user.id,
+            role_id=role.id,
+            scope_type="delegated",
+            scope_id=invitation.scope,
+            granted_by=invitation.invited_by,
+        )
+    )
+    db.add(
+        MfaCredential(
+            user_id=user.id,
+            type="totp",
+            secret_hash=totp_secret,
+            details={"provisioning_uri": totp_uri},
+        )
+    )
+    invitation.status = "REDEEMED"
+
+    try:
+        record_audit_event(
+            db=db,
+            action="auth.invitation.redeemed",
+            result="success",
+            actor_id=user.id,
+            details={"invitation_id": invitation.id, "role": invitation.role, "scope": invitation.scope},
+        )
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Invitation could not be redeemed because the account already exists",
+        )
+
+    response = InvitationRedeemResponse(
+        status="invitation_redeemed",
+        user_id=user.id,
+        role=invitation.role,
+        scope=invitation.scope,
+    )
+    if APP_ENV != "production" and INVITATION_DELIVERY_MODE == "development":
+        response.totp_secret = totp_secret
+        response.totp_uri = totp_uri
+    return response
 
 
 @router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
@@ -123,7 +264,9 @@ def login(
         key="session_id",
         value=session_token,
         httponly=True,
-        secure=True,
+        # Local development and the browser smoke environment run on HTTP.
+        # Production remains HTTPS-only through APP_ENV.
+        secure=APP_ENV == "production",
         samesite="lax",
         max_age=SESSION_EXPIRE_HOURS * 3600,
     )
@@ -141,6 +284,44 @@ def login(
         user_id=user.id,
         role=primary_role,
         mfa_required=False,
+    )
+
+
+@router.get("/me", response_model=SessionProfile, status_code=status.HTTP_200_OK)
+def session_profile(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Return the server-authoritative identity and scoped capabilities.
+
+    The response is intentionally limited to membership and scope metadata. It
+    does not expose election choices, credentials, receipts, or casting data.
+    """
+    assignments = (
+        db.query(RoleAssignment, RoleDefinition.name)
+        .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+        .filter(RoleAssignment.user_id == current_user.id)
+        .all()
+    )
+    now = datetime.now(timezone.utc)
+    active = [
+        (assignment, role)
+        for assignment, role in assignments
+        if assignment.expires_at is None
+        or (assignment.expires_at.replace(tzinfo=timezone.utc) if assignment.expires_at.tzinfo is None else assignment.expires_at) > now
+    ]
+    roles = sorted({role for _assignment, role in active})
+    scopes = [
+        SessionScope(role=role, scope_type=assignment.scope_type, scope_id=assignment.scope_id)
+        for assignment, role in active
+    ]
+    return SessionProfile(
+        user_id=current_user.id,
+        email=current_user.email,
+        roles=roles,
+        scopes=scopes,
+        mfa_authenticated=bool(getattr(request.state, "authenticated_session_mfa", False)),
     )
 
 

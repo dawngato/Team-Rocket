@@ -7,7 +7,8 @@ import pytest
 from datetime import datetime, timezone
 from sqlalchemy import select
 
-from src.models import Election, WitnessAcknowledgement
+from src.models import CheckpointOutbox, Election, WitnessAcknowledgement
+
 
 
 @pytest.mark.anyio
@@ -53,16 +54,27 @@ async def test_receipt_status_transitions(
     assert data1["leaf_index"] == leaf_index
     assert data1["witnessed_at_utc"] is None
 
+    # Fetch the actual leaf digest from the outbox so the Merkle root check passes.
+    # For a single-leaf tree the root equals the leaf digest.
+    outbox_row = (
+        await test_session.execute(
+            select(CheckpointOutbox).where(
+                CheckpointOutbox.election_id == sample_election_id,
+                CheckpointOutbox.leaf_index == 0,
+            )
+        )
+    ).scalar_one()
+
     # Record witness acknowledgement covering leaf 0 (tree_size = 1)
     now = datetime.now(timezone.utc)
     witness = WitnessAcknowledgement(
         id="wit_ack_01",
         election_id=sample_election_id,
         tree_size=1,
-        merkle_root="merkle_root_tree_size_1",
+        merkle_root=outbox_row.leaf_digest,
         witness_key_id="witness_key_ed25519_01",
         witness_signature="sig_b64_vector",
-        acknowledged_at_utc=now
+        acknowledged_at_utc=now,
     )
     test_session.add(witness)
 
@@ -83,6 +95,72 @@ async def test_receipt_status_transitions(
     data2 = rcpt_resp2.json()
     assert data2["status"] == "WITNESSED"
     assert data2["witnessed_at_utc"] is not None
+
+
+@pytest.mark.anyio
+async def test_witnessed_receipt_includes_authenticated_merkle_path(
+    client,
+    open_election,
+    sample_election_id,
+    make_proof,
+    valid_ballot_b64url,
+    valid_proofs_b64url,
+    test_session,
+):
+    """A witnessed receipt exposes only the data needed for inclusion checking."""
+    payload = {
+        "election_id": sample_election_id,
+        "credential_proof_b64url": make_proof("null_receipt_proof_01"),
+        "engine_ballot_b64url": valid_ballot_b64url,
+        "engine_proofs_b64url": valid_proofs_b64url,
+        "idempotency_key": "idemp_receipt_proof_01",
+    }
+
+    cast_resp = await client.post(
+        f"/v1/cast/{sample_election_id}/ballots",
+        json=payload,
+    )
+    assert cast_resp.status_code == 202
+    handle = cast_resp.json()["handle"]
+
+    outbox = (
+        await test_session.execute(
+            select(CheckpointOutbox).where(
+                CheckpointOutbox.election_id == sample_election_id,
+                CheckpointOutbox.leaf_index == 0,
+            )
+        )
+    ).scalar_one()
+    witness = WitnessAcknowledgement(
+        id="wit_ack_receipt_proof_01",
+        election_id=sample_election_id,
+        tree_size=1,
+        merkle_root=outbox.leaf_digest,
+        witness_key_id="witness_key_ed25519_01",
+        witness_signature="sig_b64_vector",
+        acknowledged_at_utc=datetime.now(timezone.utc),
+    )
+    test_session.add(witness)
+    election = (
+        await test_session.execute(
+            select(Election).where(Election.id == sample_election_id)
+        )
+    ).scalar_one()
+    election.last_witnessed_tree_size = 1
+    await test_session.commit()
+
+    response = await client.get(
+        f"/v1/cast/{sample_election_id}/receipts/{handle}"
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "WITNESSED"
+    assert data["tree_size"] == 1
+    assert data["leaf_hash"] == outbox.leaf_digest
+    assert data["merkle_root"] == outbox.leaf_digest
+    assert data["merkle_proof"] == []
+    assert "engine_ballot_b64url" not in data
+    assert "credential_nullifier" not in data
 
 
 @pytest.mark.anyio

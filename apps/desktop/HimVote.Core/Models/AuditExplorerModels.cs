@@ -20,6 +20,7 @@ public static class VerificationProperties
 public static class PropertyStatuses
 {
     public const string Pass = "PASS";
+    public const string PassWithLimitations = "PASS_WITH_LIMITATIONS";
     public const string Fail = "FAIL";
     public const string Limited = "LIMITED";
     public const string Assumed = "ASSUMED";

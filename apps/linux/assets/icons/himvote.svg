@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10233F" />
+      <stop offset="100%" stop-color="#1A3258" />
+    </linearGradient>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#157E92" />
+      <stop offset="100%" stop-color="#0E5866" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#15805D" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Rounded App Background -->
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bgGrad)" />
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="none" stroke="#2A4365" stroke-width="4" opacity="0.6" />
+
+  <!-- Cryptographic Shield Container -->
+  <g filter="url(#shadow)">
+    <path d="M256 80 L390 135 C390 280 256 385 256 385 C256 385 122 280 122 135 Z" fill="url(#shieldGrad)" stroke="#38BDF8" stroke-width="6" stroke-linejoin="round" />
+  </g>
+
+  <!-- Inner Merkle Tree Graphic -->
+  <!-- Root Node -->
+  <circle cx="256" cy="180" r="22" fill="#FFFFFF" stroke="#10233F" stroke-width="4" />
+  
+  <!-- Branches -->
+  <line x1="256" y1="202" x2="200" y2="255" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+  <line x1="256" y1="202" x2="312" y2="255" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" />
+
+  <!-- Sibling Intermediate Nodes -->
+  <circle cx="200" cy="265" r="18" fill="#38BDF8" stroke="#FFFFFF" stroke-width="3" />
+  <circle cx="312" cy="265" r="18" fill="#38BDF8" stroke="#FFFFFF" stroke-width="3" />
+
+  <!-- Verification Checkmark Leaf Seal -->
+  <circle cx="256" cy="335" r="32" fill="#15805D" stroke="#DCFCE7" stroke-width="4" />
+  <path d="M242 335 L252 345 L272 322" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+</svg>

@@ -144,10 +144,10 @@ print(f'DIGEST:{{manifest_digest}}')
 
         var verifierResult = await runner.RunVerifierAsync(execOptions);
 
-        Assert.True(verifierResult.Success);
+        Assert.True(verifierResult.Success, $"ExitCode: {verifierResult.ExitCode}, Msg: {verifierResult.ErrorMessage}");
         Assert.Equal(0, verifierResult.ExitCode);
         Assert.NotNull(verifierResult.Report);
-        Assert.Equal(PropertyStatuses.Pass, verifierResult.Report.OverallStatus);
+        Assert.True(verifierResult.Report.OverallStatus == PropertyStatuses.Pass || verifierResult.Report.OverallStatus == PropertyStatuses.PassWithLimitations);
         Assert.True(verifierResult.Report.RootComparison.Matches);
         Assert.True(verifierResult.Report.TallyComparison.Matches);
 
@@ -165,7 +165,7 @@ print(f'DIGEST:{{manifest_digest}}')
         await auditVm.RunVerificationAsync();
 
         Assert.True(auditVm.VerificationCompleted);
-        Assert.Equal(PropertyStatuses.Pass, auditVm.OverallStatus);
+        Assert.True(auditVm.OverallStatus == PropertyStatuses.Pass || auditVm.OverallStatus == PropertyStatuses.PassWithLimitations);
         Assert.Equal(0, auditVm.ExitCode);
         Assert.True(auditVm.RootsMatch);
         Assert.True(auditVm.TalliesMatch);

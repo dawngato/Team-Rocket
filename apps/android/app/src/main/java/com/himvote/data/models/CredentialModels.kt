@@ -1,20 +1,21 @@
 package com.himvote.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class BlindedIssuanceRequest(
-    val electionId: String,
-    val blindedToken: String
+    @SerializedName("election_id") val electionId: String,
+    @SerializedName("blinded_request") val blindedRequest: String
 )
 
 data class BlindedIssuanceResponse(
-    val electionId: String,
-    val signature: String,
+    @SerializedName("blind_signature_response") val blindSignatureResponse: String,
     val status: String
 )
 
 data class IssuanceStatusResponse(
-    val electionId: String,
+    @SerializedName("election_id") val electionId: String,
     val status: String,
-    val signature: String? = null,
+    @SerializedName("blind_signature_response") val blindSignatureResponse: String? = null,
     val message: String? = null
 )
 

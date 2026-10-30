@@ -1789,6 +1789,29 @@ components:
         witnessed_at_utc:
           type: string
           format: date-time
+          nullable: true
+        tree_size:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Witnessed Merkle tree size used for inclusion verification
+        leaf_hash:
+          type: string
+          pattern: '^[0-9a-fA-F]{64}$'
+          nullable: true
+          description: RFC 9162 leaf digest for this receipt
+        merkle_root:
+          type: string
+          pattern: '^[0-9a-fA-F]{64}$'
+          nullable: true
+          description: Authenticated witness root for tree_size
+        merkle_proof:
+          type: array
+          nullable: true
+          items:
+            type: string
+            pattern: '^[0-9a-fA-F]{64}$'
+          description: RFC 9162 audit path as hexadecimal sibling digests
     CastingServiceStatus:
       type: object
       required:

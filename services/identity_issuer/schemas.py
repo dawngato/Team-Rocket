@@ -21,6 +21,36 @@ class LoginResponse(BaseModel):
     mfa_required: bool
 
 
+class SessionScope(BaseModel):
+    role: str
+    scope_type: str
+    scope_id: str
+
+
+class SessionProfile(BaseModel):
+    user_id: str
+    email: EmailStr
+    roles: List[str]
+    scopes: List[SessionScope]
+    mfa_authenticated: bool
+
+
+class InvitationRedeemRequest(BaseModel):
+    """Single-use invitation redemption payload."""
+    invitation_token: str = Field(min_length=16)
+    password: str = Field(min_length=16)
+
+
+class InvitationRedeemResponse(BaseModel):
+    """Result of activating an invited staff account."""
+    status: str
+    user_id: str
+    role: str
+    scope: str
+    totp_secret: Optional[str] = None
+    totp_uri: Optional[str] = None
+
+
 class RecoveryRequest(BaseModel):
     email: EmailStr
 
@@ -52,12 +82,12 @@ class RoleGrantRequest(BaseModel):
     user_id: str
     role: str
     scope: str
-    justification: str
+    justification: str = Field(min_length=1)
 
 
 class ApprovalDecisionRequest(BaseModel):
-    decision: str
-    reason: str
+    decision: str = Field(pattern="^(approved|rejected)$")
+    reason: str = Field(min_length=1)
 
 
 class AuditEvent(BaseModel):
@@ -93,7 +123,7 @@ class StudentImportRequest(BaseModel):
 
 
 class StudentVerifyRequest(BaseModel):
-    verified_by: str
+    verified_by: Optional[str] = None
     department: str
 
 
@@ -110,8 +140,8 @@ class RosterMeResponse(BaseModel):
 
 
 class BlindedIssuanceRequest(BaseModel):
-    election_id: str
-    blinded_request: str
+    election_id: str = Field(min_length=1, max_length=255)
+    blinded_request: str = Field(min_length=32, max_length=8192)
 
 
 class BlindedIssuanceResponse(BaseModel):

@@ -1,8 +1,17 @@
 export type ElectionState =
   | "DRAFT"
+  | "REVIEW"
+  | "APPROVED"
   | "FROZEN"
+  | "SCHEDULED"
   | "OPEN"
+  | "PAUSED"
+  | "CLOSING"
+  | "CLOSED"
   | "PENDING_WITNESS"
+  | "FINAL_WITNESSED"
+  | "AUDIT_PENDING"
+  | "AUDITED"
   | "WITNESSED"
   | "ANCHOR_PENDING"
   | "ANCHOR_FINALIZED"
@@ -10,7 +19,9 @@ export type ElectionState =
   | "AUDITOR_ATTESTED"
   | "PUBLISHED"
   | "FAILED"
-  | "DISPUTED";
+  | "DISPUTED"
+  | "AUDIT_FAILED"
+  | "CANCELLED";
 
 export type Role = "public" | "student" | "teacher" | "admin" | "officer" | "auditor" | "superadmin";
 
@@ -39,6 +50,8 @@ export interface Election extends ElectionSummary {
   selection_rule?: string;
   min_anonymous_turnout?: number;
   description?: string;
+  published_results?: PublishedResults;
+  evidence?: EvidencePackage;
 }
 
 export interface CastBallotRequest {
@@ -61,6 +74,8 @@ export interface ReceiptStatusResponse {
   handle: string;
   leaf_index: number;
   witnessed_at_utc?: string;
+  tree_size?: number;
+  leaf_hash?: string;
   chain_tx_hash?: string;
   merkle_root?: string;
   merkle_proof?: string[];

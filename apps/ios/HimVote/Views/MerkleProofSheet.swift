@@ -3,6 +3,7 @@ import SwiftUI
 public struct MerkleProofSheet: View {
     public let receipt: Receipt
     public let formattedJson: String?
+    public let isInclusionVerified: Bool
     
     @Environment(\.dismiss) private var dismiss
     @State private var hasCopiedHandle: Bool = false
@@ -10,9 +11,14 @@ public struct MerkleProofSheet: View {
     @ScaledMetric(relativeTo: .body) private var iconSize: CGFloat = 20
     @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 64
     
-    public init(receipt: Receipt, formattedJson: String? = nil) {
+    public init(
+        receipt: Receipt,
+        formattedJson: String? = nil,
+        isInclusionVerified: Bool = false
+    ) {
         self.receipt = receipt
         self.formattedJson = formattedJson
+        self.isInclusionVerified = isInclusionVerified
     }
     
     public var body: some View {
@@ -72,6 +78,13 @@ public struct MerkleProofSheet: View {
                 .foregroundStyle(ColorTokens.institutionalNavy)
             
             ReceiptStatusBadge(status: receipt.status)
+
+            Text(isInclusionVerified
+                ? "Computed root matches the supplied witness root. Independently trust the witness key before treating this as final audit evidence."
+                : "This screen shows supplied receipt fields. Inclusion is not verified until the local proof check passes.")
+                .font(Typography.caption)
+                .foregroundStyle(isInclusionVerified ? ColorTokens.stateSuccess : ColorTokens.stateWarning)
+                .multilineTextAlignment(.center)
         }
     }
     
@@ -92,6 +105,18 @@ public struct MerkleProofSheet: View {
             
             if let leafHash = receipt.leafHash {
                 metricRow(title: "SHA256 Leaf Digest", value: leafHash)
+            }
+
+            if let treeSize = receipt.treeSize {
+                metricRow(title: "Authenticated Tree Size", value: "\(treeSize) leaves")
+            }
+
+            if let merkleRoot = receipt.merkleRoot {
+                metricRow(title: "Supplied Witness Root", value: merkleRoot)
+            }
+
+            if let proofCount = receipt.merkleProof?.count {
+                metricRow(title: "Sibling Digests", value: "\(proofCount) supplied")
             }
         }
         .padding(16)

@@ -1,5 +1,6 @@
 package com.himvote.di
 
+import com.himvote.BuildConfig
 import com.himvote.data.network.ApiClient
 import com.himvote.data.network.HimVoteApiService
 import com.himvote.data.storage.EncryptedStorage
@@ -20,8 +21,10 @@ object NetworkModule {
     fun provideApiClient(
         encryptedStorage: EncryptedStorage
     ): ApiClient {
-        // Debug mode enabled for local development host resolution
-        return ApiClient(encryptedStorage = encryptedStorage, isDebug = true)
+        // Release builds must use the pinned HTTPS production origin. Debug
+        // routing is derived from the build variant, never from a hardcoded
+        // value that can accidentally ship in a release artifact.
+        return ApiClient(encryptedStorage = encryptedStorage, isDebug = BuildConfig.DEBUG)
     }
 
     @Provides

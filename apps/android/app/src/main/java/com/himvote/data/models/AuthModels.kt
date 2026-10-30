@@ -1,9 +1,11 @@
 package com.himvote.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class LoginRequest(
     val email: String,
     val password: String,
-    val otp: String? = null
+    @SerializedName("mfa_token") val mfaToken: String? = null
 )
 
 data class UserProfile(
@@ -15,11 +17,16 @@ data class UserProfile(
 )
 
 data class LoginResponse(
-    val token: String,
-    val role: String,
-    val expiresAt: Long,
-    val user: UserProfile
-)
+    @SerializedName("session_token") val sessionToken: String = "",
+    val role: String = "STUDENT",
+    @SerializedName("mfa_required") val mfaRequired: Boolean = false,
+    @SerializedName("user_id") val userId: String? = null,
+    val user: UserProfile? = null,
+    @SerializedName("token") val legacyToken: String? = null
+) {
+    val token: String
+        get() = sessionToken.ifBlank { legacyToken.orEmpty() }
+}
 
 data class UserSession(
     val token: String,

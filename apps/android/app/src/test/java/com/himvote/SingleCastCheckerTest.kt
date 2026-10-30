@@ -35,7 +35,7 @@ class SingleCastCheckerTest {
     fun testRevotingIsStrictlyBlockedAfterCast() {
         val electionId = "elec_student_council_2026"
         val receiptHandle = "rcpt_test_handle_123"
-        val ballotHash = "hash_sha256_mock_abc123456789012345"
+        val ballotHash = offlineVerificationHelper.sha256("ballot_1")
 
         assertTrue(singleCastChecker.canCast(electionId))
 
@@ -62,10 +62,19 @@ class SingleCastCheckerTest {
     fun testOfflineProofValidation() {
         val electionId = "elec_offline_proof_01"
         val receiptHandle = "rcpt_offline_handle_456"
-        val proof = offlineVerificationHelper.buildSyntheticVerifiedProof(electionId, receiptHandle)
+        val leaf = offlineVerificationHelper.sha256("leaf_$electionId")
+        val sibling = offlineVerificationHelper.sha256("sibling_$receiptHandle")
+        val proof = com.himvote.data.models.InclusionProof(
+            receiptHandle = receiptHandle,
+            ballotHash = leaf,
+            leafIndex = 0L,
+            pathHashes = listOf(sibling),
+            rootHash = offlineVerificationHelper.computeMerkleRoot(leaf, 0L, listOf(sibling)),
+            verified = true
+        )
 
         val isValid = singleCastChecker.validateOfflineProof(electionId, proof)
-        assertTrue("Synthetic proof must pass offline validation", isValid)
+        assertTrue("Authenticated proof fixture must pass offline validation", isValid)
 
         singleCastChecker.recordCast(electionId, proof.receiptHandle, proof.ballotHash, isOfflineVerified = true)
         assertTrue("Integrity check must pass for recorded valid receipt", singleCastChecker.verifyRecordedCastIntegrity(electionId))

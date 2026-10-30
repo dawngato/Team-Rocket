@@ -70,10 +70,4 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun populateDemoCredentials() {
-        _uiState.value = _uiState.value.copy(
-            email = "student2026@hptu.ac.in",
-            password = "securePassword123"
-        )
-    }
 }

@@ -8,7 +8,7 @@ from src.services.roster_service import RosterService
 from src.models.database import ElectionModel, ElectionStateModel
 from src.models.schemas import StudentRecord, RosterApproveRequest
 from src.crypto.signatures import sign_data_ed25519
-from src.state_machine.lifecycle import StateMachineError
+from src.state_machine.lifecycle import StateMachineError, StatePreconditionError
 
 
 def create_draft_election(db, election_id="elec_roster_test"):
@@ -133,3 +133,23 @@ def test_independent_approver_success_with_signature(test_db, roster_approver_ke
     # State transitions to APPROVED
     state_rec = test_db.query(ElectionStateModel).filter_by(election_id=elec.id).first()
     assert state_rec.state == "APPROVED"
+
+
+def test_independent_approver_signature_is_required(test_db):
+    """Distinct actor IDs alone cannot approve an unsigned roster."""
+    elec = create_draft_election(test_db, "elec_unsigned_approve")
+    RosterService.submit_roster(
+        db=test_db,
+        election_id=elec.id,
+        actor_id="importer_alice",
+        roster_version="v1",
+        records=[StudentRecord(student_id="S401", email="s401@univ.edu", full_name="Student Six", department="CS")],
+    )
+
+    with pytest.raises(StatePreconditionError, match="signature"):
+        RosterService.approve_roster(
+            db=test_db,
+            election_id=elec.id,
+            actor_id="approver_bob",
+            approval_request=RosterApproveRequest(roster_version="v1"),
+        )

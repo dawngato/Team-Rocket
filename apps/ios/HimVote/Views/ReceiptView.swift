@@ -22,6 +22,8 @@ public struct ReceiptView: View {
                 headerView
                 
                 receiptDetailsCard
+
+                receiptErrorSection
                 
                 merkleAuditSection
                 
@@ -51,7 +53,11 @@ public struct ReceiptView: View {
         }
         .sheet(isPresented: $showProofSheet) {
             if let receipt = receiptViewModel.receipt {
-                MerkleProofSheet(receipt: receipt, formattedJson: receiptViewModel.formatReceiptJson())
+                MerkleProofSheet(
+                    receipt: receipt,
+                    formattedJson: receiptViewModel.formatReceiptJson(),
+                    isInclusionVerified: receiptViewModel.inclusionStatus.isVerified
+                )
             }
         }
         .onAppear {
@@ -104,6 +110,17 @@ public struct ReceiptView: View {
                     ProgressView()
                 }
             }
+
+            HStack(alignment: .top, spacing: 8) {
+                Image(systemName: inclusionStatusIcon)
+                    .foregroundStyle(inclusionStatusColor)
+                    .accessibilityHidden(true)
+                Text(inclusionStatusDescription)
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
             
             Divider()
             
@@ -190,6 +207,46 @@ public struct ReceiptView: View {
                 .stroke(ColorTokens.cardBorder, lineWidth: 1)
         )
     }
+
+    @ViewBuilder
+    private var receiptErrorSection: some View {
+        if let errorMessage = receiptViewModel.errorMessage {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(ColorTokens.stateDanger)
+                        .accessibilityHidden(true)
+                    Text(errorMessage)
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.stateDanger)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Button {
+                    receiptViewModel.startPollingReceiptStatus(
+                        electionId: electionId,
+                        handle: receiptHandle
+                    )
+                } label: {
+                    Text("Retry Status Check")
+                        .font(Typography.captionBold)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(ColorTokens.stateDanger)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .accessibilityLabel("Retry receipt status check")
+            }
+            .padding(14)
+            .background(ColorTokens.stateDangerBackground)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(ColorTokens.stateDanger.opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
     
     private var merkleAuditSection: some View {
         Group {
@@ -199,12 +256,51 @@ public struct ReceiptView: View {
                     leafIndex: receipt.leafIndex,
                     leafHash: receipt.leafHash,
                     nullifierCommitment: receipt.nullifierCommitment,
-                    status: receipt.status
+                    rootHash: receipt.merkleRoot,
+                    status: receipt.status,
+                    isInclusionVerified: receiptViewModel.inclusionStatus.isVerified
                 ) {
                     HapticFeedback.light()
                     showProofSheet = true
                 }
             }
+        }
+    }
+
+    private var inclusionStatusIcon: String {
+        switch receiptViewModel.inclusionStatus {
+        case .verified:
+            return "checkmark.seal.fill"
+        case .failed:
+            return "xmark.octagon.fill"
+        case .pending:
+            return "clock.fill"
+        case .notAvailable:
+            return "questionmark.circle.fill"
+        }
+    }
+
+    private var inclusionStatusColor: Color {
+        switch receiptViewModel.inclusionStatus {
+        case .verified:
+            return ColorTokens.stateSuccess
+        case .failed:
+            return ColorTokens.stateDanger
+        case .pending, .notAvailable:
+            return ColorTokens.stateWarning
+        }
+    }
+
+    private var inclusionStatusDescription: String {
+        switch receiptViewModel.inclusionStatus {
+        case .verified:
+            return "Inclusion proof recomputed locally: the RFC 9162 root matches the supplied witness root. Independently trust the witness key before treating it as final audit evidence; this does not prove vote intent or tally correctness."
+        case .failed(let reason):
+            return "Inclusion verification failed: \(reason)"
+        case .pending:
+            return "Inclusion is not checked until a witness proof is available."
+        case .notAvailable:
+            return "A witnessed proof is not available yet. The current status is not proof of inclusion."
         }
     }
     
@@ -219,23 +315,29 @@ public struct ReceiptView: View {
                     stepNumber: "1",
                     title: "Committed to Outbox",
                     subtitle: "Ballot ciphertext accepted by casting origin",
-                    isCompleted: true
+                    isCompleted: receiptViewModel.receipt != nil,
+                    completedColor: ColorTokens.stateAnchored,
+                    statusLabel: "Recorded"
                 )
                 
                 let isWitnessed = receiptViewModel.receipt?.status == .witnessed || receiptViewModel.receipt?.status == .anchored
                 LifecycleStepRow(
                     stepNumber: "2",
                     title: "Witnessed in Merkle Log",
-                    subtitle: "Signed by independent witness organization",
-                    isCompleted: isWitnessed
+                    subtitle: "Witness checkpoint reported; independent trust still requires a pinned key",
+                    isCompleted: isWitnessed,
+                    completedColor: ColorTokens.stateWitnessed,
+                    statusLabel: "Witness reported"
                 )
                 
                 let isAnchored = receiptViewModel.receipt?.status == .anchored
                 LifecycleStepRow(
                     stepNumber: "3",
-                    title: "Anchored on Blockchain",
-                    subtitle: "Final root published to Ethereum smart contract",
-                    isCompleted: isAnchored
+                    title: "Blockchain Anchor Reported",
+                    subtitle: "A chain anchor was reported; finality still requires independent verification",
+                    isCompleted: isAnchored,
+                    completedColor: ColorTokens.stateAnchored,
+                    statusLabel: "Anchor reported"
                 )
             }
         }
@@ -297,24 +399,35 @@ public struct LifecycleStepRow: View {
     public let title: String
     public let subtitle: String
     public let isCompleted: Bool
+    public let completedColor: Color
+    public let statusLabel: String
     
     @ScaledMetric(relativeTo: .body) private var circleSize: CGFloat = 30
     @ScaledMetric(relativeTo: .caption) private var checkIconSize: CGFloat = 14
     
-    public init(stepNumber: String, title: String, subtitle: String, isCompleted: Bool) {
+    public init(
+        stepNumber: String,
+        title: String,
+        subtitle: String,
+        isCompleted: Bool,
+        completedColor: Color = ColorTokens.stateSuccess,
+        statusLabel: String = "Completed"
+    ) {
         self.stepNumber = stepNumber
         self.title = title
         self.subtitle = subtitle
         self.isCompleted = isCompleted
+        self.completedColor = completedColor
+        self.statusLabel = statusLabel
     }
     
     public var body: some View {
         HStack(alignment: .top, spacing: 14) {
             ZStack {
                 Circle()
-                    .fill(isCompleted ? ColorTokens.stateSuccess : ColorTokens.stateNeutral.opacity(0.25))
+                    .fill(isCompleted ? completedColor : ColorTokens.stateNeutral.opacity(0.25))
                     .frame(width: circleSize, height: circleSize)
-                    .beaconPulse(color: ColorTokens.stateSuccess, isActive: isCompleted)
+                    .beaconPulse(color: completedColor, isActive: isCompleted)
                 
                 if isCompleted {
                     Image(systemName: "checkmark")
@@ -338,6 +451,6 @@ public struct LifecycleStepRow: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), status: \(isCompleted ? "Completed" : "Pending")")
+        .accessibilityLabel("\(title), status: \(isCompleted ? statusLabel : "Pending")")
     }
 }

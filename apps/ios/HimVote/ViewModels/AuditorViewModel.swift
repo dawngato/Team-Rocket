@@ -1,10 +1,11 @@
 import Foundation
 import Observation
-import CryptoKit
 
-public enum VerificationVerdict: String, Sendable {
+public enum VerificationVerdict: String, Sendable, Equatable {
     case pass = "PASS"
     case fail = "FAIL"
+    case limited = "LIMITED"
+    case notChecked = "NOT_CHECKED"
     case unverifiable = "UNVERIFIABLE"
 }
 
@@ -29,7 +30,7 @@ public final class AuditorViewModel {
     public var auditCheckItems: [AuditCheckItem] = []
     public var isLoading: Bool = false
     public var errorMessage: String?
-    public var overallVerdict: VerificationVerdict = .unverifiable
+    public var overallVerdict: VerificationVerdict = .notChecked
     
     private let apiClient: ApiClientProtocol
     
@@ -41,7 +42,7 @@ public final class AuditorViewModel {
         isLoading = true
         errorMessage = nil
         auditCheckItems = []
-        overallVerdict = .unverifiable
+        overallVerdict = .notChecked
         
         do {
             let evidence = try await apiClient.fetchEvidence(electionId: electionId, sessionToken: sessionToken)
@@ -55,7 +56,9 @@ public final class AuditorViewModel {
                     id: "election_identity",
                     name: "Election Identity Correlation",
                     verdict: idMatch ? .pass : .fail,
-                    detail: idMatch ? "Evidence package matches election \(electionId)" : "Mismatch: Expected \(electionId) but received \(evidence.electionId)"
+                    detail: idMatch
+                        ? "The response field matches the requested election. This is a structural check, not an independent cryptographic attestation."
+                        : "Mismatch: Expected \(electionId) but received \(evidence.electionId)"
                 )
             )
             
@@ -68,8 +71,10 @@ public final class AuditorViewModel {
                 AuditCheckItem(
                     id: "manifest_digest",
                     name: "Election Manifest SHA256 Digest",
-                    verdict: manifestValid ? .pass : .fail,
-                    detail: manifestValid ? "Cryptographic manifest digest verified: \(evidence.manifestDigest.prefix(16))..." : "Invalid manifest digest format"
+                    verdict: manifestValid ? .limited : .fail,
+                    detail: manifestValid
+                        ? "Digest is correctly shaped (\(evidence.manifestDigest.prefix(16))...). Recompute and compare it with an independently pinned manifest using the standalone verifier."
+                        : "Invalid manifest digest format"
                 )
             )
             
@@ -78,8 +83,10 @@ public final class AuditorViewModel {
                 AuditCheckItem(
                     id: "final_checkpoint",
                     name: "Witness Merkle Tree Final Checkpoint",
-                    verdict: checkpointValid ? .pass : .fail,
-                    detail: checkpointValid ? "Witness checkpoint digest verified: \(evidence.finalCheckpointDigest.prefix(16))..." : "Invalid checkpoint digest length"
+                    verdict: checkpointValid ? .limited : .fail,
+                    detail: checkpointValid
+                        ? "Checkpoint digest is correctly shaped (\(evidence.finalCheckpointDigest.prefix(16))...). Signature, tree contents and continuity require a separately supplied witness pin and offline verifier."
+                        : "Invalid checkpoint digest length"
                 )
             )
             
@@ -93,8 +100,10 @@ public final class AuditorViewModel {
                 AuditCheckItem(
                     id: "anchor_tx",
                     name: "Ethereum Smart Contract Anchor Transaction",
-                    verdict: anchorValid ? .pass : .fail,
-                    detail: anchorValid ? "Anchored transaction hash verified: \(evidence.anchorTxHash.prefix(18))..." : "Malformed Ethereum transaction hash format"
+                    verdict: anchorValid ? .limited : .fail,
+                    detail: anchorValid
+                        ? "Transaction hash is correctly shaped (\(evidence.anchorTxHash.prefix(18))...). Chain identity, receipt and finality are not checked by this metadata-only client."
+                        : "Malformed Ethereum transaction hash format"
                 )
             )
             
@@ -103,8 +112,10 @@ public final class AuditorViewModel {
                 AuditCheckItem(
                     id: "auditor_signature",
                     name: "Independent Auditor Attestation Signature",
-                    verdict: signatureValid ? .pass : .fail,
-                    detail: signatureValid ? "Cryptographic attestation signature verified: \(evidence.auditorSignature.prefix(20))..." : "Missing or invalid auditor signature"
+                    verdict: signatureValid ? .limited : .fail,
+                    detail: signatureValid
+                        ? "A signature-shaped value is present. It is not verified here because no independently trusted auditor key or canonical report digest was supplied."
+                        : "Missing or invalid auditor signature"
                 )
             )
             
@@ -114,19 +125,21 @@ public final class AuditorViewModel {
                     AuditCheckItem(
                         id: "evidence_url",
                         name: "Immutable Evidence Archive Bundle URL",
-                        verdict: urlValid ? .pass : .fail,
-                        detail: urlValid ? "Archive bundle endpoint verified: \(urlString)" : "Invalid evidence package URL location"
+                        verdict: urlValid ? .limited : .fail,
+                        detail: urlValid
+                            ? "Archive URL is syntactically valid. The archive remains untrusted until downloaded and checked by the standalone verifier."
+                            : "Invalid evidence package URL location"
                     )
                 )
             }
             
             self.auditCheckItems = checks
             
-            let allPassed = !checks.isEmpty && checks.allSatisfy { $0.verdict == .pass }
-            self.overallVerdict = allPassed ? .pass : .fail
+            let hasFailure = checks.contains { $0.verdict == .fail }
+            self.overallVerdict = hasFailure ? .fail : (checks.isEmpty ? .notChecked : .limited)
         } catch {
             self.errorMessage = error.localizedDescription
-            self.overallVerdict = .fail
+            self.overallVerdict = .notChecked
         }
         
         isLoading = false

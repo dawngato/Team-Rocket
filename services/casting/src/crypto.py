@@ -6,7 +6,10 @@ Complies with RFC 8785 canonical JSON and RFC 9162 Merkle tree hashing.
 import base64
 import hashlib
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Sequence, Tuple
+
+
+SHA256_DIGEST_BYTES = 32
 
 
 def base64url_decode(data: str) -> bytes:
@@ -49,6 +52,66 @@ def compute_leaf_digest(canonical_leaf_bytes: bytes) -> str:
     hasher.update(b"\x00")
     hasher.update(canonical_leaf_bytes)
     return hasher.hexdigest()
+
+
+def _validate_leaf_digests(leaf_digests: Sequence[bytes]) -> None:
+    for index, digest in enumerate(leaf_digests):
+        if not isinstance(digest, bytes) or len(digest) != SHA256_DIGEST_BYTES:
+            raise ValueError(f"leaf digest at index {index} must be 32 bytes")
+
+
+def _largest_power_of_two_less_than(value: int) -> int:
+    if value <= 1:
+        raise ValueError("value must be greater than one")
+    power = 1
+    while power * 2 < value:
+        power *= 2
+    return power
+
+
+def _node_digest(left: bytes, right: bytes) -> bytes:
+    if len(left) != SHA256_DIGEST_BYTES or len(right) != SHA256_DIGEST_BYTES:
+        raise ValueError("Merkle node inputs must be 32-byte digests")
+    return hashlib.sha256(b"\x01" + left + right).digest()
+
+
+def merkle_root_from_leaf_digests(leaf_digests: Sequence[bytes]) -> bytes:
+    """Compute an RFC 9162 tree root from already hashed log leaves."""
+    _validate_leaf_digests(leaf_digests)
+    if not leaf_digests:
+        return hashlib.sha256(b"").digest()
+    if len(leaf_digests) == 1:
+        return leaf_digests[0]
+
+    split = _largest_power_of_two_less_than(len(leaf_digests))
+    return _node_digest(
+        merkle_root_from_leaf_digests(leaf_digests[:split]),
+        merkle_root_from_leaf_digests(leaf_digests[split:]),
+    )
+
+
+def inclusion_proof_from_leaf_digests(
+    leaf_index: int,
+    leaf_digests: Sequence[bytes],
+) -> List[bytes]:
+    """Return an RFC 9162 audit path for a pre-hashed leaf."""
+    _validate_leaf_digests(leaf_digests)
+    tree_size = len(leaf_digests)
+    if leaf_index < 0 or leaf_index >= tree_size:
+        raise ValueError("leaf index is outside the witnessed tree")
+    if tree_size == 1:
+        return []
+
+    split = _largest_power_of_two_less_than(tree_size)
+    if leaf_index < split:
+        return inclusion_proof_from_leaf_digests(
+            leaf_index,
+            leaf_digests[:split],
+        ) + [merkle_root_from_leaf_digests(leaf_digests[split:])]
+    return inclusion_proof_from_leaf_digests(
+        leaf_index - split,
+        leaf_digests[split:],
+    ) + [merkle_root_from_leaf_digests(leaf_digests[:split])]
 
 
 def compute_nullifier_commitment(credential_nullifier: str) -> str:

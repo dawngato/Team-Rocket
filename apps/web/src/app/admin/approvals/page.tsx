@@ -1,48 +1,36 @@
 "use client";
 
-import React, { useState } from "react";
-import { CheckCircle2, XCircle, ShieldCheck, Clock } from "lucide-react";
-
-interface RoleApproval {
-  id: string;
-  applicant: string;
-  email: string;
-  requestedRole: string;
-  scope: string;
-  justification: string;
-  status: "PENDING" | "APPROVED" | "REJECTED";
-  requestedAt: string;
-}
+import React, { useEffect, useState } from "react";
+import { AlertTriangle, Clock, RefreshCw } from "lucide-react";
+import {
+  adminApprovalsClient,
+  AdminApprovalApiError,
+  type RoleApproval,
+} from "@/lib/admin_approvals";
 
 export default function AdminApprovalsPage() {
-  const [approvals, setApprovals] = useState<RoleApproval[]>([
-    {
-      id: "appr_101",
-      applicant: "Dr. Alok Nath Sen",
-      email: "alok.sen@hptu.ac.in",
-      requestedRole: "ELECTION_OFFICER",
-      scope: "Mechanical Engineering Student Council 2026",
-      justification: "Appointed as faculty returning officer by the Dean of Academic Affairs.",
-      status: "PENDING",
-      requestedAt: "2026-10-30T08:15:00Z",
-    },
-    {
-      id: "appr_102",
-      applicant: "Pooja Hegde",
-      email: "pooja.h@hptu.ac.in",
-      requestedRole: "ROSTER_AUDITOR",
-      scope: "Civil Engineering Department",
-      justification: "Student council election oversight committee representative.",
-      status: "PENDING",
-      requestedAt: "2026-10-29T16:40:00Z",
-    },
-  ]);
+  const [approvals, setApprovals] = useState<RoleApproval[] | null>(null);
+  const [error, setError] = useState<AdminApprovalApiError | null>(null);
 
-  const handleDecision = (id: string, decision: "APPROVED" | "REJECTED") => {
-    setApprovals((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: decision } : a))
-    );
+  const loadApprovals = () => {
+    setApprovals(null);
+    setError(null);
+    void adminApprovalsClient.getPendingApprovals().then(setApprovals).catch((cause) => {
+      setError(
+        cause instanceof AdminApprovalApiError
+          ? cause
+          : new AdminApprovalApiError({
+              code: "ADMIN_APPROVAL_LOAD_FAILED",
+              message: "The approval queue could not be loaded safely.",
+              status: 503,
+            }),
+      );
+    });
   };
+
+  useEffect(() => {
+    loadApprovals();
+  }, []);
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -61,82 +49,44 @@ export default function AdminApprovalsPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {approvals.map((item) => {
-          const isPending = item.status === "PENDING";
-          return (
-            <div
-              key={item.id}
-              className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-4"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div>
-                  <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-                    {item.applicant}
-                  </h2>
-                  <span className="text-xs text-slate-500 font-mono">{item.email}</span>
-                </div>
-                <span
-                  className={`text-xs font-bold px-3 py-1 rounded-md ${
-                    item.status === "APPROVED"
-                      ? "bg-[#15805D]/10 text-[#15805D] border border-[#15805D]/30"
-                      : item.status === "PENDING"
-                      ? "bg-[#AA6C0B]/10 text-[#AA6C0B] border border-[#AA6C0B]/30"
-                      : "bg-[#C23C45]/10 text-[#C23C45] border border-[#C23C45]/30"
-                  }`}
-                >
-                  {item.status}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-slate-50 dark:bg-slate-900/40 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-                <div>
-                  <span className="text-slate-400 block">Requested Role</span>
-                  <strong className="text-slate-800 dark:text-slate-200">{item.requestedRole}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-400 block">Scope Assignment</span>
-                  <strong className="text-slate-800 dark:text-slate-200">{item.scope}</strong>
-                </div>
-                <div className="sm:col-span-2">
-                  <span className="text-slate-400 block">Justification</span>
-                  <p className="text-slate-600 dark:text-slate-400 mt-0.5">{item.justification}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-[#1E3352]">
-                <span className="text-[11px] font-mono text-slate-400">
-                  Requested: {new Date(item.requestedAt).toLocaleString()}
-                </span>
-                {isPending ? (
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => handleDecision(item.id, "APPROVED")}
-                      className="min-h-[44px] px-4 py-1.5 text-xs font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors flex items-center gap-1 shadow-sm"
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Approve Role Grant</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDecision(item.id, "REJECTED")}
-                      className="min-h-[44px] px-4 py-1.5 text-xs font-bold text-[#C23C45] hover:bg-[#C23C45]/10 border border-[#C23C45]/30 rounded-lg transition-colors flex items-center gap-1"
-                    >
-                      <XCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Reject</span>
-                    </button>
-                  </div>
-                ) : (
-                  <span className="text-xs font-semibold text-slate-400">
-                    Decision recorded to immutable audit ledger
-                  </span>
-                )}
-              </div>
+      {error ? (
+        <section
+          role="alert"
+          className="rounded-xl border border-[#AA6C0B]/40 bg-[#AA6C0B]/10 p-6 space-y-4"
+        >
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0 text-[#AA6C0B]" aria-hidden="true" />
+            <div className="space-y-2">
+              <h2 className="font-bold text-[#6B4707] dark:text-[#FBBF24]">Approval queue unavailable</h2>
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                The identity service does not currently provide an authorized pending-approval list. No local or seeded requests are shown, and no approval decision can be submitted from this page.
+              </p>
+              <p className="text-xs font-mono text-slate-600 dark:text-slate-400">{error.code}: {error.message}</p>
             </div>
-          );
-        })}
-      </div>
+          </div>
+          <button
+            type="button"
+            onClick={loadApprovals}
+            className="min-h-[44px] px-4 py-2 text-sm font-semibold text-[#10233F] dark:text-white border border-[#AA6C0B]/40 rounded-lg hover:bg-[#AA6C0B]/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#AA6C0B] inline-flex items-center gap-2"
+          >
+            <RefreshCw className="w-4 h-4" aria-hidden="true" />
+            Check again
+          </button>
+        </section>
+      ) : approvals === null ? (
+        <section role="status" className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-400">
+          <Clock className="w-5 h-5 animate-pulse mb-3" aria-hidden="true" />
+          Loading the authoritative approval queue…
+        </section>
+      ) : approvals.length === 0 ? (
+        <section className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-400">
+          The authoritative approval queue is empty.
+        </section>
+      ) : (
+        <section className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-400">
+          Approval records were returned, but this client has no safe decision workflow for rendering them yet. No action was taken.
+        </section>
+      )}
     </div>
   );
 }

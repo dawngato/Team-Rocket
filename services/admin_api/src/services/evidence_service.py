@@ -43,15 +43,10 @@ class EvidenceService:
             )
             if not state_record:
                 raise StateMachineError(f"Election {election_id} not found", "NOT_FOUND")
-
-            return {
-                "election_id": election_id,
-                "manifest_digest": state_record.manifest_digest or "pending",
-                "final_checkpoint_digest": "pending",
-                "anchor_tx_hash": "pending",
-                "auditor_signature": "pending",
-                "evidence_url": f"/v1/elections/{election_id}/evidence?download=true"
-            }
+            raise StateMachineError(
+                f"Election {election_id} has no released evidence package",
+                "EVIDENCE_NOT_RELEASED",
+            )
 
         return {
             "election_id": pkg.election_id,

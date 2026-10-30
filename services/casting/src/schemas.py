@@ -5,7 +5,7 @@ Conforms strictly to packages openapi himvote.openapi.yaml specification.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel, Field, ConfigDict
 
 
@@ -106,6 +106,23 @@ class ReceiptStatusResponse(BaseModel):
     witnessed_at_utc: Optional[datetime] = Field(
         default=None,
         description="Timestamp when witness acknowledgement was recorded"
+    )
+    tree_size: Optional[int] = Field(
+        default=None,
+        ge=1,
+        description="Witnessed Merkle tree size used for an inclusion proof"
+    )
+    leaf_hash: Optional[str] = Field(
+        default=None,
+        description="RFC 9162 leaf digest for this receipt"
+    )
+    merkle_root: Optional[str] = Field(
+        default=None,
+        description="Authenticated witness root for tree_size"
+    )
+    merkle_proof: Optional[List[str]] = Field(
+        default=None,
+        description="RFC 9162 audit path, encoded as lowercase hexadecimal digests"
     )
 
 

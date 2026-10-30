@@ -1,248 +1,164 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Award, Plus, Lock, ArrowRight } from "lucide-react";
+import { ArrowRight, Award, Plus, RefreshCw } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
-import { INITIAL_ELECTIONS } from "@/lib/mock_data";
+import { electionClient, ElectionApiError } from "@/lib/election_client";
+import type { Election } from "@/lib/types";
+import { summarizeOfficerElections, formatUtcDate } from "@/lib/officer_elections";
 
 export default function OfficerOverviewPage() {
-  const activeElections = INITIAL_ELECTIONS.filter((e) => e.state === "OPEN" || e.state === "FROZEN");
-  const draftElections = INITIAL_ELECTIONS.filter((e) => e.state === "DRAFT");
+  const [elections, setElections] = useState<Election[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ElectionApiError | Error | null>(null);
+
+  const loadElections = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setElections(await electionClient.getElections());
+    } catch (cause) {
+      setElections([]);
+      setError(cause instanceof Error ? cause : new Error("The election service could not be reached."));
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadElections();
+  }, [loadElections]);
+
+  const metrics = useMemo(() => summarizeOfficerElections(elections), [elections]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
+    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+      <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            <Award className="w-3.5 h-3.5" aria-hidden="true" />
-            <span>Election Administration Desk</span>
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+            <Award className="h-3.5 w-3.5" aria-hidden="true" />
+            <span>Election administration desk</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
-            Election Officer Desk
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
-            Build manifests, lock voter rosters, control voting windows, and request evidence based publication review.
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">Election Officer Desk</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+            Live election service data for assigned elections. No local election fixtures are used on this operational screen.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/officer/elections"
-            className="min-h-[44px] px-4 py-2 font-semibold text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-[#1E3352] hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-[0.98] rounded-xl transition-all duration-75 ease-out flex items-center gap-2 text-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={() => void loadElections()}
+            disabled={loading}
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-wait disabled:opacity-60 dark:border-[#1E3352] dark:text-slate-300 dark:hover:bg-slate-800"
           >
-            <span>My Elections</span>
-          </Link>
-          <Link
-            href="/officer/create"
-            className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] active:scale-[0.98] rounded-xl transition-all duration-75 ease-out flex items-center gap-2 text-sm shadow-sm select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
-          >
-            <Plus className="w-4 h-4" aria-hidden="true" />
-            <span>Create New Election</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Metrics with High Contrast Indicators */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Active Contests
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
-              Live
-            </span>
-          </div>
-          <div className="text-3xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
-            {activeElections.length}
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Currently accepting encrypted ballots or frozen
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Draft Contests
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#AA6C0B]/10 text-[#AA6C0B] dark:text-[#FBBF24] border border-[#AA6C0B]/30">
-              Pre Freeze
-            </span>
-          </div>
-          <div className="text-3xl font-extrabold text-[#AA6C0B] dark:text-[#FBBF24] font-mono tabular-nums">
-            {draftElections.length}
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Rosters or candidate slates pending manifest lock
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Total Governed Contests
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
-              Institutional
-            </span>
-          </div>
-          <div className="text-3xl font-extrabold text-[#10233F] dark:text-white font-mono tabular-nums">
-            {INITIAL_ELECTIONS.length}
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Full governance and publication audit trail
-          </span>
-        </div>
-      </div>
-
-      {/* Quick Action Workspaces */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-[#10233F] dark:text-white tracking-tight">
-          Election Management Lifecycle
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Link
-            href="/officer/elections"
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
-          >
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center">
-                <Award className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                  Contest Portfolio
-                </span>
-                <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight">
-                  All Assigned Elections
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                View and manage complete election roster, freeze windows, and state transitions.
-              </p>
-            </div>
-            <div className="pt-2 flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
-              <span>Open Portfolio</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </div>
-          </Link>
-
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} aria-hidden="true" />
+            Refresh
+          </button>
           <Link
             href="/officer/create"
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#15805D] dark:hover:border-[#34D399] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+            className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#157E92] px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-[#0E6273] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
           >
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] flex items-center justify-center">
-                <Plus className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                  New Specification
-                </span>
-                <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight">
-                  Create Election Draft
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Define contest parameters, eligible department boundaries, and UTC voting cutoffs.
-              </p>
-            </div>
-            <div className="pt-2 flex items-center justify-between text-xs font-bold text-[#15805D] dark:text-[#34D399]">
-              <span>New Contest</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </div>
-          </Link>
-
-          <Link
-            href="/officer/elections/elec_cs_2026/freeze"
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#AA6C0B] dark:hover:border-[#FBBF24] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
-          >
-            <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-[#AA6C0B]/10 text-[#AA6C0B] dark:text-[#FBBF24] flex items-center justify-center">
-                <Lock className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                  RFC 8785 Digest
-                </span>
-                <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight">
-                  Freeze Manifest Tool
-                </h3>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Lock roster commitment and manifest digest before initiating the voting phase.
-              </p>
-            </div>
-            <div className="pt-2 flex items-center justify-between text-xs font-bold text-[#AA6C0B] dark:text-[#FBBF24]">
-              <span>Manifest Locker</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </div>
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Create election
           </Link>
         </div>
       </div>
 
-      {/* Active Contests Table */}
-      <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
-          <div>
-            <h2 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight">
-              Monitored Contests
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Live state indicators for active campus and department ballots.
-            </p>
-          </div>
-          <Link
-            href="/officer/elections"
-            className="text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
-          >
-            View All ({INITIAL_ELECTIONS.length})
-          </Link>
+      {error && (
+        <div className="flex flex-col gap-3 rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630] dark:text-[#FCA5A5] sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <span>{error.message}</span>
+          <button type="button" onClick={() => void loadElections()} className="min-h-[44px] rounded-lg border border-[#C23C45]/40 px-3 py-2 font-bold hover:bg-[#C23C45]/10">
+            Try again
+          </button>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-[#1E3352]">
-              <tr>
-                <th scope="col" className="px-6 py-3">Contest Title</th>
-                <th scope="col" className="px-6 py-3">State</th>
-                <th scope="col" className="px-6 py-3">Eligible Voters</th>
-                <th scope="col" className="px-6 py-3">Closing Time (UTC)</th>
-                <th scope="col" className="px-6 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {INITIAL_ELECTIONS.slice(0, 4).map((el) => (
-                <tr key={el.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-[#10233F] dark:text-white tracking-tight">{el.title}</div>
-                    <div className="text-xs text-slate-400 font-mono mt-0.5">{el.id}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <StateBadge state={el.state} size="sm" />
-                  </td>
-                  <td className="px-6 py-4 text-xs font-mono tabular-nums text-slate-600 dark:text-slate-300">
-                    {el.eligible_count?.toLocaleString()}
-                  </td>
-                  <td className="px-6 py-4 text-xs font-mono tabular-nums text-slate-500">
-                    {new Date(el.closes_at_utc).toISOString().slice(0, 16).replace("T", " ")} UTC
-                  </td>
-                  <td className="px-6 py-4">
-                    <Link
-                      href={`/officer/elections/${el.id}/lifecycle`}
-                      className="min-h-[36px] px-3 py-1 font-bold text-[#157E92] dark:text-[#38BDF8] hover:bg-[#157E92]/10 active:scale-[0.98] rounded-lg transition-all duration-75 ease-out text-xs inline-flex items-center gap-1.5 select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92]"
-                    >
-                      <span>Lifecycle</span>
-                      <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      )}
+
+      {loading ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">
+          Loading assigned elections…
         </div>
-      </div>
+      ) : !error && elections.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-[#1E3352] dark:bg-[#132135]" role="status">
+          <Award className="mx-auto h-8 w-8 text-slate-400" aria-hidden="true" />
+          <h2 className="mt-3 font-bold text-[#10233F] dark:text-white">No assigned elections</h2>
+          <p className="mt-1 text-sm text-slate-500">The election service returned no officer-scoped records.</p>
+        </div>
+      ) : !loading && !error ? (
+        <>
+          <section aria-label="Election service metrics" className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            {[
+              ["Active elections", metrics.active, "OPEN, FROZEN, SCHEDULED, PAUSED, or CLOSING"],
+              ["Draft elections", metrics.drafts, "Not yet frozen"],
+              ["Governed elections", metrics.governed, "Returned by the service"],
+            ].map(([label, value, detail]) => (
+              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
+                <div className="mt-2 font-mono text-3xl font-extrabold tabular-nums text-[#10233F] dark:text-white">{value}</div>
+                <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{detail}</span>
+              </div>
+            ))}
+          </section>
+
+          <section aria-labelledby="officer-actions-heading" className="space-y-4">
+            <h2 id="officer-actions-heading" className="text-xl font-bold tracking-tight text-[#10233F] dark:text-white">Election management lifecycle</h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+              <Link href="/officer/elections" className="flex min-h-[180px] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-[#157E92] dark:border-[#1E3352] dark:bg-[#132135] dark:hover:border-[#38BDF8]">
+                <div>
+                  <Award className="h-8 w-8 text-[#157E92] dark:text-[#38BDF8]" aria-hidden="true" />
+                  <h3 className="mt-4 font-bold text-[#10233F] dark:text-white">Open assigned portfolio</h3>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Filter server-returned elections by lifecycle state.</p>
+                </div>
+                <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">View portfolio <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+              </Link>
+              {elections[0] ? (
+                <Link href={`/officer/elections/${elections[0].id}/lifecycle`} className="flex min-h-[180px] flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-[#AA6C0B] dark:border-[#1E3352] dark:bg-[#132135] dark:hover:border-[#FBBF24]">
+                  <div>
+                    <StateBadge state={elections[0].state} size="sm" />
+                    <h3 className="mt-4 font-bold text-[#10233F] dark:text-white">Open election workspace</h3>
+                    <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{elections[0].title}</p>
+                  </div>
+                  <span className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#AA6C0B] dark:text-[#FBBF24]">Open workspace <ArrowRight className="h-4 w-4" aria-hidden="true" /></span>
+                </Link>
+              ) : (
+                <div className="flex min-h-[180px] flex-col justify-between rounded-2xl border border-dashed border-slate-300 p-6 dark:border-[#1E3352]">
+                  <div>
+                    <h3 className="font-bold text-slate-500 dark:text-slate-400">Election workspace unavailable</h3>
+                    <p className="mt-1 text-sm text-slate-500">A server-returned election is required before a workspace can be opened.</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section aria-labelledby="monitored-elections-heading" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+            <div className="flex items-center justify-between gap-4 border-b border-slate-100 px-6 py-4 dark:border-[#1E3352]">
+              <div>
+                <h2 id="monitored-elections-heading" className="font-bold tracking-tight text-[#10233F] dark:text-white">Monitored elections</h2>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Server-authoritative lifecycle and schedule data.</p>
+              </div>
+              <Link href="/officer/elections" className="text-xs font-bold text-[#157E92] hover:underline dark:text-[#38BDF8]">View all ({elections.length})</Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm">
+                <thead className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:border-[#1E3352] dark:bg-slate-900/50">
+                  <tr><th scope="col" className="px-6 py-3">Election</th><th scope="col" className="px-6 py-3">State</th><th scope="col" className="px-6 py-3">Close time UTC</th><th scope="col" className="px-6 py-3">Action</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
+                  {elections.slice(0, 4).map((election) => (
+                    <tr key={election.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                      <td className="px-6 py-4"><div className="font-bold text-[#10233F] dark:text-white">{election.title}</div><div className="font-mono text-xs text-slate-400">{election.id}</div></td>
+                      <td className="px-6 py-4"><StateBadge state={election.state} size="sm" /></td>
+                      <td className="px-6 py-4 text-xs text-slate-500">{formatUtcDate(election.closes_at_utc)}</td>
+                      <td className="px-6 py-4"><Link href={`/officer/elections/${election.id}/lifecycle`} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-bold text-[#157E92] hover:bg-[#157E92]/10 dark:text-[#38BDF8]">Lifecycle <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </>
+      ) : null}
     </div>
   );
 }

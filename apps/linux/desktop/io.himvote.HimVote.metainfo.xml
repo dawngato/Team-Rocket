@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.himvote.HimVote</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>Apache-2.0</project_license>
+  <name>HimVote Linux</name>
+  <summary>Institutional election client and independent cryptographic auditor</summary>
+  <description>
+    <p>
+      HimVote Linux provides transparent, verifiable student and institutional democracy.
+      It features independent election browsing, cryptographic receipt tracking, offline
+      RFC 9162 Merkle tree verification, and automated candidate tally recomputation.
+    </p>
+    <p>Key capabilities include:</p>
+    <ul>
+      <li>Browse official institutional elections and verified candidate manifestos</li>
+      <li>Track 4-stage cryptographic receipt evidence: Submitted, Accepted, Witnessed, and Anchored</li>
+      <li>Perform standalone offline election audits from zipped or directory archives without server trust</li>
+      <li>Interactive Merkle inclusion proof visualization with animated hashing progression</li>
+      <li>Reproducible audit report export in Markdown and JSON conforming to Section 6.8</li>
+      <li>High-contrast accessibility theme conforming to WCAG 2.1 AAA contrast ratios</li>
+    </ul>
+  </description>
+  <launchable type="desktop-id">himvote.desktop</launchable>
+  <categories>
+    <category>Office</category>
+    <category>Security</category>
+    <category>Utility</category>
+  </categories>
+  <provides>
+    <binary>himvote</binary>
+  </provides>
+  <releases>
+    <release version="2.0.0" date="2026-10-30">
+      <description>
+        <p>Production release with 5-view institutional suite, candidate bio modals, and reproducible audit export.</p>
+      </description>
+    </release>
+  </releases>
+  <developer_name>HimVote Core Engineering</developer_name>
+</component>

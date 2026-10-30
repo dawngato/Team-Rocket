@@ -8,7 +8,7 @@ import hmac
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..config import BOOTSTRAP_ALLOWED, BOOTSTRAP_INVITATION_TOKEN
+from ..config import APP_ENV, BOOTSTRAP_ALLOWED, BOOTSTRAP_INVITATION_TOKEN
 from ..models import User, RoleDefinition, RoleAssignment, MfaCredential, SystemSetting
 from ..schemas import BootstrapClaimRequest, BootstrapClaimResponse
 from ..crypto.hashing import hash_password
@@ -32,6 +32,16 @@ def bootstrap_claim(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Bootstrap not permitted by configuration",
+        )
+
+    if APP_ENV == "production":
+        # This service has no independently controlled MFA provisioning
+        # channel.  Creating an account while withholding the seed would make
+        # the first privileged account unusable, while returning it would
+        # expose a production secret in an HTTP response.
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Bootstrap MFA provisioning is not configured",
         )
 
     if not BOOTSTRAP_INVITATION_TOKEN:

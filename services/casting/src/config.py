@@ -75,6 +75,12 @@ class Settings(BaseModel):
     ELECTION_ENGINE_BASE: str = Field(
         default_factory=lambda: os.getenv("ELECTION_ENGINE_BASE", "http://localhost:8084")
     )
+    ENGINE_VALIDATION_MODE: str = Field(
+        default_factory=lambda: os.getenv("ENGINE_VALIDATION_MODE", "remote")
+    )
+    ENGINE_VALIDATION_TIMEOUT_SECONDS: float = Field(
+        default_factory=lambda: float(os.getenv("ENGINE_VALIDATION_TIMEOUT_SECONDS", "5"))
+    )
 
     def get_database_url(self) -> str:
         """

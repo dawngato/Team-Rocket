@@ -1,12 +1,27 @@
 import Foundation
 import Observation
 
+public enum ReceiptInclusionStatus: Sendable, Equatable {
+    case notAvailable
+    case pending
+    case verified(MerkleInclusionResult)
+    case failed(String)
+
+    public var isVerified: Bool {
+        if case .verified(let result) = self {
+            return result.valid
+        }
+        return false
+    }
+}
+
 @Observable
 @MainActor
 public final class ReceiptViewModel {
     public var receipt: Receipt?
     public var isPolling: Bool = false
     public var errorMessage: String?
+    public var inclusionStatus: ReceiptInclusionStatus = .notAvailable
     
     private let apiClient: ApiClientProtocol
     private let keychainService: KeychainServiceProtocol
@@ -23,13 +38,14 @@ public final class ReceiptViewModel {
     public func loadReceipt(handle: String, electionId: String) {
         if let storedReceipt = try? keychainService.readReceipt(handle: handle) {
             self.receipt = storedReceipt
+            verifyInclusion()
         } else {
-            self.receipt = Receipt(
-                electionId: electionId,
-                handle: handle,
-                leafIndex: 0,
-                status: .committedPendingWitness
-            )
+            // Do not fabricate a leaf index or a pending proof. The holder
+            // supplied opaque handle is enough to query the casting origin;
+            // a receipt is materialized only after the origin returns it.
+            self.receipt = nil
+            self.inclusionStatus = .notAvailable
+            self.errorMessage = "This receipt for election \(electionId) is not stored on this device yet. The casting origin will be queried using the opaque handle."
         }
     }
     
@@ -58,11 +74,15 @@ public final class ReceiptViewModel {
                         status: statusResponse.receiptStatus,
                         nullifierCommitment: self.receipt?.nullifierCommitment,
                         witnessedAtUtc: statusResponse.witnessedAtUtc,
-                        leafHash: self.receipt?.leafHash
+                        leafHash: statusResponse.leafHash ?? self.receipt?.leafHash,
+                        treeSize: statusResponse.treeSize ?? self.receipt?.treeSize,
+                        merkleRoot: statusResponse.merkleRoot ?? self.receipt?.merkleRoot,
+                        merkleProof: statusResponse.merkleProof ?? self.receipt?.merkleProof
                     )
                     
                     self.receipt = updated
                     try? self.keychainService.saveReceipt(updated)
+                    self.verifyInclusion()
                     
                     if statusResponse.receiptStatus == .witnessed || statusResponse.receiptStatus == .anchored || statusResponse.receiptStatus == .rejected {
                         terminalReached = true
@@ -78,6 +98,41 @@ public final class ReceiptViewModel {
             }
             
             self.isPolling = false
+        }
+    }
+
+    public func verifyInclusion() {
+        guard let receipt else {
+            inclusionStatus = .notAvailable
+            return
+        }
+
+        guard receipt.status == .witnessed || receipt.status == .anchored else {
+            inclusionStatus = receipt.status == .committedPendingWitness ? .pending : .notAvailable
+            return
+        }
+
+        guard let treeSize = receipt.treeSize,
+              let leafHash = receipt.leafHash,
+              let merkleRoot = receipt.merkleRoot,
+              let merkleProof = receipt.merkleProof else {
+            inclusionStatus = .notAvailable
+            return
+        }
+
+        do {
+            let result = try MerkleProofVerifier.verify(
+                leafIndex: receipt.leafIndex,
+                treeSize: treeSize,
+                leafHashHex: leafHash,
+                proofHex: merkleProof,
+                expectedRootHex: merkleRoot
+            )
+            inclusionStatus = result.valid
+                ? .verified(result)
+                : .failed("The computed Merkle root does not match the witnessed root.")
+        } catch {
+            inclusionStatus = .failed(error.localizedDescription)
         }
     }
     

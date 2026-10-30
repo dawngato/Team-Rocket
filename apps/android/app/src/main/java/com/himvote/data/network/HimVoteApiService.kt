@@ -20,7 +20,7 @@ interface HimVoteApiService {
     ): Response<RecoveryResponse>
 
     @GET("v1/elections")
-    suspend fun getElections(): Response<List<ElectionSummary>>
+    suspend fun getElections(): Response<ElectionListResponse>
 
     @GET("v1/elections/{id}")
     suspend fun getElectionDetail(
@@ -57,5 +57,5 @@ interface HimVoteApiService {
     @GET("v1/elections/{id}/results")
     suspend fun getElectionResults(
         @Path("id") electionId: String
-    ): Response<PublishedResults>
+    ): Response<PublishedResultsResponse>
 }

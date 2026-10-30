@@ -3,17 +3,28 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { Vote, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { identityClient } from "@/lib/identity_client";
 
 export default function StudentSignupPage() {
   const [studentId, setStudentId] = useState("");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [department, setDepartment] = useState("Computer Science and Engineering");
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      await identityClient.registerStudent({ student_id: studentId, full_name: fullName, email });
+      setSubmitted(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Registration could not be submitted.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -99,30 +110,14 @@ export default function StudentSignupPage() {
             />
           </div>
 
-          <div>
-            <label htmlFor="department-select" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Academic Department
-            </label>
-            <select
-              id="department-select"
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            >
-              <option value="Computer Science and Engineering">Computer Science and Engineering</option>
-              <option value="Electronics and Communication">Electronics and Communication</option>
-              <option value="Mechanical Engineering">Mechanical Engineering</option>
-              <option value="Civil Engineering">Civil Engineering</option>
-              <option value="Management Studies">Management Studies</option>
-            </select>
-          </div>
+          {error && <div className="rounded-lg border border-[#C23C45]/30 bg-[#C23C45]/10 p-3 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
 
           <div className="pt-2">
             <button
               type="submit"
               className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
             >
-              <span>Submit Registration Request</span>
+              <span>{loading ? "Submitting registration request…" : "Submit Registration Request"}</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>

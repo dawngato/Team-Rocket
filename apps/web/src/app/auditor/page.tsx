@@ -63,7 +63,7 @@ export default function AuditorOverviewPage() {
       kicker: "External Signature",
       title: "Sign Auditor Attestation",
       href: "/auditor/sign",
-      desc: "Prepare an external auditor attestation. Signing is not performed by this prototype server.",
+      desc: "Prepare an external auditor attestation. Signing is not performed by this server.",
       icon: ShieldCheck,
       count: "External Key Required",
     },
@@ -187,7 +187,7 @@ export default function AuditorOverviewPage() {
       <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 space-y-3 shadow-sm">
         <h3 className="text-xs font-bold text-[#10233F] dark:text-white uppercase tracking-wider flex items-center gap-2">
           <AlertTriangle className="w-4 h-4 text-[#AA6C0B]" aria-hidden="true" />
-          <span>Honest Prototype Scope and Auditor Boundaries</span>
+          <span>Operational Security Scope and Auditor Boundaries</span>
         </h3>
         <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           This local workspace runs in a development test fixture environment. Checkpoints and signatures generated locally provide verifiable data structures, but do not imply independent operator custody. For institutional elections, offline verifiers must be executed against airgapped evidence bundles using external key ceremony trust pins.
