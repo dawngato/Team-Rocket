@@ -1179,8 +1179,8 @@ class StatusChip(tk.Frame):
         glyph = self.GLYPHS.get(self.variant, "●")
         display_str = f" {glyph}  {text.strip()} " if text.strip() else ""
 
-        self.configure(bg=border_col, bd=1, relief="solid")
-        self.label.configure(text=display_str, bg=bg_col, fg=fg_col)
+        self.configure(bg=bg_col, bd=0, relief="flat", highlightthickness=1, highlightbackground=border_col)
+        self.label.configure(text=display_str, bg=bg_col, fg=fg_col, padx=10, pady=3)
 
     def get_status(self) -> tuple[str, str]:
         """Return tuple of current text and variant."""
@@ -3061,27 +3061,32 @@ class HimVoteLinuxApp(tk.Tk):
             self.configure(bg=SURFACE)
             style.configure("App.TFrame", background=SURFACE)
             style.configure("Nav.TFrame", background=NAVY)
-            style.configure("Card.TFrame", background=WHITE, relief="solid", borderwidth=1)
+            style.configure("Card.TFrame", background=WHITE, relief="flat", borderwidth=0)
             style.configure("Title.TLabel", background=SURFACE, foreground=NAVY, font=("DejaVu Sans", 22, "bold"))
             style.configure("SubTitle.TLabel", background=WHITE, foreground=NAVY, font=("DejaVu Sans", 13, "bold"))
             style.configure("Body.TLabel", background=SURFACE, foreground=TEXT, font=("DejaVu Sans", 10))
             style.configure("Muted.TLabel", background=SURFACE, foreground=MUTED, font=("DejaVu Sans", 10))
             style.configure("CardBody.TLabel", background=WHITE, foreground=TEXT, font=("DejaVu Sans", 10))
             style.configure("CardMuted.TLabel", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9))
-            style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 18, "bold"))
-            style.configure("NavBody.TLabel", background=NAVY, foreground="#CBD5E1", font=("DejaVu Sans", 10))
-            style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(12, 7), font=("DejaVu Sans", 10, "bold"))
-            style.map("Action.TButton", background=[("active", NAVY_SOFT)])
-            style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(10, 6), font=("DejaVu Sans", 9, "bold"))
-            style.map("Secondary.TButton", background=[("active", "#CBD5E1")])
-            style.configure("Nav.TButton", background=NAVY, foreground=WHITE, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
-            style.map("Nav.TButton", background=[("active", NAVY_SOFT)])
+            style.configure("NavTitle.TLabel", background=NAVY, foreground=WHITE, font=("DejaVu Sans", 17, "bold"))
+            style.configure("NavBody.TLabel", background=NAVY, foreground="#94A3B8", font=("DejaVu Sans", 9))
+            style.configure("Action.TButton", background=TEAL, foreground=WHITE, padding=(16, 8), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Action.TButton", background=[("active", NAVY_SOFT), ("disabled", "#94A3B8")])
+            style.configure("Secondary.TButton", background="#E2E8F0", foreground=TEXT, padding=(12, 7), font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Secondary.TButton", background=[("active", "#CBD5E1"), ("disabled", "#F1F5F9")])
+            style.configure("Nav.TButton", background=NAVY, foreground="#94A3B8", padding=(14, 9), anchor="w", font=("DejaVu Sans", 9, "bold"), relief="flat", borderwidth=0)
+            style.map("Nav.TButton", background=[("active", NAVY_SOFT), ("focus", NAVY_SOFT)], foreground=[("active", WHITE), ("focus", WHITE)])
             style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
             style.configure("Mode.TLabel", background=LIGHT_BG, foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("DemoMode.TLabel", background="#FEF3C7", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeGreen.TLabel", background="#DCFCE7", foreground=GREEN, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeRed.TLabel", background="#FEE2E2", foreground=RED, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
             style.configure("BadgeAmber.TLabel", background="#FEF3C7", foreground=AMBER, padding=(8, 4), font=("DejaVu Sans", 9, "bold"))
+
+            # Modern Notebook Pill Tabs (eliminating boxy tab bars)
+            style.configure("TNotebook", background=SURFACE, borderwidth=0, tabmargins=(0, 4, 0, 0))
+            style.configure("TNotebook.Tab", background="#E2E8F0", foreground="#475569", padding=(18, 8), font=("DejaVu Sans", 9, "bold"), borderwidth=0, relief="flat")
+            style.map("TNotebook.Tab", background=[("selected", WHITE), ("active", "#CBD5E1")], foreground=[("selected", TEAL), ("active", NAVY)])
 
     def _build_shell(self) -> None:
         root = ttk.Frame(self, style="App.TFrame")
@@ -3091,19 +3096,30 @@ class HimVoteLinuxApp(tk.Tk):
         navigation.pack(side="left", fill="y")
         navigation.pack_propagate(False)
 
-        ttk.Label(navigation, text="HimVote", style="NavTitle.TLabel").pack(anchor="w", padx=22, pady=(28, 4))
-        ttk.Label(navigation, text="Linux desktop client", style="NavBody.TLabel").pack(anchor="w", padx=22, pady=(0, 24))
+        # Modern Sidebar Brand Badge
+        brand_frame = ttk.Frame(navigation, style="Nav.TFrame")
+        brand_frame.pack(fill="x", padx=16, pady=(22, 16))
 
-        self._nav_button(navigation, "Elections [Ctrl+1]", self._show_elections)
-        self._nav_button(navigation, "Receipt status [Ctrl+2]", self._show_receipt)
-        self._nav_button(navigation, "Offline audit [Ctrl+3]", self._show_audit)
-        self._nav_button(navigation, "How it works [Ctrl+4]", self._show_how_it_works)
-        self._nav_button(navigation, "Security limits [Ctrl+5]", self._show_security_limits)
-        self._nav_button(navigation, "Session & Identity [Ctrl+6]", self._show_login)
-        self._nav_button(navigation, "System Settings [Ctrl+7]", self._show_settings)
-        self._nav_button(navigation, "Audit Trail Logs [Ctrl+8]", self._show_admin)
-        self._nav_button(navigation, "High Contrast [Ctrl+H]", self.toggle_high_contrast)
-        self._nav_button(navigation, "Shortcuts [Ctrl+K]", self.show_shortcuts_modal)
+        logo_row = ttk.Frame(brand_frame, style="Nav.TFrame")
+        logo_row.pack(anchor="w")
+        ttk.Label(logo_row, text="✦ HIMVOTE", style="NavTitle.TLabel").pack(side="left")
+
+        ttk.Label(brand_frame, text="ZERO-KNOWLEDGE CLIENT v2.0", style="NavBody.TLabel", font=("DejaVu Sans", 7, "bold")).pack(anchor="w", pady=(2, 0))
+
+        # Thin divider
+        div = tk.Frame(navigation, height=1, bg=NAVY_SOFT, bd=0)
+        div.pack(fill="x", padx=16, pady=(0, 14))
+
+        self._nav_button(navigation, "🏛  Elections Portal [Ctrl+1]", self._show_elections)
+        self._nav_button(navigation, "🛡  Receipt Verifier [Ctrl+2]", self._show_receipt)
+        self._nav_button(navigation, "🔍  Offline Audit [Ctrl+3]", self._show_audit)
+        self._nav_button(navigation, "📐  How It Works [Ctrl+4]", self._show_how_it_works)
+        self._nav_button(navigation, "🔒  Security Limits [Ctrl+5]", self._show_security_limits)
+        self._nav_button(navigation, "👤  Session & SSO [Ctrl+6]", self._show_login)
+        self._nav_button(navigation, "⚙  System Settings [Ctrl+7]", self._show_settings)
+        self._nav_button(navigation, "📜  Audit Trail Logs [Ctrl+8]", self._show_admin)
+        self._nav_button(navigation, "⚡  High Contrast [Ctrl+H]", self.toggle_high_contrast)
+        self._nav_button(navigation, "⌨  Shortcuts Guide [Ctrl+K]", self.show_shortcuts_modal)
 
         ttk.Frame(navigation, style="Nav.TFrame").pack(fill="both", expand=True)
         self.mode_label = ttk.Label(navigation, text="", style="NavBody.TLabel", wraplength=185)
@@ -3269,9 +3285,14 @@ class HimVoteLinuxApp(tk.Tk):
             self._election_card(election, index)
 
     def _election_card(self, election: Election, index: int) -> None:
-        card = ttk.Frame(self.election_list, style="Card.TFrame", padding=18)
-        card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=6, pady=6)
+        card = ttk.Frame(self.election_list, style="Card.TFrame", padding=(18, 14))
+        card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=8, pady=8)
         card.columnconfigure(0, weight=1)
+
+        # 3px top accent stripe (removing boxy border, adding modern card stripe)
+        stripe_color = GREEN if election.state in {"OPEN", "ACTIVE"} else (TEAL if election.state == "UPCOMING" else MUTED)
+        stripe = tk.Frame(card, height=3, bg=stripe_color, bd=0)
+        stripe.pack(fill="x", pady=(0, 10))
 
         top = ttk.Frame(card, style="Card.TFrame")
         top.pack(fill="x")
@@ -4276,17 +4297,19 @@ class HimVoteLinuxApp(tk.Tk):
         count_str = f"{tally.vote_count} votes ({tally.percentage:.1f}%)"
         ttk.Label(header, text=count_str, font=("DejaVu Sans", 11, "bold"), foreground=NAVY, background=WHITE).pack(side="right")
 
-        # Proportional bar canvas
-        canvas = tk.Canvas(row, height=18, bg=PROGRESS_BG, highlightthickness=0)
-        canvas.pack(fill="x", pady=(2, 0))
+        # Proportional bar canvas with modern rounded pill track
+        canvas = tk.Canvas(row, height=14, bg=PROGRESS_BG, highlightthickness=0)
+        canvas.pack(fill="x", pady=(4, 0))
 
         def draw_bar(event: tk.Event[tk.Canvas] | None = None) -> None:
             width = canvas.winfo_width()
-            fill_width = max(2, int(width * (tally.percentage / 100.0))) if tally.vote_count > 0 else 0
             canvas.delete("all")
+            # Pill track background
+            canvas.create_rectangle(0, 0, width, 14, fill="#E2E8F0", outline="")
+            fill_width = max(4, int(width * (tally.percentage / 100.0))) if tally.vote_count > 0 else 0
             fill_color = GREEN if tally.is_winner else TEAL
             if fill_width > 0:
-                canvas.create_rectangle(0, 0, fill_width, 18, fill=fill_color, outline="")
+                canvas.create_rectangle(0, 0, fill_width, 14, fill=fill_color, outline="")
 
         canvas.bind("<Configure>", draw_bar)
 
