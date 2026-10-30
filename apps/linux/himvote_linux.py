@@ -4561,6 +4561,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--export-md", default="", help="Export verification audit report as Markdown")
     parser.add_argument("--check-origins", action="store_true", help="Perform network health check on configured service origins")
     parser.add_argument("--view", default="elections", choices=["elections", "receipt", "audit", "how_it_works", "security_limits", "session", "settings", "admin"], help="Initial view to display on launch")
+    parser.add_argument("--web-preview", nargs="?", const=8085, type=int, help="Launch standalone interactive HTML5 web preview server on specified port (default: 8085)")
     parser.add_argument("--version", action="version", version="HimVote Linux 1.0.0")
     return parser.parse_args(argv)
 
@@ -4653,6 +4654,39 @@ def main(argv: list[str] | None = None) -> int:
             status = "OK" if ok else "OFFLINE"
             print(f"  {name:18} {url:26} [{status}] ({ms:.1f}ms - {msg})")
         return 0
+
+    if args.web_preview:
+        port = int(args.web_preview)
+        preview_file = Path(__file__).resolve().parent / "preview.html"
+        if not preview_file.exists():
+            print(f"Error: Preview file not found at {preview_file}", file=sys.stderr)
+            return 1
+        import functools
+        import http.server
+        import socketserver
+        import webbrowser
+
+        class PreviewHandler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *a, **kw):
+                super().__init__(*a, directory=str(preview_file.parent), **kw)
+            def do_GET(self):
+                if self.path in ("/", "/index.html"):
+                    self.path = "/preview.html"
+                return super().do_GET()
+            def log_message(self, format, *a):
+                pass
+
+        print("============================================================")
+        print("HimVote Linux Desktop Client — Interactive Web Preview Server")
+        print(f"Live URL: http://localhost:{port}")
+        print("============================================================")
+        webbrowser.open(f"http://localhost:{port}")
+        with socketserver.TCPServer(("", port), PreviewHandler) as httpd:
+            try:
+                httpd.serve_forever()
+            except KeyboardInterrupt:
+                print("\nWeb preview server stopped.")
+                return 0
 
     if args.headless:
         if not args.archive:
