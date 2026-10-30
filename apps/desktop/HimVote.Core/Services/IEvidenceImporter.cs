@@ -18,7 +18,6 @@ public interface IEvidenceImporter
 
     Task<ExtractionResult> ExtractArchiveAsync(string zipFilePath, string destinationDirectory, CancellationToken cancellationToken = default);
     Task<ExtractionResult> ExtractArchiveAsync(Stream zipStream, string destinationDirectory, CancellationToken cancellationToken = default);
-
     // Convenience method
     Task<bool> ImportEvidenceAsync(string archivePath)
     {

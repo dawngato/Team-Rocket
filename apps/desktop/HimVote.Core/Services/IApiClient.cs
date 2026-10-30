@@ -31,7 +31,6 @@ public interface IApiClient
     Task RequestPublicationAsync(string id, CancellationToken cancellationToken = default);
     Task<ReceiptStatusResponse> GetReceiptStatusAsync(string electionId, string handle, CancellationToken cancellationToken = default);
     Task<PublishedResults> GetPublishedResultsAsync(string electionId, CancellationToken cancellationToken = default);
-
     // Compatibility methods for generic HTTP calls
     Task<string> PostAsync(string path, object body);
     Task<string> GetAsync(string path);

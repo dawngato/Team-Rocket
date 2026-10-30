@@ -18,7 +18,6 @@ public interface IUpdateService
 
     Task<UpdateInfo> CheckForUpdatesAsync(CancellationToken cancellationToken = default);
     Task<string> GetVerifierChecksumAsync(string verifierPath, CancellationToken cancellationToken = default);
-
     Task<bool> HasUpdateAsync() => CheckForUpdatesAsync(CancellationToken.None).ContinueWith(t => t.Result.IsUpdateAvailable);
     Task DownloadUpdateAsync(string version) => Task.CompletedTask;
 }

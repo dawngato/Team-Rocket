@@ -113,7 +113,6 @@ public sealed class TrustPins
 
     [JsonPropertyName("election_id")]
     public string ElectionId { get; set; } = string.Empty;
-
     [JsonPropertyName("manifest_digest")]
     public string ManifestDigest { get; set; } = string.Empty;
 
@@ -131,7 +130,6 @@ public sealed class TrustPins
 
     [JsonPropertyName("witness_keys")]
     public object? WitnessKeys { get; set; }
-
     [JsonPropertyName("contract_address")]
     public string ContractAddress { get; set; } = string.Empty;
 
@@ -177,7 +175,6 @@ public sealed class AuditReport
     [JsonPropertyName("properties")]
     public List<VerificationPropertyItem> Properties { get; set; } = new();
 }
-
 public record AuditReportDto(
     string ElectionId,
     string ManifestDigest,

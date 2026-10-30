@@ -29,7 +29,6 @@ public interface IVerifierRunner
 {
     string ComputeVerifierChecksum(string filePath);
     Task<VerifierExecutionResult> RunVerifierAsync(VerifierExecutionOptions options, CancellationToken cancellationToken = default);
-
     Task<(bool Success, string Output, string Sha256)> RunAsync(string args)
     {
         return Task.FromResult((false, "Not implemented in interface directly", string.Empty));

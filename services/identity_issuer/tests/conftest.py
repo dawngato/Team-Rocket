@@ -8,9 +8,14 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
-from services.identity_issuer.database import Base, get_db
-import services.identity_issuer.models
-from services.identity_issuer.main import app
+try:
+    from services.identity_issuer.database import Base, get_db
+    import services.identity_issuer.models as models
+    from services.identity_issuer.main import app
+except (ImportError, ModuleNotFoundError):
+    from ..database import Base, get_db
+    from .. import models
+    from ..main import app
 
 TEST_DATABASE_URL = "sqlite:///:memory:"
 

@@ -1,10 +1,13 @@
-# HimVote Windows Desktop Client
+# HimVote Desktop Client (Windows & Linux)
 
-HimVote Desktop is the institutional thick client application built using C# and WinUI 3 on .NET 8.
-It targets Windows 10 build 1809 and later as well as Windows 11.
-Packaging is distributed as a signed MSIX package or enterprise store channel without private keys.
+HimVote Desktop is the institutional thick client application supporting both Windows (WinUI 3 on .NET 8) and Linux (Avalonia UI on .NET 8).
 
-## Architecture and Structure
+## Projects and Architecture
+
+* `HimVote.Core`: Shared, platform-agnostic models (`HimVote.Core.Models`), service interfaces (`HimVote.Core.Services`), and MVVM view models (`HimVote.Core.ViewModels`).
+* `HimVote.Windows`: WinUI 3 desktop client targeting Windows 10/11 with DPAPI session protection.
+* `HimVote.Linux`: Cross-platform Avalonia UI desktop client targeting modern Linux distributions with FreeDesktop Secret Service session protection.
+* `HimVote.Windows.Tests`: xUnit unit tests verifying service and viewmodel contracts.
 
 The client adopts the Model View ViewModel architecture utilizing CommunityToolkit.Mvvm for reactive state management.
 

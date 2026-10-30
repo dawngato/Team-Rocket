@@ -9,7 +9,6 @@ public interface ITrustPinStore
     Task SavePinsAsync(TrustPins pins, CancellationToken cancellationToken = default);
     Task<TrustPins?> LoadSavedPinsAsync(CancellationToken cancellationToken = default);
     void Clear();
-
     // Key value compatibility methods
     void SetPin(string name, string value) { }
     string? GetPin(string name) => null;
