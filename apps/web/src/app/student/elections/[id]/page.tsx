@@ -137,6 +137,9 @@ export default function ElectionDetailPage() {
                               <img
                                 src={rich.photo_url}
                                 alt={candidate.name}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
                                 className="w-full h-full object-cover object-top"
                               />
                             ) : rich?.avatar_svg ? (

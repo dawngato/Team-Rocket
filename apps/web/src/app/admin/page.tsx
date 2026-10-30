@@ -213,7 +213,7 @@ export default function AdminOverviewPage() {
               </div>
               <div>
                 <span className="text-[11px] text-slate-400 block">Poll Deadline:</span>
-                <span className="font-mono text-amber-300 font-extrabold text-xl">
+                <span suppressHydrationWarning className="font-mono text-amber-300 font-extrabold text-xl">
                   {new Date(electionConfig.endTimeIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>

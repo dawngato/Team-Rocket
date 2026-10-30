@@ -30,7 +30,7 @@ import type { Election } from "../lib/types";
 function formatUtc(value: string): string {
   const date = new Date(value);
   if (!value || Number.isNaN(date.getTime())) return "Not scheduled";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeZoneName: "short" }).format(date);
+  return new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeZone: "UTC" }).format(date);
 }
 
 export default function HomePage() {

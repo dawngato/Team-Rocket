@@ -25,9 +25,6 @@ android {
     }
     buildTypes {
         release {
-            if (boothBaseUrl.isBlank() || returnUrl.isBlank() || returnHost.isBlank()) {
-                throw GradleException("Configure himvote.boothBaseUrl, himvote.returnUrl, and himvote.returnHost for release builds")
-            }
             buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             isMinifyEnabled = false
@@ -37,6 +34,13 @@ android {
             buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             applicationIdSuffix = ".debug"
+        }
+    }
+    gradle.taskGraph.whenReady {
+        if (allTasks.any { it.name.contains("Release", ignoreCase = true) }) {
+            if (boothBaseUrl.isBlank() || returnUrl.isBlank() || returnHost.isBlank()) {
+                throw GradleException("Configure himvote.boothBaseUrl, himvote.returnUrl, and himvote.returnHost for release builds")
+            }
         }
     }
     defaultConfig.manifestPlaceholders["himvoteReturnHost"] = returnHost

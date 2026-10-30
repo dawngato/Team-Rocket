@@ -249,6 +249,9 @@ export default function AdminCandidatesPage() {
                     <img
                       src={candidate.photo_url}
                       alt={candidate.name}
+                      onError={(e) => {
+                        e.currentTarget.style.display = "none";
+                      }}
                       className="w-full h-full object-cover object-top hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
