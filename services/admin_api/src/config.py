@@ -54,6 +54,11 @@ class Settings(BaseModel):
     ).rstrip("/")
     identity_request_timeout_seconds: float = float(os.getenv("IDENTITY_REQUEST_TIMEOUT_SECONDS", "3"))
     admin_schema_version: str = os.getenv("ADMIN_SCHEMA_VERSION", "1")
+    require_established_engine_tally: bool = os.getenv(
+        "REQUIRE_ESTABLISHED_ENGINE_TALLY",
+        "true" if os.getenv("ENVIRONMENT", os.getenv("APP_ENV", "development")) == "production" else "false",
+    ).lower() in {"true", "1", "yes"}
+    established_engine_tally_verified: bool = os.getenv("ESTABLISHED_ENGINE_TALLY_VERIFIED", "false").lower() in {"true", "1", "yes"}
 
     def model_post_init(self, __context) -> None:
         if self.environment == "production" and not self.casting_db_url:
