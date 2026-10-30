@@ -21,7 +21,7 @@ The local test suites exercise the five adversarial integrity mutations, but thi
 | Casting and duplicate prevention | **TESTED** | Monotonic zero-indexed leaf assignment, PostgreSQL ACID row lock (`SELECT FOR UPDATE`), and nullifier uniqueness enforced. 100 concurrent submissions in `tests/security/Q7-01_duplicate_cast_test.py` produce exactly 1 accepted leaf and safe identical replays. |
 | Canonical evidence and Merkle/checkpoint code | **TESTED** | RFC 8785 canonical JCS leaves, RFC 9162 Merkle tree hash chaining, and independent witness checkpoints verified across Python and TypeScript test vectors. |
 | Standalone verifier CLI | **TESTED** | The isolated verifier suite passed 12 tests in the latest unified run. It audits exported evidence against external out-of-band trust pins with zero backend connection; native engine tally remains not checked. |
-| Web application Next.js | **TESTED** | `apps/web` passed 81 Vitest tests across 13 files, `npm run typecheck`, and the Chromium smoke flow. The public shell now includes a real CSS perspective ballot-box illustration with a reduced-motion check, and the role menu is explicitly navigation-only. Browser-side fixture verifier and fake account verification paths were removed or made fail-closed. |
+| Web application Next.js | **TESTED** | `apps/web` passed 84 Vitest tests across 14 files, `npm run typecheck`, a clean production build, and the production Chromium smoke flow. The public shell now includes a real CSS perspective ballot-box illustration with a reduced-motion check, and the role menu is explicitly navigation-only. Browser-side fixture verifier and fake account verification paths were removed or made fail-closed. |
 | Android Native Client | **TESTED_LIMITED** | `./gradlew testDebugUnitTest --no-daemon --max-workers=1` completed successfully with 59 unit tests and 0 failures. No emulator/device UI or release APK validation is claimed. |
 | Desktop Avalonia Client (.NET 8) | **TESTED** | `/home/Kali/.dotnet/dotnet test HimVote.Windows.sln` passed all **101 tests** across `HimVote.Core`, `HimVote.Linux`, and `HimVote.Windows.Tests`. |
 | Auxiliary Python Linux GUI | **TESTED** | `pytest apps/linux/tests` passed all **84 tests**. Standalone offline Merkle tree visualizer and audit explorer verified. |
@@ -60,8 +60,8 @@ established election engine.
 4. **Web Client Vitest and Typecheck**:
    ```bash
    cd apps/web && npm run typecheck && npm test
-   # Result: 81 tests passed across 13 files; typecheck passed
-   NEXT_PRIVATE_BUILD_WORKER=1 npm run build
+   # Result: 84 tests passed across 14 files; typecheck passed
+   ./node_modules/.bin/next build
    # Result: clean production build passed; 48 application routes compiled
    python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --timeout 60 --server "npm run start" --port 3000 -- python -u tests/browser_smoke.py
    # Result: exit 0; browser smoke passed

@@ -20,6 +20,7 @@ it must have an executable implementation and an observed test result.
 | --- | --- | --- |
 | Public 3D presentation and role-shell honesty | `apps/web/src/components/BallotBoxHero.tsx`, `apps/web/src/components/Navbar.tsx`, `apps/web/tests/browser_smoke.py` | `TESTED_PASS`; the public homepage now renders a real CSS perspective ballot-box illustration with a reduced-motion fallback and explicit visual-only copy. The role menu is explicitly navigation-only and cannot grant access. This remains presentation, not cryptographic evidence. |
 | Teacher scoped roster view | `apps/web/src/app/teacher/classes/page.tsx`, `apps/web/src/lib/teacher_rosters.ts`, `services/identity_issuer/routers/roster.py` | `TESTED_PASS`; the page now consumes the authenticated identity endpoint, groups only server-returned department records, and shows loading, empty, retry, and search states. It no longer renders fabricated course sections or fixture students. Backend scope tests remain the authorization boundary. |
+| Election officer dashboard and portfolio | `apps/web/src/app/officer/page.tsx`, `apps/web/src/app/officer/elections/page.tsx`, `apps/web/src/lib/officer_elections.ts`, `apps/web/tests/officer_elections.test.ts` | `IMPLEMENTED_UNTESTED`; both screens now read the authenticated election service, derive counts and filters from server-returned records, and fail closed with loading, retry, empty, and missing-service states. A configured-service success flow remains untested on this host. |
 | Admin teacher directory | `apps/web/src/app/admin/teachers`, `apps/web/src/lib/api_client.ts` | `PARTIAL`; the identity API has no teacher-directory contract, so the UI reports unavailable data instead of using fixtures. |
 | Scoped teacher and super-admin administration | `apps/web/src/app/teacher`, `apps/web/src/app/super-admin` | `PARTIAL`; several pages remain presentation shells until corresponding scoped API contracts are implemented. |
 | Auditor verification UI | `apps/web/src/app/auditor/verify`, `apps/web/src/app/auditor/evidence` | `PARTIAL`; the UI retrieves authoritative metadata and hands off to the offline CLI. It intentionally does not run a browser-side substitute verifier. |
@@ -43,7 +44,7 @@ it must have an executable implementation and an observed test result.
 ## Evidence currently available
 
 - Python unified suites: 302 passed, 0 failed, 0 skipped in the latest run.
-- Web Vitest suite: 81 passed; Next production build, typecheck, and browser
+- Web Vitest suite: 84 passed; Next production build, typecheck, and browser
   smoke test pass on this host.
 - Desktop .NET suite: 101 passed; Linux client tests: 84 passed.
 - Android unit tests: 59 passed with `testDebugUnitTest`; device/emulator UI and

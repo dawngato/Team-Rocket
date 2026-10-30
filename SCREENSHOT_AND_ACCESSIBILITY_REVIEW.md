@@ -4,8 +4,11 @@
 
 The web client has semantic buttons/links, skip navigation, accessible dialogs,
 tabs, status labels, reduced-motion CSS, explicit icon labels/hidden decorative
-icons, and responsive tokenized surfaces. `npm test`, web typecheck, and the
-production build pass on this host. The
+icons, and responsive tokenized surfaces. 84 Vitest tests across 14 files,
+web typecheck, the production build, and the production Chromium smoke pass on
+this host. The public web shell also has a real CSS perspective ballot-box
+illustration with an explicit visual-only disclaimer; it is not cryptographic
+evidence. The
 Android client contains Compose accessibility helpers, semantic status banners,
 and touch-target-oriented components. The iOS client now has a contained native
 SwiftUI `BallotBoxHero` with capped `rotation3DEffect` tilt, a reduced-motion

@@ -4,7 +4,8 @@
 
 | Suite | Command | Result |
 |---|---|---|
-| Web | `npm --prefix apps/web test -- --run` | 78 passed |
+| Web | `npm --prefix apps/web test -- --run` | 84 passed across 14 files |
+| Web production smoke | `cd apps/web && python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --server "./node_modules/.bin/next start" --port 3000 -- python -u tests/browser_smoke.py` | exit 0; production server browser smoke passed |
 | Web types | `npm --prefix apps/web run typecheck` | exit 0 |
 | iOS unit and integration source | `swift test` from `apps/ios` | BLOCKED before compilation: `swift` is not installed |
 | Casting/receipt/security | `python3 -m pytest services/casting/tests/test_receipt.py services/casting/tests/test_security.py services/casting/tests/test_idempotency_and_duplicates.py -q` | 14 passed |

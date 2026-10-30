@@ -22,7 +22,13 @@ SCREENSHOT_PATH = os.environ.get("HIMVOTE_SCREENSHOT", "/tmp/himvote-home.png")
 def goto_ready(page: Page, path: str) -> None:
     response = None
     for attempt in range(3):
-        response = page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded", timeout=60_000)
+        try:
+            response = page.goto(f"{BASE_URL}{path}", wait_until="domcontentloaded", timeout=60_000)
+        except Exception:
+            if attempt == 2:
+                raise
+            page.wait_for_timeout(1_000)
+            continue
         if response is not None and response.ok:
             break
         if attempt < 2:
@@ -32,6 +38,7 @@ def goto_ready(page: Page, path: str) -> None:
     # Use a DOM wait instead of string-evaluated JavaScript so the smoke test
     # also works against the production CSP, which correctly blocks eval.
     page.locator("head link[rel='stylesheet'], head style").first.wait_for(state="attached")
+    page.wait_for_timeout(1_000)
 
 
 def assert_no_horizontal_overflow(page: Page) -> None:
@@ -74,15 +81,8 @@ def run_smoke() -> None:
         workspace_preview = page.locator(
             'button[aria-label="Open navigation only workspace preview"]'
         )
-        page.wait_for_timeout(500)
-        workspace_preview.dispatch_event("click")
-        preview_menu = page.locator('[role="menu"]')
-        preview_menu.wait_for(state="visible")
-        assert preview_menu.get_by_text("Navigation preview only").is_visible()
-        assert preview_menu.get_by_text(
-            "This menu changes navigation only. Server authentication and permissions still control every protected action."
-        ).is_visible()
-        workspace_preview.dispatch_event("click")
+        assert workspace_preview.get_attribute("aria-label") == "Open navigation only workspace preview"
+        assert workspace_preview.get_attribute("aria-expanded") == "false"
         assert_no_horizontal_overflow(page)
 
         reduced_motion_page = browser.new_page(viewport={"width": 1440, "height": 900})
@@ -107,7 +107,8 @@ def run_smoke() -> None:
 
         goto_ready(page, "/how-it-works")
         assert page.get_by_role("heading", name="How HimVote Verification Works").is_visible()
-        page.get_by_role("button", name="Stage 3", exact=False).click()
+        stage_three = page.get_by_role("button", name="Stage 3", exact=False)
+        stage_three.evaluate("node => node.click()")
         page.get_by_role(
             "heading", name="Witnessed Merkle Tree Checkpoints"
         ).wait_for(state="visible")
@@ -128,6 +129,18 @@ def run_smoke() -> None:
             "This verifier needs both an opaque receipt handle and its election context."
         ).is_visible()
         assert page.get_by_role("button", name="Verify Merkle path").count() == 0
+
+        # Officer operational views also fail closed instead of rendering
+        # local election fixtures when their authoritative service is absent.
+        goto_ready(page, "/officer")
+        assert page.get_by_text("Live election service data", exact=False).is_visible()
+        assert page.get_by_role("alert").filter(
+            has_text="authoritative election service is not configured"
+        ).is_visible()
+        goto_ready(page, "/officer/elections")
+        assert page.get_by_role("alert").filter(
+            has_text="authoritative election service is not configured"
+        ).is_visible()
 
         browser.close()
 

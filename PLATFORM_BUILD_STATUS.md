@@ -2,7 +2,7 @@
 
 | Platform | Source | Evidence on 2026-10-31 | Status |
 |---|---|---|---|
-| Web | `apps/web` | Vitest 78 passed; `npm run typecheck` exit 0 | TESTED_PASS locally |
+| Web | `apps/web` | Vitest 84 passed across 14 files; `npm run typecheck`, production build, and production Chromium smoke exit 0 | TESTED_PASS locally |
 | Android | `apps/android` | `testDebugUnitTest --no-daemon --max-workers=1` completed successfully with 59 unit tests and 0 failures | TESTED_LIMITED; device and release APK validation not run |
 | iOS | `apps/ios` | `swift test` could not start because `swift` is not installed; Xcode/macOS unavailable | BLOCKED; XCTest not claimed |
 | Windows Avalonia | `apps/desktop/HimVote.Windows` | existing .NET test evidence in repository status docs; re-run required for this iteration | LIMITED |
