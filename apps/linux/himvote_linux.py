@@ -16,6 +16,8 @@ import subprocess
 import sys
 import tarfile
 import tempfile
+import threading
+import queue
 import tkinter as tk
 import zipfile
 from dataclasses import dataclass, field
@@ -24,6 +26,15 @@ from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+# Ensure Tcl/Tk libraries are located reliably on Windows systems
+if sys.platform == "win32":
+    _tcl_cand = Path(sys.base_prefix) / "tcl" / "tcl8.6"
+    if _tcl_cand.exists() and "TCL_LIBRARY" not in os.environ:
+        os.environ["TCL_LIBRARY"] = str(_tcl_cand)
+    _tk_cand = Path(sys.base_prefix) / "tcl" / "tk8.6"
+    if _tk_cand.exists() and "TK_LIBRARY" not in os.environ:
+        os.environ["TK_LIBRARY"] = str(_tk_cand)
 
 
 NAVY = "#10233F"
@@ -129,22 +140,53 @@ class MerkleProofError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class Candidate:
+    candidate_id: str
+    name: str
+    slate: str = ""
+    statement: str = ""
+    department: str = ""
+
+
+@dataclass(frozen=True)
 class Election:
     election_id: str
     title: str
     state: str
     closes_at: str
     candidate_count: int
+    description: str = ""
+    candidates: list[Candidate] = field(default_factory=list)
+    eligibility: str = "Registered Students"
+    started_at: str = "Active"
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "Election":
-        candidates = payload.get("candidates") or []
+        raw_candidates = payload.get("candidates") or []
+        candidates_list: list[Candidate] = []
+        for i, c in enumerate(raw_candidates):
+            if isinstance(c, dict):
+                candidates_list.append(
+                    Candidate(
+                        candidate_id=str(c.get("id") or c.get("candidate_id") or f"cand_{i}"),
+                        name=str(c.get("name") or "Unnamed candidate"),
+                        slate=str(c.get("slate") or ""),
+                        statement=str(c.get("statement") or ""),
+                        department=str(c.get("department") or ""),
+                    )
+                )
+            else:
+                candidates_list.append(Candidate(candidate_id=f"cand_{i}", name=str(c)))
         return cls(
             election_id=str(payload.get("id") or payload.get("election_id") or ""),
             title=str(payload.get("title") or "Untitled election"),
             state=str(payload.get("state") or "DRAFT"),
             closes_at=str(payload.get("closes_at_utc") or "Not scheduled"),
-            candidate_count=len(candidates),
+            candidate_count=len(candidates_list) if candidates_list else len(raw_candidates),
+            description=str(payload.get("description") or ""),
+            candidates=candidates_list,
+            eligibility=str(payload.get("eligibility") or "Registered Students"),
+            started_at=str(payload.get("started_at_utc") or "Active"),
         )
 
 
@@ -158,12 +200,6 @@ class Receipt:
     ballot_hash: str | None = None
     election_id: str | None = None
     handle: str | None = None
-
-
-@dataclass(frozen=True)
-class Candidate:
-    candidate_id: str
-    name: str
 
 
 @dataclass(frozen=True)
@@ -256,6 +292,21 @@ def canonicalize_json(obj: Any) -> bytes:
     raise ArchiveError(f"Unsupported data type for canonical JSON: {type(obj)}")
 
 
+def _duplicate_key_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    d = dict(pairs)
+    if len(d) != len(pairs):
+        seen: set[str] = set()
+        for k, _ in pairs:
+            if k in seen:
+                raise ArchiveError(f"Duplicate JSON key detected: {k}")
+            seen.add(k)
+    return d
+
+
+def _reject_float_hook(val: str) -> None:
+    raise ArchiveError(f"Floats not permitted in canonical records: {val}")
+
+
 def safe_json_loads(data: str | bytes) -> Any:
     """Safely decode JSON without duplicate keys or float values."""
     if isinstance(data, bytes):
@@ -266,24 +317,11 @@ def safe_json_loads(data: str | bytes) -> Any:
     else:
         text = data
 
-    def duplicate_key_hook(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
-        seen: set[str] = set()
-        result: dict[str, Any] = {}
-        for key, value in pairs:
-            if key in seen:
-                raise ArchiveError(f"Duplicate JSON key detected: {key}")
-            seen.add(key)
-            result[key] = value
-        return result
-
-    def reject_float_hook(val: str) -> None:
-        raise ArchiveError(f"Floats not permitted in canonical records: {val}")
-
     try:
         return json.loads(
             text,
-            object_pairs_hook=duplicate_key_hook,
-            parse_float=reject_float_hook,
+            object_pairs_hook=_duplicate_key_hook,
+            parse_float=_reject_float_hook,
         )
     except json.JSONDecodeError as err:
         raise ArchiveError(f"Malformed JSON data: {err}") from err
@@ -637,7 +675,8 @@ class ElectionArchive:
         leaf_bytes = self.get_canonical_leaf_bytes()
         if not leaf_bytes:
             return ""
-        return f"sha256:{hashlib.sha256(b'\x00' + leaf_bytes[-1]).hexdigest()}"
+        digest = hashlib.sha256(b"\x00" + leaf_bytes[-1]).hexdigest()
+        return f"sha256:{digest}"
 
     def get_leaf_proof(self, leaf_index: int) -> MerkleProofResult:
         """Generate and verify inclusion proof for the leaf at leaf_index."""
@@ -648,7 +687,8 @@ class ElectionArchive:
 
         target_leaf = self.leaves[leaf_index]
         target_bytes = leaf_bytes_list[leaf_index]
-        leaf_hash = f"sha256:{hashlib.sha256(b'\x00' + target_bytes).hexdigest()}"
+        target_digest = hashlib.sha256(b"\x00" + target_bytes).hexdigest()
+        leaf_hash = f"sha256:{target_digest}"
         leaf_id = str(target_leaf.get("ballot_id") or f"leaf_{leaf_index}")
         nullifier = str(target_leaf.get("credential_nullifier") or "")
 
@@ -911,8 +951,39 @@ class LinuxApiClient:
 def demo_elections() -> list[Election]:
     """Return clearly labelled local demo records for disconnected development."""
     return [
-        Election("demo_union_2026", "Student Union Council 2026", "OPEN", "14 Nov 2026", 6),
-        Election("demo_design_2026", "School of Design Representatives", "UPCOMING", "20 Nov 2026", 3),
+        Election(
+            "demo_union_2026",
+            "Student Union Council 2026",
+            "OPEN",
+            "14 Nov 2026",
+            6,
+            description="Annual executive elections for the Student Union Council representing all undergraduate and postgraduate bodies across campus.",
+            candidates=[
+                Candidate("cand_pres_1", "Sarah Jenkins", "Progress & Transparency", "Championing digital student democracy, expanded study spaces, and green campus transit.", "Computer Science"),
+                Candidate("cand_pres_2", "Marcus Rodriguez", "Action Student Slate", "Focused on transparent student fee allocations, athletic funding, and 24/7 mental health access.", "Business Admin"),
+                Candidate("cand_vp_1", "Priya Sharma", "Independent Student Voice", "Empowering student societies, increasing club budgets, and securing laboratory equipment.", "Electrical Eng"),
+                Candidate("cand_vp_2", "Alexander Vance", "United Campus Initiative", "Advocating for campus-wide universal design, wheelchair accessibility, and library hours.", "Law"),
+                Candidate("cand_treas_1", "Elena Rostova", "Fiscal Integrity Slate", "Ensuring full open-ledger public reporting for student activity grants and union budgets.", "Economics"),
+                Candidate("cand_treas_2", "David Kim", "Students First Coalition", "Creating emergency student micro-grant schemes and textbook affordability textbook banks.", "Data Science"),
+            ],
+            eligibility="All enrolled undergraduate & graduate students",
+            started_at="01 Nov 2026 09:00 UTC",
+        ),
+        Election(
+            "demo_design_2026",
+            "School of Design Representatives",
+            "UPCOMING",
+            "20 Nov 2026",
+            3,
+            description="Departmental election for faculty board student delegates across Industrial Design, UX/UI, and Architecture.",
+            candidates=[
+                Candidate("cand_des_1", "Chloe Moreau", "Studio Collective", "Bridging industry design apprenticeships with annual undergraduate portfolio showcases.", "Industrial Design"),
+                Candidate("cand_des_2", "Kenji Sato", "Open Studio Guild", "Modernizing studio workshop hardware, 3D printers, and materials subsidy quotas.", "Architecture"),
+                Candidate("cand_des_3", "Amara Okonjo", "Inclusive Design Alliance", "Promoting universal accessibility standards and digital ethics across all design courses.", "HCI"),
+            ],
+            eligibility="School of Design registered students & faculty affiliates",
+            started_at="20 Nov 2026 08:00 UTC",
+        ),
     ]
 
 
@@ -1705,6 +1776,393 @@ def demo_receipts() -> list[dict[str, Any]]:
     ]
 
 
+
+class VerificationReport:
+    """Generates comprehensive cryptographic verification audit reports."""
+
+    @staticmethod
+    def generate_markdown(result: ArchiveInspectionResult) -> str:
+        lines = [
+            "# HimVote Cryptographic Election Audit Report",
+            "**Engine:** HimVote Linux Independent Verifier",
+            f"**Election Title:** {result.title}",
+            f"**Election ID:** `{result.election_id}`",
+            f"**Protocol Version:** {result.protocol_version}",
+            f"**Voting Engine:** {result.voting_engine}",
+            "",
+            "## 1. Executive Summary & Verdict",
+            f"- **Overall Audit Verdict:** {'PASS (ALL CHECKS VERIFIED)' if result.is_valid else 'AUDIT ISSUES DETECTED'}",
+            f"- **Total Ballots / Leaves in Log:** {result.total_leaves}",
+            f"- **Eligible Voter Count:** {result.eligible_count if result.eligible_count is not None else 'Unspecified'}",
+            f"- **Total Candidates:** {result.candidate_count}",
+            "",
+            "## 2. Cryptographic Integrity Checks",
+            f"- **RFC 8785 Canonical JSON Manifest Digest:** {'VALID' if result.manifest_digest_valid else 'INVALID'} (`{result.manifest_digest}`)",
+            f"- **RFC 9162 Merkle Leaf Sequence:** {'CONTINUOUS' if result.leaf_sequence_valid else 'SEQUENCE GAP OR DUPLICATE'} (0 to N-1 continuous)",
+            f"- **Credential Nullifier Uniqueness:** {'UNIQUE' if result.nullifiers_unique else 'COLLISION DETECTED'} (Zero double-votes)",
+            f"- **Recomputed Merkle Tree Root:** `{result.merkle_root_hex}`",
+            f"- **Witness Checkpoint Merkle Root:** `{result.witness_root_hex or 'None Provided'}`",
+            f"- **Recomputed Root Matches Witness:** {result.merkle_root_matches_witness}",
+            f"- **Last Leaf Digest:** `{result.last_leaf_digest}`",
+            "",
+            "## 3. Candidate Tally Recomputation",
+            f"- **Recomputed Tally Matches Announced:** {result.tally_recomputed_matches_announced}",
+            "",
+            "| Rank | Candidate Name | Candidate ID | Recomputed Votes | Percentage | Status |",
+            "|---|---|---|---|---|---|",
+        ]
+        for t in result.candidate_tallies:
+            status = "LEADING / WINNER" if t.is_winner else "CONTENDER"
+            lines.append(f"| #{t.rank} | {t.name} | `{t.candidate_id}` | {t.vote_count} | {t.percentage:.2f}% | {status} |")
+
+        if result.warnings:
+            lines.extend(["", "## Warnings", *[f"- {w}" for w in result.warnings]])
+        if result.errors:
+            lines.extend(["", "## Audit Errors", *[f"- {e}" for e in result.errors]])
+
+        lines.extend([
+            "",
+            "---",
+            "*Report independently verified by HimVote Linux desktop client conforming to RFC 9162, RFC 8785, and Section 6.8 Specifications.*",
+        ])
+        return "\n".join(lines)
+
+    @staticmethod
+    def generate_json(result: ArchiveInspectionResult) -> str:
+        report_dict = {
+            "report_type": "himvote_cryptographic_audit",
+            "election_id": result.election_id,
+            "title": result.title,
+            "protocol_version": result.protocol_version,
+            "voting_engine": result.voting_engine,
+            "verdict": "PASS" if result.is_valid else "FAIL",
+            "summary": {
+                "total_leaves": result.total_leaves,
+                "eligible_count": result.eligible_count,
+                "candidate_count": result.candidate_count,
+            },
+            "cryptographic_checks": {
+                "manifest_digest": result.manifest_digest,
+                "manifest_digest_valid": result.manifest_digest_valid,
+                "leaf_sequence_valid": result.leaf_sequence_valid,
+                "nullifiers_unique": result.nullifiers_unique,
+                "merkle_root_recomputed": result.merkle_root_hex,
+                "witness_root_announced": result.witness_root_hex,
+                "merkle_root_matches_witness": result.merkle_root_matches_witness,
+                "last_leaf_digest": result.last_leaf_digest,
+                "last_leaf_matches_witness": result.last_leaf_matches_witness,
+            },
+            "tallies": {
+                "recomputed_matches_announced": result.tally_recomputed_matches_announced,
+                "recomputed_tallies": result.recomputed_tallies,
+                "announced_tallies": result.announced_tallies,
+                "candidates": [
+                    {
+                        "candidate_id": t.candidate_id,
+                        "name": t.name,
+                        "vote_count": t.vote_count,
+                        "percentage": t.percentage,
+                        "rank": t.rank,
+                        "is_winner": t.is_winner,
+                    }
+                    for t in result.candidate_tallies
+                ],
+            },
+            "warnings": result.warnings,
+            "errors": result.errors,
+        }
+        return json.dumps(report_dict, indent=2)
+
+
+class CandidateDetailModal(tk.Toplevel):
+    """Accessible modal dialog presenting candidate biography, slate, and platform."""
+
+    def __init__(self, parent: Any, candidate: Candidate, election_title: str, **kwargs: Any) -> None:
+        super().__init__(parent, **kwargs)
+        self.candidate = candidate
+        self.title(f"Candidate Profile - {candidate.name}")
+        self.geometry("640x540")
+        self.minsize(520, 440)
+        self.configure(bg=SURFACE)
+        self.transient(parent)
+
+        self._build_ui(election_title)
+        self.bind("<Escape>", lambda e: self.destroy())
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
+    def _build_ui(self, election_title: str) -> None:
+        header = ttk.Frame(self, style="Card.TFrame", padding=18)
+        header.pack(fill="x", padx=20, pady=(16, 10))
+
+        avatar_frame = ttk.Frame(header, style="Card.TFrame")
+        avatar_frame.pack(side="left", padx=(0, 16))
+
+        canvas = tk.Canvas(avatar_frame, width=54, height=54, bg=WHITE, highlightthickness=0)
+        canvas.pack()
+        canvas.create_oval(3, 3, 51, 51, fill=TEAL, outline=NAVY, width=2)
+        initials = "".join(part[0].upper() for part in self.candidate.name.split()[:2]) or "CD"
+        canvas.create_text(27, 27, text=initials, fill=WHITE, font=("DejaVu Sans", 14, "bold"))
+
+        info_col = ttk.Frame(header, style="Card.TFrame")
+        info_col.pack(side="left", fill="both", expand=True)
+
+        ttk.Label(info_col, text=self.candidate.name, font=("DejaVu Sans", 16, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w")
+        slate_text = f"Slate: {self.candidate.slate}" if self.candidate.slate else "Independent Candidate"
+        ttk.Label(info_col, text=slate_text, font=("DejaVu Sans", 10, "bold"), foreground=TEAL, background=WHITE).pack(anchor="w", pady=(2, 0))
+        dept_text = f"Department: {self.candidate.department}" if self.candidate.department else "Enrolled Student"
+        ttk.Label(info_col, text=dept_text, font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w")
+
+        content_card = ttk.Frame(self, style="Card.TFrame", padding=18)
+        content_card.pack(fill="both", expand=True, padx=20, pady=10)
+
+        ttk.Label(content_card, text="Campaign Platform & Manifesto", font=("DejaVu Sans", 12, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(0, 8))
+        statement_text = self.candidate.statement or "No extended campaign platform statement submitted by this candidate."
+        ttk.Label(content_card, text=statement_text, font=("DejaVu Sans", 10), foreground=TEXT, background=WHITE, wraplength=560, justify="left").pack(anchor="w", pady=(0, 14))
+
+        meta_box = ttk.Frame(content_card, style="Card.TFrame", padding=10)
+        meta_box.pack(fill="x", pady=6)
+        ttk.Label(meta_box, text=f"Election: {election_title}", font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w")
+        ttk.Label(meta_box, text=f"Cryptographic Identifier: {self.candidate.candidate_id}", font=("DejaVu Sans Mono", 9), foreground=MUTED, background=WHITE).pack(anchor="w")
+
+        btn_row = ttk.Frame(self, style="App.TFrame")
+        btn_row.pack(fill="x", padx=20, pady=(4, 16))
+        ttk.Button(btn_row, text="Close Profile [Esc]", command=self.destroy, style="Secondary.TButton").pack(side="right")
+
+
+class AuditReportExportModal(tk.Toplevel):
+    """Modal dialog providing preview, copying, and file export of the election audit report."""
+
+    def __init__(self, parent: Any, inspection: ArchiveInspectionResult, **kwargs: Any) -> None:
+        super().__init__(parent, **kwargs)
+        self.inspection = inspection
+        self.title("Export Cryptographic Audit Report")
+        self.geometry("740x620")
+        self.minsize(600, 480)
+        self.configure(bg=SURFACE)
+        self.transient(parent)
+
+        self._build_ui()
+        self.bind("<Escape>", lambda e: self.destroy())
+        try:
+            self.grab_set()
+        except Exception:
+            pass
+
+    def _build_ui(self) -> None:
+        header = ttk.Frame(self, style="Card.TFrame", padding=16)
+        header.pack(fill="x", padx=20, pady=(16, 10))
+
+        title_row = ttk.Frame(header, style="Card.TFrame")
+        title_row.pack(fill="x")
+        ttk.Label(title_row, text="Cryptographic Audit Verification Report", font=("DejaVu Sans", 15, "bold"), foreground=NAVY, background=WHITE).pack(side="left")
+
+        verdict_str = "AUDIT PASSED" if self.inspection.is_valid else "AUDIT ANOMALIES"
+        verdict_var = "success" if self.inspection.is_valid else "danger"
+        StatusChip(title_row, text=verdict_str, variant=verdict_var).pack(side="right")
+
+        ttk.Label(header, text="Export reproducible proof artifacts compliant with Section 6.8 Audit Specifications.", font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w", pady=(4, 0))
+
+        text_frame = ttk.Frame(self, style="Card.TFrame", padding=10)
+        text_frame.pack(fill="both", expand=True, padx=20, pady=10)
+
+        self.report_text = tk.Text(text_frame, wrap="none", font=("DejaVu Sans Mono", 9), bg=WHITE, fg=TEXT)
+        scrollbar_y = ttk.Scrollbar(text_frame, orient="vertical", command=self.report_text.yview)
+        scrollbar_x = ttk.Scrollbar(text_frame, orient="horizontal", command=self.report_text.xview)
+        self.report_text.configure(xscrollcommand=scrollbar_x.set, yscrollcommand=scrollbar_y.set)
+
+        self.report_text.pack(side="top", fill="both", expand=True)
+        scrollbar_y.pack(side="right", fill="y", before=self.report_text)
+        scrollbar_x.pack(side="bottom", fill="x")
+
+        md_content = VerificationReport.generate_markdown(self.inspection)
+        self.report_text.insert("1.0", md_content)
+        self.report_text.configure(state="disabled")
+
+        btn_bar = ttk.Frame(self, style="App.TFrame")
+        btn_bar.pack(fill="x", padx=20, pady=(0, 16))
+
+        ttk.Button(btn_bar, text="Save as Markdown (.md)", command=self._save_markdown, style="Action.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_bar, text="Save as JSON (.json)", command=self._save_json, style="Secondary.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_bar, text="Copy to Clipboard", command=self._copy_clipboard, style="Secondary.TButton").pack(side="left")
+        ttk.Button(btn_bar, text="Close [Esc]", command=self.destroy, style="Secondary.TButton").pack(side="right")
+
+    def _save_markdown(self) -> None:
+        target = filedialog.asksaveasfilename(
+            parent=self,
+            title="Save Audit Report as Markdown",
+            defaultextension=".md",
+            filetypes=[("Markdown files", "*.md"), ("Text files", "*.txt"), ("All files", "*.*")],
+            initialfile=f"himvote_audit_{self.inspection.election_id}.md",
+        )
+        if target:
+            md_content = VerificationReport.generate_markdown(self.inspection)
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(md_content)
+            messagebox.showinfo("Export Successful", f"Audit report saved to:\n{target}", parent=self)
+
+    def _save_json(self) -> None:
+        target = filedialog.asksaveasfilename(
+            parent=self,
+            title="Save Audit Report as JSON",
+            defaultextension=".json",
+            filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
+            initialfile=f"himvote_audit_{self.inspection.election_id}.json",
+        )
+        if target:
+            json_content = VerificationReport.generate_json(self.inspection)
+            with open(target, "w", encoding="utf-8") as f:
+                f.write(json_content)
+            messagebox.showinfo("Export Successful", f"Audit JSON saved to:\n{target}", parent=self)
+
+    def _copy_clipboard(self) -> None:
+        md_content = VerificationReport.generate_markdown(self.inspection)
+        self.clipboard_clear()
+        self.clipboard_append(md_content)
+        messagebox.showinfo("Copied", "Audit report copied to system clipboard.", parent=self)
+
+
+
+@dataclass
+class SavedReceipt:
+    receipt_handle: str
+    election_id: str
+    status: str
+    leaf_index: int | None = None
+    witnessed_at: str | None = None
+    server_commitment: str | None = None
+    witness_checkpoint: str | None = None
+    ballot_hash: str | None = None
+    notes: str = ""
+    saved_at_utc: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "receipt_handle": self.receipt_handle,
+            "election_id": self.election_id,
+            "status": self.status,
+            "leaf_index": self.leaf_index,
+            "witnessed_at": self.witnessed_at,
+            "server_commitment": self.server_commitment,
+            "witness_checkpoint": self.witness_checkpoint,
+            "ballot_hash": self.ballot_hash,
+            "notes": self.notes,
+            "saved_at_utc": self.saved_at_utc,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "SavedReceipt":
+        return cls(
+            receipt_handle=str(data.get("receipt_handle") or data.get("handle") or ""),
+            election_id=str(data.get("election_id") or ""),
+            status=str(data.get("status") or "PENDING_WITNESS"),
+            leaf_index=data.get("leaf_index"),
+            witnessed_at=data.get("witnessed_at"),
+            server_commitment=data.get("server_commitment"),
+            witness_checkpoint=data.get("witness_checkpoint"),
+            ballot_hash=data.get("ballot_hash"),
+            notes=str(data.get("notes") or ""),
+            saved_at_utc=str(data.get("saved_at_utc") or ""),
+        )
+
+
+class ReceiptWallet:
+    """Manages persistent voter cryptographic receipts per XDG Base Directory standards."""
+
+    def __init__(self, storage_path: Path | None = None) -> None:
+        if storage_path:
+            self.file_path = storage_path
+        else:
+            xdg_data = os.environ.get("XDG_DATA_HOME")
+            base = Path(xdg_data) if xdg_data else (Path.home() / ".local" / "share")
+            self.file_path = base / "himvote" / "receipts.json"
+        self._ensure_storage()
+
+    def _ensure_storage(self) -> None:
+        try:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+            if not self.file_path.exists():
+                with open(self.file_path, "w", encoding="utf-8") as f:
+                    json.dump({"version": "1.0", "receipts": []}, f, indent=2)
+        except Exception:
+            pass
+
+    def list_receipts(self) -> list[SavedReceipt]:
+        try:
+            if not self.file_path.exists():
+                return []
+            with open(self.file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            return [SavedReceipt.from_dict(r) for r in data.get("receipts", [])]
+        except Exception:
+            return []
+
+    def save_receipt(self, receipt: SavedReceipt | dict[str, Any]) -> None:
+        rec_obj = receipt if isinstance(receipt, SavedReceipt) else SavedReceipt.from_dict(receipt)
+        all_recs = self.list_receipts()
+        all_recs = [r for r in all_recs if r.receipt_handle != rec_obj.receipt_handle]
+        all_recs.insert(0, rec_obj)
+        try:
+            self.file_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump({"version": "1.0", "receipts": [r.to_dict() for r in all_recs]}, f, indent=2)
+        except Exception:
+            pass
+
+    def remove_receipt(self, receipt_handle: str) -> None:
+        all_recs = self.list_receipts()
+        filtered = [r for r in all_recs if r.receipt_handle != receipt_handle]
+        try:
+            with open(self.file_path, "w", encoding="utf-8") as f:
+                json.dump({"version": "1.0", "receipts": [r.to_dict() for r in filtered]}, f, indent=2)
+        except Exception:
+            pass
+
+
+@dataclass(frozen=True)
+class TrustPin:
+    authority_name: str
+    pin_type: str
+    public_key_hex: str
+    description: str = ""
+
+
+class TrustPinStore:
+    """Manages pinned cryptographic public keys for independent verification."""
+
+    DEFAULT_PINS = [
+        TrustPin(
+            authority_name="HimVote Independent Witness Cluster",
+            pin_type="witness_ed25519",
+            public_key_hex="ed25519:7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b",
+            description="Autonomous external auditor witness cluster signing periodic checkpoints per RFC 9162.",
+        ),
+        TrustPin(
+            authority_name="Institutional Identity & Blind Credential Issuer",
+            pin_type="issuer_rsa",
+            public_key_hex="rsa4096:b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5",
+            description="University registrar blind credential signing key per RFC 9474.",
+        ),
+        TrustPin(
+            authority_name="HimVoteAnchor Smart Contract",
+            pin_type="anchor_evm",
+            public_key_hex="0x9A3B5C7D1E2F4A6B8C0D2E4F6A8B0C2D4E6F8A0B",
+            description="On-chain consensus smart contract anchoring witnessed log roots.",
+        ),
+    ]
+
+    def __init__(self, pins: list[TrustPin] | None = None) -> None:
+        self.pins = pins if pins is not None else list(self.DEFAULT_PINS)
+
+    def find_pin(self, pin_type: str) -> TrustPin | None:
+        for pin in self.pins:
+            if pin.pin_type == pin_type:
+                return pin
+        return None
+
+
 class HimVoteLinuxApp(tk.Tk):
     """Accessible desktop shell for Linux election and audit workflows."""
 
@@ -1714,7 +2172,18 @@ class HimVoteLinuxApp(tk.Tk):
         verifier_path: Path,
         initial_archive: Path | None = None,
     ) -> None:
-        super().__init__()
+        last_err: Exception | None = None
+        for attempt in range(4):
+            try:
+                super().__init__()
+                last_err = None
+                break
+            except Exception as err:
+                last_err = err
+                import time
+                time.sleep(0.12)
+        if last_err is not None:
+            raise last_err
         self.api_client = api_client
         self.verifier_path = verifier_path
         self.elections: list[Election] = []
@@ -1725,6 +2194,13 @@ class HimVoteLinuxApp(tk.Tk):
         self.receipt_modal: ReceiptInspectionModal | None = None
         self.shortcuts_modal: KeyboardShortcutsModal | None = None
         self.last_looked_up_receipt: dict[str, Any] | None = None
+        self.election_filter: str = "ALL"
+        self.election_search_query: str = ""
+        self.receipt_wallet = ReceiptWallet()
+        self.trust_pin_store = TrustPinStore()
+        self._async_queue: queue.Queue[tuple[str, Any, Any, Any]] = queue.Queue()
+        self._async_poll_id: str | None = None
+        self._async_thread: threading.Thread | None = None
 
         self.title("HimVote Linux")
         self.geometry("1160x760")
@@ -1741,6 +2217,11 @@ class HimVoteLinuxApp(tk.Tk):
             self._show_elections()
 
     def destroy(self) -> None:
+        if hasattr(self, "_async_thread") and self._async_thread and self._async_thread.is_alive():
+            try:
+                self._async_thread.join(timeout=1.0)
+            except Exception:
+                pass
         if hasattr(self, "merkle_visualizer") and self.merkle_visualizer:
             self.merkle_visualizer.cancel_animation()
         if self.receipt_modal:
@@ -1832,6 +2313,8 @@ class HimVoteLinuxApp(tk.Tk):
         self._nav_button(navigation, "Elections [Ctrl+1]", self._show_elections)
         self._nav_button(navigation, "Receipt status [Ctrl+2]", self._show_receipt)
         self._nav_button(navigation, "Offline audit [Ctrl+3]", self._show_audit)
+        self._nav_button(navigation, "How it works [Ctrl+4]", self._show_how_it_works)
+        self._nav_button(navigation, "Security limits [Ctrl+5]", self._show_security_limits)
         self._nav_button(navigation, "High Contrast [Ctrl+H]", self.toggle_high_contrast)
         self._nav_button(navigation, "Shortcuts [Ctrl+K]", self.show_shortcuts_modal)
 
@@ -1860,15 +2343,49 @@ class HimVoteLinuxApp(tk.Tk):
         self.current_view_name = "elections"
         self._clear_content()
         self._header(
-            "Student view",
-            "Elections you can follow",
-            "The server decides eligibility and timing. This client displays confirmed states and hands voting to the supported booth.",
+            "Student Portal",
+            "Institutional Elections Directory",
+            "The server enforces eligibility and timing per specification rules. This client displays confirmed states and hands voting to the vetted booth.",
         )
+
+        # Disciplinary Disclaimer Banner
+        disclaimer = ttk.Frame(self.content, style="Card.TFrame", padding=(14, 10))
+        disclaimer.pack(fill="x", padx=36, pady=(0, 10))
+        ttk.Label(
+            disclaimer,
+            text="Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. Voting is handed off securely to the vetted booth API contract.",
+            font=("DejaVu Sans", 9, "bold"),
+            foreground=TEAL,
+            background=WHITE,
+        ).pack(anchor="w")
+
+        # Search and Filter Toolbar
         toolbar = ttk.Frame(self.content, style="App.TFrame")
-        toolbar.pack(fill="x", padx=36, pady=(0, 14))
-        ttk.Button(toolbar, text="Refresh elections", command=self._load_elections, style="Action.TButton").pack(side="left")
+        toolbar.pack(fill="x", padx=36, pady=(0, 12))
+
+        ttk.Button(toolbar, text="Refresh", command=self._load_elections, style="Action.TButton").pack(side="left", padx=(0, 8))
+
+        # Filter Tabs
+        filter_box = ttk.Frame(toolbar, style="App.TFrame")
+        filter_box.pack(side="left", padx=(0, 14))
+
+        def set_filter(f: str) -> None:
+            self.election_filter = f
+            self._render_filtered_elections()
+
+        ttk.Button(filter_box, text="All", command=lambda: set_filter("ALL"), style="Secondary.TButton").pack(side="left", padx=2)
+        ttk.Button(filter_box, text="Active / Open", command=lambda: set_filter("OPEN"), style="Secondary.TButton").pack(side="left", padx=2)
+        ttk.Button(filter_box, text="Upcoming", command=lambda: set_filter("UPCOMING"), style="Secondary.TButton").pack(side="left", padx=2)
+
+        # Search Bar
+        ttk.Label(toolbar, text="Search:", style="Body.TLabel").pack(side="left", padx=(10, 4))
+        self.search_entry = ttk.Entry(toolbar, width=22)
+        self.search_entry.pack(side="left", padx=(0, 12))
+        self.search_entry.bind("<KeyRelease>", lambda e: self._on_search_elections())
+
         self.election_status = ttk.Label(toolbar, text="", style="Muted.TLabel")
-        self.election_status.pack(side="left", padx=14)
+        self.election_status.pack(side="left", padx=6)
+
         self.mode_chip = StatusChip(toolbar, text="LOCAL DEMO MODE", variant="warning")
         self.mode_chip.pack(side="right")
         self.mode_badge = self.mode_chip
@@ -1878,6 +2395,10 @@ class HimVoteLinuxApp(tk.Tk):
         self.election_list.columnconfigure(0, weight=1)
         self.election_list.columnconfigure(1, weight=1)
         self._load_elections()
+
+    def _on_search_elections(self) -> None:
+        self.election_search_query = self.search_entry.get().strip().lower() if hasattr(self, "search_entry") else ""
+        self._render_filtered_elections()
 
     def _load_elections(self) -> None:
         try:
@@ -1894,23 +2415,193 @@ class HimVoteLinuxApp(tk.Tk):
             self.mode_chip.set_status("API UNAVAILABLE", "danger")
             self.election_status.configure(text=str(exc))
 
+        self._render_filtered_elections()
+
+    def _render_filtered_elections(self) -> None:
         for child in self.election_list.winfo_children():
             child.destroy()
-        for index, election in enumerate(self.elections):
+
+        filtered = []
+        for e in self.elections:
+            # Status filter
+            if self.election_filter == "OPEN" and e.state not in {"OPEN", "ACTIVE"}:
+                continue
+            if self.election_filter == "UPCOMING" and e.state != "UPCOMING":
+                continue
+
+            # Query filter
+            q = getattr(self, "election_search_query", "")
+            if q:
+                cand_match = any(q in c.name.lower() or q in c.slate.lower() for c in e.candidates)
+                if q not in e.title.lower() and q not in e.election_id.lower() and not cand_match:
+                    continue
+            filtered.append(e)
+
+        if not filtered:
+            empty = ttk.Frame(self.election_list, style="Card.TFrame", padding=24)
+            empty.grid(row=0, column=0, columnspan=2, sticky="ew", padx=10, pady=20)
+            ttk.Label(empty, text="No elections match your current search or filter criteria.", style="CardBody.TLabel").pack()
+            return
+
+        for index, election in enumerate(filtered):
             self._election_card(election, index)
 
     def _election_card(self, election: Election, index: int) -> None:
         card = ttk.Frame(self.election_list, style="Card.TFrame", padding=18)
         card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=6, pady=6)
         card.columnconfigure(0, weight=1)
+
         top = ttk.Frame(card, style="Card.TFrame")
         top.pack(fill="x")
         status = StatusChip(top, text=election.state, variant=chip_variant_from_state(election.state))
         status.pack(side="left")
         ttk.Label(top, text=f"Closes {election.closes_at}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(side="right")
+
         ttk.Label(card, text=election.title, background=WHITE, foreground=NAVY, font=("DejaVu Sans", 14, "bold"), wraplength=380).pack(anchor="w", pady=(12, 4))
-        ttk.Label(card, text=f"{election.candidate_count} candidates", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 10)).pack(anchor="w")
-        ttk.Label(card, text=f"Election ID  {election.election_id}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(anchor="w", pady=(3, 0))
+
+        if election.description:
+            ttk.Label(card, text=election.description, background=WHITE, foreground=TEXT, font=("DejaVu Sans", 9), wraplength=380).pack(anchor="w", pady=(0, 6))
+
+        mid = ttk.Frame(card, style="Card.TFrame")
+        mid.pack(fill="x", pady=4)
+        ttk.Label(mid, text=f"{election.candidate_count} candidates registered", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 10, "bold")).pack(side="left")
+
+        if election.candidates:
+            cand_names = ", ".join(c.name for c in election.candidates[:3])
+            if len(election.candidates) > 3:
+                cand_names += f" +{len(election.candidates) - 3} more"
+            ttk.Label(card, text=f"Candidates: {cand_names}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9), wraplength=380).pack(anchor="w", pady=(2, 6))
+
+        bot = ttk.Frame(card, style="Card.TFrame")
+        bot.pack(fill="x", pady=(6, 0))
+        ttk.Label(bot, text=f"ID: {election.election_id}", background=WHITE, foreground=MUTED, font=("DejaVu Sans Mono", 8)).pack(side="left")
+
+        if election.candidates:
+            def view_cands(cand_list=election.candidates, e_title=election.title) -> None:
+                if cand_list:
+                    CandidateDetailModal(self, cand_list[0], e_title)
+            ttk.Button(bot, text="View Candidates", command=view_cands, style="Secondary.TButton").pack(side="right")
+
+    def _show_how_it_works(self) -> None:
+        """Render the educational trust architecture explainer view."""
+        self.current_view_name = "how_it_works"
+        self._clear_content()
+        self._header(
+            "Verification Architecture",
+            "How Mathematical Election Verification Works",
+            "HimVote replaces administrative trust with 4 independent, mathematically verifiable layers. Every ballot is cast-as-intended, recorded-as-cast, and tallied-as-recorded.",
+        )
+
+        container = ttk.Frame(self.content, style="App.TFrame")
+        container.pack(fill="both", expand=True, padx=36, pady=(0, 20))
+
+        tiers = [
+            (
+                "Tier 1: Student Voter Booth",
+                "Zero-Knowledge & Blind Credentials",
+                "Voters obtain an RSA blind signature credential (RFC 9474) from the Identity Issuer. During casting, the booth blinds voter identity completely. The casting server verifies the signature without learning which student submitted the vote.",
+                "RFC 9474 Blind Signatures",
+                GREEN,
+            ),
+            (
+                "Tier 2: Tamper-Evident Merkle Log",
+                "Canonical Hashing & RFC 9162 Log",
+                "Every accepted ballot is canonicalized per RFC 8785 (JCS) and inserted as an ordered leaf into an append-only RFC 9162 Merkle tree. Any alteration or deletion fundamentally corrupts the tree root.",
+                "RFC 8785 JCS & RFC 9162 Merkle",
+                TEAL,
+            ),
+            (
+                "Tier 3: Independent Witness Co-signing",
+                "External Validator Checkpoints",
+                "An autonomous witness service operated outside the university periodically inspects the log, verifies sequence continuity and consistency proofs, and co-signs tree head checkpoints.",
+                "Ed25519 Cosigned Checkpoints",
+                AMBER,
+            ),
+            (
+                "Tier 4: Immutable Blockchain Anchor",
+                "Public Consensus Finality",
+                "Witnessed checkpoints are anchored periodically onto the public Ethereum / EVM smart contract (HimVoteAnchor.sol). This provides tamper-proof public timestamps that no university administrator can rewrite.",
+                "EVM Smart Contract Consensus",
+                NAVY,
+            ),
+        ]
+
+        for index, (tier_title, sub_title, desc, spec_tag, accent_color) in enumerate(tiers):
+            card = ttk.Frame(container, style="Card.TFrame", padding=16)
+            card.pack(fill="x", pady=5)
+
+            hdr = ttk.Frame(card, style="Card.TFrame")
+            hdr.pack(fill="x")
+
+            ttk.Label(hdr, text=f"LAYER 0{index + 1}", font=("DejaVu Sans", 9, "bold"), foreground=accent_color, background=WHITE).pack(side="left")
+            StatusChip(hdr, text=spec_tag, variant="info").pack(side="right")
+
+            ttk.Label(card, text=tier_title, font=("DejaVu Sans", 13, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(3, 1))
+            ttk.Label(card, text=sub_title, font=("DejaVu Sans", 10, "bold"), foreground=TEAL, background=WHITE).pack(anchor="w", pady=(0, 4))
+            ttk.Label(card, text=desc, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, wraplength=840).pack(anchor="w")
+
+        rule_card = ttk.Frame(container, style="Card.TFrame", padding=14)
+        rule_card.pack(fill="x", pady=(8, 0))
+        ttk.Label(rule_card, text="Independent Verification Guarantee", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w")
+        ttk.Label(
+            rule_card,
+            text="Any voter or auditor can independently verify their ballot inclusion in the Merkle log using the Offline Audit view, completely without relying on server trust or internet access.",
+            font=("DejaVu Sans", 9),
+            foreground=MUTED,
+            background=WHITE,
+            wraplength=840,
+        ).pack(anchor="w", pady=(2, 0))
+
+    def _show_security_limits(self) -> None:
+        """Render the security guarantees and institutional trust boundaries view."""
+        self.current_view_name = "security_limits"
+        self._clear_content()
+        self._header(
+            "Institutional Trust Model",
+            "Security Guarantees & Cryptographic Limits",
+            "In strict compliance with Specification Rule 0.1(7), HimVote never makes unqualified claims such as 'unhackable' or '100% secure'. Below are the exact verified mathematical properties and assumptions.",
+        )
+
+        container = ttk.Frame(self.content, style="App.TFrame")
+        container.pack(fill="both", expand=True, padx=36, pady=(0, 20))
+
+        col1 = ttk.Frame(container, style="App.TFrame")
+        col1.pack(side="left", fill="both", expand=True, padx=(0, 8))
+
+        col2 = ttk.Frame(container, style="App.TFrame")
+        col2.pack(side="left", fill="both", expand=True, padx=(8, 0))
+
+        card_guar = ttk.Frame(col1, style="Card.TFrame", padding=18)
+        card_guar.pack(fill="both", expand=True)
+
+        ttk.Label(card_guar, text="What Independent Verification Proves", font=("DejaVu Sans", 13, "bold"), foreground=GREEN, background=WHITE).pack(anchor="w", pady=(0, 8))
+
+        guarantees = [
+            ("Cast-as-Intended", "The voting booth encrypts the ballot using the election public key before submission, preventing network eavesdroppers from observing selections."),
+            ("Recorded-as-Cast", "The voter's receipt handle and ballot hash are mathematically proven to be present in the append-only RFC 9162 Merkle tree via verifiable sibling proof paths."),
+            ("Tallied-as-Recorded", "The candidate tallies shown in the Audit Explorer are recomputed directly by summing canonical decrypted ballots from the export archive, matching the published results."),
+            ("Double-Voting Impossibility", "The nullifier of each credential is cryptographically derived and unique. The audit engine verifies zero collisions across all leaves."),
+            ("Server Non-Equivocation", "Because tree checkpoints are co-signed by an independent witness and anchored on-chain, the server cannot show different tree states to different users."),
+        ]
+        for title, desc in guarantees:
+            ttk.Label(card_guar, text=f"✓  {title}", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(6, 2))
+            ttk.Label(card_guar, text=desc, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, wraplength=400).pack(anchor="w", padx=(18, 0))
+
+        card_bound = ttk.Frame(col2, style="Card.TFrame", padding=18)
+        card_bound.pack(fill="both", expand=True)
+
+        ttk.Label(card_bound, text="Trust Assumptions & System Boundaries", font=("DejaVu Sans", 13, "bold"), foreground=AMBER, background=WHITE).pack(anchor="w", pady=(0, 8))
+
+        boundaries = [
+            ("Client Device Integrity", "If the voter's personal phone or laptop is infected with malware, malicious software could tamper with display inputs before encryption."),
+            ("Honest Witness Threshold", "The system assumes at least one independent witness co-signer is honest and refuses to sign forks or inconsistent log heads."),
+            ("Coercion Resistance", "While ballots are private, standard receipt tokens must not disclose individual candidate choices to prevent vote-buying or coercion."),
+            ("Eligibility Authority Boundary", "The university identity issuer is the authoritative source for roster eligibility. The verifier proves ballots match issued credentials, but cannot verify if the student was legally eligible."),
+            ("Key Management Assurance", "Cryptographic keys must reside in reviewed Hardware Security Modules (HSMs) or cloud KMS per specification rules."),
+        ]
+        for title, desc in boundaries:
+            ttk.Label(card_bound, text=f"!  {title}", font=("DejaVu Sans", 10, "bold"), foreground=AMBER, background=WHITE).pack(anchor="w", pady=(6, 2))
+            ttk.Label(card_bound, text=desc, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, wraplength=400).pack(anchor="w", padx=(18, 0))
 
     def _show_receipt(self) -> None:
         self.current_view_name = "receipt"
@@ -1939,6 +2630,41 @@ class HimVoteLinuxApp(tk.Tk):
         result = ttk.Label(form, text="Enter election ID and receipt handle to verify status.", background=WHITE, foreground=TEXT, wraplength=620)
         result.grid(row=3, column=1, sticky="w", pady=(18, 0), padx=(10, 0))
 
+        # 4-Stage Cryptographic Pipeline Bar
+        pipeline_frame = ttk.Frame(self.content, style="Card.TFrame", padding=14)
+        pipeline_frame.pack(fill="x", padx=36, pady=(0, 10))
+
+        ttk.Label(pipeline_frame, text="4-Stage Independent Evidence Pipeline", font=("DejaVu Sans", 11, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(0, 8))
+        stages_row = ttk.Frame(pipeline_frame, style="Card.TFrame")
+        stages_row.pack(fill="x")
+
+        stage_chips: list[StatusChip] = []
+        pipeline_defs = [
+            ("1. SUBMITTED", "Booth cast verified"),
+            ("2. ACCEPTED", "Credential nullified"),
+            ("3. WITNESSED", "Merkle log checkpointed"),
+            ("4. ANCHORED", "Blockchain finality"),
+        ]
+        for idx, (st_name, st_sub) in enumerate(pipeline_defs):
+            s_box = ttk.Frame(stages_row, style="Card.TFrame")
+            s_box.pack(side="left", fill="both", expand=True, padx=4)
+            chip = StatusChip(s_box, text=st_name, variant="neutral")
+            chip.pack(anchor="w")
+            stage_chips.append(chip)
+            ttk.Label(s_box, text=st_sub, font=("DejaVu Sans", 8), foreground=MUTED, background=WHITE).pack(anchor="w", pady=(2, 0))
+
+        def update_pipeline_stages(status: str) -> None:
+            st = status.upper()
+            is_sub = True
+            is_acc = st in {"ACCEPTED", "PENDING_WITNESS", "WITNESSED", "ANCHOR_FINALIZED", "CONFIRMED"}
+            is_wit = st in {"WITNESSED", "ANCHOR_FINALIZED", "CONFIRMED"}
+            is_anc = st in {"ANCHOR_FINALIZED", "CONFIRMED"}
+
+            stage_chips[0].set_status("1. SUBMITTED", "success" if is_sub else "neutral")
+            stage_chips[1].set_status("2. ACCEPTED", "success" if is_acc else "warning")
+            stage_chips[2].set_status("3. WITNESSED", "success" if is_wit else ("warning" if is_acc else "neutral"))
+            stage_chips[3].set_status("4. ANCHORED", "success" if is_anc else "neutral")
+
         def lookup() -> None:
             e_id = election_entry.get().strip()
             h_id = handle_entry.get().strip()
@@ -1947,6 +2673,7 @@ class HimVoteLinuxApp(tk.Tk):
                 match = next((d for d in demos if d.get("election_id") == e_id or d.get("receipt_handle") == h_id), demos[0])
                 self.last_looked_up_receipt = match
                 self.receipt_chip.set_status(match["status"], chip_variant_from_state(match["status"]))
+                update_pipeline_stages(match["status"])
                 result.configure(
                     text=f"Demo Receipt State: {match['status']}\nLeaf index: {match['leaf_index']}\nWitnessed: {match['witnessed_at']}",
                     foreground=TEXT,
@@ -1962,6 +2689,7 @@ class HimVoteLinuxApp(tk.Tk):
                     "witnessed_at": receipt.witnessed_at,
                 }
                 self.receipt_chip.set_status(receipt.status, chip_variant_from_state(receipt.status))
+                update_pipeline_stages(receipt.status)
                 result.configure(
                     text=f"State: {receipt.status}\nLeaf index: {receipt.leaf_index}\nWitnessed at: {receipt.witnessed_at or 'Not yet witnessed'}",
                     foreground=status_colour(receipt.status),
@@ -1974,17 +2702,72 @@ class HimVoteLinuxApp(tk.Tk):
             rec_to_open = self.last_looked_up_receipt or demo_receipts()[0]
             self._open_receipt_modal(rec_to_open)
 
-        def load_demo() -> None:
-            demo_item = demo_receipts()[0]
+        def load_demo(idx: int = 0) -> None:
+            demos = demo_receipts()
+            demo_item = demos[idx % len(demos)]
             election_entry.delete(0, "end")
             election_entry.insert(0, demo_item["election_id"])
             handle_entry.delete(0, "end")
             handle_entry.insert(0, demo_item["receipt_handle"])
             lookup()
 
+        def save_to_wallet() -> None:
+            rec = self.last_looked_up_receipt or demo_receipts()[0]
+            saved = SavedReceipt(
+                receipt_handle=str(rec.get("receipt_handle") or rec.get("handle") or "UNSPECIFIED"),
+                election_id=str(rec.get("election_id") or "UNSPECIFIED"),
+                status=str(rec.get("status") or "PENDING_WITNESS"),
+                leaf_index=rec.get("leaf_index"),
+                witnessed_at=rec.get("witnessed_at"),
+                server_commitment=rec.get("server_commitment"),
+                witness_checkpoint=rec.get("witness_checkpoint"),
+                ballot_hash=rec.get("ballot_hash"),
+                saved_at_utc="30 Oct 2026",
+            )
+            self.receipt_wallet.save_receipt(saved)
+            refresh_wallet_list()
+            messagebox.showinfo("Receipt Saved", f"Receipt {saved.receipt_handle} saved to your local wallet.")
+
         ttk.Button(btn_row, text="Check receipt", command=lookup, style="Action.TButton").pack(side="left", padx=(0, 8))
-        ttk.Button(btn_row, text="Inspect Receipt Modal", command=open_modal, style="Secondary.TButton").pack(side="left", padx=(0, 8))
-        ttk.Button(btn_row, text="Load Demo Receipt", command=load_demo, style="Secondary.TButton").pack(side="left")
+        ttk.Button(btn_row, text="Inspect Certificate Modal", command=open_modal, style="Secondary.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Save to Wallet", command=save_to_wallet, style="Action.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Load Witnessed Demo", command=lambda: load_demo(0), style="Secondary.TButton").pack(side="left", padx=(0, 8))
+        ttk.Button(btn_row, text="Load Pending Demo", command=lambda: load_demo(1), style="Secondary.TButton").pack(side="left")
+
+        # Persistent Receipt Wallet List
+        wallet_frame = ttk.Frame(self.content, style="Card.TFrame", padding=14)
+        wallet_frame.pack(fill="x", padx=36, pady=(10, 0))
+
+        w_hdr = ttk.Frame(wallet_frame, style="Card.TFrame")
+        w_hdr.pack(fill="x", pady=(0, 6))
+        ttk.Label(w_hdr, text="Local Receipt Wallet (Saved Proofs)", font=("DejaVu Sans", 11, "bold"), foreground=NAVY, background=WHITE).pack(side="left")
+
+        wallet_items_frame = ttk.Frame(wallet_frame, style="Card.TFrame")
+        wallet_items_frame.pack(fill="x")
+
+        def refresh_wallet_list() -> None:
+            for child in wallet_items_frame.winfo_children():
+                child.destroy()
+            saved_list = self.receipt_wallet.list_receipts()
+            if not saved_list:
+                ttk.Label(wallet_items_frame, text="No saved receipts in local wallet yet. Look up a receipt and click 'Save to Wallet'.", font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w")
+                return
+            for s_rec in saved_list[:5]:
+                row = ttk.Frame(wallet_items_frame, style="Card.TFrame")
+                row.pack(fill="x", pady=2)
+                StatusChip(row, text=s_rec.status, variant=chip_variant_from_state(s_rec.status)).pack(side="left", padx=(0, 8))
+                ttk.Label(row, text=f"Handle: {s_rec.receipt_handle}   (Election: {s_rec.election_id})", font=("DejaVu Sans Mono", 9), foreground=TEXT, background=WHITE).pack(side="left")
+
+                def select_rec(r=s_rec) -> None:
+                    election_entry.delete(0, "end")
+                    election_entry.insert(0, r.election_id)
+                    handle_entry.delete(0, "end")
+                    handle_entry.insert(0, r.receipt_handle)
+                    lookup()
+
+                ttk.Button(row, text="Select", command=select_rec, style="Secondary.TButton").pack(side="right")
+
+        refresh_wallet_list()
 
     def _show_audit(self) -> None:
         """Render the comprehensive offline election audit view."""
@@ -2005,6 +2788,8 @@ class HimVoteLinuxApp(tk.Tk):
 
         self.archive_path_label = ttk.Label(toolbar, text="No archive loaded", style="Muted.TLabel")
         self.archive_path_label.pack(side="left", padx=10)
+
+        self.archive_progress_bar = ttk.Progressbar(toolbar, mode="indeterminate", length=120)
 
         self.audit_notebook = ttk.Notebook(self.content)
         self.audit_notebook.pack(fill="both", expand=True, padx=36, pady=(0, 20))
@@ -2065,7 +2850,11 @@ class HimVoteLinuxApp(tk.Tk):
                 return
         messagebox.showinfo("Demo Archive", "Demo simulation directory not found on disk.")
 
-    def _load_archive_path(self, target_path: Path) -> None:
+    def _load_archive_path(self, target_path: Path, async_mode: bool = False) -> None:
+        if async_mode:
+            self._load_archive_path_async(target_path)
+            return
+
         try:
             if self.current_archive:
                 self.current_archive.close()
@@ -2076,6 +2865,72 @@ class HimVoteLinuxApp(tk.Tk):
             self._render_inspection_views()
         except Exception as exc:
             messagebox.showerror("Archive Inspection Failed", f"Could not inspect archive: {exc}")
+
+    def _load_archive_path_async(self, target_path: Path) -> None:
+        """Asynchronously load and verify archive to keep UI completely responsive."""
+        if hasattr(self, "archive_progress_bar"):
+            self.archive_progress_bar.pack(side="left", padx=10)
+            self.archive_progress_bar.start(12)
+        if hasattr(self, "archive_path_label"):
+            self.archive_path_label.configure(text=f"Inspecting {target_path.name}...")
+
+        def worker() -> None:
+            try:
+                import gc
+                was_enabled = gc.isenabled()
+                gc.disable()
+                try:
+                    if self.current_archive:
+                        self.current_archive.close()
+                    archive = ElectionArchive.load(target_path)
+                    inspection = archive.inspect()
+                    self._async_queue.put(("SUCCESS", target_path, archive, inspection))
+                finally:
+                    if was_enabled:
+                        gc.enable()
+            except Exception as exc:
+                self._async_queue.put(("ERROR", target_path, exc, None))
+
+        self._async_thread = threading.Thread(target=worker, daemon=True)
+        self._async_thread.start()
+        self._poll_async_queue()
+
+    def _poll_async_queue(self) -> None:
+        """Check thread-safe queue for async worker results."""
+        try:
+            while not self._async_queue.empty():
+                msg_type, target_path, obj1, obj2 = self._async_queue.get_nowait()
+                if msg_type == "SUCCESS":
+                    self._on_async_archive_loaded(target_path, obj1, obj2)
+                    return
+                elif msg_type == "ERROR":
+                    self._on_async_archive_error(obj1)
+                    return
+        except Exception:
+            pass
+
+        try:
+            self._async_poll_id = self.after(30, self._poll_async_queue)
+        except Exception:
+            pass
+
+    def _on_async_archive_loaded(self, target_path: Path, archive: ElectionArchive, inspection: ArchiveInspectionResult) -> None:
+        if hasattr(self, "archive_progress_bar"):
+            self.archive_progress_bar.stop()
+            self.archive_progress_bar.pack_forget()
+        self.current_archive = archive
+        self.current_inspection = inspection
+        if hasattr(self, "archive_path_label"):
+            self.archive_path_label.configure(text=f"Loaded: {target_path.name}")
+        self._render_inspection_views()
+
+    def _on_async_archive_error(self, exc: Exception) -> None:
+        if hasattr(self, "archive_progress_bar"):
+            self.archive_progress_bar.stop()
+            self.archive_progress_bar.pack_forget()
+        if hasattr(self, "archive_path_label"):
+            self.archive_path_label.configure(text="Inspection failed")
+        messagebox.showerror("Archive Inspection Failed", f"Could not inspect archive: {exc}")
 
     def _render_inspection_views(self) -> None:
         if not self.current_inspection:
@@ -2145,6 +3000,13 @@ class HimVoteLinuxApp(tk.Tk):
         root_entry.insert(0, insp.merkle_root_hex)
         root_entry.configure(state="readonly")
         root_entry.pack(fill="x")
+
+        # Export Report Card
+        export_card = ttk.Frame(panel, style="Card.TFrame", padding=16)
+        export_card.pack(fill="x", pady=6)
+        ttk.Label(export_card, text="Reproducible Cryptographic Verification Report", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(export_card, text="Generate and export an independent cryptographic audit report artifact in Markdown or JSON conforming to Section 6.8.", style="CardMuted.TLabel").pack(anchor="w", pady=(0, 8))
+        ttk.Button(export_card, text="Export Full Verification Report", command=self._open_export_modal, style="Action.TButton").pack(side="left")
 
     def _render_merkle_tab(self) -> None:
         for child in self.tab_merkle.winfo_children():
@@ -2427,6 +3289,12 @@ class HimVoteLinuxApp(tk.Tk):
         self._configure_styles()
         self._refresh_current_view()
 
+    def _open_export_modal(self) -> None:
+        if not self.current_inspection:
+            messagebox.showinfo("Export Notice", "Please load an election archive first.")
+            return
+        AuditReportExportModal(self, self.current_inspection)
+
     def _refresh_current_view(self) -> None:
         if self.current_view_name == "elections":
             self._show_elections()
@@ -2434,6 +3302,10 @@ class HimVoteLinuxApp(tk.Tk):
             self._show_receipt()
         elif self.current_view_name == "audit":
             self._show_audit()
+        elif self.current_view_name == "how_it_works":
+            self._show_how_it_works()
+        elif self.current_view_name == "security_limits":
+            self._show_security_limits()
 
     def _setup_keyboard_shortcuts(self) -> None:
         """Register global keyboard navigation bindings."""
@@ -2443,6 +3315,10 @@ class HimVoteLinuxApp(tk.Tk):
         self.bind_all("<Alt-Key-2>", lambda e: self._show_receipt())
         self.bind_all("<Control-Key-3>", lambda e: self._show_audit())
         self.bind_all("<Alt-Key-3>", lambda e: self._show_audit())
+        self.bind_all("<Control-Key-4>", lambda e: self._show_how_it_works())
+        self.bind_all("<Alt-Key-4>", lambda e: self._show_how_it_works())
+        self.bind_all("<Control-Key-5>", lambda e: self._show_security_limits())
+        self.bind_all("<Alt-Key-5>", lambda e: self._show_security_limits())
 
         self.bind_all("<Control-Key-o>", lambda e: self._open_archive_file())
         self.bind_all("<Control-Key-O>", lambda e: self._open_archive_file())

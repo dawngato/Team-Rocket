@@ -128,7 +128,10 @@ def test_archive_rejects_missing_manifest(tmp_path: Path) -> None:
 
 def test_archive_rejects_symlink_in_directory(sample_archive_dir: Path, tmp_path: Path) -> None:
     target_link = sample_archive_dir / "evil_link.json"
-    target_link.symlink_to(sample_archive_dir / "manifest.json")
+    try:
+        target_link.symlink_to(sample_archive_dir / "manifest.json")
+    except OSError:
+        pytest.skip("Symlink creation not permitted on this platform")
 
     with pytest.raises(ArchiveError, match="Symlinks are prohibited"):
         ElectionArchive.load(sample_archive_dir)
