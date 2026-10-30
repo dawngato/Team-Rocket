@@ -198,3 +198,60 @@ def test_simulation_run_export_complete_audit() -> None:
     assert res.last_leaf_matches_witness is True
     assert res.tally_recomputed_matches_announced is True
     archive.close()
+
+def test_archive_loads_full_external_trust_package() -> None:
+    sim_dir = _REPO_ROOT / "fixtures" / "simulation_run" / "export"
+    if not sim_dir.exists():
+        pytest.skip("Simulation export fixtures not present on disk")
+
+    archive = ElectionArchive.load(sim_dir)
+    res = archive.inspect()
+    assert res.has_witness_final is True
+    assert res.has_trust_pins is True
+    assert res.has_roster_approval is True
+    assert res.has_issuer_closure is True
+    assert res.has_chain_pins is True
+    assert res.has_attestation is True
+    assert res.external_package_complete is True
+    assert archive.witness_final is not None
+    assert archive.trust_pins is not None
+    assert archive.roster_approval is not None
+    assert archive.issuer_closure is not None
+    assert archive.chain_pins is not None
+    assert archive.attestation is not None
+    archive.close()
+
+
+def test_archive_rejects_symlink_in_tar(tmp_path: Path) -> None:
+    tar_path = tmp_path / "symlink_evil.tar"
+    with tarfile.open(tar_path, "w") as tf:
+        info = tarfile.TarInfo(name="manifest.json")
+        info.type = tarfile.SYMTYPE
+        info.linkname = "/etc/passwd"
+        tf.addfile(info)
+
+    with pytest.raises(ArchiveError, match="Symlinks are prohibited in tar"):
+        ElectionArchive.load(tar_path)
+
+
+def test_archive_rejects_path_traversal_in_zip(tmp_path: Path) -> None:
+    zip_path = tmp_path / "traversal_evil.zip"
+    with zipfile.ZipFile(zip_path, "w") as zf:
+        zf.writestr("../manifest.json", "{}")
+
+    with pytest.raises(ArchiveError, match="Path traversal detected"):
+        ElectionArchive.load(zip_path)
+
+
+def test_archive_rejects_path_traversal_in_tar(tmp_path: Path) -> None:
+    import io
+    tar_path = tmp_path / "traversal_evil.tar"
+    with tarfile.open(tar_path, "w") as tf:
+        data = b"{}"
+        info = tarfile.TarInfo(name="../manifest.json")
+        info.size = len(data)
+        tf.addfile(info, io.BytesIO(data))
+
+    with pytest.raises(ArchiveError, match="Path traversal detected"):
+        ElectionArchive.load(tar_path)
+

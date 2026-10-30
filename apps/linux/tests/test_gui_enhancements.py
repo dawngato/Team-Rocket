@@ -258,6 +258,24 @@ def test_receipt_inspection_modal_dialog() -> None:
     assert modal_obj.status_chip.get_status()[0] == "CONFIRMED"
     assert modal_obj.status_chip.get_status()[1] == "success"
 
+    # Test saving receipt to voter wallet from modal
+    modal._save_to_wallet()
+    assert "Saved to voter wallet" in modal.copy_status.cget("text")
+
+    # Test exporting receipt to file from modal
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as tmp_export:
+        tmp_export_path = tmp_export.name
+    with patch("tkinter.filedialog.asksaveasfilename", return_value=tmp_export_path):
+        modal._export_file()
+        assert "Exported to" in modal.copy_status.cget("text")
+        exported_content = Path(tmp_export_path).read_text(encoding="utf-8")
+        assert demo_item["receipt_handle"] in exported_content
+    try:
+        os.remove(tmp_export_path)
+    except Exception:
+        pass
+
     modal.destroy()
     modal_obj.destroy()
     root.destroy()

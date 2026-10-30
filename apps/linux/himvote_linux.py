@@ -249,6 +249,13 @@ class ArchiveInspectionResult:
     announced_tallies: dict[str, int]
     warnings: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    has_witness_final: bool = False
+    has_trust_pins: bool = False
+    has_roster_approval: bool = False
+    has_issuer_closure: bool = False
+    has_chain_pins: bool = False
+    has_attestation: bool = False
+    external_package_complete: bool = False
 
     @property
     def is_valid(self) -> bool:
@@ -498,6 +505,10 @@ class ElectionArchive:
         source_path: Path,
         witness_final: dict[str, Any] | None = None,
         trust_pins: dict[str, Any] | None = None,
+        roster_approval: dict[str, Any] | None = None,
+        issuer_closure: dict[str, Any] | None = None,
+        chain_pins: dict[str, Any] | None = None,
+        attestation: dict[str, Any] | None = None,
         temp_dir: tempfile.TemporaryDirectory | None = None,
     ) -> None:
         self.manifest = manifest
@@ -506,6 +517,10 @@ class ElectionArchive:
         self.source_path = source_path
         self.witness_final = witness_final
         self.trust_pins = trust_pins
+        self.roster_approval = roster_approval
+        self.issuer_closure = issuer_closure
+        self.chain_pins = chain_pins
+        self.attestation = attestation
         self._temp_dir = temp_dir
         self._canonical_bytes_cache: list[bytes] | None = None
 
@@ -618,21 +633,27 @@ class ElectionArchive:
                 except Exception:
                     pass
 
-        # Locate optional trust pins
-        trust_pins: dict[str, Any] | None = None
-        trust_candidates = [
-            working_dir / "trust_pins.json",
-            working_dir / "external" / "trust_pins.json",
-            working_dir.parent / "external" / "trust_pins.json",
-        ]
-        for tc in trust_candidates:
-            if tc.exists():
-                try:
-                    with open(tc, "rb") as tf_pin:
-                        trust_pins = safe_json_loads(tf_pin.read())
-                    break
-                except Exception:
-                    pass
+        # Locate optional trust pins and external package files
+        def find_external_json(filename: str) -> dict[str, Any] | None:
+            candidates = [
+                working_dir / filename,
+                working_dir / "external" / filename,
+                working_dir.parent / "external" / filename,
+            ]
+            for c in candidates:
+                if c.exists():
+                    try:
+                        with open(c, "rb") as f:
+                            return safe_json_loads(f.read())
+                    except Exception:
+                        pass
+            return None
+
+        trust_pins = find_external_json("trust_pins.json")
+        roster_approval = find_external_json("roster_approval.json")
+        issuer_closure = find_external_json("issuer_closure.json")
+        chain_pins = find_external_json("chain_pins.json")
+        attestation = find_external_json("attestation.json")
 
         # Sort leaves by leaf_index if present
         def get_index(record: dict[str, Any]) -> int:
@@ -648,6 +669,10 @@ class ElectionArchive:
             source_path=target_path,
             witness_final=witness_final,
             trust_pins=trust_pins,
+            roster_approval=roster_approval,
+            issuer_closure=issuer_closure,
+            chain_pins=chain_pins,
+            attestation=attestation,
             temp_dir=temp_holder,
         )
 
@@ -914,6 +939,13 @@ class ElectionArchive:
             ),
             warnings=warnings,
             errors=errors,
+            has_witness_final=self.witness_final is not None,
+            has_trust_pins=self.trust_pins is not None,
+            has_roster_approval=self.roster_approval is not None,
+            has_issuer_closure=self.issuer_closure is not None,
+            has_chain_pins=self.chain_pins is not None,
+            has_attestation=self.attestation is not None,
+            external_package_complete=bool(self.witness_final and self.trust_pins and self.roster_approval and self.issuer_closure and self.chain_pins),
         )
 
 
@@ -1342,6 +1374,20 @@ class ReceiptInspectionModal(tk.Toplevel):
                 style="Action.TButton",
             ).pack(side="left")
 
+        ttk.Button(
+            bottom_bar,
+            text="Save to Voter Wallet",
+            command=self._save_to_wallet,
+            style="Action.TButton",
+        ).pack(side="left", padx=4)
+
+        ttk.Button(
+            bottom_bar,
+            text="Export Receipt File",
+            command=self._export_file,
+            style="Secondary.TButton",
+        ).pack(side="left", padx=4)
+
         self.archive_verdict = ttk.Label(bottom_bar, text="", style="CardBody.TLabel")
         self.archive_verdict.pack(side="left", padx=10)
 
@@ -1360,6 +1406,48 @@ class ReceiptInspectionModal(tk.Toplevel):
             self.copy_status.configure(text="Copied to clipboard!", foreground=GREEN)
         except Exception as exc:
             self.copy_status.configure(text=f"Copy failed: {exc}", foreground=RED)
+
+    def _save_to_wallet(self) -> None:
+        try:
+            handle = self.receipt_data.get("handle") or self.receipt_data.get("receipt_handle") or "rcpt_unknown"
+            elec_id = self.receipt_data.get("election_id") or "elec_unknown"
+            status = self.receipt_data.get("status") or "PENDING_WITNESS"
+            leaf_idx = self.receipt_data.get("leaf_index")
+            wit_at = self.receipt_data.get("witnessed_at")
+            server_commit = self.receipt_data.get("server_commitment")
+            wit_check = self.receipt_data.get("witness_checkpoint")
+            ballot_hash = self.receipt_data.get("ballot_hash")
+
+            saved = SavedReceipt(
+                receipt_handle=str(handle),
+                election_id=str(elec_id),
+                status=str(status),
+                leaf_index=leaf_idx if isinstance(leaf_idx, int) else None,
+                witnessed_at=str(wit_at) if wit_at else None,
+                server_commitment=str(server_commit) if server_commit else None,
+                witness_checkpoint=str(wit_check) if wit_check else None,
+                ballot_hash=str(ballot_hash) if ballot_hash else None,
+            )
+            wallet = ReceiptWallet()
+            wallet.save_receipt(saved)
+            self.copy_status.configure(text="Saved to voter wallet!", foreground=GREEN)
+        except Exception as exc:
+            self.copy_status.configure(text=f"Save failed: {exc}", foreground=RED)
+
+    def _export_file(self) -> None:
+        try:
+            from tkinter import filedialog
+            path = filedialog.asksaveasfilename(
+                defaultextension=".json",
+                filetypes=[("JSON Files", "*.json"), ("All Files", "*.*")],
+                title="Export Receipt Record",
+            )
+            if path:
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(self.receipt_data, f, indent=2)
+                self.copy_status.configure(text=f"Exported to {Path(path).name}", foreground=GREEN)
+        except Exception as exc:
+            self.copy_status.configure(text=f"Export failed: {exc}", foreground=RED)
 
     def _verify_against_archive(self) -> None:
         if not self.current_archive:
