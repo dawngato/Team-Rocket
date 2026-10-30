@@ -125,7 +125,12 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
         var components = URLComponents(url: boothBaseUrl, resolvingAgainstBaseURL: false)
         var items = components?.queryItems ?? []
         items.append(URLQueryItem(name: "election_id", value: electionId))
-        items.append(URLQueryItem(name: "credential_proof", value: credentialProof))
+        // Credential proof is intentionally kept out of navigation URLs. The
+        // deployed booth must receive it through a same-origin back channel or
+        // a short-lived opaque handoff.
+        guard !credentialProof.isEmpty else {
+            throw BoothError.missingArtifacts(detail: "credential proof is required for a secure back-channel handoff")
+        }
         items.append(URLQueryItem(name: "state", value: stateToken))
         items.append(URLQueryItem(name: "redirect_uri", value: "\(callbackScheme)://booth_return"))
         components?.queryItems = items
@@ -232,24 +237,22 @@ public final class BoothSessionHandler: NSObject, BoothSessionHandling, ASWebAut
             throw BoothError.electionMismatch
         }
         
-        guard let credentialProof = queryDict["credential_proof_b64url"] ?? queryDict["credential_proof"] else {
-            throw BoothError.missingArtifacts(detail: "missing credential_proof_b64url")
+        let secretArtifactKeys = [
+            "credential_proof_b64url", "credential_proof",
+            "engine_ballot_b64url", "engine_ballot",
+            "engine_proofs_b64url", "engine_proofs"
+        ]
+        if secretArtifactKeys.contains(where: { queryDict[$0] != nil }) {
+            throw BoothError.missingArtifacts(
+                detail: "cryptographic artifacts must not be returned in a URL; use the authenticated back-channel handoff"
+            )
         }
-        
-        guard let engineBallot = queryDict["engine_ballot_b64url"] ?? queryDict["engine_ballot"] else {
-            throw BoothError.missingArtifacts(detail: "missing engine_ballot_b64url")
-        }
-        
-        guard let engineProofs = queryDict["engine_proofs_b64url"] ?? queryDict["engine_proofs"] else {
-            throw BoothError.missingArtifacts(detail: "missing engine_proofs_b64url")
-        }
-        
-        return BoothArtifacts(
-            electionId: electionId,
-            credentialProofB64url: credentialProof,
-            engineBallotB64url: engineBallot,
-            engineProofsB64url: engineProofs,
-            stateToken: returnedState
+
+        // The current iOS client intentionally fails closed until the deployed
+        // booth exposes a native back-channel handoff. A URL callback can carry
+        // only the opaque state and election binding, never ballot material.
+        throw BoothError.missingArtifacts(
+            detail: "secure back-channel handoff is not configured for this build"
         )
     }
 }

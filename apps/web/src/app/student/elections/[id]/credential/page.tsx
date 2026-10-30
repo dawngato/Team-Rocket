@@ -9,10 +9,13 @@ import { electionClient } from "@/lib/election_client";
 import {
   CREDENTIAL_ENGINE_HANDOFF_TYPE,
   getCredentialHandoffStorageKey,
+  getCredentialProofStorageKey,
+  getCredentialStateStorageKey,
   identityClient,
   parseCredentialEngineHandoff,
   type CredentialEngineHandoff,
 } from "@/lib/identity_client";
+import { createCredentialRequest, finalizeCredential, type CredentialRequestState } from "@/lib/credential_crypto";
 import type { Election } from "@/lib/types";
 
 type CredentialPageState = "LOADING" | "READY" | "ISSUING" | "ISSUED" | "ERROR";
@@ -33,11 +36,30 @@ export default function GetCredentialPage() {
     void Promise.all([
       electionClient.getElection(electionId),
       identityClient.getIssuanceStatus(electionId),
-    ]).then(([nextElection, status]) => {
+      identityClient.getIssuerPublicKey(),
+    ]).then(async ([nextElection, status, issuerKey]) => {
       if (cancelled) return;
       setElection(nextElection);
       setIssuanceStatus(status.status);
-      if (status.delivered) setIssued(true);
+      const storedProof = window.sessionStorage.getItem(getCredentialProofStorageKey(electionId));
+      if (status.delivered && storedProof) setIssued(true);
+
+      let parsed: CredentialEngineHandoff | null = null;
+      try {
+        const raw = window.sessionStorage.getItem(getCredentialHandoffStorageKey(electionId));
+        parsed = raw ? parseCredentialEngineHandoff(JSON.parse(raw), electionId) : null;
+      } catch {
+        parsed = null;
+      }
+      if (!parsed && status.status === "none") {
+        const generated = await createCredentialRequest(electionId, issuerKey);
+        window.sessionStorage.setItem(getCredentialHandoffStorageKey(electionId), JSON.stringify(generated.handoff));
+        window.sessionStorage.setItem(getCredentialStateStorageKey(electionId), JSON.stringify(generated.state));
+        parsed = generated.handoff;
+      }
+      if (!parsed && !status.delivered) throw new Error("The browser could not create a valid blind credential request.");
+      if (parsed) setHandoff(parsed);
+      if (status.delivered && !storedProof) setError("The issuer has already consumed this one-time request, but this browser no longer has the private blinding state. Start a new election session instead of attempting a replacement credential.");
       setState("READY");
     }).catch((cause) => {
       if (!cancelled) {
@@ -45,22 +67,7 @@ export default function GetCredentialPage() {
         setState("ERROR");
       }
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [electionId]);
-
-  useEffect(() => {
-    if (!electionId) return;
-    try {
-      const raw = window.sessionStorage.getItem(getCredentialHandoffStorageKey(electionId));
-      if (!raw) return;
-      const parsed = parseCredentialEngineHandoff(JSON.parse(raw), electionId);
-      if (parsed) setHandoff(parsed);
-      else setError("The supported engine returned an invalid credential handoff.");
-    } catch {
-      setError("The supported engine handoff could not be read. No credential request was made.");
-    }
+    return () => { cancelled = true; };
   }, [electionId]);
 
   const canRequest = useMemo(() => {
@@ -76,7 +83,14 @@ export default function GetCredentialPage() {
     setState("ISSUING");
     setError(null);
     try {
-      await identityClient.issueCredential(handoff);
+      const response = await identityClient.issueCredential(handoff);
+      const rawState = window.sessionStorage.getItem(getCredentialStateStorageKey(electionId));
+      if (!rawState) throw new Error("The browser lost the private blinding state; the signed credential cannot be safely unblinded.");
+      const requestState = JSON.parse(rawState) as CredentialRequestState;
+      const currentElection = election;
+      if (!currentElection) throw new Error("The authoritative election disappeared while the credential was being finalized.");
+      const proof = await finalizeCredential(requestState, currentElection.manifest_digest, response.blind_signature_response);
+      window.sessionStorage.setItem(getCredentialProofStorageKey(electionId), proof);
       setIssued(true);
       setIssuanceStatus("DELIVERED");
       setState("ISSUED");
@@ -126,7 +140,7 @@ export default function GetCredentialPage() {
         </div>
 
         <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-          The identity service signs only a blinded value supplied by the supported election engine. This web page does not implement RSA blinding, create a credential, or invent a token.
+          This browser creates a fresh blinded request locally, sends only the blinded value to the identity issuer, verifies the returned blind signature, and stores the election-bound proof in session storage.
         </p>
 
         {error && <div className="rounded-lg border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-xs text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
@@ -141,14 +155,14 @@ export default function GetCredentialPage() {
         {!issued && (
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/40">
             <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300"><Lock className="size-4 text-[#157E92]" aria-hidden="true" />Credential handoff</div>
-            <p className="mt-2 text-slate-500">{handoff ? `Received ${CREDENTIAL_ENGINE_HANDOFF_TYPE} from the supported engine.` : "Waiting for the supported engine to return a blinded request."}</p>
+            <p className="mt-2 text-slate-500">{handoff ? `Prepared ${CREDENTIAL_ENGINE_HANDOFF_TYPE} with a browser-generated blinding factor.` : "Waiting for a valid blinded request."}</p>
           </div>
         )}
 
         {issued && (
           <div className="space-y-3 rounded-lg border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-xs text-[#0F5B43] dark:text-[#86EFAC]" role="status">
             <div className="flex items-center gap-2 font-bold"><CheckCircle2 className="size-5" aria-hidden="true" />Identity service delivered a blind signature</div>
-            <p>The signed value is intentionally not displayed or persisted by this page. The supported engine must unblind it and return a complete encrypted ballot handoff before casting can proceed.</p>
+            <p>The signed value was verified locally and transformed into an election-bound credential proof without exposing the voter token to the identity service.</p>
           </div>
         )}
 
@@ -158,7 +172,7 @@ export default function GetCredentialPage() {
           </button>
         )}
 
-        {issued && <div className="flex items-start gap-2 rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-xs leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span>Return to the supported booth. Casting remains blocked until it returns a valid election-bound encrypted ballot handoff.</span></div>}
+        {issued && <div className="flex items-start gap-2 rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-xs leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span>Continue to the browser booth to encrypt your selected candidate with the election engine’s public key.</span></div>}
 
         <Link href={`/student/elections/${encodeURIComponent(election.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#157E92] hover:underline"><ArrowLeft className="size-4" aria-hidden="true" /> Back to election details</Link>
       </section>

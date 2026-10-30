@@ -7,8 +7,8 @@ services:
     image: nginx:1.25-alpine
     container_name: himvote_gateway
     ports:
-      - "8080:8080"
-      - "8443:8443"
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:8443:8443"
     volumes:
       - ./infrastructure/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./infrastructure/nginx/certs:/etc/nginx/certs:ro
@@ -18,7 +18,7 @@ services:
       - identity_issuer
       - casting
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/healthz || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -34,7 +34,7 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_web
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       - NEXT_PUBLIC_API_BASE=http://localhost:8080
       - NEXT_PUBLIC_IDENTITY_BASE=http://localhost:8080
@@ -53,32 +53,19 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_admin_api
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     environment:
-      - IDENTITY_DB_HOST=identity_db
-      - IDENTITY_DB_PORT=5432
-      - IDENTITY_DB_NAME=himvote_identity
-      - IDENTITY_DB_USER=himvote_identity
-      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:-himvote_identity}
-      - IDENTITY_DB_SSL_MODE=prefer
-      - CASTING_DB_HOST=casting_db
-      - CASTING_DB_PORT=5432
-      - CASTING_DB_NAME=himvote_casting
-      - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:-himvote_casting}
-      - CASTING_DB_SSL_MODE=prefer
+      - ADMIN_DB_URL=sqlite:///./himvote_admin_development.db
+      - IDENTITY_SERVICE_URL=http://identity_issuer:8081
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
       - IDENTITY_ALLOWED_ORIGINS=${IDENTITY_ALLOWED_ORIGINS:-http://localhost:3000,http://127.0.0.1:3000}
       - AUDITOR_PUBLIC_KEY_FINGERPRINT=${AUDITOR_PUBLIC_KEY_FINGERPRINT:-CHANGE_ME}
     depends_on:
-      identity_db:
-        condition: service_healthy
-      casting_db:
-        condition: service_healthy
+      identity_issuer:
+        condition: service_started
     networks:
       - himvote_identity_net
-      - himvote_casting_net
     restart: unless-stopped
 
   identity_issuer:
@@ -87,13 +74,13 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_identity_issuer
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
       - IDENTITY_DB_HOST=identity_db
       - IDENTITY_DB_PORT=5432
       - IDENTITY_DB_NAME=himvote_identity
       - IDENTITY_DB_USER=himvote_identity
-      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:-himvote_identity}
+      - IDENTITY_DB_PASSWORD=${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD must be set}
       - IDENTITY_DB_SSL_MODE=prefer
       - KMS_PROVIDER=local
       - LOG_LEVEL=info
@@ -112,13 +99,13 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_casting
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     environment:
       - CASTING_DB_HOST=casting_db
       - CASTING_DB_PORT=5432
       - CASTING_DB_NAME=himvote_casting
       - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:-himvote_casting}
+      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
       - CASTING_DB_SSL_MODE=prefer
       - ELECTION_ENGINE_BASE=http://election_engine:8084
       - LOG_LEVEL=info
@@ -139,10 +126,10 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_election_engine
     ports:
-      - "8084:8084"
+      - "127.0.0.1:8084:8084"
     environment:
       - LOG_LEVEL=info
-      - VOTING_ENGINE_PROVIDER=local_vetted
+      - VOTING_ENGINE_PROVIDER=custom_development_unverified
     networks:
       - himvote_casting_net
     restart: unless-stopped
@@ -157,7 +144,7 @@ services:
       - CASTING_DB_PORT=5432
       - CASTING_DB_NAME=himvote_casting
       - CASTING_DB_USER=himvote_casting
-      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:-himvote_casting}
+      - CASTING_DB_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
       - WITNESS_BASE=http://witness:8086
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
@@ -176,7 +163,7 @@ services:
       dockerfile: Dockerfile
     container_name: himvote_witness
     ports:
-      - "8086:8086"
+      - "127.0.0.1:8086:8086"
     environment:
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
@@ -211,9 +198,9 @@ services:
     container_name: himvote_chain_node
     entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337"]
     ports:
-      - "8545:8545"
+      - "127.0.0.1:8545:8545"
     healthcheck:
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 8545 || exit 1"]
+      test: ["CMD", "cast", "block-number", "--rpc-url", "http://127.0.0.1:8545"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -227,7 +214,7 @@ services:
     environment:
       - POSTGRES_DB=himvote_identity
       - POSTGRES_USER=himvote_identity
-      - POSTGRES_PASSWORD=${IDENTITY_DB_PASSWORD:-himvote_identity}
+      - POSTGRES_PASSWORD=${IDENTITY_DB_PASSWORD:?IDENTITY_DB_PASSWORD must be set}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - identity_db_data:/var/lib/postgresql/data
@@ -247,7 +234,7 @@ services:
     environment:
       - POSTGRES_DB=himvote_casting
       - POSTGRES_USER=himvote_casting
-      - POSTGRES_PASSWORD=${CASTING_DB_PASSWORD:-himvote_casting}
+      - POSTGRES_PASSWORD=${CASTING_DB_PASSWORD:?CASTING_DB_PASSWORD must be set}
       - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
     volumes:
       - casting_db_data:/var/lib/postgresql/data
@@ -264,13 +251,13 @@ services:
   redis:
     image: redis:7-alpine
     container_name: himvote_redis
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-himvote_redis}"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}"]
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-himvote_redis}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

@@ -17,7 +17,7 @@ export default function OfficerOverviewPage() {
     setLoading(true);
     setError(null);
     try {
-      setElections(await electionClient.getElections());
+      setElections(await electionClient.getElections({ includeInternal: true }));
     } catch (cause) {
       setElections([]);
       setError(cause instanceof Error ? cause : new Error("The election service could not be reached."));

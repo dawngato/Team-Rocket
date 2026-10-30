@@ -70,6 +70,7 @@ class CandidateModel(Base):
     election_id = Column(String(64), ForeignKey("elections.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
     contest = Column(String(255), nullable=False)
+    statement = Column(Text, nullable=True)
 
     election = relationship("ElectionModel", back_populates="candidates")
 

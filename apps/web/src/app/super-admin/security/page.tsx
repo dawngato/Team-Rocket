@@ -3,22 +3,11 @@
 import React, { useState } from "react";
 import { ShieldAlert, ShieldCheck, Key, Lock, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
-import { INITIAL_TRUSTED_PINS } from "@/lib/mock_data";
+import type { TrustedPin } from "@/lib/types";
 
 export default function SuperAdminSecurityPage() {
-  const [emergencyLockActive, setEmergencyLockActive] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const toggleEmergencyLock = () => {
-    const nextState = !emergencyLockActive;
-    setEmergencyLockActive(nextState);
-    setFeedback(
-      nextState
-        ? "Emergency credential lockdown enabled. Blind signature issuance suspended across all departments."
-        : "Emergency lockdown deactivated. Normal blind issuance resumed."
-    );
-    setTimeout(() => setFeedback(null), 4000);
-  };
+  const emergencyLockActive = false;
+  const trustedPins: TrustedPin[] = [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -39,12 +28,7 @@ export default function SuperAdminSecurityPage() {
 
       <SuperAdminNav />
 
-      {feedback && (
-        <div className="p-4 rounded-xl bg-[#15805D]/10 border border-[#15805D]/30 text-[#15805D] text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span>{feedback}</span>
-        </div>
-      )}
+      <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08]" role="status">Security controls are read-only until trusted pins and emergency controls are backed by an independently operated control plane. Fixture pins are hidden.</div>
 
       {/* Security Status Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -80,7 +64,7 @@ export default function SuperAdminSecurityPage() {
           </span>
           <button
             type="button"
-            onClick={toggleEmergencyLock}
+            disabled
             className={`min-h-[44px] w-full mt-1 px-4 py-2 font-bold text-xs rounded-lg transition-colors flex items-center justify-center gap-2 ${
               emergencyLockActive
                 ? "bg-[#C23C45] text-white hover:bg-red-700"
@@ -111,7 +95,7 @@ export default function SuperAdminSecurityPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {INITIAL_TRUSTED_PINS.map((pin) => (
+              {trustedPins.map((pin) => (
                 <tr key={pin.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
                   <td className="px-6 py-4">
                     <div className="font-bold text-[#10233F] dark:text-white">{pin.label}</div>

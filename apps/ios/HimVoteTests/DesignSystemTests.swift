@@ -136,4 +136,162 @@ final class DesignSystemTests: XCTestCase {
         XCTAssertEqual(bullet.icon, "shield.fill")
         XCTAssertEqual(bullet.title, "Hardware Isolation")
     }
+    
+    func testTailAdminThemeColorTokens() {
+        XCTAssertNotNil(ColorTokens.tailAdminBrand)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandDark)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandLight)
+        XCTAssertNotNil(ColorTokens.tailAdminBrandBg)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkBg)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkCard)
+        XCTAssertNotNil(ColorTokens.tailAdminDarkBorder)
+        XCTAssertNotNil(ColorTokens.tailAdminLightBg)
+        XCTAssertNotNil(ColorTokens.tailAdminLightCard)
+        XCTAssertNotNil(ColorTokens.tailAdminLightBorder)
+        XCTAssertNotNil(ColorTokens.tailAdminSuccess)
+        XCTAssertNotNil(ColorTokens.tailAdminWarning)
+        XCTAssertNotNil(ColorTokens.tailAdminDanger)
+        XCTAssertNotNil(ColorTokens.tailAdminInfo)
+        XCTAssertNotNil(ColorTokens.tailAdminPurple)
+    }
+    
+    func testFloatingBottomBarInitialization() {
+        var selected = 0
+        let binding = Binding<Int>(
+            get: { selected },
+            set: { selected = $0 }
+        )
+        let bar = FloatingBottomBar(selectedTab: binding)
+        XCTAssertNotNil(bar)
+    }
+    
+    func testTailAdminDashboardViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let dashboard = TailAdminDashboardView(
+            authViewModel: authVM,
+            electionsViewModel: elecVM,
+            onNavigateToTab: { _ in },
+            onOpenSidebar: { }
+        )
+        XCTAssertNotNil(dashboard)
+    }
+    
+    func testMainTabViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let mainView = MainTabView(
+            authViewModel: authVM,
+            electionsViewModel: elecVM
+        )
+        XCTAssertNotNil(mainView)
+    }
+    
+    func testSuperAdminDashboardViewInitialization() {
+        let authVM = AuthViewModel()
+        let view = SuperAdminDashboardView(authViewModel: authVM)
+        XCTAssertNotNil(view)
+    }
+    
+    func testAdminElectionManagerViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let view = AdminElectionManagerView(authViewModel: authVM, electionsViewModel: elecVM)
+        XCTAssertNotNil(view)
+    }
+    
+    func testVisitorPublicPortalViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let view = VisitorPublicPortalView(authViewModel: authVM, electionsViewModel: elecVM)
+        XCTAssertNotNil(view)
+    }
+    
+    func testAdminCanPromoteStudentToCandidate() {
+        let authVM = AuthViewModel()
+        XCTAssertTrue(authVM.registeredStudents.isEmpty)
+        
+        // Register a new student
+        authVM.registerStudent(
+            name: "Clara Chen",
+            email: "clara.chen@campus.edu",
+            password: "StudentPass2026!",
+            studentId: "EC2026-042",
+            department: "Electronics & Comm"
+        )
+        XCTAssertEqual(authVM.registeredStudents.count, 1)
+        let student = authVM.registeredStudents[0]
+        XCTAssertFalse(student.isNominatedCandidate)
+        
+        authVM.promoteStudentToCandidate(studentId: student.id, contest: "Academic Senate")
+        let updated = authVM.registeredStudents.first(where: { $0.id == student.id })
+        XCTAssertTrue(updated?.isNominatedCandidate == true)
+        XCTAssertEqual(updated?.candidateContest, "Academic Senate")
+    }
+    
+    func testAdminCanCreateElection() {
+        let elecVM = ElectionsViewModel()
+        let initialCount = elecVM.elections.count
+        let newId = elecVM.createElectionByAdmin(title: "Hostel Council", contest: "President", eligibleCount: 800)
+        
+        XCTAssertEqual(elecVM.elections.count, initialCount + 1)
+        XCTAssertEqual(elecVM.elections.first?.id, newId)
+        XCTAssertEqual(elecVM.elections.first?.title, "Hostel Council")
+        XCTAssertEqual(elecVM.customElections[newId]?.eligibleCount, 800)
+    }
+    
+    func testVisitorModeActivation() {
+        let authVM = AuthViewModel()
+        authVM.continueAsVisitor()
+        XCTAssertTrue(authVM.isAuthenticated)
+        XCTAssertEqual(authVM.currentUser?.role, .visitor)
+    }
+    
+    func testVoterBoothPortalViewInitialization() {
+        let authVM = AuthViewModel()
+        let elecVM = ElectionsViewModel()
+        let votingVM = VotingViewModel()
+        let view = VoterBoothPortalView(
+            authViewModel: authVM,
+            electionsViewModel: elecVM,
+            votingViewModel: votingVM
+        )
+        XCTAssertNotNil(view)
+    }
+    
+    func testStudentReceiptPortalViewInitialization() {
+        let votingVM = VotingViewModel()
+        let view = StudentReceiptPortalView(votingViewModel: votingVM)
+        XCTAssertNotNil(view)
+    }
+    
+    func testCredentialModelAndViewModelCompatibility() {
+        let cred = Credential(
+            electionId: "elec_01",
+            blindSignatureResponse: "sig_resp_xyz",
+            blindedSecret: "secret_1234567890abcdef",
+            unblindedSignature: "unblinded_sig",
+            status: .delivered
+        )
+        XCTAssertEqual(cred.blindedRequest, "secret_1234567890abcdef")
+        XCTAssertEqual(cred.credentialToken, "unblinded_sig")
+        XCTAssertEqual(cred.nullifier, "secret_123456789")
+        
+        let credVM = CredentialViewModel()
+        XCTAssertFalse(credVM.isLoading)
+        XCTAssertNil(credVM.issuedCredential)
+    }
+    
+    func testVotingBoothViewSecondaryInitializer() {
+        let votingVM = VotingViewModel()
+        let boothView = VotingBoothView(
+            electionId: "elec_test",
+            electionTitle: "Test Election",
+            credentialToken: "tok_test_123",
+            votingViewModel: votingVM
+        )
+        XCTAssertNotNil(boothView)
+        XCTAssertEqual(boothView.electionSummary.id, "elec_test")
+        XCTAssertEqual(boothView.credential.credentialToken, "tok_test_123")
+    }
 }

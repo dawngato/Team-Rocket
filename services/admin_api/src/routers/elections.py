@@ -47,6 +47,7 @@ from src.services.publication_service import PublicationService
 from src.services.evidence_service import EvidenceService
 from src.services.audit_service import AuditService
 from src.crypto.canonical import canonical_json_str
+from src.auth import get_authenticated_actor
 
 router = APIRouter(prefix="/v1/elections", tags=["elections"])
 
@@ -58,29 +59,28 @@ def get_current_actor_id(request: Request) -> str:
     gateway. Accepting a caller supplied actor header in production would allow
     audit records and lifecycle actions to be impersonated.
     """
-    from src.config import settings
-
-    if not settings.allow_dev_actor_headers:
-        raise HTTPException(
-            status_code=401,
-            detail="Authenticated actor context is required in this environment",
-        )
-    for header_name in ["X-Actor-ID", "x-actor-id", "X_Actor_ID", "x_actor_id", "actor_id"]:
-        val = request.headers.get(header_name)
-        if val:
-            return val
-    return "election_officer_default"
+    return get_authenticated_actor(request)
 
 
 @router.get("", response_model=ElectionList)
 def list_elections(
     state: Optional[str] = Query(None),
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
-    """Lists elections with optional state filter."""
+    """Lists public elections, or scoped internal elections for operators."""
     query = db.query(ElectionModel).join(ElectionStateModel)
     if state:
         query = query.filter(ElectionStateModel.state == state)
+    elif include_internal:
+        # Internal lifecycle views must use the same authenticated actor
+        # boundary as mutations. Public callers never receive draft metadata.
+        get_current_actor_id(request)
+    else:
+        query = query.filter(
+            ElectionStateModel.state.notin_(["DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"])
+        )
 
     elections = query.all()
     summaries = [
@@ -162,15 +162,22 @@ def create_election(
 @router.get("/{id}", response_model=Election)
 def get_election(
     id: str,
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """Retrieves detailed election information."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    state = election.state_record.state if election.state_record else "UNKNOWN"
+    if state in {"DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"}:
+        if not include_internal:
+            raise HTTPException(status_code=404, detail="Election not found")
+        get_current_actor_id(request)
 
     candidates = [
-        Candidate(id=c.id, name=c.name, contest=c.contest)
+        Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
         for c in election.candidates
     ]
 
@@ -190,6 +197,8 @@ def get_election(
         opens_at_utc=election.opens_at_utc,
         closes_at_utc=election.closes_at_utc,
         issuance_cutoff_utc=election.issuance_cutoff_utc,
+        contest=election.contest,
+        selection_rule=election.selection_rule,
         eligible_count=eligible_count,
         candidates=candidates
     )
@@ -287,7 +296,7 @@ def list_candidates(
         raise HTTPException(status_code=404, detail="Election not found")
 
     return [
-        Candidate(id=c.id, name=c.name, contest=c.contest)
+        Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
         for c in election.candidates
     ]
 
@@ -299,7 +308,7 @@ def add_candidates(
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
-    """Adds candidates to an election prior to freeze."""
+    """Replace the authoritative candidate set while the election is mutable."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
@@ -310,25 +319,31 @@ def add_candidates(
     except StateMachineError as e:
         raise HTTPException(status_code=409, detail=e.message)
 
+    submitted_ids = {candidate.id for candidate in candidates}
+    for existing in list(election.candidates):
+        if existing.id not in submitted_ids:
+            db.delete(existing)
+
     for c in candidates:
         cand_model = CandidateModel(
             id=c.id,
             election_id=id,
             name=c.name,
-            contest=c.contest
+            contest=c.contest,
+            statement=c.statement,
         )
         db.merge(cand_model)
 
     AuditService.record_event(
         db=db,
         actor_id=actor_id,
-        action="ADD_CANDIDATES",
+        action="REPLACE_CANDIDATES",
         result="SUCCESS",
         details={"election_id": id, "count": len(candidates)}
     )
 
     db.commit()
-    return {"status": "candidates_added", "count": len(candidates)}
+    return {"status": "candidates_replaced", "count": len(candidates)}
 
 
 @router.post("/{id}/roster", status_code=202)

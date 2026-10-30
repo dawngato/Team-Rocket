@@ -9,9 +9,13 @@ import type {
   StudentRecord,
   TeacherRecord,
   TrustedPin,
+  Candidate,
+  AdminInvitationRecord,
+  RosterCorrectionRecord,
 } from "./types";
 import { castingClient } from "./casting_client";
 import { electionClient, ElectionApiError } from "./election_client";
+export { electionClient };
 
 export class ApiClientError extends Error {
   readonly code: string;
@@ -96,13 +100,13 @@ function toElection(value: unknown): Election {
 }
 
 export const apiClient = {
-  async getElections(): Promise<Election[]> {
-    return electionClient.getElections();
+  async getElections(options: { includeInternal?: boolean } = {}): Promise<Election[]> {
+    return electionClient.getElections(options);
   },
 
-  async getElection(id: string): Promise<Election | null> {
+  async getElection(id: string, options: { includeInternal?: boolean } = {}): Promise<Election | null> {
     try {
-      return await electionClient.getElection(id);
+      return await electionClient.getElection(id, options);
     } catch (error) {
       if (error instanceof ElectionApiError && error.status === 404) return null;
       throw error;
@@ -140,12 +144,16 @@ export const apiClient = {
     return electionClient.getElection(id);
   },
 
-  async requestPublication(_id: string): Promise<Election> {
-    throw new ApiClientError(
-      "AUDITOR_SIGNATURE_REQUIRED",
-      "Publication requires an independently signed auditor attestation; the client will not invent one.",
-      409,
-    );
+  async requestPublication(id: string, payload?: { auditor_public_key: string; auditor_signature: string; attestation_data: Record<string, unknown> }): Promise<Election> {
+    if (!payload) {
+      throw new ApiClientError("AUDITOR_SIGNATURE_REQUIRED", "Publication requires an independently signed auditor attestation; the client will not invent one.", 409);
+    }
+    const body = await requestJson<unknown>("admin", `/v1/elections/${encodeURIComponent(id)}/publication-request`, {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+    if (!isRecord(body)) throw new ApiClientError("PUBLICATION_RESPONSE_INVALID", "The admin service returned an invalid publication response.", 502);
+    return electionClient.getElection(id);
   },
 
   async getResults(electionId: string): Promise<PublishedResults | null> {
@@ -240,7 +248,60 @@ export const apiClient = {
   },
 
   async getTeachers(): Promise<TeacherRecord[]> {
-    throw new ApiClientError("TEACHER_DIRECTORY_UNAVAILABLE", "The identity service does not expose a teacher directory contract yet.", 501);
+    const rows = await requestJson<Array<Record<string, unknown>>>("identity", "/v1/admin/teachers");
+    return rows.map((row) => ({
+      id: String(row.user_id || ""),
+      faculty_id: String(row.external_id || row.user_id || ""),
+      full_name: String(row.email || "Teacher"),
+      department: String(row.scope || ""),
+      role: String(row.role || "teacher"),
+      active: String(row.status || "") === "ACTIVE",
+      email: String(row.email || ""),
+      status: String(row.status || ""),
+      scope: String(row.scope || ""),
+      invitation_id: typeof row.invitation_id === "string" ? row.invitation_id : null,
+    }));
+  },
+
+  async getInvitations(): Promise<AdminInvitationRecord[]> {
+    const rows = await requestJson<Array<Record<string, unknown>>>("identity", "/v1/admin/invitations");
+    return rows.map((row) => ({
+      id: String(row.id || ""),
+      email: String(row.email || ""),
+      role: String(row.role || ""),
+      scope: String(row.scope || ""),
+      status: String(row.status || ""),
+      expires_at: String(row.expires_at || ""),
+      created_at: String(row.created_at || ""),
+    }));
+  },
+
+  async createInvitation(input: { email: string; role: string; scope: string }): Promise<{ invitation_id: string; token?: string; status: string }> {
+    const response = await requestJson<Record<string, unknown>>("identity", "/v1/admin/invitations", {
+      method: "POST",
+      body: JSON.stringify(input),
+    });
+    if (typeof response.invitation_id !== "string" || typeof response.status !== "string") {
+      throw new ApiClientError("INVITATION_RESPONSE_INVALID", "The identity service returned an invalid invitation response.", 502);
+    }
+    return { invitation_id: response.invitation_id, status: response.status, token: typeof response.token === "string" ? response.token : undefined };
+  },
+
+  async getRosterCorrections(): Promise<RosterCorrectionRecord[]> {
+    return requestJson<RosterCorrectionRecord[]>("identity", "/v1/roster/corrections");
+  },
+
+  async submitRosterCorrection(input: Omit<RosterCorrectionRecord, "id" | "status" | "submitted_by" | "created_at" | "decided_by" | "decided_at">): Promise<RosterCorrectionRecord> {
+    return requestJson<RosterCorrectionRecord>("identity", "/v1/roster/corrections", { method: "POST", body: JSON.stringify(input) });
+  },
+
+  async getCandidates(electionId: string): Promise<Candidate[]> {
+    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`);
+  },
+
+  async replaceCandidates(electionId: string, candidates: Candidate[]): Promise<Candidate[]> {
+    await requestJson("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`, { method: "POST", body: JSON.stringify(candidates) });
+    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`);
   },
 
   async getAuditEvents(): Promise<AuditEvent[]> {

@@ -18,7 +18,7 @@ import hashlib
 from typing import Tuple, Optional
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
-from ..config import ISSUER_PRIVATE_KEY_PEM
+from ..config import APP_ENV, ISSUER_PRIVATE_KEY_PEM
 
 
 class RsaBlindIssuer:
@@ -32,11 +32,13 @@ class RsaBlindIssuer:
                 ISSUER_PRIVATE_KEY_PEM.encode("utf-8"),
                 password=None,
             )
-        else:
+        elif APP_ENV != "production":
             self._private_key = rsa.generate_private_key(
                 public_exponent=65537,
                 key_size=2048,
             )
+        else:
+            raise RuntimeError("Production issuer key is not configured")
 
         self._public_key = self._private_key.public_key()
         priv_numbers = self._private_key.private_numbers()
@@ -51,6 +53,11 @@ class RsaBlindIssuer:
     def public_key(self) -> rsa.RSAPublicKey:
         """Get the RSA public key."""
         return self._public_key
+
+    @property
+    def public_parameters(self) -> dict[str, int]:
+        """Return the public RSA parameters needed by a browser blind signer."""
+        return {"n": self.n, "e": self.e, "modulus_len": self.modulus_len}
 
     def blind_sign(self, blinded_msg: bytes) -> bytes:
         """

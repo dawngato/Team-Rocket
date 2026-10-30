@@ -1,167 +1,19 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import {
-  ShieldCheck,
-  Search,
-  FileCheck,
-  Globe,
-  Layers,
-  Download,
-  ExternalLink,
-  CheckCircle2,
-  Lock,
-  ArrowRight,
-} from "lucide-react";
-import { StateBadge } from "@/components/StateBadge";
-import { INITIAL_ELECTIONS, INITIAL_EVIDENCE, INITIAL_RESULTS } from "@/lib/mock_data";
-import { EvidencePackage, Election } from "@/lib/types";
+import { FileCheck, Search, ShieldCheck } from "lucide-react";
+import { StateBadge } from "../../components/StateBadge";
+import { apiClient } from "../../lib/api_client";
+import type { Election, EvidencePackage } from "../../lib/types";
+
+type AuditRecord = { election: Election; evidence: EvidencePackage | null };
 
 export default function PublicAuditExplorerPage() {
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const filteredElections = INITIAL_ELECTIONS.filter((el) => {
-    const ev = INITIAL_EVIDENCE[el.id];
-    const term = searchTerm.toLowerCase();
-    return (
-      el.title.toLowerCase().includes(term) ||
-      el.id.toLowerCase().includes(term) ||
-      el.manifest_digest.toLowerCase().includes(term) ||
-      (ev && ev.anchor_tx_hash.toLowerCase().includes(term)) ||
-      (ev && ev.final_checkpoint_digest.toLowerCase().includes(term))
-    );
-  });
-
-  return (
-    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-10">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            Evidence Explorer
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Public Audit Explorer
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Inspect manifest digests, witness Merkle checkpoints, and development chain anchor records. Use the offline verifier for authoritative checks.
-          </p>
-        </div>
-        <Link
-          href="/auditor/evidence"
-          className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-        >
-          <Layers className="w-4 h-4" aria-hidden="true" />
-          <span>Offline Evidence Verifier</span>
-        </Link>
-      </div>
-
-      {/* Search Input */}
-      <div className="relative">
-        <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search by election title, manifest digest, Merkle root, or chain transaction hash..."
-          className="w-full min-h-[48px] pl-10 pr-4 py-2 rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-        />
-      </div>
-
-      {/* Evidence Packages List */}
-      <div className="space-y-6">
-        {filteredElections.map((elec) => {
-          const evidence: EvidencePackage = INITIAL_EVIDENCE[elec.id] || {
-            election_id: elec.id,
-            manifest_digest: elec.manifest_digest,
-            final_checkpoint_digest: "deb3384abb0306e861b04a6e760e9fa992f25a5632507a91454a49538880a7e5",
-            anchor_tx_hash: "0x4f82a93c7210e395b018c47f89a2b6d19e04c8f2a573b9e1a82649d038271e9a",
-            auditor_signature: "development_fixture_signature_reference",
-          };
-
-          return (
-            <div
-              key={elec.id}
-              className="p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-6"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-[#1E3352]">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h2 className="text-xl font-bold text-[#10233F] dark:text-white">
-                      {elec.title}
-                    </h2>
-                    <StateBadge state={elec.state} size="sm" />
-                  </div>
-                  <span className="text-xs text-slate-400 font-mono mt-1 block">
-                    Contest ID: {elec.id}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Link
-                    href={`/student/receipts/HV_24F8_19C2/inclusion`}
-                    className="min-h-[44px] px-3.5 py-2 font-semibold text-xs border border-slate-300 dark:border-[#1E3352] hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-                  >
-                    <Layers className="w-3.5 h-3.5 text-[#157E92]" aria-hidden="true" />
-                    <span>Inclusion Proofs</span>
-                  </Link>
-                  <Link
-                    href={`/results`}
-                    className="min-h-[44px] px-3.5 py-2 font-bold text-xs bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] hover:bg-[#157E92]/20 rounded-lg transition-colors flex items-center gap-1.5"
-                  >
-                    <span>View Published Tally</span>
-                    <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* Cryptographic Ledger Table */}
-              <div className="space-y-3 font-mono text-xs">
-                <div className="p-3.5 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300">
-                    <FileCheck className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                    <span>Manifest Digest (RFC 8785 Canonical JSON)</span>
-                  </div>
-                  <span className="text-slate-600 dark:text-slate-400 truncate max-w-md">
-                    {elec.manifest_digest}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300">
-                    <Layers className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-                    <span>Final Witness Checkpoint Root (RFC 9162 Log)</span>
-                  </div>
-                  <span className="text-[#15805D] font-bold truncate max-w-md">
-                    {evidence.final_checkpoint_digest}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300">
-                    <Globe className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                    <span>Consortium Chain Anchor Transaction</span>
-                  </div>
-                  <span className="text-[#157E92] font-bold truncate max-w-md">
-                    {evidence.anchor_tx_hash}
-                  </span>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 font-sans font-semibold text-slate-700 dark:text-slate-300">
-                    <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-                    <span>Independent Auditor Signature</span>
-                  </div>
-                  <span className="text-slate-600 dark:text-slate-400 truncate max-w-md">
-                    {evidence.auditor_signature}
-                  </span>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const [records, setRecords] = useState<AuditRecord[]>([]);
+  const [term, setTerm] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { void apiClient.getElections().then((summaries) => Promise.all(summaries.map(async (summary) => { const election = await apiClient.getElection(summary.id); return election ? { election, evidence: await apiClient.getEvidence(summary.id) } : null; }))).then((rows) => setRecords(rows.filter((row): row is AuditRecord => Boolean(row)))).catch((cause) => setError(cause instanceof Error ? cause.message : "Audit evidence unavailable.")); }, []);
+  const filtered = useMemo(() => records.filter(({ election, evidence }) => { const value = term.toLowerCase(); return !value || [election.title, election.id, election.manifest_digest, evidence?.final_checkpoint_digest, evidence?.anchor_tx_hash].some((field) => field?.toLowerCase().includes(value)); }), [records, term]);
+  return <main className="mx-auto max-w-6xl space-y-10 px-4 py-12 sm:px-6 lg:px-8"><header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#157E92]"><ShieldCheck className="size-4" aria-hidden="true" />Evidence explorer</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Public audit explorer</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Only evidence returned by the authoritative election service is shown. Missing witness or anchor records remain missing; no fixture is substituted.</p></header><div className="relative"><Search className="absolute left-3 top-1/2 size-5 -translate-y-1/2 text-slate-400" aria-hidden="true" /><input value={term} onChange={(event) => setTerm(event.target.value)} placeholder="Search election, manifest, checkpoint or transaction" className="min-h-12 w-full rounded-xl border border-slate-300 bg-white pl-10 pr-4 text-sm dark:border-[#1E3352] dark:bg-[#132135]" /></div>{error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707]" role="alert">{error}</div>}<section className="space-y-5">{filtered.map(({ election, evidence }) => <article key={election.id} className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="flex flex-wrap items-center justify-between gap-3"><div><div className="flex items-center gap-3"><h2 className="text-xl font-bold text-[#10233F] dark:text-white">{election.title}</h2><StateBadge state={election.state} size="sm" /></div><p className="font-mono text-xs text-slate-400">{election.id}</p></div><Link href={`/auditor/verify?election=${encodeURIComponent(election.id)}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-3 text-xs font-semibold"><FileCheck className="size-4 text-[#157E92]" aria-hidden="true" />Verify package</Link></div><dl className="grid gap-3 font-mono text-xs sm:grid-cols-2"><div><dt className="font-sans text-slate-500">Manifest digest</dt><dd className="break-all">{election.manifest_digest || "Not frozen"}</dd></div><div><dt className="font-sans text-slate-500">Final witness checkpoint</dt><dd className="break-all">{evidence?.final_checkpoint_digest || "Not released"}</dd></div><div><dt className="font-sans text-slate-500">Chain anchor</dt><dd className="break-all">{evidence?.anchor_tx_hash || "Not released"}</dd></div><div><dt className="font-sans text-slate-500">Auditor signature</dt><dd className="break-all">{evidence?.auditor_signature || "Not released"}</dd></div></dl></article>)}{filtered.length === 0 && <div className="rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-500">No authoritative records match the search.</div>}</section></main>;
 }

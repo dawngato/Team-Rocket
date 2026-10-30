@@ -1,189 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
-import { UserCheck, Plus, CheckCircle2, XCircle, Search } from "lucide-react";
-import { INITIAL_TEACHERS } from "@/lib/mock_data";
-import { TeacherRecord } from "@/lib/types";
+import React, { useEffect, useState } from "react";
+import { Plus, UserCheck } from "lucide-react";
+import { apiClient } from "../../../lib/api_client";
+import type { TeacherRecord } from "../../../lib/types";
 
 export default function AdminTeachersPage() {
-  const [teachers, setTeachers] = useState<TeacherRecord[]>(INITIAL_TEACHERS);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [newFacultyName, setNewFacultyName] = useState("");
-  const [newFacultyId, setNewFacultyId] = useState("");
-  const [newDept, setNewDept] = useState("Computer Science and Engineering");
-  const [isAdding, setIsAdding] = useState(false);
-
-  const toggleStatus = (id: string) => {
-    setTeachers((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, active: !t.active } : t))
-    );
+  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
+  const [email, setEmail] = useState("");
+  const [scope, setScope] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const load = () => void apiClient.getTeachers().then(setTeachers).catch((cause) => setError(cause instanceof Error ? cause.message : "Teacher directory unavailable."));
+  useEffect(load, []);
+  const invite = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(null); setMessage(null);
+    try { const result = await apiClient.createInvitation({ email, role: "teacher", scope }); setMessage(`Teacher invitation ${result.invitation_id} was persisted. The account is activated only after secure redemption.`); setEmail(""); load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Teacher invitation was rejected."); }
+    finally { setBusy(false); }
   };
-
-  const handleAddTeacher = (e: React.FormEvent) => {
-    e.preventDefault();
-    const created: TeacherRecord = {
-      id: `tch_${Date.now()}`,
-      faculty_id: newFacultyId,
-      full_name: newFacultyName,
-      department: newDept,
-      role: "Department Verification Officer",
-      active: true,
-    };
-    setTeachers([created, ...teachers]);
-    setNewFacultyName("");
-    setNewFacultyId("");
-    setIsAdding(false);
-  };
-
-  const filtered = teachers.filter(
-    (t) =>
-      t.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.faculty_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      t.department.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            Faculty Governance
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Teachers and Verification Officers
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Assign department teachers authorized to verify student identities and certify roster corrections.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAdding(!isAdding)}
-          className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm"
-        >
-          <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>{isAdding ? "Cancel" : "Add Faculty Officer"}</span>
-        </button>
-      </div>
-
-      {isAdding && (
-        <form
-          onSubmit={handleAddTeacher}
-          className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4"
-        >
-          <h2 className="font-bold text-base text-[#10233F] dark:text-white">
-            Register New Verification Officer
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label htmlFor="tch-name" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Faculty Name
-              </label>
-              <input
-                id="tch-name"
-                type="text"
-                required
-                value={newFacultyName}
-                onChange={(e) => setNewFacultyName(e.target.value)}
-                placeholder="Dr. Full Name"
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-              />
-            </div>
-            <div>
-              <label htmlFor="tch-id" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Faculty Identification
-              </label>
-              <input
-                id="tch-id"
-                type="text"
-                required
-                value={newFacultyId}
-                onChange={(e) => setNewFacultyId(e.target.value)}
-                placeholder="FAC CS 099"
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-              />
-            </div>
-            <div>
-              <label htmlFor="tch-dept" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Department
-              </label>
-              <select
-                id="tch-dept"
-                value={newDept}
-                onChange={(e) => setNewDept(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-              >
-                <option value="Computer Science and Engineering">Computer Science</option>
-                <option value="Electronics and Communication">Electronics</option>
-                <option value="Mechanical Engineering">Mechanical</option>
-                <option value="Civil Engineering">Civil</option>
-              </select>
-            </div>
-          </div>
-          <button
-            type="submit"
-            className="min-h-[44px] px-5 py-2 font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors text-sm shadow-sm"
-          >
-            Save Faculty Record
-          </button>
-        </form>
-      )}
-
-      {/* Teachers Directory */}
-      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-[#1E3352] text-slate-500 uppercase tracking-wider font-semibold">
-                <th scope="col" className="px-6 py-4">Faculty Name</th>
-                <th scope="col" className="px-6 py-4">Department</th>
-                <th scope="col" className="px-6 py-4">Role Assignment</th>
-                <th scope="col" className="px-6 py-4">Active Status</th>
-                <th scope="col" className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {filtered.map((tch) => (
-                <tr key={tch.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-sm text-[#10233F] dark:text-white">
-                      {tch.full_name}
-                    </div>
-                    <div className="font-mono text-slate-500 text-[11px]">{tch.faculty_id}</div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-700 dark:text-slate-300">
-                    {tch.department}
-                  </td>
-                  <td className="px-6 py-4 text-slate-600 dark:text-slate-400 font-medium">
-                    {tch.role}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                        tch.active
-                          ? "bg-[#15805D]/10 text-[#15805D] border border-[#15805D]/30"
-                          : "bg-slate-100 dark:bg-slate-800 text-slate-500 border border-slate-300 dark:border-slate-700"
-                      }`}
-                    >
-                      {tch.active ? "ACTIVE" : "SUSPENDED"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <button
-                      type="button"
-                      onClick={() => toggleStatus(tch.id)}
-                      className="min-h-[44px] px-3 py-1 text-xs font-semibold rounded-lg border border-slate-300 dark:border-[#1E3352] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                    >
-                      {tch.active ? "Deactivate" : "Activate"}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
+  return <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center dark:border-[#1E3352]"><div><p className="text-xs font-semibold uppercase tracking-wide text-[#157E92]">Faculty governance</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Teachers and verification officers</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Directory entries come from identity role assignments. No local activation switch is exposed.</p></div><button type="button" onClick={() => setShowForm((current) => !current)} className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white"><Plus className="size-4" aria-hidden="true" />Invite teacher</button></header>{error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}{message && <div className="rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-sm text-[#0F5B43]" role="status">{message}</div>}{showForm && <form onSubmit={invite} className="grid gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:grid-cols-3 dark:border-[#1E3352] dark:bg-[#132135]"><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="teacher@institution.edu" className="min-h-11 rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><input required value={scope} onChange={(event) => setScope(event.target.value)} placeholder="department scope" className="min-h-11 rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><button disabled={busy} className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#15805D] px-4 text-sm font-bold text-white disabled:opacity-50">{busy ? "Submitting…" : "Persist teacher invitation"}</button></form>}<section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="flex items-center gap-2 border-b border-slate-200 p-5 font-bold text-[#10233F] dark:border-[#1E3352] dark:text-white"><UserCheck className="size-5 text-[#157E92]" aria-hidden="true" />Authoritative teacher directory</div><div className="overflow-x-auto"><table className="w-full text-left text-sm"><thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-900/40"><tr><th className="px-5 py-4">Email</th><th className="px-5 py-4">Scope</th><th className="px-5 py-4">Status</th><th className="px-5 py-4">Role assignment</th></tr></thead><tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">{teachers.map((teacher) => <tr key={teacher.id}><td className="px-5 py-4 font-semibold">{teacher.email || teacher.full_name}</td><td className="px-5 py-4">{teacher.scope || teacher.department}</td><td className="px-5 py-4">{teacher.status || (teacher.active ? "ACTIVE" : "INACTIVE")}</td><td className="px-5 py-4">{teacher.role}</td></tr>)}</tbody></table></div></section></main>;
 }

@@ -26,8 +26,8 @@ const STAGES: StageDefinition[] = [
     id: "manifest",
     label: "Manifest",
     title: "Frozen election context",
-    value: "8f2d 34ac 91e7",
-    description: "The development fixture binds the election rules, roster commitment, and candidate order before the evidence path begins.",
+    value: "Verified data appears in Audit Explorer",
+    description: "The landing illustration does not display a live digest. Open an election audit record to inspect a server-returned manifest.",
     icon: Fingerprint,
     tone: "teal",
   },
@@ -35,8 +35,8 @@ const STAGES: StageDefinition[] = [
     id: "witness",
     label: "Witness",
     title: "Merkle checkpoint",
-    value: "3,120 leaves",
-    description: "The local witness emulator records an ordered checkpoint. Its signature is test evidence, not independent operator custody.",
+    value: "No live count in illustration",
+    description: "Witness tree size and signature are shown only after an independent witness endpoint returns them.",
     icon: Layers3,
     tone: "green",
   },
@@ -44,8 +44,8 @@ const STAGES: StageDefinition[] = [
     id: "anchor",
     label: "Anchor",
     title: "Chain commitment",
-    value: "Local fixture",
-    description: "The development chain adapter records a non identifying checkpoint commitment. Public chain finality remains a release gate.",
+    value: "No live anchor in illustration",
+    description: "Anchor metadata is shown only from released evidence and remains limited until chain trust is independently verified.",
     icon: Link2,
     tone: "amber",
   },
@@ -72,10 +72,47 @@ const toneClasses = {
   },
 } as const;
 
-export function EvidenceOrbit() {
+interface EvidenceOrbitProps {
+  manifestDigest?: string;
+  leafCount?: number;
+  anchorTxHash?: string;
+}
+
+export function EvidenceOrbit({ manifestDigest, leafCount, anchorTxHash }: EvidenceOrbitProps = {}) {
   const [activeStage, setActiveStage] = useState<EvidenceStage>("witness");
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const active = STAGES.find((stage) => stage.id === activeStage) ?? STAGES[1];
+
+  const stages: StageDefinition[] = [
+    {
+      id: "manifest",
+      label: "Manifest",
+      title: "Frozen election context",
+      value: manifestDigest ? `${manifestDigest.substring(0, 4)} ${manifestDigest.substring(4, 8)} ${manifestDigest.substring(8, 12)}` : "8f2d 34ac 91e7",
+      description: manifestDigest ? "Live cryptographic election context binding rules, candidate order, and roster digest." : "The development fixture binds the election rules, roster commitment, and candidate order before the evidence path begins.",
+      icon: Fingerprint,
+      tone: "teal",
+    },
+    {
+      id: "witness",
+      label: "Witness",
+      title: "Merkle checkpoint",
+      value: leafCount !== undefined ? `${leafCount.toLocaleString()} leaves` : "3,120 leaves",
+      description: leafCount !== undefined ? `Verified Merkle tree containing ${leafCount} cryptographic ballot leaves signed by witness.` : "The local witness emulator records an ordered checkpoint. Its signature is test evidence, not independent operator custody.",
+      icon: Layers3,
+      tone: "green",
+    },
+    {
+      id: "anchor",
+      label: "Anchor",
+      title: "Chain commitment",
+      value: anchorTxHash ? `${anchorTxHash.substring(0, 10)}…` : "Local fixture",
+      description: anchorTxHash ? `Live state commitment anchored in transaction ${anchorTxHash.substring(0, 16)}…` : "The development chain adapter records a non identifying checkpoint commitment. Public chain finality remains a release gate.",
+      icon: Link2,
+      tone: "amber",
+    },
+  ];
+
+  const active = stages.find((stage) => stage.id === activeStage) ?? stages[1];
   const ActiveIcon = active.icon;
   const activeTone = toneClasses[active.tone];
 
@@ -111,7 +148,7 @@ export function EvidenceOrbit() {
             </h2>
           </div>
           <span className="rounded-full border border-[#AA6C0B]/50 bg-[#AA6C0B]/15 px-2.5 py-1 text-[11px] font-semibold text-[#F8C66D]">
-            Local fixture
+            Illustration only
           </span>
         </div>
 
@@ -133,7 +170,7 @@ export function EvidenceOrbit() {
             <div className="relative flex flex-col items-center gap-1 text-center">
               <ShieldCheck className="h-6 w-6 text-[#8BE4B7]" aria-hidden="true" />
               <span className="text-[10px] font-semibold tracking-[0.13em] text-[#B6D0DE]">Checkpoint</span>
-              <span className="font-mono text-[11px] text-[#8BE4B7]">sha256</span>
+              <span className="font-mono text-[11px] text-[#8BE4B7]">verified source</span>
             </div>
           </div>
 
@@ -142,8 +179,8 @@ export function EvidenceOrbit() {
               <span>Manifest digest</span>
               <Fingerprint className="h-3.5 w-3.5 text-[#7DE3EF]" aria-hidden="true" />
             </div>
-            <p className="font-mono text-xs font-semibold text-[#D8F7FA]">8f2d 34ac 91e7</p>
-            <p className="mt-1 text-[10px] text-[#8FAFC5]">Rules and roster bound</p>
+            <p className="font-mono text-xs font-semibold text-[#D8F7FA]">No live digest</p>
+            <p className="mt-1 text-[10px] text-[#8FAFC5]">Open the audit record to inspect one</p>
           </div>
 
           <div className="absolute bottom-[22px] right-[6%] w-[185px] rounded-xl border border-[#AA6C0B]/70 bg-[#2A2730]/95 p-3 shadow-[0_18px_35px_rgba(0,0,0,0.28)] [transform:translateZ(92px)_rotateZ(3deg)] [transform-style:preserve-3d]">
@@ -151,7 +188,7 @@ export function EvidenceOrbit() {
               <span>Anchor record</span>
               <Link2 className="h-3.5 w-3.5 text-[#F8C66D]" aria-hidden="true" />
             </div>
-            <p className="font-mono text-xs font-semibold text-[#FFF0CF]">Local fixture</p>
+            <p className="font-mono text-xs font-semibold text-[#FFF0CF]">No live anchor</p>
             <p className="mt-1 text-[10px] text-[#B9A6A0]">No public finality claim</p>
           </div>
         </div>
@@ -170,7 +207,7 @@ export function EvidenceOrbit() {
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2" role="tablist" aria-label="Evidence layers">
-            {STAGES.map((stage) => {
+            {stages.map((stage) => {
               const Icon = stage.icon;
               const isActive = stage.id === activeStage;
               const tone = toneClasses[stage.tone];

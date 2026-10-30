@@ -121,6 +121,34 @@ export interface TeacherRecord {
   department: string;
   role: string;
   active: boolean;
+  email?: string;
+  status?: string;
+  scope?: string;
+  invitation_id?: string | null;
+}
+
+export interface AdminInvitationRecord {
+  id: string;
+  email: string;
+  role: string;
+  scope: string;
+  status: string;
+  expires_at: string;
+  created_at: string;
+}
+
+export interface RosterCorrectionRecord {
+  id: string;
+  student_id: string;
+  student_name: string;
+  department: string;
+  correction_type: string;
+  reason: string;
+  status: string;
+  submitted_by: string;
+  created_at: string;
+  decided_by?: string | null;
+  decided_at?: string | null;
 }
 
 export interface AuditEvent {

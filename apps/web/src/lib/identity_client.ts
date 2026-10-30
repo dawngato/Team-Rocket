@@ -1,4 +1,5 @@
 import type { Election } from "./types";
+import type { IssuerPublicKey } from "./credential_crypto";
 
 export interface IdentityClientOptions {
   baseUrl?: string;
@@ -16,11 +17,27 @@ export interface CredentialIssuanceResponse {
   status: "RESERVED" | "SIGNING" | "SIGNED" | "DELIVERED";
 }
 
+export type CredentialIssuerPublicKey = IssuerPublicKey;
+
 export interface LoginResponse {
   session_token: string;
   user_id: string;
   role: string;
   mfa_required: boolean;
+}
+
+export interface SessionScope {
+  role: string;
+  scope_type: string;
+  scope_id: string;
+}
+
+export interface SessionProfile {
+  user_id: string;
+  email: string;
+  roles: string[];
+  scopes: SessionScope[];
+  mfa_authenticated: boolean;
 }
 
 export interface RegistrationResponse {
@@ -134,12 +151,33 @@ function isCredentialIssuanceResponse(value: unknown): value is CredentialIssuan
     (value.status === "RESERVED" || value.status === "SIGNING" || value.status === "SIGNED" || value.status === "DELIVERED");
 }
 
+function isCredentialIssuerPublicKey(value: unknown): value is CredentialIssuerPublicKey {
+  return isRecord(value) &&
+    typeof value.key_id === "string" &&
+    typeof value.algorithm === "string" &&
+    typeof value.n === "string" && /^([0-9a-f]+|0x[0-9a-f]+)$/i.test(value.n) &&
+    typeof value.e === "number" && Number.isSafeInteger(value.e) && value.e > 1 &&
+    typeof value.modulus_len === "number" && Number.isSafeInteger(value.modulus_len) && value.modulus_len >= 128;
+}
+
 function isLoginResponse(value: unknown): value is LoginResponse {
   return isRecord(value) &&
     typeof value.session_token === "string" &&
     typeof value.user_id === "string" &&
     typeof value.role === "string" &&
     typeof value.mfa_required === "boolean";
+}
+
+function isSessionProfile(value: unknown): value is SessionProfile {
+  return isRecord(value) &&
+    typeof value.user_id === "string" &&
+    typeof value.email === "string" &&
+    Array.isArray(value.roles) && value.roles.every((role) => typeof role === "string") &&
+    Array.isArray(value.scopes) && value.scopes.every((scope) => isRecord(scope) &&
+      typeof scope.role === "string" &&
+      typeof scope.scope_type === "string" &&
+      typeof scope.scope_id === "string") &&
+    typeof value.mfa_authenticated === "boolean";
 }
 
 function isRegistrationResponse(value: unknown): value is RegistrationResponse {
@@ -160,6 +198,14 @@ export const CREDENTIAL_ENGINE_HANDOFF_TYPE = "himvote.engine.credential.v1" as 
 
 export function getCredentialHandoffStorageKey(electionId: string): string {
   return `himvote.engine.credential.handoff.v1:${electionId}`;
+}
+
+export function getCredentialStateStorageKey(electionId: string): string {
+  return `himvote.credential.private-state.v1:${electionId}`;
+}
+
+export function getCredentialProofStorageKey(electionId: string): string {
+  return `himvote.credential.proof.v1:${electionId}`;
 }
 
 export function parseCredentialEngineHandoff(value: unknown, expectedElectionId: string): CredentialEngineHandoff | null {
@@ -247,6 +293,10 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       }
     },
 
+    async getSession(): Promise<SessionProfile> {
+      return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+    },
+
     async registerStudent(input: { student_id: string; email: string; full_name: string }): Promise<RegistrationResponse> {
       return request("/v1/students/register", { method: "POST", body: JSON.stringify(input) }, isRegistrationResponse, "The identity service returned an invalid registration response.");
     },
@@ -264,6 +314,10 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
         throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service returned status for a different election.", status: 502, retryable: false });
       }
       return response;
+    },
+
+    async getIssuerPublicKey(): Promise<CredentialIssuerPublicKey> {
+      return request("/v1/credentials/public-key", {}, isCredentialIssuerPublicKey, "The identity service returned an invalid issuer public key.");
     },
 
     async issueCredential(handoff: CredentialEngineHandoff): Promise<CredentialIssuanceResponse> {

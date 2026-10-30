@@ -56,6 +56,11 @@ class PublicationService:
         if state_record.state == "PUBLISHED":
             raise StateMachineError("Election is already published", "ALREADY_PUBLISHED")
 
+        if settings.require_established_engine_tally and not settings.established_engine_tally_verified:
+            raise StatePreconditionError(
+                "Publication is blocked until an established engine independently verifies the native tally"
+            )
+
         valid_prerequisite_states = {
             "ANCHOR_FINALIZED",
             "AUDIT_PASSED",

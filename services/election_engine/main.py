@@ -1,6 +1,7 @@
-"""HimVote Election Engine Service API.
-FastAPI microservice exposing the vetted voting engine adapter interface.
-Profile VEEM with zero knowledge proofs and threshold tallying.
+"""HimVote development election-engine adapter service.
+
+This service is a custom protocol test harness. It is never advertised as an
+established or independently vetted voting engine.
 """
 
 import base64
@@ -21,7 +22,7 @@ try:
         TallyVerificationError,
         VotingEngineAdapter,
     )
-    from .constants import PROTOCOL_VERSION
+    from .constants import G, PROTOCOL_VERSION
 except (ImportError, ValueError):
     from adapter import (
         BallotValidationError,
@@ -31,13 +32,19 @@ except (ImportError, ValueError):
         TallyVerificationError,
         VotingEngineAdapter,
     )
-    from constants import PROTOCOL_VERSION
+    from constants import G, PROTOCOL_VERSION
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "info"))
+logging.basicConfig(level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO))
 logger = logging.getLogger("election_engine")
 
 ENGINE_PROVIDER = os.getenv("VOTING_ENGINE_PROVIDER", PROTOCOL_VERSION)
 ENGINE_VERSION = os.getenv("VOTING_ENGINE_VERSION", "1.0.0")
+ENGINE_JOINT_PUBLIC_KEY = os.getenv("ENGINE_JOINT_PUBLIC_KEY", hex(G))
+ENGINE_ESTABLISHED = os.getenv("ENGINE_ESTABLISHED", "false").lower() in {"true", "1", "yes"}
+if ENGINE_PROVIDER in {PROTOCOL_VERSION, "custom_development_unverified", "local_vetted"}:
+    ENGINE_ESTABLISHED = False
+if os.getenv("APP_ENV", "development").lower() == "production" and not os.getenv("ENGINE_JOINT_PUBLIC_KEY"):
+    raise RuntimeError("ENGINE_JOINT_PUBLIC_KEY must be configured in production")
 
 adapter_instance = VotingEngineAdapter()
 
@@ -104,11 +111,36 @@ class VerifyInclusionResponse(BaseModel):
     valid: bool
 
 
+class EncryptBallotRequest(BaseModel):
+    election_id: str
+    manifest_digest: str
+    candidates: List[str]
+    selected_candidate_id: str
+    joint_public_key: Optional[str] = None
+
+
+class EncryptBallotResponse(BaseModel):
+    ballot_b64url: str
+    proofs_b64url: str
+    tracking_code: str
+    ballot_data: Dict[str, Any]
+    proofs_data: Dict[str, Any]
+
+
 class ProtocolVersionResponse(BaseModel):
     provider: str
     version: str
     supports_revoting_prevention: bool
     supports_web_booth: bool
+    established_protocol: bool
+
+
+class PublicParametersResponse(BaseModel):
+    provider: str
+    version: str
+    protocol: str
+    joint_public_key: str
+    established_protocol: bool
 
 
 # Application routing
@@ -126,6 +158,40 @@ def health() -> Dict[str, str]:
     return {"status": "healthy", "service": "election_engine", "provider": ENGINE_PROVIDER}
 
 
+@app.post("/v1/engine/encrypt_ballot", response_model=EncryptBallotResponse, tags=["booth"])
+def encrypt_ballot_endpoint(req: EncryptBallotRequest) -> EncryptBallotResponse:
+    """Create an encrypted exponential ElGamal ballot with zero knowledge proofs."""
+    try:
+        try:
+            from .booth import create_encrypted_ballot
+            from .crypto import base64url_encode, canonical_json
+            from .constants import DEFAULT_JOINT_PUBLIC_KEY
+        except (ImportError, ValueError):
+            from booth import create_encrypted_ballot
+            from crypto import base64url_encode, canonical_json
+            from constants import DEFAULT_JOINT_PUBLIC_KEY
+
+        pubkey_int = int(req.joint_public_key, 16) if req.joint_public_key else DEFAULT_JOINT_PUBLIC_KEY
+        ballot_data, proofs_data, tracking_code = create_encrypted_ballot(
+            election_id=req.election_id,
+            manifest_digest=req.manifest_digest,
+            candidates=req.candidates,
+            selected_candidate_id=req.selected_candidate_id,
+            joint_public_key=pubkey_int,
+        )
+        ballot_b64url = base64url_encode(canonical_json(ballot_data))
+        proofs_b64url = base64url_encode(canonical_json(proofs_data))
+        return EncryptBallotResponse(
+            ballot_b64url=ballot_b64url,
+            proofs_b64url=proofs_b64url,
+            tracking_code=tracking_code,
+            ballot_data=ballot_data,
+            proofs_data=proofs_data,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
+
+
 @app.post("/v1/engine/validate_ballot", response_model=ValidateBallotResponse, tags=["engine"])
 def validate_ballot_endpoint(req: ValidateBallotRequest) -> ValidateBallotResponse:
     """Validate an encrypted ballot and its zero knowledge proofs."""
@@ -134,6 +200,8 @@ def validate_ballot_endpoint(req: ValidateBallotRequest) -> ValidateBallotRespon
         raw_proofs = base64.urlsafe_b64decode(req.proofs_b64url + "==").decode("utf_8")
         ballot_data = json.loads(raw_ballot)
         proofs_data = json.loads(raw_proofs)
+        if proofs_data.get("public_key") != ENGINE_JOINT_PUBLIC_KEY:
+            return ValidateBallotResponse(valid=False, reason="Ballot public key does not match the configured election engine key")
         adapter_instance.validate_ballot(
             election_id=req.election_id,
             manifest_digest=req.manifest_digest,
@@ -226,4 +294,17 @@ def get_protocol_version_endpoint() -> ProtocolVersionResponse:
         version=ENGINE_VERSION,
         supports_revoting_prevention=True,
         supports_web_booth=True,
+        established_protocol=ENGINE_ESTABLISHED,
+    )
+
+
+@app.get("/v1/engine/public_parameters", response_model=PublicParametersResponse, tags=["engine"])
+def get_public_parameters_endpoint() -> PublicParametersResponse:
+    """Return the public election parameters required by the browser booth."""
+    return PublicParametersResponse(
+        provider=ENGINE_PROVIDER,
+        version=ENGINE_VERSION,
+        protocol=PROTOCOL_VERSION,
+        joint_public_key=ENGINE_JOINT_PUBLIC_KEY,
+        established_protocol=ENGINE_ESTABLISHED,
     )

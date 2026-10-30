@@ -5,6 +5,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { identityClient } from "@/lib/identity_client";
 
+function workspaceForRole(role: string): string {
+  const normalized = role.trim().toLowerCase();
+  if (normalized === "super_admin" || normalized === "superadmin") return "/super-admin";
+  if (normalized === "administrator" || normalized === "admin") return "/admin";
+  if (normalized === "election_officer" || normalized === "officer") return "/officer";
+  if (normalized === "teacher") return "/teacher";
+  if (normalized === "auditor" || normalized === "independent_auditor") return "/auditor";
+  return "/student";
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,7 +32,9 @@ export default function LoginPage() {
       if (data.mfa_required) {
         setError("MFA is required before an authenticated session can be created.");
       } else {
-        router.push("/student/elections");
+        const profile = await identityClient.getSession();
+        const grantedRole = profile.roles[0] || data.role;
+        router.push(workspaceForRole(grantedRole));
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The identity service rejected the sign in request.");
@@ -49,10 +61,12 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Institutional email</label>
+            <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Institutional email</label>
             <input
+              id="login-email"
               type="email"
               required
+              autoComplete="username"
               className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
               placeholder="student@university.edu"
               value={email}
@@ -60,19 +74,24 @@ export default function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
             <input
+              id="login-password"
               type="password"
               required
+              autoComplete="current-password"
               className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">MFA token (if required)</label>
+            <label htmlFor="login-mfa-token" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">MFA token (if required)</label>
             <input
+              id="login-mfa-token"
               type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
               className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
               placeholder="6-digit code"
               value={mfaToken}

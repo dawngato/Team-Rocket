@@ -22,6 +22,7 @@ from ..models import (
     Department,
     RoleAssignment,
     RoleDefinition,
+    RosterCorrection,
 )
 from ..schemas import (
     StudentRegisterRequest,
@@ -31,11 +32,77 @@ from ..schemas import (
     RosterElection,
     RosterSnapshotCreateRequest,
     RosterSnapshotResponse,
+    RosterCorrectionRequest,
+    RosterCorrectionRecord,
 )
 from ..crypto.hashing import hash_password
 from .deps import get_current_user, get_user_roles, require_roles, record_audit_event, user_has_scope
 
 router = APIRouter(prefix="/v1", tags=["roster"])
+
+
+@router.get("/roster/corrections", response_model=list[RosterCorrectionRecord], status_code=status.HTTP_200_OK)
+def list_roster_corrections(
+    current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin", "roster_approver"])),
+    db: Session = Depends(get_db),
+):
+    rows = db.query(RosterCorrection).order_by(RosterCorrection.created_at.desc()).limit(500).all()
+    return [
+        RosterCorrectionRecord(
+            id=row.id,
+            student_id=row.student_id,
+            student_name=row.student_name,
+            department=row.department,
+            correction_type=row.correction_type,
+            reason=row.reason,
+            status=row.status,
+            submitted_by=row.submitted_by,
+            created_at=row.created_at,
+            decided_by=row.decided_by,
+            decided_at=row.decided_at,
+        )
+        for row in rows
+    ]
+
+
+@router.post("/roster/corrections", response_model=RosterCorrectionRecord, status_code=status.HTTP_201_CREATED)
+def submit_roster_correction(
+    req: RosterCorrectionRequest,
+    current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin"])),
+    db: Session = Depends(get_db),
+):
+    correction = RosterCorrection(
+        student_id=req.student_id.strip(),
+        student_name=req.student_name.strip(),
+        department=req.department.strip(),
+        correction_type=req.correction_type.strip(),
+        reason=req.reason.strip(),
+        status="PENDING",
+        submitted_by=current_user.id,
+    )
+    db.add(correction)
+    record_audit_event(
+        db=db,
+        action="roster.correction.submitted",
+        result="pending_review",
+        actor_id=current_user.id,
+        details={"correction_id": correction.id, "student_id": correction.student_id},
+    )
+    db.commit()
+    db.refresh(correction)
+    return RosterCorrectionRecord(
+        id=correction.id,
+        student_id=correction.student_id,
+        student_name=correction.student_name,
+        department=correction.department,
+        correction_type=correction.correction_type,
+        reason=correction.reason,
+        status=correction.status,
+        submitted_by=correction.submitted_by,
+        created_at=correction.created_at,
+        decided_by=correction.decided_by,
+        decided_at=correction.decided_at,
+    )
 
 
 @router.post("/students/register", status_code=status.HTTP_202_ACCEPTED)

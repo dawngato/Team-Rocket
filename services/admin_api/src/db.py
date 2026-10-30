@@ -1,11 +1,8 @@
-"""
-Database connection and session factory for HimVote Admin API.
-Supports PostgreSQL with transparent SQLite fallback for testing environments.
-"""
+"""Database connection and session factory for HimVote Admin API."""
 
 import os
 from typing import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
 from src.config import settings
@@ -14,17 +11,26 @@ from src.models.database import Base
 
 def build_database_url() -> str:
     """Constructs database URL with preference for configured overrides."""
-    if settings.casting_db_url:
-        return settings.casting_db_url
+    if settings.admin_db_url:
+        if settings.environment == "production" and settings.admin_db_url.startswith("sqlite"):
+            raise ValueError("SQLite is strictly forbidden in production environments")
+        return settings.admin_db_url
     
     if os.getenv("TESTING", "false").lower() == "true":
         return "sqlite:///:memory:"
 
-    user = settings.casting_db_user
-    pwd = settings.casting_db_password
-    host = settings.casting_db_host
-    port = settings.casting_db_port
-    name = settings.casting_db_name
+    if settings.environment != "production":
+        # Development has an explicit, persistent local database default. It
+        # is never selected in production, where ADMIN_DB_URL is required.
+        return "sqlite:///./himvote_admin_development.db"
+
+    user = os.getenv("ADMIN_DB_USER", "himvote_admin")
+    pwd = os.getenv("ADMIN_DB_PASSWORD", "")
+    host = os.getenv("ADMIN_DB_HOST", "localhost")
+    port = os.getenv("ADMIN_DB_PORT", "5432")
+    name = os.getenv("ADMIN_DB_NAME", "himvote_admin")
+    if not pwd:
+        raise RuntimeError("ADMIN_DB_PASSWORD must be explicitly configured for the production admin database")
     return f"postgresql://{user}:{pwd}@{host}:{port}/{name}"
 
 
@@ -39,7 +45,14 @@ try:
     engine = create_engine(DATABASE_URL, **engine_kwargs)
     with engine.connect() as conn:
         pass
-except Exception:
+except Exception as exc:
+    # TR-004: Fail loudly in production and staging; do not silently fallback to in-memory SQLite
+    if settings.environment.lower() in ("production", "staging"):
+        raise RuntimeError(
+            f"Database connection failed in production/staging environment ({settings.environment}): {exc}. "
+            "Silent fallback to in-memory SQLite is disabled."
+        ) from exc
+    
     DATABASE_URL = "sqlite:///:memory:"
     engine = create_engine(
         DATABASE_URL,
@@ -51,8 +64,27 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def init_db() -> None:
-    """Initializes tables in database schema."""
+    """Initialize a test or development database, or verify production migrations."""
+    if settings.environment == "production":
+        inspector = inspect(engine)
+        if not inspector.has_table("schema_migrations"):
+            raise RuntimeError("Admin database migrations are not installed; refusing production startup")
+        with engine.connect() as connection:
+            version = connection.execute(
+                text("SELECT version FROM schema_migrations WHERE service = 'admin_api' ORDER BY applied_at DESC LIMIT 1")
+            ).scalar_one_or_none()
+        if version != settings.admin_schema_version:
+            raise RuntimeError(
+                f"Admin database schema version {version!r} does not match required {settings.admin_schema_version!r}"
+            )
+        return
+
+    # create_all is deliberately limited to explicit non-production profiles.
     Base.metadata.create_all(bind=engine)
+    columns = {column["name"] for column in inspect(engine).get_columns("candidates")}
+    if "statement" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE candidates ADD COLUMN statement TEXT"))
 
 
 def get_db() -> Generator[Session, None, None]:

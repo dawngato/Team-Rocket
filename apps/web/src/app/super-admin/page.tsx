@@ -16,26 +16,16 @@ import {
   Lock,
 } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
-import {
-  INITIAL_INSTITUTIONS,
-  INITIAL_DEPARTMENTS,
-  INITIAL_ADMINISTRATORS,
-  INITIAL_ROLE_REQUESTS,
-  INITIAL_POLICIES,
-  INITIAL_AUDIT_EVENTS,
-} from "@/lib/mock_data";
 
 export default function SuperAdminOverviewPage() {
-  const pendingRequestsCount = INITIAL_ROLE_REQUESTS.filter(
-    (r) => r.status === "PENDING_APPROVAL"
-  ).length;
+  const pendingRequestsCount = "Not loaded";
 
   const quickCards = [
     {
       kicker: "Campus Boundaries",
       title: "Institutions and Campuses",
       href: "/super-admin/institutions",
-      count: "3 Campuses Active",
+      count: "Not loaded",
       icon: Building2,
       desc: "Tenant configuration and regional campus boundary allocations.",
     },
@@ -43,7 +33,7 @@ export default function SuperAdminOverviewPage() {
       kicker: "Enrollment Caps",
       title: "Academic Departments",
       href: "/super-admin/departments",
-      count: `${INITIAL_DEPARTMENTS.length} Departments`,
+      count: "Not loaded",
       icon: GraduationCap,
       desc: "Enrollment limits and verification officer threshold controls.",
     },
@@ -51,7 +41,7 @@ export default function SuperAdminOverviewPage() {
       kicker: "Credential Scopes",
       title: "Administrator Roster",
       href: "/super-admin/administrators",
-      count: `${INITIAL_ADMINISTRATORS.length} Institutional Admins`,
+      count: "Not loaded",
       icon: Users2,
       desc: "Scoped permissions and mandatory hardware MFA enrollment.",
     },
@@ -67,7 +57,7 @@ export default function SuperAdminOverviewPage() {
       kicker: "Quorum Rules",
       title: "Governance Policies",
       href: "/super-admin/policies",
-      count: `${INITIAL_POLICIES.length} Enforced Rules`,
+      count: "Not loaded",
       icon: Sliders,
       desc: "Turnout anonymity thresholds and frozen parameters.",
     },
@@ -83,7 +73,7 @@ export default function SuperAdminOverviewPage() {
       kicker: "Immutable Ledger",
       title: "System Audit Ledger",
       href: "/super-admin/system-audit",
-      count: `${INITIAL_AUDIT_EVENTS.length} Immutable Logs`,
+      count: "Live audit query required",
       icon: FileText,
       desc: "Append only verification trail for administrative actions.",
     },
@@ -121,10 +111,10 @@ export default function SuperAdminOverviewPage() {
             </span>
           </div>
           <div className="text-2xl font-extrabold text-[#10233F] dark:text-white truncate font-mono">
-            {INITIAL_INSTITUTIONS[0].code}
+            NOT LOADED
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
-            {INITIAL_INSTITUTIONS[0].name}
+            No live institution record returned
           </span>
         </div>
 
@@ -138,10 +128,10 @@ export default function SuperAdminOverviewPage() {
             </span>
           </div>
           <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
-            {INITIAL_INSTITUTIONS[0].total_students_enrolled.toLocaleString()}
+            NOT LOADED
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Across 3 regional campuses
+            No fixture roster count is displayed
           </span>
         </div>
 

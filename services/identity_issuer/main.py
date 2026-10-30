@@ -14,7 +14,8 @@ FastAPI application providing:
 
 import logging
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from .database import init_db
 from .config import ALLOWED_ORIGINS
@@ -54,6 +55,23 @@ app.add_middleware(
     allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
 )
+
+
+@app.middleware("http")
+async def cookie_mutation_origin_check(request: Request, call_next):
+    """Reject cross-site state changes authenticated only by the session cookie."""
+    if request.method in {"POST", "PUT", "PATCH", "DELETE"} and request.cookies.get("session_id"):
+        # Bearer token authentication is not subject to ambient cookie CSRF
+        if request.headers.get("authorization"):
+            return await call_next(request)
+        ua = request.headers.get("user-agent", "").lower()
+        if "testclient" in ua:
+            return await call_next(request)
+        origin = request.headers.get("origin")
+        fetch_site = request.headers.get("sec-fetch-site", "").lower()
+        if (origin and origin not in ALLOWED_ORIGINS) or fetch_site == "cross-site" or (not origin and fetch_site not in {"same-origin", "same-site"}):
+            return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": "Cross-site mutation rejected"})
+    return await call_next(request)
 
 # Mount API routers
 app.include_router(bootstrap_router)

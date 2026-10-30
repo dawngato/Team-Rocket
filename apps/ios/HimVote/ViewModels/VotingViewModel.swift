@@ -7,6 +7,7 @@ public final class VotingViewModel {
     public var isCasting: Bool = false
     public var isLaunchingBooth: Bool = false
     public var lastCastResponse: CastBallotResponse?
+    public var latestReceipt: Receipt?
     public var errorMessage: String?
     public var successReceiptHandle: String?
     
@@ -83,6 +84,7 @@ public final class VotingViewModel {
                 witnessedAtUtc: nil,
                 leafHash: nil
             )
+            self.latestReceipt = receiptRecord
             
             try? keychainService.saveReceipt(receiptRecord)
         } catch {

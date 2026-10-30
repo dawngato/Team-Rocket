@@ -15,7 +15,13 @@ The engine exposes the six required adapter functions:
 * `export_ballots`: Formats accepted ballots and native zero knowledge proofs into canonical RFC 8785 JSON records and computes the RFC 9162 Merkle tree root.
 * `verify_tally`: Performs independent tally verification by homomorphically accumulating ciphertexts, checking trustee decryption share proofs, and confirming reported candidate totals.
 * `verify_inclusion`: Verifies cryptographic inclusion of cast ballots in the RFC 9162 Merkle log.
-* `get_protocol_version`: Returns the protocol identifier `himvote_veem_v1`.
+* `get_protocol_version`: Returns the development protocol identifier `himvote_veem_v1`.
+
+The adapter is intentionally reported as `custom_development_unverified`. It
+must not be used for a security-complete release until a separately selected
+established engine, its native booth and its independent verifier have passed
+the release gate. Mathematical correctness tests in this repository do not
+substitute for that external protocol review.
 
 ## Development cryptographic architecture: Profile VEEM
 

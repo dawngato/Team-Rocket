@@ -11,6 +11,7 @@ class Candidate(BaseModel):
     id: str
     name: str
     contest: str
+    statement: Optional[str] = None
 
 
 class CreateElectionRequest(BaseModel):
@@ -53,6 +54,8 @@ class Election(BaseModel):
     opens_at_utc: str
     closes_at_utc: str
     issuance_cutoff_utc: str
+    contest: Optional[str] = None
+    selection_rule: Optional[str] = None
     eligible_count: Optional[int] = 0
     candidates: Optional[List[Candidate]] = []
 

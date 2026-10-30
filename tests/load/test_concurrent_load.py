@@ -7,7 +7,7 @@ and witness checkpoint pipeline under sustained throughput.
 import concurrent.futures
 import os
 from datetime import datetime, timezone
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 from ..harness.crypto import (
     MerkleTree,

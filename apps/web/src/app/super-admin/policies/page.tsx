@@ -3,16 +3,10 @@
 import React, { useState } from "react";
 import { Sliders, Shield, Lock, CheckCircle2, AlertTriangle } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
-import { INITIAL_POLICIES } from "@/lib/mock_data";
+import type { PolicyConfigRecord } from "@/lib/types";
 
 export default function SuperAdminPoliciesPage() {
-  const [policies, setPolicies] = useState(INITIAL_POLICIES);
-  const [feedback, setFeedback] = useState<string | null>(null);
-
-  const handleSave = () => {
-    setFeedback("Policy configurations persisted to identity cluster. Immutable rules locked.");
-    setTimeout(() => setFeedback(null), 3000);
-  };
+  const policies: PolicyConfigRecord[] = [];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -31,22 +25,17 @@ export default function SuperAdminPoliciesPage() {
         </div>
         <button
           type="button"
-          onClick={handleSave}
+          disabled
           className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
         >
           <Lock className="w-4 h-4" aria-hidden="true" />
-          <span>Save Policy State</span>
+          <span>Policy API unavailable</span>
         </button>
       </div>
 
       <SuperAdminNav />
 
-      {feedback && (
-        <div className="p-4 rounded-xl bg-[#15805D]/10 border border-[#15805D]/30 text-[#15805D] text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span>{feedback}</span>
-        </div>
-      )}
+      <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08]" role="status">Policy editing is disabled until the signed policy service is connected. No fixture policy values are shown.</div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {policies.map((pol) => (

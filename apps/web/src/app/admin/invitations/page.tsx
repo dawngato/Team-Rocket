@@ -1,171 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { Mail, Plus, CheckCircle2, Copy } from "lucide-react";
-
-interface Invitation {
-  id: string;
-  email: string;
-  role: string;
-  token: string;
-  expiresAt: string;
-}
+import React, { useEffect, useState } from "react";
+import { Mail, Copy } from "lucide-react";
+import { apiClient } from "../../../lib/api_client";
+import type { AdminInvitationRecord } from "../../../lib/types";
 
 export default function AdminInvitationsPage() {
-  const [invitations, setInvitations] = useState<Invitation[]>([
-    {
-      id: "inv_1",
-      email: "registrar.officer@hptu.ac.in",
-      role: "ELECTION_OFFICER",
-      token: "tok_invite_officer_9918234",
-      expiresAt: "2026-11-15T00:00:00Z",
-    },
-    {
-      id: "inv_2",
-      email: "external.auditor@auditfirm.example.in",
-      role: "AUDITOR",
-      token: "tok_invite_auditor_7718293",
-      expiresAt: "2026-12-01T00:00:00Z",
-    },
-  ]);
-
+  const [invitations, setInvitations] = useState<AdminInvitationRecord[]>([]);
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState("ELECTION_OFFICER");
-  const [isCopied, setIsCopied] = useState<string | null>(null);
+  const [role, setRole] = useState("election_officer");
+  const [scope, setScope] = useState("*");
+  const [oneTimeToken, setOneTimeToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleCreateInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newInv: Invitation = {
-      id: `inv_${Date.now()}`,
-      email,
-      role,
-      token: `tok_${role.toLowerCase()}_${Math.random().toString(36).substring(2, 10)}`,
-      expiresAt: new Date(Date.now() + 86400000 * 7).toISOString(),
-    };
-    setInvitations([newInv, ...invitations]);
-    setEmail("");
+  const load = () => void apiClient.getInvitations().then(setInvitations).catch((cause) => setError(cause instanceof Error ? cause.message : "Invitation records could not be loaded."));
+  useEffect(load, []);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault(); setBusy(true); setError(null); setOneTimeToken(null);
+    try { const result = await apiClient.createInvitation({ email, role, scope }); setOneTimeToken(result.token || null); setEmail(""); load(); }
+    catch (cause) { setError(cause instanceof Error ? cause.message : "Invitation was rejected by the identity service."); }
+    finally { setBusy(false); }
   };
 
-  const copyToken = (tok: string) => {
-    navigator.clipboard.writeText(tok);
-    setIsCopied(tok);
-    setTimeout(() => setIsCopied(null), 2000);
-  };
-
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
-            Access Control
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Administrator and Officer Invitations
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Dispatch scoped invitation credentials for campus election officers and independent auditors.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Create Invitation Form */}
-        <div className="lg:col-span-5">
-          <form
-            onSubmit={handleCreateInvite}
-            className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4"
-          >
-            <h2 className="font-bold text-base text-[#10233F] dark:text-white">
-              Dispatch Invitation
-            </h2>
-
-            <div>
-              <label htmlFor="invite-email" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Recipient Email
-              </label>
-              <input
-                id="invite-email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="colleague@hptu.ac.in"
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="invite-role" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Assigned Role Scope
-              </label>
-              <select
-                id="invite-role"
-                value={role}
-                onChange={(e) => setRole(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-              >
-                <option value="ELECTION_OFFICER">Election Officer</option>
-                <option value="AUDITOR">Independent Auditor</option>
-                <option value="ADMINISTRATOR">Administrator</option>
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              <Mail className="w-4 h-4" aria-hidden="true" />
-              <span>Generate Invitation Token</span>
-            </button>
-          </form>
-        </div>
-
-        {/* Existing Invitations List */}
-        <div className="lg:col-span-7 space-y-4">
-          <h2 className="font-bold text-base text-[#10233F] dark:text-white">
-            Active Invitation Tokens
-          </h2>
-          <div className="space-y-3">
-            {invitations.map((inv) => (
-              <div
-                key={inv.id}
-                className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
-                      {inv.email}
-                    </h3>
-                    <span className="text-xs font-semibold text-[#157E92]">{inv.role}</span>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    Expires: {new Date(inv.expiresAt).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 text-xs font-mono">
-                  <span className="truncate pr-2 text-slate-600 dark:text-slate-400">
-                    {inv.token}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => copyToken(inv.token)}
-                    className="p-1 rounded text-[#157E92] hover:bg-[#157E92]/10"
-                    aria-label="Copy invitation token"
-                  >
-                    <Copy className="w-3.5 h-3.5" aria-hidden="true" />
-                  </button>
-                </div>
-                {isCopied === inv.token && (
-                  <span className="text-[11px] text-[#15805D] font-semibold block text-right">
-                    Token copied to clipboard
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <main className="mx-auto max-w-5xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]"><p className="text-xs font-semibold uppercase tracking-wide text-[#157E92]">Access control</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Scoped invitations</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Invitations are persisted by the identity issuer. Tokens are shown only when the configured delivery adapter explicitly returns a one-time development token.</p></header>{error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}{oneTimeToken && <div className="flex items-center justify-between gap-3 rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-xs text-[#0F5B43]" role="status"><span className="break-all font-mono">{oneTimeToken}</span><button type="button" onClick={() => void navigator.clipboard.writeText(oneTimeToken)} className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-[#15805D]/30 px-3 font-semibold"><Copy className="size-4" aria-hidden="true" />Copy once</button></div>}<div className="grid gap-8 lg:grid-cols-12"><form onSubmit={submit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-5 dark:border-[#1E3352] dark:bg-[#132135]"><h2 className="font-bold text-[#10233F] dark:text-white">Create invitation</h2><input required type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="recipient@institution.edu" className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><select value={role} onChange={(event) => setRole(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm dark:bg-[#132135]"><option value="election_officer">Election officer</option><option value="teacher">Teacher</option><option value="administrator">Administrator</option></select><input required value={scope} onChange={(event) => setScope(event.target.value)} placeholder="department or *" className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm" /><button disabled={busy} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white disabled:opacity-50"><Mail className="size-4" aria-hidden="true" />{busy ? "Submitting…" : "Create invitation"}</button></form><section className="space-y-3 lg:col-span-7"><h2 className="font-bold text-[#10233F] dark:text-white">Persisted invitations</h2>{invitations.map((inv) => <article key={inv.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="flex items-center justify-between gap-3"><div><h3 className="font-bold text-[#10233F] dark:text-white">{inv.email}</h3><p className="text-xs text-[#157E92]">{inv.role} · {inv.scope}</p></div><span className="text-xs font-semibold text-slate-500">{inv.status}</span></div><p className="mt-2 text-[11px] text-slate-500">Expires {new Date(inv.expires_at).toLocaleString()}</p></article>)}</section></div></main>;
 }

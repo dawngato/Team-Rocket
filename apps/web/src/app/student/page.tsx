@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
+import { identityClient } from "@/lib/identity_client";
 import type { Election } from "@/lib/types";
 
 function formatUtc(value: string): string {
@@ -31,6 +32,20 @@ export default function StudentPortalOverviewPage() {
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [latestReceipt, setLatestReceipt] = useState<{ handle: string; title: string; timestamp: string } | null>(null);
+  const [issuedCredentialCount, setIssuedCredentialCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem("himvote_receipts");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.handle) {
+          setLatestReceipt(parsed[0]);
+        }
+      }
+    } catch {}
+  }, []);
   const activeElections = useMemo(
     () => elections.filter((election) => election.state === "OPEN"),
     [elections],
@@ -43,6 +58,9 @@ export default function StudentPortalOverviewPage() {
       .then((nextElections) => {
         if (!cancelled) {
           setElections(nextElections);
+          void Promise.all(nextElections.map((election) => identityClient.getIssuanceStatus(election.id).catch(() => null))).then((statuses) => {
+            if (!cancelled) setIssuedCredentialCount(statuses.filter((status) => status?.delivered).length);
+          });
           setError(null);
         }
       })
@@ -129,13 +147,25 @@ export default function StudentPortalOverviewPage() {
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Engine authorization</span>
-          <strong className="flex items-center gap-1.5 text-2xl text-[#AA6C0B] dark:text-[#FCD34D]"><Lock className="size-5" aria-hidden="true" />Not loaded</strong>
-          <span className="text-xs text-slate-500">No credential is minted by this UI</span>
+          <strong className="flex items-center gap-1.5 text-2xl text-[#AA6C0B] dark:text-[#FCD34D]"><Lock className="size-5" aria-hidden="true" />{issuedCredentialCount === null ? "Not available" : `${issuedCredentialCount} issued`}</strong>
+          <span className="text-xs text-slate-500">Identity-service issuance status; no ballot identity is stored here</span>
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Last cast receipt</span>
-          <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
-          <span className="text-xs text-slate-500">No live receipt loaded in this session</span>
+          {latestReceipt ? (
+            <Link
+              href={`/student/receipts/${encodeURIComponent(latestReceipt.handle)}`}
+              className="text-xs font-mono font-bold text-[#15805D] hover:underline dark:text-[#34D399] truncate block"
+              title={latestReceipt.handle}
+            >
+              {latestReceipt.handle.substring(0, 16)}…
+            </Link>
+          ) : (
+            <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
+          )}
+          <span className="text-xs text-slate-500">
+            {latestReceipt ? `Cast in ${latestReceipt.title}` : "No live receipt loaded in this session"}
+          </span>
         </div>
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Privacy status</span>

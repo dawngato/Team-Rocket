@@ -23,6 +23,9 @@ public struct ElectionsView: View {
             }
             .navigationTitle("HimVote Elections")
             .searchable(text: $electionsViewModel.searchQuery, prompt: "Search elections by title")
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: 75)
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {

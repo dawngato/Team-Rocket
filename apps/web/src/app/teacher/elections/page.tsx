@@ -1,88 +1,16 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { StateBadge } from "../../components/StateBadge";
-import { INITIAL_ELECTIONS, INITIAL_RESULTS } from "../../lib/mock_data";
-import { Award, ArrowRight, ShieldCheck, Calendar, Users } from "lucide-react";
+import { ArrowRight, Award } from "lucide-react";
+import { StateBadge } from "@/components/StateBadge";
+import { apiClient } from "@/lib/api_client";
+import type { Election, PublishedResults } from "@/lib/types";
 
 export default function TeacherPublishedElectionsPage() {
-  return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
-            <Award className="w-3.5 h-3.5" aria-hidden="true" />
-            Faculty Observer Portal
-          </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Published Department Elections
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Campus contests with displayed checkpoint status and participation statistics.
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {INITIAL_ELECTIONS.map((elec) => {
-          const results = INITIAL_RESULTS[elec.id];
-          return (
-            <div
-              key={elec.id}
-              className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4 flex flex-col justify-between"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <StateBadge state={elec.state} size="sm" />
-                  <span className="text-xs font-mono text-slate-500">
-                    {elec.eligible_count} Registered Voters
-                  </span>
-                </div>
-                <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-                  {elec.title}
-                </h2>
-                <p className="text-xs text-slate-600 dark:text-slate-400">
-                  {elec.description}
-                </p>
-
-                {results && (
-                  <div className="pt-2 p-3 bg-slate-50 dark:bg-slate-900/40 rounded-lg border border-slate-100 dark:border-slate-800 space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold text-slate-700 dark:text-slate-300">
-                      <span>Total Ballots Counted:</span>
-                      <span className="font-mono text-[#157E92]">{results.total_ballots}</span>
-                    </div>
-                    <div className="flex justify-between text-slate-500">
-                      <span>Turnout Rate:</span>
-                      <span className="font-mono text-[#15805D]">
-                        {elec.eligible_count
-                          ? `${((results.total_ballots / elec.eligible_count) * 100).toFixed(1)}%`
-                          : "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
-                <Link
-                  href={`/results?election=${elec.id}`}
-                  className="text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline flex items-center gap-1"
-                >
-                  <span>View Public Tally</span>
-                  <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
-                </Link>
-                <Link
-                  href={`/audit?election=${elec.id}`}
-                  className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
-                >
-                  Inspect Evidence
-                </Link>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  const [elections, setElections] = useState<Election[]>([]);
+  const [results, setResults] = useState<Record<string, PublishedResults>>({});
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { void apiClient.getElections().then(async (rows) => { setElections(rows); const published = await Promise.all(rows.filter((row) => row.state === "PUBLISHED").map(async (row) => [row.id, await apiClient.getResults(row.id)] as const)); setResults(Object.fromEntries(published.filter((item): item is [string, PublishedResults] => Boolean(item[1])))); }).catch((cause) => setError(cause instanceof Error ? cause.message : "Published elections unavailable.")); }, []);
+  return <main className="mx-auto max-w-6xl space-y-8 px-4 py-10 sm:px-6 lg:px-8"><header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]"><p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#15805D]"><Award className="size-4" aria-hidden="true" />Faculty observer portal</p><h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white">Published department elections</h1><p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Results appear only when the authoritative service publishes them.</p></header>{error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630]" role="alert">{error}</div>}<section className="grid gap-6 md:grid-cols-2">{elections.filter((election) => election.state === "PUBLISHED").map((election) => { const result = results[election.id]; return <article key={election.id} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"><div className="flex items-center justify-between"><StateBadge state={election.state} size="sm" /><span className="font-mono text-xs text-slate-500">{result ? `${result.total_ballots} ballots` : "Tally unavailable"}</span></div><h2 className="text-lg font-bold text-[#10233F] dark:text-white">{election.title}</h2><div className="flex justify-between border-t border-slate-100 pt-3 text-xs dark:border-[#1E3352]"><Link href={`/results?election=${encodeURIComponent(election.id)}`} className="inline-flex items-center gap-1 font-bold text-[#157E92]">View public tally <ArrowRight className="size-4" aria-hidden="true" /></Link><Link href={`/audit?election=${encodeURIComponent(election.id)}`} className="font-semibold text-slate-500">Inspect evidence</Link></div></article>; })}{elections.filter((election) => election.state === "PUBLISHED").length === 0 && <div className="rounded-xl border border-slate-200 p-8 text-sm text-slate-500 md:col-span-2">No published election was returned.</div>}</section></main>;
 }

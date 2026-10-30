@@ -8,6 +8,7 @@ public enum UserRole: String, Codable, Sendable, CaseIterable {
     case student = "student"
     case rosterApprover = "roster_approver"
     case auditor = "auditor"
+    case visitor = "visitor"
     
     public var displayName: String {
         switch self {
@@ -25,7 +26,76 @@ public enum UserRole: String, Codable, Sendable, CaseIterable {
             return "Roster Approver"
         case .auditor:
             return "Independent Auditor"
+        case .visitor:
+            return "Public Visitor"
         }
+    }
+    
+    public var priorityLevel: Int {
+        switch self {
+        case .superAdmin: return 1   // Highest Authority
+        case .administrator, .electionOfficer: return 2
+        case .teacher, .rosterApprover: return 3
+        case .auditor: return 4
+        case .student: return 5      // Normal Student
+        case .visitor: return 6      // Public Observer (Lowest / Unauthenticated)
+        }
+    }
+}
+
+public struct RegisteredStudent: Codable, Identifiable, Sendable, Equatable {
+    public let id: String
+    public let studentId: String
+    public let name: String
+    public let email: String
+    public let department: String
+    public var isNominatedCandidate: Bool
+    public var candidateContest: String?
+    public var passwordHash: String?
+    
+    public init(
+        id: String,
+        studentId: String,
+        name: String,
+        email: String,
+        department: String,
+        isNominatedCandidate: Bool = false,
+        candidateContest: String? = nil,
+        passwordHash: String? = nil
+    ) {
+        self.id = id
+        self.studentId = studentId
+        self.name = name
+        self.email = email
+        self.department = department
+        self.isNominatedCandidate = isNominatedCandidate
+        self.candidateContest = candidateContest
+        self.passwordHash = passwordHash
+    }
+}
+
+public struct AdminProfile: Codable, Identifiable, Sendable, Equatable {
+    public let id: String
+    public let email: String
+    public let departmentScope: String
+    public let createdBySuperUserId: String
+    public let createdAtUtc: String
+    public var passwordHash: String?
+    
+    public init(
+        id: String,
+        email: String,
+        departmentScope: String,
+        createdBySuperUserId: String,
+        createdAtUtc: String,
+        passwordHash: String? = nil
+    ) {
+        self.id = id
+        self.email = email
+        self.departmentScope = departmentScope
+        self.createdBySuperUserId = createdBySuperUserId
+        self.createdAtUtc = createdAtUtc
+        self.passwordHash = passwordHash
     }
 }
 

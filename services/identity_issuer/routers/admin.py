@@ -26,7 +26,11 @@ from ..schemas import (
     ApprovalDecisionRequest,
     AuditEventList,
     AuditEvent as AuditEventSchema,
+    AdminInvitationRecord,
+    TeacherDirectoryRecord,
+    CreateTeacherRequest,
 )
+from ..crypto.hashing import hash_password
 from .deps import (
     get_current_user,
     get_user_roles,
@@ -38,6 +42,162 @@ from .deps import (
 )
 
 router = APIRouter(prefix="/v1", tags=["admin"])
+
+
+@router.get("/admin/invitations", response_model=list[AdminInvitationRecord], status_code=status.HTTP_200_OK)
+def list_admin_invitations(
+    current_user: User = Depends(require_roles(["super_admin", "administrator"])),
+    db: Session = Depends(get_db),
+):
+    """Return invitation metadata only. Invitation secrets are never recoverable."""
+    rows = db.query(Invitation).order_by(Invitation.created_at.desc()).limit(500).all()
+    return [
+        AdminInvitationRecord(
+            id=row.id,
+            email=row.email,
+            role=row.role,
+            scope=row.scope,
+            status=row.status,
+            expires_at=row.expires_at,
+            created_at=row.created_at,
+        )
+        for row in rows
+    ]
+
+
+@router.get("/admin/approvals", status_code=status.HTTP_200_OK)
+def list_admin_approvals(
+    status_filter: str = Query("pending", alias="status"),
+    current_user: User = Depends(require_roles(["super_admin", "administrator"])),
+    db: Session = Depends(get_db),
+):
+    """Return the durable approval queue used by the super-admin UI."""
+    query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc()).limit(500)
+    if status_filter.lower() == "pending":
+        query = query.filter(ApprovalRequest.decision.is_(None))
+    elif status_filter.lower() in {"approved", "rejected"}:
+        query = query.filter(ApprovalRequest.decision == status_filter.lower())
+    rows = query.all()
+    users = {
+        user.id: user
+        for user in db.query(User).filter(
+            User.id.in_({value for row in rows for value in (row.requester_id, row.target_user_id) if value})
+        ).all()
+    }
+    return [
+        {
+            "id": row.id,
+            "request_type": row.request_type,
+            "requester_id": row.requester_id,
+            "requester_email": users.get(row.requester_id).email if users.get(row.requester_id) else "",
+            "target_user_id": row.target_user_id,
+            "target_email": users.get(row.target_user_id).email if row.target_user_id and users.get(row.target_user_id) else "",
+            "requested_role": row.requested_role,
+            "requested_scope": row.requested_scope,
+            "justification": row.reason,
+            "status": row.decision or "pending",
+            "requested_at": row.created_at,
+            "decided_at": row.decided_at,
+        }
+        for row in rows
+    ]
+
+
+@router.get("/admin/teachers", response_model=list[TeacherDirectoryRecord], status_code=status.HTTP_200_OK)
+def list_teachers(
+    current_user: User = Depends(require_roles(["super_admin", "administrator"])),
+    db: Session = Depends(get_db),
+):
+    """Return persisted teacher identities and their delegated scopes."""
+    rows = (
+        db.query(User, RoleAssignment, RoleDefinition)
+        .join(RoleAssignment, RoleAssignment.user_id == User.id)
+        .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+        .filter(RoleDefinition.name == "teacher")
+        .order_by(User.created_at.desc())
+        .all()
+    )
+    output = []
+    for user, assignment, role_definition in rows:
+        invitation = db.query(Invitation).filter(
+            Invitation.email == user.email,
+            Invitation.role == "teacher",
+        ).order_by(Invitation.created_at.desc()).first()
+        output.append(
+            TeacherDirectoryRecord(
+                user_id=user.id,
+                email=user.email,
+                external_id=user.external_id,
+                status=user.status,
+                role=role_definition.name,
+                scope=assignment.scope_id,
+                invitation_id=invitation.id if invitation else None,
+            )
+        )
+    return output
+
+
+@router.post("/admin/teachers", response_model=TeacherDirectoryRecord, status_code=status.HTTP_201_CREATED)
+def provision_teacher(
+    req: CreateTeacherRequest,
+    current_user: User = Depends(require_roles(["super_admin", "administrator"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Provision a persistent teacher identity and assign the teacher role within the specified department scope.
+    """
+    existing = db.query(User).filter(User.email == str(req.email).lower()).first()
+    if existing:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A user with this email address already exists",
+        )
+
+    pwd_hash, _ = hash_password(req.initial_password or "TeacherSecurePass123!")
+    teacher_user = User(
+        email=str(req.email).lower(),
+        password_hash=pwd_hash,
+        external_id=req.faculty_id.strip(),
+        status="ACTIVE",
+    )
+    db.add(teacher_user)
+    db.flush()
+
+    teacher_role = db.query(RoleDefinition).filter(RoleDefinition.name == "teacher").first()
+    if not teacher_role:
+        teacher_role = RoleDefinition(name="teacher", description="Department Teacher and Verification Officer")
+        db.add(teacher_role)
+        db.flush()
+
+    assignment = RoleAssignment(
+        user_id=teacher_user.id,
+        role_id=teacher_role.id,
+        scope_type="department",
+        scope_id=req.department.strip(),
+    )
+    db.add(assignment)
+
+    record_audit_event(
+        db=db,
+        action="admin.teacher.provisioned",
+        result="success",
+        actor_id=current_user.id,
+        details={
+            "faculty_id": req.faculty_id.strip(),
+            "email": str(req.email).lower(),
+            "department": req.department.strip(),
+        },
+    )
+    db.commit()
+
+    return TeacherDirectoryRecord(
+        user_id=teacher_user.id,
+        email=teacher_user.email,
+        external_id=teacher_user.external_id,
+        status=teacher_user.status,
+        role="teacher",
+        scope=req.department.strip(),
+    )
 
 
 @router.post("/admin/invitations", status_code=status.HTTP_201_CREATED)

@@ -54,6 +54,12 @@ services:
       LOG_REDACTION_ENABLED: "true"
       ALLOW_DEV_ACTOR_HEADERS: "false"
       ALLOWED_ORIGINS: ${ADMIN_ALLOWED_ORIGINS:?Set ADMIN_ALLOWED_ORIGINS to trusted HTTPS origins}
+      ADMIN_DB_URL: ${ADMIN_DATABASE_URL:?Set ADMIN_DATABASE_URL to the managed admin database URL}
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_URL:?Set IDENTITY_SERVICE_URL to the identity issuer}
+      PINNED_AUDITOR_PUBLIC_KEY: ${PINNED_AUDITOR_PUBLIC_KEY:?Set PINNED_AUDITOR_PUBLIC_KEY}
+      ADMIN_SCHEMA_VERSION: ${ADMIN_SCHEMA_VERSION:?Set ADMIN_SCHEMA_VERSION after applying admin migrations}
+      REQUIRE_ESTABLISHED_ENGINE_TALLY: "true"
+      ESTABLISHED_ENGINE_TALLY_VERIFIED: ${ESTABLISHED_ENGINE_TALLY_VERIFIED:-false}
       IDENTITY_DB_SSL_MODE: verify-full
       CASTING_DB_SSL_MODE: verify-full
     deploy:
@@ -80,6 +86,8 @@ services:
       LOG_REDACTION_ENABLED: "true"
       BOOTSTRAP_ALLOWED: "false"
       IDENTITY_ALLOWED_ORIGINS: ${IDENTITY_ALLOWED_ORIGINS:?Set IDENTITY_ALLOWED_ORIGINS to trusted HTTPS origins}
+      DATABASE_URL: ${IDENTITY_DATABASE_URL:?Set IDENTITY_DATABASE_URL to the managed identity database URL}
+      ISSUER_PRIVATE_KEY_PEM: ${ISSUER_PRIVATE_KEY_PEM:?Set ISSUER_PRIVATE_KEY_PEM through the secret manager}
       IDENTITY_DB_SSL_MODE: verify-full
       KMS_PROVIDER: ${KMS_PROVIDER:-aws_kms}
     deploy:
@@ -105,6 +113,10 @@ services:
       LOG_LEVEL: info
       LOG_REDACTION_ENABLED: "true"
       CASTING_DB_SSL_MODE: verify-full
+      DATABASE_URL: ${CASTING_DATABASE_URL:?Set CASTING_DATABASE_URL to the managed casting database URL}
+      ISSUER_PUBLIC_KEY_N: ${ISSUER_PUBLIC_KEY_N:?Set ISSUER_PUBLIC_KEY_N to the issuer public modulus}
+      ISSUER_PUBLIC_KEY_E: ${ISSUER_PUBLIC_KEY_E:-65537}
+      REQUIRE_ESTABLISHED_ENGINE: "true"
       ELECTION_ENGINE_BASE: http://election_engine:8084
       ENGINE_VALIDATION_MODE: remote
       CASTING_ALLOWED_ORIGINS: ${CASTING_ALLOWED_ORIGINS:?Set CASTING_ALLOWED_ORIGINS to trusted HTTPS origins}
@@ -129,6 +141,9 @@ services:
     environment:
       APP_ENV: production
       LOG_LEVEL: info
+      VOTING_ENGINE_PROVIDER: ${VOTING_ENGINE_PROVIDER:?Set VOTING_ENGINE_PROVIDER to an established upstream provider}
+      ENGINE_JOINT_PUBLIC_KEY: ${ENGINE_JOINT_PUBLIC_KEY:?Set ENGINE_JOINT_PUBLIC_KEY from the election key ceremony}
+      ENGINE_ESTABLISHED: ${ENGINE_ESTABLISHED:-false}
     deploy:
       resources:
         limits:
