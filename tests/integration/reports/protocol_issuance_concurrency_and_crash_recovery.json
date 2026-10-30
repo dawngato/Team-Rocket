@@ -10,7 +10,7 @@
   },
   "engine_version": "electionguard_1.0.0",
   "expected_result": "ISSUANCE_PROTOCOL_CONCURRENCY_AND_CRASH_RECOVERY_PASS",
-  "manifest_digest": "sha256:a3ac4db2ee7b6f25b89db21cc448a51e8edb23ad75298a16c331839714dc7af3",
+  "manifest_digest": "sha256:5e648b0736d418e54f684a9e4e551f761abee03227e01e7dbbda08c9d26c03bc",
   "notes": "",
   "passed": true,
   "postconditions": [

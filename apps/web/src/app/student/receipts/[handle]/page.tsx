@@ -1,58 +1,95 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { StateBadge } from "../../../../components/StateBadge";
 import {
   ShieldCheck,
   CheckCircle2,
   Clock,
-  Sparkles,
   Lock,
   Copy,
   ArrowRight,
-  ExternalLink,
   Layers,
 } from "lucide-react";
-import { ElectionState } from "../../../../lib/types";
+import { castingClient } from "@/lib/casting_client";
+import type { ElectionState, ReceiptStatusResponse } from "@/lib/types";
 
 export default function MyReceiptPage() {
   const params = useParams();
-  const rawHandle = (params?.handle as string) || "HV_24F8_19C2";
-  const handleFormatted = decodeURIComponent(rawHandle).replace(/_/g, " ");
+  const searchParams = useSearchParams();
+  const rawHandle = (params?.handle as string) || "";
+  const electionId = searchParams?.get("election_id") || "";
+  const handleFormatted = rawHandle ? decodeURIComponent(rawHandle) : "Unavailable";
 
-  const [activeStage, setActiveStage] = useState<number>(1);
   const [copied, setCopied] = useState(false);
+  const [receipt, setReceipt] = useState<ReceiptStatusResponse | null>(null);
+  const [loading, setLoading] = useState(Boolean(rawHandle && electionId));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!rawHandle || !electionId) {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const nextReceipt = await castingClient.getReceiptStatus(electionId, decodeURIComponent(rawHandle));
+        if (cancelled) return;
+        setReceipt(nextReceipt);
+        setError(null);
+      } catch (cause) {
+        if (cancelled) return;
+        setError(cause instanceof Error ? cause.message : "Receipt status could not be retrieved.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [electionId, rawHandle]);
 
   const stages: Array<{
     title: string;
     state: ElectionState;
     detail: string;
     timestamp: string;
-  }> = [
-    {
-      title: "Ballot Committed",
-      state: "PENDING_WITNESS",
-      detail: "The casting gateway committed your encrypted ballot to the append only leaf sequence.",
-      timestamp: "30 Oct 2026, 10:14:02 UTC",
-    },
-    {
-      title: "Witness Cosigned",
-      state: "WITNESSED",
-      detail: "The local witness emulator recorded batch checkpoint digest 8f2d34ac.",
-      timestamp: "30 Oct 2026, 10:15:30 UTC",
-    },
-    {
-      title: "Chain Finality Anchor",
-      state: "ANCHOR_FINALIZED",
-      detail: "The local chain adapter recorded the checkpoint at its configured demonstration depth.",
-      timestamp: "30 Oct 2026, 10:28:45 UTC",
-    },
-  ];
+  }> = receipt
+    ? [
+        {
+          title: "Accepted by casting service",
+          state: "PENDING_WITNESS",
+          detail: "The casting origin returned a durable acceptance receipt. This status is not an independent witness or tally result.",
+          timestamp: receipt.witnessed_at_utc || "Timestamp not returned",
+        },
+        ...(receipt.status === "WITNESSED" || receipt.status === "ANCHORED"
+          ? [{
+              title: "Witness acknowledgement returned",
+              state: "WITNESSED" as ElectionState,
+              detail: "The casting origin reports a witness acknowledgement. Operator independence must still be checked against separately pinned witness evidence.",
+              timestamp: receipt.witnessed_at_utc || "Timestamp not returned",
+            }]
+          : []),
+        ...(receipt.status === "ANCHORED"
+          ? [{
+              title: "Anchor status returned",
+              state: "ANCHOR_FINALIZED" as ElectionState,
+              detail: "The casting origin reports an anchored state. This UI does not independently verify chain finality.",
+              timestamp: "Timestamp not returned",
+            }]
+          : []),
+      ]
+    : [];
+  const activeStage = Math.max(stages.length - 1, 0);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(handleFormatted);
+    if (!rawHandle) return;
+    navigator.clipboard.writeText(decodeURIComponent(rawHandle));
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -69,7 +106,7 @@ export default function MyReceiptPage() {
             Voter Evidence Receipt
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Track the development checkpoint and chain states recorded for this fixture. Independent production operation is not established here.
+            Track only the status returned by the casting origin. Independent witness custody and native tally verification are not established by this page.
           </p>
         </div>
 
@@ -102,11 +139,35 @@ export default function MyReceiptPage() {
             Checkpoint Progression Timeline
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Green state indicators appear only for cryptographically confirmed checkpoints.
+            A green indicator means the configured service returned that state; it is not a claim of independent production finality.
           </p>
         </div>
 
-        <div className="space-y-6">
+        {loading && (
+          <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">
+            Loading receipt status from the casting origin…
+          </div>
+        )}
+
+        {error && (
+          <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
+            {error} Do not submit another ballot while the status is unresolved.
+          </div>
+        )}
+
+        {!loading && !error && !electionId && (
+          <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">
+            The election context is missing from this receipt link. Retrieve the receipt from the original submission page before attempting inclusion verification.
+          </div>
+        )}
+
+        {!loading && !error && electionId && !receipt && (
+          <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50 dark:bg-slate-900/30 p-4 text-sm text-slate-600 dark:text-slate-300" role="status">
+            No authenticated receipt status has been returned yet.
+          </div>
+        )}
+
+        {stages.length > 0 && <div className="space-y-6">
           {stages.map((stage, idx) => {
             const isCompleted = idx <= activeStage;
             const isCurrent = idx === activeStage;
@@ -148,25 +209,31 @@ export default function MyReceiptPage() {
               </div>
             );
           })}
-        </div>
+        </div>}
 
         <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-[#1E3352] flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400">
           <Lock className="w-5 h-5 text-[#157E92] flex-shrink-0" aria-hidden="true" />
           <p>
-            <strong>Secrecy guarantee:</strong> Your receipt does not reveal your selection. It mathematically proves only that your encrypted ballot was committed at leaf index 1428.
+            <strong>Privacy boundary:</strong> The opaque receipt does not reveal your selection. A status response alone does not prove ballot inclusion, cast as intended, secrecy, or tally correctness.
           </p>
         </div>
 
         {/* Call to Action to Verify Merkle Inclusion */}
         <div className="pt-2 flex flex-col sm:flex-row gap-4">
-          <Link
-            href={`/student/receipts/${encodeURIComponent(rawHandle)}/inclusion`}
-            className="flex-1 min-h-[44px] px-6 py-3 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-          >
-            <Layers className="w-4 h-4" aria-hidden="true" />
-            <span>Verify Merkle Tree Inclusion Proof</span>
-            <ArrowRight className="w-4 h-4" aria-hidden="true" />
-          </Link>
+          {receipt?.merkle_proof?.length ? (
+            <Link
+              href={`/student/receipts/${encodeURIComponent(rawHandle)}/inclusion?election_id=${encodeURIComponent(electionId)}`}
+              className="flex-1 min-h-[44px] px-6 py-3 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+            >
+              <Layers className="w-4 h-4" aria-hidden="true" />
+              <span>Verify Merkle Tree Inclusion Proof</span>
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
+            </Link>
+          ) : (
+            <span className="flex-1 min-h-[44px] px-6 py-3 font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center gap-2 text-sm text-center">
+              Inclusion proof is not available from this receipt response
+            </span>
+          )}
           <Link
             href="/student/results"
             className="min-h-[44px] px-6 py-3 font-bold text-[#10233F] dark:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"

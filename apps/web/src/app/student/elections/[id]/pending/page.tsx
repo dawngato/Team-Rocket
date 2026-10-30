@@ -118,7 +118,7 @@ export default function PendingAcceptancePage() {
         {handle && (
           <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352]">
           <Link
-            href={`/student/receipts/${encodeURIComponent(handle)}`}
+            href={`/student/receipts/${encodeURIComponent(handle)}?election_id=${encodeURIComponent(electionId)}`}
             className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
           >
             <ShieldCheck className="w-4 h-4" aria-hidden="true" />
