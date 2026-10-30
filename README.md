@@ -143,3 +143,12 @@ HimVote provides root level developer automation through both GNU Make and npm:
 ### Automated Verification Tools
 * tools/env_loader.py: Validates variable definitions, port bounds, URL structures, and detects unconfigured placeholder tokens.
 * tools/verify_integrations.py: Confirms directory layouts, test vector structures, cross service communication endpoints, and database isolation invariants.
+
+## Campus Vault Monolithic Integration
+
+In addition to the multi service microservice architecture, this repository integrates the Campus Vault standalone educational implementation by Abhishek:
+
+* Strict Identity Decoupling with AcceptedBallot records containing no student identifiers
+* Ed25519 digitally signed checkpoints and standalone Python 3 verification script at scripts/verify_election.py
+* In browser voter inclusion verification and receipt checking
+* Automated security test suite runner at scripts/run-security-tests.mjs

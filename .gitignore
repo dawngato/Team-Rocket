@@ -1,14 +1,63 @@
+# ==============================================================================
+# HimVote and Campus Vault Git Ignore Configuration
+# ==============================================================================
+
+# Node dependencies
 node_modules/
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# Next.js Build Outputs and Caches
 .next/
 out/
-*.tsbuildinfo
-.env
-.env.*
-!.env.example
-coverage/
-playwright-report/
-test-results/
-dist/
 build/
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Environment Variables and Secrets
+.env
+.env*.local
+.env.production
+.env.staging
+!.env.example
+
+# Local SQLite Database and Journal Files
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-shm
+prisma/*.db-wal
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+
+# Python caches
 __pycache__/
 *.pyc
+
+# Private Cryptographic Keys
+keys/*_private*
+*.pfx
+*.p12
+
+# Explicitly allow public verification keys to be tracked
+!keys/*_public_key.pem
+!artifacts/**/trusted_auditor_public_key.pem
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# Testing and Coverage
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Temporary and Scratch Dirs
+tmp/
+temp/
+.cache/
