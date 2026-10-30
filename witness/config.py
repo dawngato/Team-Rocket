@@ -32,6 +32,16 @@ class WitnessConfig:
         self.require_writer_signature = require_writer_signature and req_sig
         self.host = os.getenv("WITNESS_HOST", host)
         self.port = int(os.getenv("WITNESS_PORT", str(port)))
+        allowed_origins_env = os.getenv("WITNESS_ALLOWED_ORIGINS", "")
+        if allowed_origins_env:
+            self.allowed_origins = [orig.strip() for orig in allowed_origins_env.split(",") if orig.strip()]
+        else:
+            self.allowed_origins = [
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:8080",
+                "http://127.0.0.1:8080",
+            ]
 
         self.pinned_writers: Dict[str, str] = pinned_writers or {}
         env_pinned = os.getenv("WITNESS_PINNED_WRITERS")
