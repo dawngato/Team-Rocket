@@ -125,4 +125,37 @@ public class AuditExplorerViewModelTests
         mockExporter.Verify(x => x.ExportToTextFileAsync(sampleReport, "/tmp/exported.txt", It.IsAny<CancellationToken>()), Times.Once);
         Assert.Contains("Exported human readable text audit report", vm.StatusMessage);
     }
+
+    [Fact]
+    public async Task RunVerificationAsync_WhenRunnerThrows_ClearsPriorReportState()
+    {
+        var mockRunner = new Mock<IVerifierRunner>();
+        var mockExporter = new Mock<IReportExporter>();
+        mockRunner.Setup(x => x.RunVerifierAsync(It.IsAny<VerifierExecutionOptions>(), It.IsAny<CancellationToken>()))
+                  .ThrowsAsync(new InvalidOperationException("verifier unavailable"));
+
+        var vm = new AuditExplorerViewModel(mockRunner.Object, mockExporter.Object)
+        {
+            EvidenceDirectoryPath = "/path/to/evidence",
+            TrustPinsFilePath = "/path/to/trust.json",
+            VerifierScriptPath = "/path/to/verify.py",
+            CurrentReport = CreateMockReport(),
+            RootsMatch = true,
+            TalliesMatch = true
+        };
+        vm.Properties.Add(new VerificationPropertyItem
+        {
+            PropertyName = VerificationProperties.RecordIntegrity,
+            Status = PropertyStatuses.Pass
+        });
+
+        await vm.RunVerificationAsync();
+
+        Assert.Null(vm.CurrentReport);
+        Assert.Empty(vm.Properties);
+        Assert.False(vm.RootsMatch);
+        Assert.False(vm.TalliesMatch);
+        Assert.Equal(PropertyStatuses.Fail, vm.OverallStatus);
+        Assert.Contains("verifier unavailable", vm.ErrorMessage);
+    }
 }

@@ -97,4 +97,37 @@ public class CoreAuditExplorerViewModelTests
         Assert.Contains("Evidence directory path is required", vm.ErrorMessage);
         Assert.False(vm.VerificationCompleted);
     }
+
+    [Fact]
+    public async Task RunVerificationAsync_WhenRunnerThrows_ClearsPriorReportState()
+    {
+        var mockRunner = new Mock<IVerifierRunner>();
+        var mockExporter = new Mock<IReportExporter>();
+        mockRunner.Setup(x => x.RunVerifierAsync(It.IsAny<VerifierExecutionOptions>(), It.IsAny<CancellationToken>()))
+                  .ThrowsAsync(new InvalidOperationException("verifier unavailable"));
+
+        var vm = new AuditExplorerViewModel(mockRunner.Object, mockExporter.Object)
+        {
+            EvidenceDirectoryPath = "/path/to/evidence",
+            TrustPinsFilePath = "/path/to/trust.json",
+            VerifierScriptPath = "/path/to/verify.py",
+            CurrentReport = new AuditReport { OverallStatus = PropertyStatuses.Pass },
+            RootsMatch = true,
+            TalliesMatch = true
+        };
+        vm.Properties.Add(new VerificationPropertyItem
+        {
+            PropertyName = VerificationProperties.RecordIntegrity,
+            Status = PropertyStatuses.Pass
+        });
+
+        await vm.RunVerificationAsync();
+
+        Assert.Null(vm.CurrentReport);
+        Assert.Empty(vm.Properties);
+        Assert.False(vm.RootsMatch);
+        Assert.False(vm.TalliesMatch);
+        Assert.Equal(PropertyStatuses.Fail, vm.OverallStatus);
+        Assert.Contains("verifier unavailable", vm.ErrorMessage);
+    }
 }

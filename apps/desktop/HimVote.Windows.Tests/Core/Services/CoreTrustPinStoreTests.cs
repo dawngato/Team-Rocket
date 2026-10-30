@@ -114,4 +114,16 @@ public class CoreTrustPinStoreTests : IDisposable
         Assert.Null(store.CurrentPins);
         Assert.False(File.Exists(_storeFile));
     }
+
+    [Fact]
+    public async Task LoadSavedPinsAsync_InvalidPersistedPins_DoesNotTrustOrRetainThem()
+    {
+        await File.WriteAllTextAsync(_storeFile, "{\"ManifestDigest\":\"\",\"WitnessPublicKey\":\"stale\",\"AuthorityPublicKey\":\"stale\"}");
+
+        var store = new TrustPinStore(_storeFile);
+        var loaded = await store.LoadSavedPinsAsync();
+
+        Assert.Null(loaded);
+        Assert.Null(store.CurrentPins);
+    }
 }

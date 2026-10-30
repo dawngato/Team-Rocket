@@ -122,4 +122,59 @@ public class CoreEvidenceImporterTests : IDisposable
         Assert.False(result.Success);
         Assert.Contains("exceeds maximum limit", result.ErrorMessage);
     }
+
+    [Fact]
+    public async Task ExtractArchiveAsync_DuplicateEntryNames_RejectsBeforeWriting()
+    {
+        var zipPath = Path.Combine(_testRoot, "duplicate.zip");
+        var destDir = Path.Combine(_testRoot, "duplicate_dest");
+
+        using (var zipStream = new FileStream(zipPath, FileMode.Create))
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+        {
+            foreach (var content in new[] { "first", "second" })
+            {
+                var entry = archive.CreateEntry("manifest.json");
+                await using var writer = new StreamWriter(entry.Open());
+                await writer.WriteAsync(content);
+            }
+        }
+
+        var importer = new EvidenceImporter();
+        var result = await importer.ExtractArchiveAsync(zipPath, destDir);
+
+        Assert.False(result.Success);
+        Assert.Contains("Duplicate archive entry path rejected", result.ErrorMessage);
+        Assert.False(File.Exists(Path.Combine(destDir, "manifest.json")));
+    }
+
+    [Fact]
+    public async Task ExtractArchiveAsync_TotalBytesLimitExceeded_RemovesPartialFiles()
+    {
+        var zipPath = Path.Combine(_testRoot, "partial_cleanup.zip");
+        var destDir = Path.Combine(_testRoot, "partial_cleanup_dest");
+
+        using (var zipStream = new FileStream(zipPath, FileMode.Create))
+        using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create))
+        {
+            for (var i = 0; i < 2; i++)
+            {
+                var entry = archive.CreateEntry($"entry_{i}.bin");
+                await using var entryStream = entry.Open();
+                await entryStream.WriteAsync(new byte[800]);
+            }
+        }
+
+        var importer = new EvidenceImporter
+        {
+            MaxEntrySizeBytes = 10_000,
+            MaxTotalSizeBytes = 1_000
+        };
+
+        var result = await importer.ExtractArchiveAsync(zipPath, destDir);
+
+        Assert.False(result.Success);
+        Assert.Contains("exceeded limit", result.ErrorMessage);
+        Assert.Empty(Directory.EnumerateFiles(destDir, "*", SearchOption.AllDirectories));
+    }
 }

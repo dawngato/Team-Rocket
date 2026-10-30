@@ -79,4 +79,30 @@ public class CoreVerifierRunnerTests : IDisposable
         Assert.Equal(4, result.ExitCode);
         Assert.Contains("not found", result.ErrorMessage);
     }
+
+    [Fact]
+    public async Task RunVerifierAsync_ZeroExitWithoutReport_IsNotSuccessful()
+    {
+        var scriptPath = Path.Combine(_testRoot, "no_report.py");
+        await File.WriteAllTextAsync(scriptPath, "import sys\nprint('finished without report')\nsys.exit(0)\n");
+
+        var runner = new VerifierRunner();
+        var result = await runner.RunVerifierAsync(new VerifierExecutionOptions
+        {
+            VerifierPath = scriptPath,
+            ExportDirectory = _testRoot,
+            TrustPinsFilePath = Path.Combine(_testRoot, "pins.json"),
+            OutputReportPath = Path.Combine(_testRoot, "missing_report.json")
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal(0, result.ExitCode);
+        Assert.NotNull(result.Report);
+        Assert.Equal(PropertyStatuses.Unverifiable, result.Report.OverallStatus);
+        Assert.Equal(FailureCodes.MissingReport, result.Report.Properties
+            .Single(property => property.PropertyName == VerificationProperties.RecordIntegrity).FailureCode);
+        Assert.Equal(PropertyStatuses.Limited, result.Report.Properties
+            .Single(property => property.PropertyName == VerificationProperties.IndependentOperators).Status);
+        Assert.Contains("complete PASS audit report", result.ErrorMessage);
+    }
 }

@@ -232,5 +232,30 @@ public class EvidenceImporterTests : IDisposable
 
         Assert.False(result.Success);
         Assert.Contains("exceeded limit", result.ErrorMessage);
+        Assert.Empty(Directory.EnumerateFiles(destDir, "*", SearchOption.AllDirectories));
+    }
+
+    [Fact]
+    public async Task ExtractArchiveAsync_DuplicateEntryNames_RejectsBeforeWriting()
+    {
+        var destDir = Path.Combine(_testRoot, "extracted_duplicate");
+        using var stream = new MemoryStream();
+        using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, true))
+        {
+            foreach (var content in new[] { "first", "second" })
+            {
+                var entry = zip.CreateEntry("manifest.json");
+                await using var writer = new StreamWriter(entry.Open());
+                await writer.WriteAsync(content);
+            }
+        }
+        stream.Position = 0;
+
+        var importer = new EvidenceImporter();
+        var result = await importer.ExtractArchiveAsync(stream, destDir);
+
+        Assert.False(result.Success);
+        Assert.Contains("Duplicate archive entry path rejected", result.ErrorMessage);
+        Assert.False(File.Exists(Path.Combine(destDir, "manifest.json")));
     }
 }

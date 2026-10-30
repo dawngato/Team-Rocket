@@ -17,11 +17,11 @@
                 <Grid ColumnDefinitions="*,Auto">
                     <StackPanel Grid.Column="0" Spacing="4">
                         <TextBlock Text="Offline Cryptographic Audit Explorer" FontSize="24" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-                        <TextBlock Text="Independently verify Merkle history, anonymous credentials, roster attestations, homomorphic tally proofs, and chain finality in a network isolated sandbox."
+                        <TextBlock Text="Inspect Merkle history, anonymous credential evidence, roster attestations, tally proofs, and configured chain evidence from local files."
                                    Foreground="#475569" TextWrapping="Wrap" />
                     </StackPanel>
                     <Border Grid.Column="1" Classes="badge" Background="#E0E7FF" BorderBrush="#C7D2FE" BorderThickness="1">
-                        <TextBlock Text="Zero Network Permitted" FontSize="11" FontWeight="Bold" Foreground="#3730A3" />
+                        <TextBlock Text="Local Evidence Mode" FontSize="11" FontWeight="Bold" Foreground="#3730A3" />
                     </Border>
                 </Grid>
             </StackPanel>
@@ -103,7 +103,7 @@
         <!-- Verification Parameters and Sandbox Settings -->
         <Border Classes="card">
             <StackPanel Spacing="16">
-                <TextBlock Text="Verification Inputs &amp; Sandbox Settings" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
+                <TextBlock Text="Verification Inputs &amp; Process Settings" FontSize="18" FontWeight="SemiBold" Foreground="{StaticResource Navy900Brush}" />
 
                 <Grid ColumnDefinitions="210,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="12" ColumnSpacing="16">
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Evidence Directory:" VerticalAlignment="Center" FontWeight="Medium" />
@@ -151,7 +151,7 @@
                 <!-- In Progress Loading State -->
                 <StackPanel Spacing="8" IsVisible="{Binding IsVerifying}" Margin="0,8,0,0">
                     <ProgressBar IsIndeterminate="True" MinHeight="6" />
-                    <TextBlock Text="Running cryptographic verifier inside isolated process sandbox..." FontSize="13" Foreground="{StaticResource Teal600Brush}" FontWeight="Medium" />
+                    <TextBlock Text="Running the checked verifier process; network isolation is not enforced by this client..." FontSize="13" Foreground="{StaticResource Teal600Brush}" FontWeight="Medium" />
                 </StackPanel>
 
                 <!-- Clean Error State Display -->
@@ -186,7 +186,7 @@
                 </Border>
                 <StackPanel Grid.Column="1" Spacing="6">
                     <TextBlock Text="Ready for Offline Verification" FontSize="16" FontWeight="Bold" Foreground="{StaticResource Navy900Brush}" />
-                    <TextBlock Text="Provide the path to your extracted election evidence directory and external trust pins file above. The sandboxed verifier will execute without network access, computing all Merkle roots and homomorphic tally proofs from raw cryptographic records."
+                    <TextBlock Text="Provide the path to your extracted election evidence directory and separately obtained trust pins file above. The verifier reads local evidence; this client does not provide OS-level network isolation."
                                FontSize="13" Foreground="#475569" TextWrapping="Wrap" />
                 </StackPanel>
             </Grid>

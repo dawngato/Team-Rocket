@@ -17,7 +17,7 @@
 
         <StackPanel Grid.Row="0" Spacing="4">
             <TextBlock Text="Offline Audit Explorer" Style="{ThemeResource TitleTextBlockStyle}" />
-            <TextBlock Text="Independent verification engine runner and cryptographic proof evaluator"
+            <TextBlock Text="Checked verifier process runner and cryptographic proof evaluator"
                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         </StackPanel>
 

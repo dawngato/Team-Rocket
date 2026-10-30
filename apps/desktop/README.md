@@ -1,8 +1,11 @@
-# HimVote Windows Desktop Client
+# HimVote Desktop Clients
 
-HimVote Desktop is the institutional thick client application built using C# and WinUI 3 on .NET 8.
-It targets Windows 10 build 1809 and later as well as Windows 11.
-Packaging is distributed as a signed MSIX package or enterprise store channel without private keys.
+HimVote contains a shared C#/.NET 8 Core plus two desktop shells:
+
+* `HimVote.Linux` is an Avalonia client for Linux.
+* `HimVote.Windows` contains the Windows WinUI path and a non-Windows source/test compatibility path.
+
+This is a synthetic-data educational prototype. Source presence is not evidence of a native build, a signed MSIX package, an independently operated witness, or suitability for a real election. The local witness and Anvil-style chain flows are demonstrations unless independently operated and externally pinned.
 
 ## Architecture and Structure
 
@@ -29,7 +32,7 @@ Located in `HimVote.Windows/ViewModels`:
 * `ReceiptViewModel`: Ballot receipt querying against the witness inclusion ledger.
 * `AdminViewModel`: Draft election creation, roster freeze commands, open and close operations, and publication requests.
 * `EvidenceImportViewModel`: Archive extraction workflow and trust pin importer validations.
-* `AuditExplorerViewModel`: Execution orchestrator for the sandboxed verifier, side by side comparisons, and reporting.
+* `AuditExplorerViewModel`: Execution orchestrator for the checked verifier process, side by side comparisons, and reporting.
 * `SettingsViewModel`: Update status queries and configuration settings.
 
 ### Services
@@ -37,15 +40,15 @@ Located in `HimVote.Windows/ViewModels`:
 Located in `HimVote.Windows/Services`:
 * `ApiClient`: Typed HTTP client communicating with identity, admin, and casting endpoints.
 * `SecureStore`: Windows Data Protection API (DPAPI) and Credential Locker integration for session tokens.
-* `VerifierRunner`: Child process runner executing the Python verifier CLI inside an isolated sandbox with SHA256 verification before every run.
+* `VerifierRunner`: Child process runner executing the Python verifier CLI with SHA256 verification before every run. It is a separate process, not an OS-level network sandbox.
 * `TrustPinStore`: Storage and validator for trust pins chosen from a user selected external file.
 * `EvidenceImporter`: Defensive ZIP extractor with path traversal defenses, symlink rejection, and file count and byte limits.
 * `ReportExporter`: Deterministic JSON and human readable text export engine.
-* `UpdateService`: Version inspector and MSIX channel update supervisor.
+* `UpdateService`: Version/channel status abstraction; packaging or signed update evidence is not implied by this source.
 
 ## Offline Audit Explorer Security Controls
 
-The offline audit explorer operates without network connectivity:
+The audit explorer can operate on local evidence without the election API. The client does not itself provide OS-level network isolation; the verifier must be independently reviewed for offline behavior and the operator must treat local process execution accordingly.
 
 1. Safe ZIP Extraction:
 * Prevents directory traversal attacks by validating destination boundaries for every file entry.
@@ -56,17 +59,17 @@ The offline audit explorer operates without network connectivity:
 * Requires trust pins to be selected by the user from an external file.
 * Strictly rejects reading trust pins located inside the imported evidence directory.
 
-3. Sandboxed Verifier Invocation:
+3. Checked Verifier Invocation:
 * Inspects the SHA256 checksum of the verifier executable or script prior to execution.
 * Aborts immediately if the expected checksum does not match the actual file digest.
-* Strips proxy environment variables to block outbound network requests.
+* Clears common proxy environment variables and sets `NO_PROXY=*`; this is a best-effort environment hygiene measure, not a firewall or process sandbox.
 
 4. Evaluated Verification Properties:
 * `RECORD_INTEGRITY`: Verification of Merkle tree history and ballot evidence leaves.
 * `CREDENTIAL_UNIQUENESS`: Evaluation of blind credential signatures and nullifier commitments.
 * `ROSTER_ATTESTATION`: Verification of authorized institutional registrar roster signatures.
 * `TALLY_PROOF`: Verification of native cryptographic ballot tally proofs.
-* `ANCHOR_FINALITY`: Confirmation of consortium blockchain consensus finality.
+* `ANCHOR_FINALITY`: Validation of the configured checkpoint/chain evidence. A local development chain does not establish independent consensus finality.
 Each property status is assigned one of: PASS, FAIL, LIMITED, ASSUMED, NOT_SUPPORTED, or UNVERIFIABLE.
 Failure classifications include: BAD_SIGNATURE, TRUNCATED, WRONG_CHAIN, INVALID_TALLY, MISSING_FINAL, and STALE_CHECKPOINT.
 
@@ -91,3 +94,5 @@ To run the xUnit test suite:
 ```bash
 dotnet test HimVote.Windows.sln
 ```
+
+Build evidence is environment-specific. A Windows WinUI/MSIX build requires the Windows SDK and Windows toolchain; a Linux build exercises the Avalonia project. These commands must be run on the corresponding toolchain and their output retained. In the current development environment, `dotnet` is not on `PATH`, so no native build or test pass is claimed here.

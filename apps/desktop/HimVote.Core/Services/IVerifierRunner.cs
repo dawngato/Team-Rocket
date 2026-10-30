@@ -8,6 +8,10 @@ public sealed class VerifierExecutionOptions
     public string? ExpectedSha256Checksum { get; set; }
     public string ExportDirectory { get; set; } = string.Empty;
     public string TrustPinsFilePath { get; set; } = string.Empty;
+    public string? FinalCheckpointFilePath { get; set; }
+    public string? RosterApprovalFilePath { get; set; }
+    public string? IssuanceClosureFilePath { get; set; }
+    public string? ChainAnchorFilePath { get; set; }
     public string? OutputReportPath { get; set; }
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(60);
     public string PythonExecutable { get; set; } = "python3";

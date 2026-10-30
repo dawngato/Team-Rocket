@@ -38,6 +38,8 @@ public class EvidenceImporter : IEvidenceImporter
 
         var fullDestination = Path.GetFullPath(destinationDirectory);
         var extractedFiles = new List<string>();
+        var normalizedEntryNames = new HashSet<string>(
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         long totalBytesExtracted = 0;
         int fileCount = 0;
 
@@ -52,6 +54,19 @@ public class EvidenceImporter : IEvidenceImporter
                 throw new SecurityException($"Archive file count {archive.Entries.Count} exceeds maximum limit of {MaxFileCount}.");
             }
 
+            // Validate the complete entry set before writing anything. ZipArchive permits
+            // duplicate names, and extracting them in sequence would silently overwrite
+            // evidence while reporting only the final bytes to the verifier.
+            foreach (var entry in archive.Entries)
+            {
+                ValidateEntrySafety(entry);
+                var normalizedName = NormalizeEntryName(entry.FullName);
+                if (!normalizedEntryNames.Add(normalizedName))
+                {
+                    throw new SecurityException($"Duplicate archive entry path rejected: {entry.FullName}");
+                }
+            }
+
             foreach (var entry in archive.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -60,8 +75,12 @@ public class EvidenceImporter : IEvidenceImporter
 
                 var entryDestination = Path.GetFullPath(Path.Combine(fullDestination, entry.FullName));
 
-                if (!entryDestination.StartsWith(fullDestination + Path.DirectorySeparatorChar, StringComparison.Ordinal) &&
-                    !string.Equals(entryDestination, fullDestination, StringComparison.Ordinal))
+                var pathComparison = OperatingSystem.IsWindows()
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+
+                if (!entryDestination.StartsWith(fullDestination + Path.DirectorySeparatorChar, pathComparison) &&
+                    !string.Equals(entryDestination, fullDestination, pathComparison))
                 {
                     throw new SecurityException($"Path traversal detected for entry: {entry.FullName}");
                 }
@@ -89,6 +108,10 @@ public class EvidenceImporter : IEvidenceImporter
                     Directory.CreateDirectory(parentDir);
                 }
 
+                // Register the destination before opening it so a cancellation, size
+                // limit, or decompression error also removes a partially written file.
+                extractedFiles.Add(entryDestination);
+
                 await using (var entryStream = entry.Open())
                 await using (var targetStream = File.Create(entryDestination))
                 {
@@ -115,7 +138,6 @@ public class EvidenceImporter : IEvidenceImporter
                     }
                 }
 
-                extractedFiles.Add(entryDestination);
             }
 
             return new ExtractionResult
@@ -184,6 +206,12 @@ public class EvidenceImporter : IEvidenceImporter
         {
             throw new SecurityException($"Reparse point rejected in archive entry: {entry.FullName}");
         }
+    }
+
+    private static string NormalizeEntryName(string name)
+    {
+        var normalized = name.Replace('\\', '/').TrimEnd('/');
+        return normalized;
     }
 
     private static void CleanUpExtractedFiles(IEnumerable<string> files)

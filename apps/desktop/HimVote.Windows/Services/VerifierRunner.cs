@@ -78,21 +78,44 @@ public class VerifierRunner : IVerifierRunner
         {
             var isPythonScript = options.VerifierPath.EndsWith(".py", StringComparison.OrdinalIgnoreCase);
             var fileName = isPythonScript ? options.PythonExecutable : options.VerifierPath;
-            var scriptArg = isPythonScript ? $"\"{options.VerifierPath}\" " : string.Empty;
 
-            var arguments = $"{scriptArg}audit-evidence --export \"{options.ExportDirectory}\" --trust \"{options.TrustPinsFilePath}\" --report \"{reportPath}\"";
-            if (options.AllowDevelopmentProfile) arguments += " --allow-development-profile";
+            var finalArg = options.FinalCheckpointFilePath ?? FindOptionalFile(options.ExportDirectory, "final_checkpoint.json");
+            var rosterArg = options.RosterApprovalFilePath ?? FindOptionalFile(options.ExportDirectory, "roster_approval.json");
+            var issuanceArg = options.IssuanceClosureFilePath ?? FindOptionalFile(options.ExportDirectory, "issuance_closure.json");
+            var chainArg = options.ChainAnchorFilePath ?? FindOptionalFile(options.ExportDirectory, "chain_anchor.json");
 
             var startInfo = new ProcessStartInfo
             {
                 FileName = fileName,
-                Arguments = arguments,
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 WorkingDirectory = Path.GetTempPath()
             };
+
+            // ArgumentList avoids shell-style quoting bugs when a user-selected evidence,
+            // trust, verifier, or report path contains spaces or quote characters.
+            if (isPythonScript)
+            {
+                startInfo.ArgumentList.Add(options.VerifierPath);
+            }
+
+            startInfo.ArgumentList.Add("audit_evidence");
+            startInfo.ArgumentList.Add("--export");
+            startInfo.ArgumentList.Add(options.ExportDirectory);
+            startInfo.ArgumentList.Add("--trust");
+            startInfo.ArgumentList.Add(options.TrustPinsFilePath);
+            startInfo.ArgumentList.Add("--report");
+            startInfo.ArgumentList.Add(reportPath);
+            AddOptionalArgument(startInfo, "--final", finalArg);
+            AddOptionalArgument(startInfo, "--roster", rosterArg);
+            AddOptionalArgument(startInfo, "--issuance", issuanceArg);
+            AddOptionalArgument(startInfo, "--chain", chainArg);
+            if (options.AllowDevelopmentProfile)
+            {
+                startInfo.ArgumentList.Add("--allow-development-profile");
+            }
 
             startInfo.Environment["HTTP_PROXY"] = "";
             startInfo.Environment["HTTPS_PROXY"] = "";
@@ -142,6 +165,7 @@ public class VerifierRunner : IVerifierRunner
             var exitCode = process.ExitCode;
 
             AuditReport? report = null;
+            var reportWasParsed = false;
 
             if (File.Exists(reportPath))
             {
@@ -149,6 +173,7 @@ public class VerifierRunner : IVerifierRunner
                 {
                     var jsonContent = await File.ReadAllTextAsync(reportPath, cancellationToken);
                     report = JsonSerializer.Deserialize<AuditReport>(jsonContent, _jsonOptions);
+                    reportWasParsed = report != null;
                 }
                 catch
                 {
@@ -157,7 +182,7 @@ public class VerifierRunner : IVerifierRunner
 
             if (report == null)
             {
-                report = CreateFallbackReport(exitCode, actualChecksum, stdout, stderr);
+                report = CreateFallbackReport(exitCode, actualChecksum, stdout, stderr, reportMissing: exitCode == 0);
             }
             else
             {
@@ -165,14 +190,19 @@ public class VerifierRunner : IVerifierRunner
                 report.ExitCode = exitCode;
             }
 
+            var verifierSuccess = exitCode == 0 && reportWasParsed && IsSuccessfulReport(report);
+
             return new VerifierExecutionResult
             {
-                Success = exitCode == 0,
+                Success = verifierSuccess,
                 ExitCode = exitCode,
                 VerifierChecksum = actualChecksum,
                 Report = report,
                 StandardOutput = stdout,
-                StandardError = stderr
+                StandardError = stderr,
+                ErrorMessage = exitCode == 0 && !verifierSuccess
+                    ? "Verifier exited successfully but did not produce a complete PASS audit report."
+                    : null
             };
         }
         finally
@@ -190,10 +220,49 @@ public class VerifierRunner : IVerifierRunner
         }
     }
 
-    private static AuditReport CreateFallbackReport(int exitCode, string verifierChecksum, string stdout, string stderr)
+    private static string? FindOptionalFile(string baseDir, string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(baseDir))
+        {
+            return null;
+        }
+
+        var direct = Path.Combine(baseDir, fileName);
+        return File.Exists(direct) ? direct : null;
+    }
+
+    private static void AddOptionalArgument(ProcessStartInfo startInfo, string optionName, string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        startInfo.ArgumentList.Add(optionName);
+        startInfo.ArgumentList.Add(value);
+    }
+
+    private static bool IsSuccessfulReport(AuditReport report)
+    {
+        if (!string.Equals(report.OverallStatus, PropertyStatuses.Pass, StringComparison.OrdinalIgnoreCase) ||
+            !report.RootComparison.Matches ||
+            !report.TallyComparison.Matches ||
+            report.Properties.Count == 0)
+        {
+            return false;
+        }
+
+        return report.Properties.All(property =>
+            !string.Equals(property.Status, PropertyStatuses.Fail, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(property.Status, PropertyStatuses.Unverifiable, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(property.Status, PropertyStatuses.NotSupported, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static AuditReport CreateFallbackReport(int exitCode, string verifierChecksum, string stdout, string stderr, bool reportMissing = false)
     {
         var status = exitCode switch
         {
+            0 when reportMissing => PropertyStatuses.Unverifiable,
             0 => PropertyStatuses.Pass,
             2 => PropertyStatuses.Fail,
             3 => PropertyStatuses.Unverifiable,
@@ -202,6 +271,7 @@ public class VerifierRunner : IVerifierRunner
 
         var failureCode = exitCode switch
         {
+            0 when reportMissing => FailureCodes.MissingReport,
             0 => FailureCodes.None,
             2 => FailureCodes.BadSignature,
             3 => FailureCodes.StaleCheckpoint,
@@ -214,12 +284,12 @@ public class VerifierRunner : IVerifierRunner
             new() { PropertyName = VerificationProperties.CredentialUniqueness, Status = status, FailureCode = failureCode, Summary = "Anonymous credential proofs and nullifiers" },
             new() { PropertyName = VerificationProperties.RosterAttestation, Status = status, FailureCode = failureCode, Summary = "Roster membership signature verification" },
             new() { PropertyName = VerificationProperties.TallyProof, Status = status, FailureCode = failureCode, Summary = "Native voting engine cryptographic tally proof" },
-            new() { PropertyName = VerificationProperties.AnchorFinality, Status = status, FailureCode = failureCode, Summary = "Consortium blockchain anchor finality verification" },
+            new() { PropertyName = VerificationProperties.AnchorFinality, Status = status, FailureCode = failureCode, Summary = "Configured checkpoint and chain evidence; local demo chains do not establish independent finality" },
             new() { PropertyName = VerificationProperties.BallotSecrecyAssumptions, Status = PropertyStatuses.Assumed, FailureCode = FailureCodes.None, Summary = "Engine specific ballot secrecy assumptions" },
             new() { PropertyName = VerificationProperties.CastAsIntended, Status = PropertyStatuses.Assumed, FailureCode = FailureCodes.None, Summary = "Client booth cast as intended proof verification" },
             new() { PropertyName = VerificationProperties.ReceiptFreeness, Status = PropertyStatuses.Limited, FailureCode = FailureCodes.None, Summary = "Receipt freeness bounded by platform constraints" },
             new() { PropertyName = VerificationProperties.CompromisedEndpointResistance, Status = PropertyStatuses.Limited, FailureCode = FailureCodes.None, Summary = "Endpoint protection and trusted execution constraints" },
-            new() { PropertyName = VerificationProperties.IndependentOperators, Status = PropertyStatuses.Pass, FailureCode = FailureCodes.None, Summary = "Witness operated independently from platform admin" },
+            new() { PropertyName = VerificationProperties.IndependentOperators, Status = PropertyStatuses.Limited, FailureCode = FailureCodes.None, Summary = "Operator independence is not established by a desktop process invocation" },
             new() { PropertyName = VerificationProperties.RealWorldEligibility, Status = PropertyStatuses.Assumed, FailureCode = FailureCodes.None, Summary = "Institutional roster and registrar verification" }
         };
 
@@ -236,13 +306,13 @@ public class VerifierRunner : IVerifierRunner
             {
                 PublishedRoot = "sha256:unknown",
                 ComputedRoot = "sha256:unknown",
-                Matches = exitCode == 0
+                Matches = exitCode == 0 && !reportMissing
             },
             TallyComparison = new TallyComparison
             {
                 PublishedTotalBallots = 0,
                 ComputedTotalBallots = 0,
-                Matches = exitCode == 0
+                Matches = exitCode == 0 && !reportMissing
             },
             Properties = props
         };

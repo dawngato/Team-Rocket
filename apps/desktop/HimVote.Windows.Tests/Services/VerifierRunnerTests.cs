@@ -84,6 +84,7 @@ parser.add_argument('--export')
 parser.add_argument('--trust')
 parser.add_argument('--report')
 args = parser.parse_args()
+assert args.command == 'audit_evidence', args.command
 
 report_data = {
     'election_id': 'elec_test_001',
@@ -184,6 +185,30 @@ sys.exit(0)
         Assert.True(result.Report.TallyComparison.Matches);
         Assert.Equal(5, result.Report.Properties.Count);
         Assert.All(result.Report.Properties, p => Assert.Equal(PropertyStatuses.Pass, p.Status));
+    }
+
+    [Fact]
+    public async Task RunVerifierAsync_ZeroExitWithoutReport_IsNotSuccessful()
+    {
+        var scriptPath = Path.Combine(_testRoot, "mock_no_report_verifier.py");
+        await File.WriteAllTextAsync(scriptPath, "import sys\nprint('finished without report')\nsys.exit(0)\n");
+
+        var runner = new VerifierRunner();
+        var result = await runner.RunVerifierAsync(new VerifierExecutionOptions
+        {
+            VerifierPath = scriptPath,
+            ExportDirectory = _testRoot,
+            TrustPinsFilePath = Path.Combine(_testRoot, "pins.json"),
+            OutputReportPath = Path.Combine(_testRoot, "missing_report.json")
+        });
+
+        Assert.False(result.Success);
+        Assert.Equal(0, result.ExitCode);
+        Assert.NotNull(result.Report);
+        Assert.Equal(PropertyStatuses.Unverifiable, result.Report.OverallStatus);
+        Assert.Equal(FailureCodes.MissingReport, result.Report.Properties
+            .Single(property => property.PropertyName == VerificationProperties.RecordIntegrity).FailureCode);
+        Assert.Contains("complete PASS audit report", result.ErrorMessage);
     }
 
     [Fact]

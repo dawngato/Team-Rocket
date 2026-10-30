@@ -215,6 +215,8 @@ public class AuditExplorerViewModel : ViewModelBase
 
     public async Task RunVerificationAsync()
     {
+        ClearVerificationState();
+
         if (string.IsNullOrWhiteSpace(EvidenceDirectoryPath))
         {
             ErrorMessage = "Evidence directory path is required.";
@@ -261,7 +263,7 @@ public class AuditExplorerViewModel : ViewModelBase
             IsVerifying = true;
             VerificationCompleted = false;
             ErrorMessage = null;
-            StatusMessage = "Computing verifier checksum and launching sandboxed process...";
+            StatusMessage = "Computing verifier checksum and launching the checked verifier process...";
 
             var options = new VerifierExecutionOptions
             {
@@ -316,6 +318,25 @@ public class AuditExplorerViewModel : ViewModelBase
         {
             IsVerifying = false;
         }
+    }
+
+    private void ClearVerificationState()
+    {
+        VerificationCompleted = false;
+        CurrentReport = null;
+        OverallStatus = PropertyStatuses.Unverifiable;
+        ExitCode = -1;
+        ActualVerifierChecksum = string.Empty;
+        PublishedRoot = string.Empty;
+        ComputedRoot = string.Empty;
+        RootsMatch = false;
+        PublishedTotalBallots = 0;
+        ComputedTotalBallots = 0;
+        TalliesMatch = false;
+        Properties.Clear();
+        CandidateTallyComparisons.Clear();
+        ErrorMessage = null;
+        StatusMessage = null;
     }
 
     public async Task ExportJsonReportAsync(string? targetFilePath)

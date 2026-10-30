@@ -127,4 +127,17 @@ public class TrustPinStoreTests : IDisposable
         var afterClear = await secondStoreInstance.LoadSavedPinsAsync();
         Assert.Null(afterClear);
     }
+
+    [Fact]
+    public async Task LoadSavedPinsAsync_InvalidPersistedPins_DoesNotTrustOrRetainThem()
+    {
+        var storePath = Path.Combine(_testRoot, "invalid_store.json");
+        await File.WriteAllTextAsync(storePath, "{\"ManifestDigest\":\"\",\"WitnessPublicKey\":\"stale\",\"AuthorityPublicKey\":\"stale\"}");
+
+        var store = new TrustPinStore(storePath);
+        var loaded = await store.LoadSavedPinsAsync();
+
+        Assert.Null(loaded);
+        Assert.Null(store.CurrentPins);
+    }
 }

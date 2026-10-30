@@ -151,6 +151,8 @@ public class EvidenceImportViewModel : ViewModelBase
             StatusMessage = "Extracting evidence archive with strict safety checks...";
             ExtractedFiles.Clear();
             ExtractionCompleted = false;
+            TrustPinsLoaded = false;
+            CurrentTrustPins = null;
 
             if (string.IsNullOrWhiteSpace(DestinationDirectory))
             {

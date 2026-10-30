@@ -8,7 +8,7 @@ export interface AccessibleDialogProps {
   onClose: () => void;
   title: string;
   description?: string;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 export const FOCUSABLE_ELEMENTS_SELECTOR = [

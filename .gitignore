@@ -12,3 +12,9 @@ dist/
 build/
 __pycache__/
 *.pyc
+.gradle/
+.kotlin/
+chain/cache/
+chain/out/
+*.sqlite3
+*.sqlite

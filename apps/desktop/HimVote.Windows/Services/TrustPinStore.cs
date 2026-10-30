@@ -71,7 +71,6 @@ public class TrustPinStore : ITrustPinStore
 
         ValidatePins(pins);
 
-        _currentPins = pins;
         await SavePinsAsync(pins, cancellationToken);
         return pins;
     }
@@ -96,11 +95,19 @@ public class TrustPinStore : ITrustPinStore
         try
         {
             var json = await File.ReadAllTextAsync(_storagePath, cancellationToken);
-            _currentPins = JsonSerializer.Deserialize<TrustPins>(json, _jsonOptions);
-            return _currentPins;
+            var pins = JsonSerializer.Deserialize<TrustPins>(json, _jsonOptions);
+            if (pins == null)
+            {
+                throw new FormatException("Saved trust pin document is empty.");
+            }
+
+            ValidatePins(pins);
+            _currentPins = pins;
+            return pins;
         }
         catch
         {
+            _currentPins = null;
             return null;
         }
     }

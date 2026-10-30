@@ -9,7 +9,7 @@ The current cryptographic engine is Profile VEEM, a local development adapter. T
 * Identity and Ballot Separation: Identity records and cast ballots reside in two physically isolated PostgreSQL clusters with distinct network boundaries, credentials, and operators. No table, log, or database view joins a student identity to a cast ballot.
 * Standardized Cryptography: Employs RFC 9474 RSA blind signatures for credential issuance, RFC 9162 Merkle tree structures for ordered audit logs, RFC 8785 canonical JSON for deterministic representations, and Argon2id for password security.
 * Server Authoritative Lifecycle: The server is the sole authority for eligibility verification, window timings, and one vote enforcement. Clients never determine election rules.
-* Multi Layer Auditability: Ballots are submitted, witnessed by independent third parties, anchored to an EVM blockchain, and validated by a standalone auditor tool.
+* Multi Layer Auditability: The development profile produces ordered evidence, a local witness checkpoint, and an optional EVM anchor for reproducible tamper-detection demonstrations. These services are controlled by the same repository/operator in local use and do not establish independent trust.
 
 ## Client Applications
 
@@ -83,18 +83,19 @@ All backend services are implemented in Python 3.12 utilizing FastAPI, SQLAlchem
 * Responsibilities: Pulls witnessed final checkpoints and submits immutable transactions to the EVM blockchain anchor contract.
 * Finality Reconciliation: Tracks block confirmations, guards against chain reorganizations, and records transaction receipts.
 
-## Independent Witness Service (witness)
+## Witness Service (witness)
 
 * Port: 8086
-* Operational Model: Operated by an independent external organization with isolated infrastructure, keys, and access controls.
-* Verification: Validates manifest digests, monotonic tree growth, and consistency proofs before returning append only cosignatures.
+* Operational Model: The checked-in service is a local witness emulator. A separately operated deployment with independently distributed keys is required before making an independence claim.
+* Verification: Validates manifest digests, monotonic tree growth, and consistency proofs before returning append only cosignatures in the local development profile.
 
 ## Blockchain Smart Contracts (chain)
 
 * Contract: HimVoteAnchor.sol (Solidity 0.8.x)
 * Node Port: 8545 (Anvil local development node)
-* Architecture: Utilizes OpenZeppelin AccessControl. Restricts checkpoint anchoring to authorized relayer accounts.
+* Architecture: Utilizes OpenZeppelin AccessControl in the development contract and restricts checkpoint anchoring to authorized relayer accounts.
 * Immutability: Guarantees that checkpoint sequence numbers increase monotonically and that final commitments cannot be overwritten or altered.
+* Trust boundary: Anvil or another chain controlled by the same developer is a reproducible demonstration, not an independent public trust anchor.
 
 ## Standalone Verifier CLI (verifier)
 
@@ -102,7 +103,7 @@ All backend services are implemented in Python 3.12 utilizing FastAPI, SQLAlchem
 * Workflow:
   1. Loads trusted authority pins from a location outside the untrusted election export package.
   2. Verifies manifest integrity, roster approvals, and issuance closure.
-  3. Obtains final witness signatures directly from independent storage.
+  3. Obtains final witness signatures from configured witness storage; local development storage is explicitly simulated, not independent.
   4. Recomputes RFC 8785 canonical JSON bytes and RFC 9162 Merkle tree roots.
   5. Verifies cryptographic nullifier uniqueness and ballot encryption proofs.
   6. Validates blockchain transaction inclusion and block finality.

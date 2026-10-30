@@ -37,6 +37,7 @@ public static class FailureCodes
     public const string MissingFinal = "MISSING_FINAL";
     public const string StaleCheckpoint = "STALE_CHECKPOINT";
     public const string ChecksumMismatch = "CHECKSUM_MISMATCH";
+    public const string MissingReport = "VERIFIER_REPORT_MISSING";
     public const string PathTraversalDetected = "PATH_TRAVERSAL_DETECTED";
     public const string SymlinkDetected = "SYMLINK_DETECTED";
     public const string ResourceLimitExceeded = "RESOURCE_LIMIT_EXCEEDED";
