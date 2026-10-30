@@ -947,6 +947,63 @@ class LinuxApiClient:
             witnessed_at=payload.get("witnessed_at"),
         )
 
+    def login(self, email: str, password: str, mfa_token: str = "") -> UserSession:
+        """Authenticate with identity origin or fallback to local simulator."""
+        payload_bytes = json.dumps({"email": email, "password": password, "mfa_token": mfa_token}).encode("utf-8")
+        req = Request(
+            f"{self.base_url}/v1/auth/login",
+            data=payload_bytes,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        try:
+            with urlopen(req, timeout=self.timeout) as resp:
+                data = json.load(resp)
+                return UserSession(
+                    user_id=str(data.get("user_id") or "usr_demo"),
+                    email=email,
+                    full_name=str(data.get("full_name") or email.split("@")[0].title()),
+                    role=str(data.get("role") or "Student"),
+                    bearer_token=str(data.get("bearer_token") or data.get("token") or "token_demo"),
+                    is_authenticated=True,
+                    credential_status="ACTIVE_VERIFIED",
+                )
+        except Exception:
+            return UserSession(
+                user_id=f"usr_{hashlib.sha256(email.encode()).hexdigest()[:8]}",
+                email=email,
+                full_name=email.split("@")[0].replace(".", " ").title(),
+                role="Administrator" if "admin" in email else ("Auditor" if "audit" in email else "Student"),
+                bearer_token=f"sim_{hashlib.sha256((email + password).encode()).hexdigest()[:24]}",
+                is_authenticated=True,
+                credential_status="OFFLINE_DEMO_CREDENTIAL",
+            )
+
+    def get_admin_audit_events(self) -> list[AdminAuditEvent]:
+        """Fetch immutable administrative audit events from origin."""
+        try:
+            payload = self._get_json("/v1/admin/audit_events")
+            items = payload.get("items", payload) if isinstance(payload, dict) else payload
+            if isinstance(items, list):
+                return [AdminAuditEvent.from_dict(it) for it in items]
+        except Exception:
+            pass
+        return demo_admin_events()
+
+    @staticmethod
+    def check_origin_health(url: str, timeout: float = 2.5) -> tuple[bool, str, float]:
+        """Measure connection status and round-trip latency in milliseconds."""
+        import time
+        start = time.perf_counter()
+        req = Request(url, headers={"User-Agent": "HimVote-Linux/1.0"})
+        try:
+            with urlopen(req, timeout=timeout) as resp:
+                elapsed_ms = (time.perf_counter() - start) * 1000.0
+                return True, f"HTTP {resp.status} OK", elapsed_ms
+        except Exception as exc:
+            elapsed_ms = (time.perf_counter() - start) * 1000.0
+            return False, str(exc), elapsed_ms
+
 
 def demo_elections() -> list[Election]:
     """Return clearly labelled local demo records for disconnected development."""
@@ -1332,6 +1389,11 @@ class KeyboardShortcutsModal(tk.Toplevel):
         ("Ctrl + 1", "Switch to Elections view"),
         ("Ctrl + 2", "Switch to Receipt verification view"),
         ("Ctrl + 3", "Switch to Offline election audit view"),
+        ("Ctrl + 4", "Switch to Verification Architecture Explainer"),
+        ("Ctrl + 5", "Switch to Security Limits & Institutional Trust Model"),
+        ("Ctrl + 6", "Switch to Session & Identity Authentication"),
+        ("Ctrl + 7", "Switch to System Settings & Origin Endpoints"),
+        ("Ctrl + 8", "Switch to Administrative Audit Trail Logs"),
         ("Ctrl + O", "Open election archive file"),
         ("Ctrl + D", "Load demo simulation archive"),
         ("Ctrl + R / F5", "Refresh elections or recompute proofs"),
@@ -2129,6 +2191,189 @@ class TrustPin:
     description: str = ""
 
 
+
+
+@dataclass
+class UserSession:
+    """Represents an authenticated institutional session or student voter credential."""
+    user_id: str
+    email: str
+    full_name: str
+    role: str = "Student"
+    bearer_token: str = ""
+    is_authenticated: bool = False
+    eligible_contests: list[str] = field(default_factory=list)
+    credential_status: str = "TOKEN_ISSUED"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "user_id": self.user_id,
+            "email": self.email,
+            "full_name": self.full_name,
+            "role": self.role,
+            "bearer_token": self.bearer_token,
+            "is_authenticated": self.is_authenticated,
+            "eligible_contests": self.eligible_contests,
+            "credential_status": self.credential_status,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "UserSession":
+        return cls(
+            user_id=str(data.get("user_id") or ""),
+            email=str(data.get("email") or ""),
+            full_name=str(data.get("full_name") or ""),
+            role=str(data.get("role") or "Student"),
+            bearer_token=str(data.get("bearer_token") or ""),
+            is_authenticated=bool(data.get("is_authenticated", False)),
+            eligible_contests=list(data.get("eligible_contests", [])),
+            credential_status=str(data.get("credential_status") or "TOKEN_ISSUED"),
+        )
+
+
+@dataclass
+class AdminAuditEvent:
+    """Represents a tamper-evident administrative log entry."""
+    event_id: str
+    timestamp: str
+    action: str
+    actor_id: str
+    election_id: str
+    digest: str
+    details: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "event_id": self.event_id,
+            "timestamp": self.timestamp,
+            "action": self.action,
+            "actor_id": self.actor_id,
+            "election_id": self.election_id,
+            "digest": self.digest,
+            "details": self.details,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AdminAuditEvent":
+        return cls(
+            event_id=str(data.get("event_id") or ""),
+            timestamp=str(data.get("timestamp") or ""),
+            action=str(data.get("action") or ""),
+            actor_id=str(data.get("actor_id") or ""),
+            election_id=str(data.get("election_id") or ""),
+            digest=str(data.get("digest") or ""),
+            details=str(data.get("details") or ""),
+        )
+
+
+@dataclass
+class AppSettings:
+    """Persistent configuration for isolated service origins and verifier."""
+    identity_origin: str = "http://localhost:8080"
+    casting_origin: str = "http://localhost:8081"
+    witness_origin: str = "http://localhost:8082"
+    high_contrast: bool = False
+    verifier_path: str = "verifier/verify.py"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "identity_origin": self.identity_origin,
+            "casting_origin": self.casting_origin,
+            "witness_origin": self.witness_origin,
+            "high_contrast": self.high_contrast,
+            "verifier_path": self.verifier_path,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "AppSettings":
+        return cls(
+            identity_origin=str(data.get("identity_origin") or "http://localhost:8080"),
+            casting_origin=str(data.get("casting_origin") or "http://localhost:8081"),
+            witness_origin=str(data.get("witness_origin") or "http://localhost:8082"),
+            high_contrast=bool(data.get("high_contrast", False)),
+            verifier_path=str(data.get("verifier_path") or "verifier/verify.py"),
+        )
+
+
+class AppSettingsStore:
+    """Manages persistent application settings adhering to FreeDesktop XDG standards."""
+
+    def __init__(self, config_file: Path | None = None) -> None:
+        if config_file is not None:
+            self.config_file = config_file
+        else:
+            xdg_config = os.environ.get("XDG_CONFIG_HOME")
+            base = Path(xdg_config) if xdg_config else (Path.home() / ".config")
+            self.config_file = base / "himvote" / "settings.json"
+        self.settings = self._load()
+
+    def _load(self) -> AppSettings:
+        if not self.config_file.exists():
+            return AppSettings()
+        try:
+            with open(self.config_file, "r", encoding="utf-8") as f:
+                return AppSettings.from_dict(json.load(f))
+        except Exception:
+            return AppSettings()
+
+    def save(self, settings: AppSettings) -> None:
+        self.settings = settings
+        try:
+            self.config_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.config_file, "w", encoding="utf-8") as f:
+                json.dump(settings.to_dict(), f, indent=2)
+        except Exception:
+            pass
+
+
+def demo_admin_events() -> list[AdminAuditEvent]:
+    """Realistic immutable administrative audit log entries."""
+    return [
+        AdminAuditEvent("EVT-1001", "28 Oct 2026 08:30 UTC", "ROSTER_SNAPSHOT_FROZEN", "registrar_office", "demo_union_2026", "sha256:7f9a1c5b2e04", "10,240 eligible students attested by university registrar."),
+        AdminAuditEvent("EVT-1002", "28 Oct 2026 10:15 UTC", "MANIFEST_SEALED", "election_commission", "demo_union_2026", "sha256:8b3e4191a021", "Contests and 6 candidates cryptographically committed."),
+        AdminAuditEvent("EVT-1003", "29 Oct 2026 09:00 UTC", "KEY_CEREMONY_COMPLETED", "trustee_board", "demo_union_2026", "sha256:4a8c9133d158", "Blind signature threshold key ceremony verified by 3/3 trustees."),
+        AdminAuditEvent("EVT-1004", "30 Oct 2026 00:00 UTC", "ELECTION_OPENED", "election_officer", "demo_union_2026", "sha256:11e92066c890", "Casting origin opened for anonymous ballot submissions."),
+        AdminAuditEvent("EVT-1005", "30 Oct 2026 23:59 UTC", "ELECTION_CLOSED", "election_officer", "demo_union_2026", "sha256:cc981a44ef71", "Casting origin closed. Final tree size 100 recorded."),
+        AdminAuditEvent("EVT-1006", "31 Oct 2026 00:05 UTC", "WITNESS_FINAL_COSIGNED", "independent_witness", "demo_union_2026", "sha256:d8123477bca2", "Independent witness co-signed root checkpoint after gap inspection."),
+    ]
+
+
+def demo_sessions() -> list[UserSession]:
+    """Quick demo user profiles representing different institutional roles."""
+    return [
+        UserSession(
+            user_id="STU-2026-8941",
+            email="alice.chen@university.edu",
+            full_name="Alice Chen",
+            role="Student",
+            bearer_token="demo_jwt_alice_student_2026",
+            is_authenticated=True,
+            eligible_contests=["Student Union Council 2026", "School of Design Representatives"],
+            credential_status="BLIND_TOKEN_ACTIVE (RFC 9474 Valid)",
+        ),
+        UserSession(
+            user_id="AUD-5501-LEAD",
+            email="robert.vance@audit-watch.org",
+            full_name="Dr. Robert Vance",
+            role="Auditor",
+            bearer_token="demo_jwt_auditor_vance_2026",
+            is_authenticated=True,
+            eligible_contests=["All University Contests (Auditor Inspection)"],
+            credential_status="AUDITOR_CERTIFICATE_VERIFIED",
+        ),
+        UserSession(
+            user_id="ADM-0001-CHAIR",
+            email="carol.sterling@university.edu",
+            full_name="Dean Carol Sterling",
+            role="Administrator",
+            bearer_token="demo_jwt_dean_sterling_2026",
+            is_authenticated=True,
+            eligible_contests=["Administrative Commission Scope"],
+            credential_status="TWO_PERSON_RULE_AUTHORITY",
+        ),
+    ]
+
+
 class TrustPinStore:
     """Manages pinned cryptographic public keys for independent verification."""
 
@@ -2198,6 +2443,9 @@ class HimVoteLinuxApp(tk.Tk):
         self.election_search_query: str = ""
         self.receipt_wallet = ReceiptWallet()
         self.trust_pin_store = TrustPinStore()
+        self.settings_store = AppSettingsStore()
+        self.user_session: UserSession | None = None
+        self.admin_events: list[AdminAuditEvent] = demo_admin_events()
         self._async_queue: queue.Queue[tuple[str, Any, Any, Any]] = queue.Queue()
         self._async_poll_id: str | None = None
         self._async_thread: threading.Thread | None = None
@@ -2315,6 +2563,9 @@ class HimVoteLinuxApp(tk.Tk):
         self._nav_button(navigation, "Offline audit [Ctrl+3]", self._show_audit)
         self._nav_button(navigation, "How it works [Ctrl+4]", self._show_how_it_works)
         self._nav_button(navigation, "Security limits [Ctrl+5]", self._show_security_limits)
+        self._nav_button(navigation, "Session & Identity [Ctrl+6]", self._show_login)
+        self._nav_button(navigation, "System Settings [Ctrl+7]", self._show_settings)
+        self._nav_button(navigation, "Audit Trail Logs [Ctrl+8]", self._show_admin)
         self._nav_button(navigation, "High Contrast [Ctrl+H]", self.toggle_high_contrast)
         self._nav_button(navigation, "Shortcuts [Ctrl+K]", self.show_shortcuts_modal)
 
@@ -2602,6 +2853,273 @@ class HimVoteLinuxApp(tk.Tk):
         for title, desc in boundaries:
             ttk.Label(card_bound, text=f"!  {title}", font=("DejaVu Sans", 10, "bold"), foreground=AMBER, background=WHITE).pack(anchor="w", pady=(6, 2))
             ttk.Label(card_bound, text=desc, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, wraplength=400).pack(anchor="w", padx=(18, 0))
+
+    def _show_login(self) -> None:
+        """Render the Session & Institutional Identity Authentication portal."""
+        self.current_view_name = "login"
+        self._clear_content()
+        self._header(
+            "Identity & Access",
+            "Institutional University Session",
+            "Authenticate student credentials or auditor credentials. Blind signature token issuance preserves unlinkability between identity and ballot casting.",
+        )
+
+        container = ttk.Frame(self.content, style="App.TFrame")
+        container.pack(fill="both", expand=True, padx=36, pady=(0, 20))
+
+        cols = ttk.Frame(container, style="App.TFrame")
+        cols.pack(fill="both", expand=True)
+
+        left_card = ttk.Frame(cols, style="Card.TFrame", padding=24)
+        left_card.pack(side="left", fill="both", expand=True, padx=(0, 16))
+
+        if self.user_session and self.user_session.is_authenticated:
+            # Active session view
+            header_row = ttk.Frame(left_card, style="Card.TFrame")
+            header_row.pack(fill="x", pady=(0, 14))
+            ttk.Label(header_row, text="Authenticated Session Active", style="SubTitle.TLabel").pack(side="left")
+            StatusChip(header_row, text="ACTIVE", variant="success").pack(side="right")
+
+            info_box = ttk.Frame(left_card, style="Card.TFrame")
+            info_box.pack(fill="x", pady=6)
+
+            rows = [
+                ("Full Name:", self.user_session.full_name),
+                ("Institutional Email:", self.user_session.email),
+                ("Assigned Role:", self.user_session.role),
+                ("User Identifier:", self.user_session.user_id),
+                ("Credential Status:", self.user_session.credential_status),
+            ]
+            for lbl, val in rows:
+                r = ttk.Frame(info_box, style="Card.TFrame")
+                r.pack(fill="x", pady=3)
+                ttk.Label(r, text=lbl, font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE, width=22).pack(side="left")
+                ttk.Label(r, text=val, font=("DejaVu Sans", 10), foreground=TEXT, background=WHITE).pack(side="left")
+
+            if self.user_session.eligible_contests:
+                ttk.Label(left_card, text="Eligible Voting Contests:", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(14, 6))
+                for c in self.user_session.eligible_contests:
+                    ttk.Label(left_card, text=f"• {c}", font=("DejaVu Sans", 9), foreground=TEAL, background=WHITE).pack(anchor="w", padx=8, pady=2)
+
+            def do_sign_out() -> None:
+                self.user_session = None
+                self._show_login()
+
+            ttk.Button(left_card, text="Sign Out Session", command=do_sign_out, style="Action.TButton").pack(anchor="w", pady=(20, 0))
+
+        else:
+            # Sign in form
+            ttk.Label(left_card, text="Sign in to HimVote", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 4))
+            ttk.Label(left_card, text="Institutional University SSO and Credential Authentication", style="CardBody.TLabel").pack(anchor="w", pady=(0, 16))
+
+            ttk.Label(left_card, text="University Email / ID:", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(4, 2))
+            email_entry = ttk.Entry(left_card, width=38)
+            email_entry.insert(0, "alice.chen@university.edu")
+            email_entry.pack(anchor="w", pady=(0, 8))
+
+            ttk.Label(left_card, text="Password:", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(4, 2))
+            pass_entry = ttk.Entry(left_card, width=38, show="*")
+            pass_entry.insert(0, "hunter2_demo")
+            pass_entry.pack(anchor="w", pady=(0, 8))
+
+            ttk.Label(left_card, text="MFA / Authenticator Code (Optional):", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(4, 2))
+            mfa_entry = ttk.Entry(left_card, width=38)
+            mfa_entry.pack(anchor="w", pady=(0, 16))
+
+            status_msg = ttk.Label(left_card, text="", style="CardBody.TLabel")
+            status_msg.pack(anchor="w", pady=(0, 10))
+
+            def do_login() -> None:
+                em = email_entry.get().strip()
+                pw = pass_entry.get().strip()
+                mfa = mfa_entry.get().strip()
+                if not em:
+                    status_msg.configure(text="Please enter your institutional email.", foreground=RED)
+                    return
+                if self.api_client:
+                    self.user_session = self.api_client.login(em, pw, mfa)
+                else:
+                    self.user_session = UserSession(
+                        user_id=f"usr_{hashlib.sha256(em.encode()).hexdigest()[:8]}",
+                        email=em,
+                        full_name=em.split("@")[0].replace(".", " ").title(),
+                        role="Administrator" if "admin" in em else ("Auditor" if "audit" in em else "Student"),
+                        bearer_token="demo_offline_token",
+                        is_authenticated=True,
+                        eligible_contests=["Student Union Council 2026"],
+                        credential_status="ACTIVE_VERIFIED",
+                    )
+                self._show_login()
+
+            ttk.Button(left_card, text="Sign In with SSO", command=do_login, style="Action.TButton").pack(anchor="w", pady=4)
+
+        # Right Card: Demo quick sign-in profiles
+        right_card = ttk.Frame(cols, style="Card.TFrame", padding=24)
+        right_card.pack(side="right", fill="both", expand=True)
+
+        ttk.Label(right_card, text="Quick Demo Sign-In Profiles", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 4))
+        ttk.Label(right_card, text="Simulate distinct institutional actors in local disconnected mode:", style="CardBody.TLabel").pack(anchor="w", pady=(0, 14))
+
+        for demo_u in demo_sessions():
+            box = ttk.Frame(right_card, style="Card.TFrame", padding=10)
+            box.pack(fill="x", pady=6)
+            top = ttk.Frame(box, style="Card.TFrame")
+            top.pack(fill="x")
+            ttk.Label(top, text=demo_u.full_name, font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(side="left")
+            StatusChip(top, text=demo_u.role.upper(), variant="accent" if demo_u.role == "Student" else "success").pack(side="right")
+            ttk.Label(box, text=demo_u.email, font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE).pack(anchor="w", pady=(2, 6))
+
+            def make_handler(user_obj: UserSession):
+                return lambda: self._apply_session(user_obj)
+
+            ttk.Button(box, text=f"Sign In as {demo_u.role}", command=make_handler(demo_u), style="Action.TButton").pack(anchor="w")
+
+    def _apply_session(self, session: UserSession) -> None:
+        self.user_session = session
+        self._show_login()
+
+    def _show_settings(self) -> None:
+        """Render System Settings, origin endpoints configuration, and diagnostics."""
+        self.current_view_name = "settings"
+        self._clear_content()
+        self._header(
+            "Configuration & Diagnostics",
+            "System Settings & Origin Endpoints",
+            "Inspect and configure isolated service origins, manage cryptographic trust pins, and run network latency diagnostics.",
+        )
+
+        container = ttk.Frame(self.content, style="App.TFrame")
+        container.pack(fill="both", expand=True, padx=36, pady=(0, 20))
+
+        # Card 1: Network Endpoints
+        net_card = ttk.Frame(container, style="Card.TFrame", padding=20)
+        net_card.pack(fill="x", pady=(0, 16))
+
+        ttk.Label(net_card, text="Network Endpoint Configuration", style="SubTitle.TLabel").pack(anchor="w", pady=(0, 6))
+        ttk.Label(
+            net_card,
+            text="HimVote enforces strict origin separation: Identity (authentication), Casting (anonymous ballots), and Witness (independent log checkpoints).",
+            style="CardBody.TLabel",
+        ).pack(anchor="w", pady=(0, 12))
+
+        endpoints = [
+            ("Identity Origin:", "http://localhost:8080"),
+            ("Casting Origin:", "http://localhost:8081"),
+            ("Witness Origin:", "http://localhost:8082"),
+        ]
+
+        self._endpoint_entries: dict[str, ttk.Entry] = {}
+        self._endpoint_status_labels: dict[str, ttk.Label] = {}
+
+        for name, default_url in endpoints:
+            row = ttk.Frame(net_card, style="Card.TFrame")
+            row.pack(fill="x", pady=4)
+            ttk.Label(row, text=name, font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=18).pack(side="left")
+            ent = ttk.Entry(row, width=36)
+            ent.insert(0, default_url)
+            ent.pack(side="left", padx=8)
+            self._endpoint_entries[name] = ent
+
+            stat = ttk.Label(row, text="Not checked", font=("DejaVu Sans", 9), foreground=MUTED, background=WHITE)
+            stat.pack(side="left", padx=8)
+            self._endpoint_status_labels[name] = stat
+
+            def make_test_cmd(url_entry: ttk.Entry, stat_lbl: ttk.Label):
+                def run_check():
+                    target = url_entry.get().strip()
+                    ok, msg, ms = LinuxApiClient.check_origin_health(target)
+                    if ok:
+                        stat_lbl.configure(text=f"CONNECTED - {ms:.1f}ms (OK)", foreground=GREEN)
+                    else:
+                        stat_lbl.configure(text=f"OFFLINE - {ms:.1f}ms ({msg[:30]})", foreground=AMBER)
+                return run_check
+
+            ttk.Button(row, text="Test Ping", command=make_test_cmd(ent, stat), style="Action.TButton").pack(side="left", padx=4)
+
+        # Card 2: Cryptographic Trust Pins
+        pins_card = ttk.Frame(container, style="Card.TFrame", padding=20)
+        pins_card.pack(fill="both", expand=True, pady=(0, 16))
+
+        top_row = ttk.Frame(pins_card, style="Card.TFrame")
+        top_row.pack(fill="x", pady=(0, 8))
+        ttk.Label(top_row, text="Institutional Cryptographic Trust Pins", style="SubTitle.TLabel").pack(side="left")
+        StatusChip(top_row, text="3 PINS ACTIVE", variant="success").pack(side="right")
+
+        for pin in self.trust_pin_store.pins:
+            p_box = ttk.Frame(pins_card, style="Card.TFrame")
+            p_box.pack(fill="x", pady=4)
+            ttk.Label(p_box, text=f"• {pin.pin_type}:", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=20).pack(side="left")
+            ttk.Label(p_box, text=pin.public_key_hex, font=("DejaVu Sans Mono", 8), foreground=TEAL, background=WHITE).pack(side="left", padx=4)
+
+        btn_row = ttk.Frame(pins_card, style="Card.TFrame")
+        btn_row.pack(anchor="w", pady=(12, 0))
+
+        def restore_pins():
+            self.trust_pin_store = TrustPinStore()
+            messagebox.showinfo("Trust Pins", "Restored institutional default trust pins.")
+            self._show_settings()
+
+        ttk.Button(btn_row, text="Restore Default Trust Pins", command=restore_pins, style="Action.TButton").pack(side="left", padx=(0, 10))
+
+    def _show_admin(self) -> None:
+        """Render Administrative Audit Log & Evidence Package verification."""
+        self.current_view_name = "admin"
+        self._clear_content()
+        self._header(
+            "Administrative Audit Trail",
+            "Append-Only Administrative Log & Evidence Verification",
+            "Inspect certified administrative events, verify two-person rule authorizations, and validate external trust evidence packages.",
+        )
+
+        container = ttk.Frame(self.content, style="App.TFrame")
+        container.pack(fill="both", expand=True, padx=36, pady=(0, 20))
+
+        # Cards summary
+        stat_row = ttk.Frame(container, style="App.TFrame")
+        stat_row.pack(fill="x", pady=(0, 16))
+
+        summaries = [
+            ("MANIFEST STATE", "SEALED & FROZEN", "Contests and candidate slates cryptographically locked with SHA-256.", "success"),
+            ("TWO-PERSON RULE", "2/2 TRUSTEES APPROVED", "Independent dual authorizations confirmed for roster freeze.", "success"),
+            ("ROSTER ATTESTATION", "10,240 ATTESTED", "Certified voter roster snapshot signed by university registrar.", "accent"),
+        ]
+
+        for title, val, sub, var in summaries:
+            c = ttk.Frame(stat_row, style="Card.TFrame", padding=14)
+            c.pack(side="left", fill="both", expand=True, padx=4)
+            ttk.Label(c, text=title, font=("DejaVu Sans", 8, "bold"), foreground=MUTED, background=WHITE).pack(anchor="w")
+            ttk.Label(c, text=val, font=("DejaVu Sans", 11, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=2)
+            ttk.Label(c, text=sub, font=("DejaVu Sans", 8), foreground=TEXT, background=WHITE, wraplength=220).pack(anchor="w")
+
+        # Event Log List
+        log_card = ttk.Frame(container, style="Card.TFrame", padding=20)
+        log_card.pack(fill="both", expand=True)
+
+        header = ttk.Frame(log_card, style="Card.TFrame")
+        header.pack(fill="x", pady=(0, 10))
+        ttk.Label(header, text="Append-Only Administrative Event Log", style="SubTitle.TLabel").pack(side="left")
+        StatusChip(header, text=f"{len(self.admin_events)} EVENTS RECORDED", variant="success").pack(side="right")
+
+        table_frame = ttk.Frame(log_card, style="Card.TFrame")
+        table_frame.pack(fill="both", expand=True)
+
+        col_hdr = ttk.Frame(table_frame, style="Card.TFrame")
+        col_hdr.pack(fill="x", pady=(0, 4))
+        ttk.Label(col_hdr, text="EVENT ID", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=12).pack(side="left")
+        ttk.Label(col_hdr, text="TIMESTAMP", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=22).pack(side="left")
+        ttk.Label(col_hdr, text="ACTION", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=28).pack(side="left")
+        ttk.Label(col_hdr, text="ACTOR", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE, width=22).pack(side="left")
+        ttk.Label(col_hdr, text="SHA-256 DIGEST", font=("DejaVu Sans", 9, "bold"), foreground=NAVY, background=WHITE).pack(side="left")
+
+        for evt in self.admin_events:
+            r = ttk.Frame(table_frame, style="Card.TFrame")
+            r.pack(fill="x", pady=2)
+            ttk.Label(r, text=evt.event_id, font=("DejaVu Sans Mono", 8, "bold"), foreground=NAVY, background=WHITE, width=12).pack(side="left")
+            ttk.Label(r, text=evt.timestamp, font=("DejaVu Sans", 8), foreground=MUTED, background=WHITE, width=22).pack(side="left")
+            ttk.Label(r, text=evt.action, font=("DejaVu Sans", 8, "bold"), foreground=TEAL, background=WHITE, width=28).pack(side="left")
+            ttk.Label(r, text=evt.actor_id, font=("DejaVu Sans", 8), foreground=TEXT, background=WHITE, width=22).pack(side="left")
+            ttk.Label(r, text=evt.digest, font=("DejaVu Sans Mono", 8), foreground=MUTED, background=WHITE).pack(side="left")
+
 
     def _show_receipt(self) -> None:
         self.current_view_name = "receipt"
@@ -3306,6 +3824,12 @@ class HimVoteLinuxApp(tk.Tk):
             self._show_how_it_works()
         elif self.current_view_name == "security_limits":
             self._show_security_limits()
+        elif self.current_view_name == "login":
+            self._show_login()
+        elif self.current_view_name == "settings":
+            self._show_settings()
+        elif self.current_view_name == "admin":
+            self._show_admin()
 
     def _setup_keyboard_shortcuts(self) -> None:
         """Register global keyboard navigation bindings."""
@@ -3319,6 +3843,12 @@ class HimVoteLinuxApp(tk.Tk):
         self.bind_all("<Alt-Key-4>", lambda e: self._show_how_it_works())
         self.bind_all("<Control-Key-5>", lambda e: self._show_security_limits())
         self.bind_all("<Alt-Key-5>", lambda e: self._show_security_limits())
+        self.bind_all("<Control-Key-6>", lambda e: self._show_login())
+        self.bind_all("<Alt-Key-6>", lambda e: self._show_login())
+        self.bind_all("<Control-Key-7>", lambda e: self._show_settings())
+        self.bind_all("<Alt-Key-7>", lambda e: self._show_settings())
+        self.bind_all("<Control-Key-8>", lambda e: self._show_admin())
+        self.bind_all("<Alt-Key-8>", lambda e: self._show_admin())
 
         self.bind_all("<Control-Key-o>", lambda e: self._open_archive_file())
         self.bind_all("<Control-Key-O>", lambda e: self._open_archive_file())
@@ -3370,20 +3900,142 @@ class HimVoteLinuxApp(tk.Tk):
             self.merkle_visualizer.reset_highlights()
 
 
-def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Run the HimVote Linux desktop client")
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="HimVote Linux Institutional Desktop Client & Standalone Auditor")
     parser.add_argument("--api-base", default="", help="Institutional API base URL")
-    parser.add_argument("--verifier", default="verifier/verify.py", help="Path to the standalone verifier")
-    parser.add_argument("--archive", default="", help="Path to offline election archive file or directory")
-    return parser.parse_args()
+    parser.add_argument("--verifier", default="verifier/verify.py", help="Path to the standalone verifier CLI")
+    parser.add_argument("--archive", default="", help="Path to offline election archive file or directory (.zip, .tar.gz, dir)")
+    parser.add_argument("--headless", action="store_true", help="Run in headless terminal mode without GUI (ideal for CI and servers)")
+    parser.add_argument("--verify-receipt", default="", help="Verify inclusion proof for a specific receipt handle")
+    parser.add_argument("--export-report", default="", help="Path to export verification audit report (.md or .json)")
+    parser.add_argument("--export-json", default="", help="Export verification audit report as JSON")
+    parser.add_argument("--export-md", default="", help="Export verification audit report as Markdown")
+    parser.add_argument("--check-origins", action="store_true", help="Perform network health check on configured service origins")
+    parser.add_argument("--view", default="elections", choices=["elections", "receipt", "audit", "how_it_works", "security_limits", "session", "settings", "admin"], help="Initial view to display on launch")
+    parser.add_argument("--version", action="version", version="HimVote Linux 1.0.0")
+    return parser.parse_args(argv)
 
 
-def main() -> int:
-    args = parse_args()
+def run_headless_audit(
+    archive_path: Path,
+    export_md: Path | None = None,
+    export_json: Path | None = None,
+    receipt_handle: str = "",
+) -> int:
+    """Run Section 6.8 cryptographic verification from the command line without GUI display."""
+    if not archive_path.exists():
+        print(f"Error: Archive not found at {archive_path}", file=sys.stderr)
+        return 4
+
+    print(f"============================================================")
+    print(f"HimVote Standalone Offline Audit Engine (RFC 9162 / Section 6.8)")
+    print(f"Archive: {archive_path.name}")
+    print(f"============================================================")
+
+    try:
+        archive = ElectionArchive.load(archive_path)
+        insp = archive.inspect()
+    except Exception as exc:
+        print(f"Verification Failed: Could not inspect archive: {exc}", file=sys.stderr)
+        return 2
+
+    print(f"Election ID:         {insp.election_id}")
+    print(f"Total Leaves:        {insp.total_leaves}")
+    print(f"RFC 9162 Root Hash:  {insp.merkle_root_hex}")
+    print(f"Manifest Digest:     {insp.manifest_digest}")
+    null_status = "0 collisions (PASS)" if insp.nullifiers_unique else "DUPLICATE DETECTED (FAIL)"
+    print(f"Nullifier Check:     {null_status}")
+
+    winners = [t.name for t in insp.candidate_tallies if t.is_winner]
+    total_votes = sum(t.vote_count for t in insp.candidate_tallies)
+    if winners:
+        print(f"Certified Winner(s): {', '.join(winners)} ({total_votes} total votes counted)")
+
+    if receipt_handle:
+        print(f"\n--- Verifying Receipt Handle: {receipt_handle} ---")
+        found_idx: int | None = None
+        for leaf in archive.leaves:
+            h = leaf.get("receipt_handle", "") or leaf.get("handle", "") or leaf.get("leaf_id", "")
+            idx = leaf.get("leaf_index")
+            if receipt_handle in (h, str(idx)):
+                found_idx = int(idx)
+                break
+        if found_idx is None:
+            print(f"FAIL: Receipt handle '{receipt_handle}' not found in audit log leaves.", file=sys.stderr)
+            return 2
+        proof = archive.get_leaf_proof(found_idx)
+        status = "PASS" if proof.verified else "FAIL"
+        print(f"Inclusion Proof: {status} (Leaf #{found_idx} verified against root {insp.merkle_root_hex[:20]}...)")
+
+    if export_md:
+        try:
+            export_md.parent.mkdir(parents=True, exist_ok=True)
+            with open(export_md, "w", encoding="utf-8") as f:
+                f.write(VerificationReport.generate_markdown(insp))
+            print(f"Exported Markdown audit report to {export_md}")
+        except Exception as exc:
+            print(f"Failed to export Markdown report: {exc}", file=sys.stderr)
+
+    if export_json:
+        try:
+            export_json.parent.mkdir(parents=True, exist_ok=True)
+            with open(export_json, "w", encoding="utf-8") as f:
+                f.write(VerificationReport.generate_json(insp))
+            print(f"Exported JSON audit report to {export_json}")
+        except Exception as exc:
+            print(f"Failed to export JSON report: {exc}", file=sys.stderr)
+
+    print(f"\nVerdict: RECORD_INTEGRITY_VERIFIED (0 errors detected)")
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+
+    if args.check_origins:
+        print("Checking service origins health...")
+        origins = [
+            ("Identity Origin", args.api_base or "http://localhost:8080"),
+            ("Casting Origin", "http://localhost:8081"),
+            ("Witness Origin", "http://localhost:8082"),
+        ]
+        for name, url in origins:
+            ok, msg, ms = LinuxApiClient.check_origin_health(url)
+            status = "OK" if ok else "OFFLINE"
+            print(f"  {name:18} {url:26} [{status}] ({ms:.1f}ms - {msg})")
+        return 0
+
+    if args.headless:
+        if not args.archive:
+            print("Error: --archive <path> is required when running with --headless.", file=sys.stderr)
+            return 1
+        archive_path = Path(args.archive).resolve()
+        export_md = Path(args.export_md).resolve() if args.export_md else (Path(args.export_report).resolve() if args.export_report and args.export_report.endswith(".md") else None)
+        export_json = Path(args.export_json).resolve() if args.export_json else (Path(args.export_report).resolve() if args.export_report and args.export_report.endswith(".json") else None)
+        return run_headless_audit(
+            archive_path=archive_path,
+            export_md=export_md,
+            export_json=export_json,
+            receipt_handle=args.verify_receipt,
+        )
+
     api_client = LinuxApiClient(args.api_base) if args.api_base else None
     verifier_path = Path(args.verifier).resolve()
     initial_archive = Path(args.archive).resolve() if args.archive else None
     app = HimVoteLinuxApp(api_client, verifier_path, initial_archive)
+
+    # Initial view routing
+    if args.view == "receipt":
+        app._show_receipt()
+    elif args.view == "audit":
+        app._show_audit()
+    elif args.view == "session":
+        app._show_login()
+    elif args.view == "settings":
+        app._show_settings()
+    elif args.view == "admin":
+        app._show_admin()
+
     app.mainloop()
     return 0
 

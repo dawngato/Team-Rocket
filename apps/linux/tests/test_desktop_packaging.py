@@ -25,6 +25,8 @@ def test_himvote_desktop_entry_syntax() -> None:
     assert entry.get("Terminal") == "false"
     assert "AuditArchive" in entry.get("Actions", "")
     assert "VerifyReceipt" in entry.get("Actions", "")
+    assert "Settings" in entry.get("Actions", "")
+    assert "Session" in entry.get("Actions", "")
 
 
 def test_appstream_metainfo_xml_validity() -> None:
@@ -60,3 +62,32 @@ def test_svg_icon_asset_validity() -> None:
     assert "</svg>" in svg_content
     assert "#10233F" in svg_content  # Institutional navy
     assert "#157E92" in svg_content  # Teal
+
+
+def test_bash_completion_script() -> None:
+    bash_comp = _DESKTOP_DIR / "himvote-completion.bash"
+    assert bash_comp.exists(), "himvote-completion.bash must exist"
+
+    with open(bash_comp, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert "_himvote_completion" in content
+    assert "--archive" in content
+    assert "--headless" in content
+    assert "--export-report" in content
+    assert "complete -F _himvote_completion himvote" in content
+
+
+def test_manpage_validity() -> None:
+    manpage = _DESKTOP_DIR / "himvote.1"
+    assert manpage.exists(), "himvote.1 manpage must exist"
+
+    with open(manpage, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    assert ".TH HIMVOTE 1" in content
+    assert ".SH NAME" in content
+    assert ".SH SYNOPSIS" in content
+    assert ".SH OPTIONS" in content
+    assert ".SH KEYBOARD SHORTCUTS" in content
+    assert "RFC 9162" in content

@@ -13,7 +13,7 @@ StartupNotify=true
 StartupWMClass=HimVote Linux
 MimeType=application/x-himvote-archive;application/zip;application/gzip;
 
-Actions=AuditArchive;VerifyReceipt;
+Actions=AuditArchive;VerifyReceipt;Settings;Session;
 
 [Desktop Action AuditArchive]
 Name=Open Election Archive
@@ -22,3 +22,11 @@ Exec=himvote --archive %f
 [Desktop Action VerifyReceipt]
 Name=Check Receipt Status
 Exec=himvote --view receipt
+
+[Desktop Action Settings]
+Name=System Settings & Origins
+Exec=himvote --view settings
+
+[Desktop Action Session]
+Name=Session & Identity Sign In
+Exec=himvote --view session
