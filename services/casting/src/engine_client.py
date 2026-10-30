@@ -8,7 +8,7 @@ tests; it is rejected when ``APP_ENV=production`` and must not be used for a
 security or privacy claim.
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any, Tuple
 
 import httpx
 
@@ -63,11 +63,11 @@ async def validate_ballot_with_engine(
         return False, f"CRYPTO_ENGINE_REJECTED: engine returned HTTP {response.status_code}"
 
     try:
-        result: Dict[str, Any] = response.json()
+        result: Any = response.json()
     except ValueError as exc:
         raise EngineValidationUnavailable("CRYPTO_ENGINE_INVALID_RESPONSE") from exc
 
-    if not isinstance(result.get("valid"), bool):
+    if not isinstance(result, dict) or not isinstance(result.get("valid"), bool):
         raise EngineValidationUnavailable("CRYPTO_ENGINE_INVALID_RESPONSE")
     reason = result.get("reason")
     if reason is not None and not isinstance(reason, str):

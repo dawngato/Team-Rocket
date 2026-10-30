@@ -46,6 +46,22 @@ When a client invokes POST /v1/cast/{election_id}/ballots:
 8. Sequence Increment and Commit: Advances next_leaf_index by one and commits the transaction atomically.
 9. Response: Returns status COMMITTED_PENDING_WITNESS alongside an unguessable opaque receipt handle.
 
+## Engine validation boundary
+
+Casting does not treat base64 decoding as proof validation. With
+`ENGINE_VALIDATION_MODE=remote`, it calls the configured
+`ELECTION_ENGINE_BASE/v1/engine/validate_ballot` endpoint and rejects invalid,
+malformed or unavailable engine responses before committing a ballot. A
+remote failure is reported as unavailable rather than accepted.
+
+The local Compose development profile sets `ENGINE_VALIDATION_MODE=syntax_only`
+only so transaction and UI fixtures can run without a protocol engine. The
+health response labels that profile `integrity_only_development`, and the
+casting service rejects it when `APP_ENV=production`. The checked-in Profile
+VEEM adapter is not an established Helios, Belenios or ElectionGuard engine;
+this boundary therefore does not close the external engine gate or establish
+ballot secrecy.
+
 ## Receipt Status Verification
 Clients query receipt verification via GET /v1/cast/{election_id}/receipts/{handle}:
 * Returns status COMMITTED_PENDING_WITNESS prior to witness aggregation.

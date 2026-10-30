@@ -10,6 +10,10 @@ playwright-report/
 test-results/
 dist/
 build/
+cache/
+TestResults/
+.coverage
+*.coverage
 __pycache__/
 *.pyc
 .gradle/

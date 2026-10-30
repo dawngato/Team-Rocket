@@ -16,7 +16,7 @@ The local test suites exercise the five adversarial integrity mutations, but thi
 | Area | Status | Observed basis |
 |---|---|---|
 | Repository/reference input audit | **TESTED** | `python3 tools/source_audit.py` executed; specification boundary and input traceability recorded in `SPEC_CONFLICTS.md` and `REQUIREMENTS_TRACEABILITY.md`. |
-| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **280 passed, 0 failed, 0 skipped** across all 11 test suites in 44.86s, exit code 0. |
+| Python services and local protocol tests | **TESTED** | `python3 tools/run_all_tests.py`: **281 passed, 0 failed, 0 skipped** across all 11 test suites in the latest run, exit code 0. |
 | Profile VEEM engine gate | **LIMITED** | The local profile adapter has executable tests, but it is not Helios, Belenios, ElectionGuard, or another externally vetted election engine. No complete Q07 privacy/tally claim is made. |
 | Casting and duplicate prevention | **TESTED** | Monotonic zero-indexed leaf assignment, PostgreSQL ACID row lock (`SELECT FOR UPDATE`), and nullifier uniqueness enforced. 100 concurrent submissions in `tests/security/Q7-01_duplicate_cast_test.py` produce exactly 1 accepted leaf and safe identical replays. |
 | Canonical evidence and Merkle/checkpoint code | **TESTED** | RFC 8785 canonical JCS leaves, RFC 9162 Merkle tree hash chaining, and independent witness checkpoints verified across Python and TypeScript test vectors. |
@@ -31,10 +31,21 @@ The local test suites exercise the five adversarial integrity mutations, but thi
 
 ## Execution Evidence Summary
 
+### Prompt2 continuation evidence
+
+The casting service now delegates native ballot and proof validation to its
+configured engine endpoint in remote mode and fails closed for unavailable or
+malformed engine responses. Production Compose explicitly selects remote mode;
+development Compose explicitly labels syntax-only fixtures as
+`integrity_only_development`. The focused engine-boundary and casting tests
+passed, and the unified Python runner passed **281 tests** after the change.
+This is a boundary hardening change, not evidence that Profile VEEM is an
+established election engine.
+
 1. **All Python Test Suites**:
    ```bash
    python3 tools/run_all_tests.py
-   # Result: 280 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
+   # Result: 281 passed, 0 failed, 0 skipped across 11 suites (himvote_crypto, test_vectors, identity_issuer, casting, admin_api, election_engine, checkpoint_worker, witness, anchor_relayer, verifier, tests)
    ```
 2. **Foundry Smart Contract Tests**:
    ```bash
