@@ -22,8 +22,8 @@
 
 | Gate | Requirement | Result | Block / Pass |
 |------|-------------|--------|--------------|
-| G-01 | Python test suite ≥ 200 tests, all pass | 281 pass (`python3 tools/run_all_tests.py`) | **PASS** |
-| G-02 | Web UI tests pass (Vitest) | 76 pass | **PASS** |
+| G-01 | Python test suite ≥ 200 tests, all pass | 301 pass (`python3 tools/run_all_tests.py`) | **PASS** |
+| G-02 | Web UI tests pass (Vitest) | 77 pass and typecheck exit 0 | **PASS** |
 | G-03 | Desktop .NET tests pass | 101 pass | **PASS** |
 | G-04 | Android native tests pass (clean run) | UP-TO-DATE cached; prior clean run FAILED | **BLOCK** |
 | G-05 | iOS native tests pass | Blocked — no macOS | **BLOCK** |
@@ -59,7 +59,7 @@
 # Python full suite
 cd /home/Kali/Desktop/HPTU/Team-Rocket
 python3 tools/run_all_tests.py
-# Exit code: 0  |  299 passed, 0 failed, 0 skipped across all 11 suites
+# Exit code: 0  |  301 passed, 0 failed, 0 skipped across all 11 suites
 
 # Q7 attack suite and demo
 python3 demo_five_attacks.py
@@ -71,7 +71,7 @@ python3 tools/run_all_tests.py
 
 # Web
 cd apps/web && npm run typecheck && npm test
-# Exit code: 0  |  typecheck passed; 76 Vitest tests passed
+# Exit code: 0  |  typecheck passed; 77 Vitest tests passed
 
 # Desktop
 cd apps/desktop && dotnet test
@@ -79,7 +79,7 @@ cd apps/desktop && dotnet test
 
 # Android (incremental — NOT a clean run)
 cd apps/android && ./gradlew test
-# Exit code: 0  |  65 tasks UP-TO-DATE (prior clean run: FAILED per IMPLEMENTATION_STATUS.md)
+# Exit code: 137  |  terminated during KAPT/resource-constrained compilation; Android is not a pass
 
 # iOS — BLOCKED
 xcodebuild test -scheme HimVote ...
@@ -123,7 +123,7 @@ forge test --match-path chain/tests/
 
 | Platform | Implementation | Test Status | Notes |
 |----------|---------------|-------------|-------|
-| Web (Next.js) | `apps/web/` | **PASS** (76 Vitest) | Full |
+| Web (Next.js) | `apps/web/` | **PASS** (77 Vitest and typecheck) | Authoritative API paths; external engine gate remains blocked |
 | Android (Jetpack Compose) | `apps/android/` | **BLOCKED** | Clean build evidence is unavailable; prior run failed |
 | iOS (SwiftUI) | `apps/ios/` | **BLOCKED** | Requires macOS + Xcode |
 | Windows/Linux Desktop (Avalonia) | `apps/desktop/` | **PASS** (101 .NET) | Full |

@@ -17,6 +17,7 @@ from src.models.database import (
     PublishedResultModel
 )
 from src.crypto.canonical import canonical_json_str
+from src.state_machine.lifecycle import StateMachineError
 
 
 def setup_published_election_with_ballots(db, election_id="elec_evid_1"):
@@ -146,3 +147,33 @@ def test_evidence_zip_structure_and_checksums(test_db):
             file_bytes = zf.read(fname)
             computed_hash = hashlib.sha256(file_bytes).hexdigest()
             assert checksum_dict[fname] == computed_hash
+
+
+def test_evidence_metadata_does_not_create_pending_placeholder(test_db):
+    """An election without a released package is not evidence-ready."""
+    election_id = "elec_evidence_pending"
+    test_db.add(ElectionModel(
+        id=election_id,
+        title="Unreleased election",
+        contest="President",
+        selection_rule="plurality",
+        opens_at_utc="2026-11-01T09:00:00Z",
+        closes_at_utc="2026-11-01T17:00:00Z",
+        issuance_cutoff_utc="2026-11-01T08:30:00Z",
+    ))
+    test_db.add(ElectionStateModel(
+        election_id=election_id,
+        state="CLOSED_PENDING_WITNESS",
+        manifest_digest="manifest_pending",
+        opens_at_utc="2026-11-01T09:00:00Z",
+        closes_at_utc="2026-11-01T17:00:00Z",
+        issuance_cutoff_utc="2026-11-01T08:30:00Z",
+    ))
+    test_db.commit()
+
+    try:
+        EvidenceService.get_evidence_metadata(test_db, election_id)
+    except StateMachineError as exc:
+        assert exc.error_code == "EVIDENCE_NOT_RELEASED"
+    else:
+        raise AssertionError("unreleased evidence must not return placeholder digests")

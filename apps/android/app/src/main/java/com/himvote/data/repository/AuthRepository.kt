@@ -24,13 +24,18 @@ class AuthRepository @Inject constructor(
             val response = apiService.login(LoginRequest(email = email, password = password))
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
+                if (body.mfaRequired) {
+                    return Result.failure(IllegalStateException("Multi factor authentication is required"))
+                }
+                val token = body.token.takeIf { it.isNotBlank() }
+                    ?: return Result.failure(IllegalStateException("Authentication response did not include a session token"))
                 val session = UserSession(
-                    token = body.token.ifBlank { "demo_session_token" },
+                    token = token,
                     role = body.role,
                     email = body.user?.email ?: email,
                     name = body.user?.name ?: email.substringBefore("@"),
-                    department = body.user?.department ?: "Computer Science",
-                    rollNumber = body.user?.rollNumber ?: "CS2026_042"
+                    department = body.user?.department,
+                    rollNumber = body.user?.rollNumber
                 )
                 encryptedStorage.saveSession(session)
                 _sessionState.value = session
@@ -39,22 +44,7 @@ class AuthRepository @Inject constructor(
                 Result.failure(Exception("Authentication failed with HTTP code ${response.code()}"))
             }
         } catch (ex: Exception) {
-            // Support local mock mode for development or when server is unavailable
-            if (email.contains("@")) {
-                val fallbackSession = UserSession(
-                    token = "demo_jwt_token_${System.currentTimeMillis()}",
-                    role = if (email.startsWith("admin")) "ADMIN" else "STUDENT",
-                    email = email,
-                    name = email.substringBefore("@").replace(".", " ").capitalizeWords(),
-                    department = "Computer Science",
-                    rollNumber = "CS2026_042"
-                )
-                encryptedStorage.saveSession(fallbackSession)
-                _sessionState.value = fallbackSession
-                Result.success(fallbackSession)
-            } else {
-                Result.failure(ex)
-            }
+            Result.failure(ex)
         }
     }
 
@@ -76,12 +66,8 @@ class AuthRepository @Inject constructor(
             val response = apiService.recoverAccount(RecoveryRequest(email = email))
             Result.success(response.isSuccessful)
         } catch (ex: Exception) {
-            Result.success(true)
+            Result.failure(ex)
         }
     }
 
-    private fun String.capitalizeWords(): String =
-        split(" ").joinToString(" ") { word ->
-            word.lowercase().replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
-        }
 }

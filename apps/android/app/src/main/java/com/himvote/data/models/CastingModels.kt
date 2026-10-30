@@ -1,26 +1,31 @@
 package com.himvote.data.models
 
+import com.google.gson.annotations.SerializedName
+
 data class CastBallotRequest(
-    val electionId: String,
-    val ciphertext: String,
-    val proof: String,
-    val credentialSignature: String
+    @SerializedName("election_id") val electionId: String,
+    @SerializedName("credential_proof_b64url") val credentialProofB64Url: String,
+    @SerializedName("engine_ballot_b64url") val engineBallotB64Url: String,
+    @SerializedName("engine_proofs_b64url") val engineProofsB64Url: String,
+    @SerializedName("idempotency_key") val idempotencyKey: String
 )
 
 data class CastBallotResponse(
-    val receiptHandle: String,
-    val ballotHash: String,
-    val castTimestamp: String,
-    val status: String
+    val status: String,
+    @SerializedName("handle") val receiptHandle: String,
+    @SerializedName("leaf_index") val leafIndex: Long,
+    @SerializedName("nullifier_commitment") val nullifierCommitment: String
 )
 
 data class ReceiptStatusResponse(
-    val receiptHandle: String,
-    val ballotHash: String,
     val status: String,
-    val leafIndex: Long,
-    val inclusionProof: List<String>,
-    val rootHash: String
+    @SerializedName("handle") val receiptHandle: String,
+    @SerializedName("leaf_index") val leafIndex: Long,
+    @SerializedName("leaf_hash") val ballotHash: String? = null,
+    @SerializedName("merkle_proof") val inclusionProof: List<String>? = null,
+    @SerializedName("merkle_root") val rootHash: String? = null,
+    @SerializedName("witnessed_at_utc") val witnessedAtUtc: String? = null,
+    @SerializedName("tree_size") val treeSize: Long? = null
 )
 
 data class CastReceipt(

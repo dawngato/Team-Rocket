@@ -1,14 +1,28 @@
 "use client";
 
-import React, { useState } from "react";
-import { Users, Search, CheckCircle2, AlertCircle } from "lucide-react";
-import { INITIAL_STUDENTS } from "@/lib/mock_data";
+import React, { useEffect, useState } from "react";
+import { Users, Search } from "lucide-react";
 import { StudentRecord } from "@/lib/types";
+import { apiClient } from "@/lib/api_client";
 
 export default function AdminStudentsPage() {
-  const [students, setStudents] = useState<StudentRecord[]>(INITIAL_STUDENTS);
+  const [students, setStudents] = useState<StudentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [deptFilter, setDeptFilter] = useState("ALL");
+
+  useEffect(() => {
+    let active = true;
+    apiClient.getStudents().then((records) => {
+      if (active) setStudents(records);
+    }).catch((cause) => {
+      if (active) setError(cause instanceof Error ? cause.message : "The identity service could not load students.");
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   const filtered = students.filter((s) => {
     const matchesSearch =
@@ -34,6 +48,8 @@ export default function AdminStudentsPage() {
           </p>
         </div>
       </div>
+
+      {error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
 
       {/* Filter and Search */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between items-stretch sm:items-center bg-white dark:bg-[#132135] p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] shadow-sm">
@@ -79,7 +95,7 @@ export default function AdminStudentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {filtered.map((s) => (
+              {loading ? <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">Loading the authoritative identity roster…</td></tr> : filtered.map((s) => (
                 <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="px-6 py-4">
                     <div className="font-bold text-sm text-[#10233F] dark:text-white">
@@ -107,6 +123,7 @@ export default function AdminStudentsPage() {
                   </td>
                 </tr>
               ))}
+              {!loading && filtered.length === 0 && <tr><td colSpan={4} className="px-6 py-12 text-center text-slate-500">No student records were returned by the identity service.</td></tr>}
             </tbody>
           </table>
         </div>

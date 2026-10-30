@@ -11,7 +11,6 @@ public struct LoginView: View {
     @FocusState private var focusedField: Field?
     
     @ScaledMetric(relativeTo: .title) private var headerCircleSize: CGFloat = 88
-    @ScaledMetric(relativeTo: .title) private var headerIconSize: CGFloat = 52
     @ScaledMetric(relativeTo: .body) private var inputIconSize: CGFloat = 20
     
     private enum Field: Hashable {
@@ -60,19 +59,10 @@ public struct LoginView: View {
     
     private var headerView: some View {
         VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(ColorTokens.brandPrimary.opacity(0.1))
-                    .frame(width: headerCircleSize, height: headerCircleSize)
-                
-                Image(systemName: "checkmark.seal.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: headerIconSize, height: headerIconSize)
-                    .foregroundStyle(ColorTokens.brandAccent)
-            }
-            .accessibilityHidden(true)
-            .padding(.top, 36)
+            BallotBoxHero()
+                .scaleEffect(headerCircleSize / 88)
+                .accessibilityHidden(true)
+                .padding(.top, 36)
             
             Text("HimVote")
                 .font(Typography.appTitle)

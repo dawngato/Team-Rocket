@@ -54,12 +54,22 @@ class OfflineVerificationHelperTest {
     }
 
     @Test
-    fun testSyntheticProofOfflineVerification() {
+    fun testAuthenticatedProofOfflineVerification() {
         val electionId = "elec_offline_unit_test"
         val receiptHandle = "rcpt_sample_handle_999"
-        val proof = helper.buildSyntheticVerifiedProof(electionId, receiptHandle)
+        val leaf = helper.sha256("leaf_$electionId")
+        val sibling = helper.sha256("sibling_$receiptHandle")
+        val path = listOf(sibling)
+        val proof = com.himvote.data.models.InclusionProof(
+            receiptHandle = receiptHandle,
+            ballotHash = leaf,
+            leafIndex = 0L,
+            pathHashes = path,
+            rootHash = helper.computeMerkleRoot(leaf, 0L, path),
+            verified = true
+        )
 
-        assertTrue("Synthetic proof must verify offline", helper.verifyInclusionProofOffline(proof))
+        assertTrue("Authenticated proof fixture must verify offline", helper.verifyInclusionProofOffline(proof))
     }
 
     @Test
@@ -77,7 +87,7 @@ class OfflineVerificationHelperTest {
     fun testAuditAttestationVerification() {
         val attestation = "hardware_tpm_attestation_valid_sha256_sig"
         val rootHash = helper.sha256("merkle_tree_published_root")
-        assertTrue(helper.verifyAuditAttestationOffline(attestation, rootHash))
+        assertFalse("Attestation shape alone must not verify", helper.verifyAuditAttestationOffline(attestation, rootHash))
         assertFalse(helper.verifyAuditAttestationOffline("", rootHash))
         assertFalse(helper.verifyAuditAttestationOffline(attestation, ""))
     }

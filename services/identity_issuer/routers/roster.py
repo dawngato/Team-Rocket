@@ -20,6 +20,8 @@ from ..models import (
     RosterMember,
     CredentialIssuanceRecord,
     Department,
+    RoleAssignment,
+    RoleDefinition,
 )
 from ..schemas import (
     StudentRegisterRequest,
@@ -160,6 +162,47 @@ def import_students(
     return {"status": "import_accepted", "imported_count": imported_count}
 
 
+@router.get("/students", status_code=status.HTTP_200_OK)
+def list_students(
+    current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin"])),
+    db: Session = Depends(get_db),
+):
+    """Return the scoped student verification queue without credential data."""
+    roles = get_user_roles(current_user, db)
+    query = db.query(StudentProfile)
+    if "teacher" in roles and not ({"administrator", "super_admin"} & set(roles)):
+        department_scopes = [
+            assignment.scope_id
+            for assignment, role_name in db.query(RoleAssignment, RoleDefinition.name)
+            .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+            .filter(RoleAssignment.user_id == current_user.id, RoleDefinition.name == "teacher")
+            .all()
+            if assignment.scope_id != "*" and assignment.scope_type != "global"
+        ]
+        if department_scopes:
+            query = query.filter(StudentProfile.department_id.in_(department_scopes))
+        else:
+            query = query.filter(StudentProfile.id == "__no_teacher_scope__")
+    rows = query.order_by(StudentProfile.created_at.asc()).all()
+    verified_ids = {
+        row.student_id
+        for row in db.query(StudentVerification.student_id).all()
+    }
+    return [
+        {
+            "id": profile.id,
+            "student_id": profile.student_id,
+            "full_name": profile.full_name,
+            "email": profile.email,
+            "department": profile.department.name if profile.department else "",
+            "verified": profile.id in verified_ids,
+            "status": "VERIFIED" if profile.id in verified_ids else "PENDING_VERIFICATION",
+            "created_at_utc": profile.created_at.isoformat() if profile.created_at else "",
+        }
+        for profile in rows
+    ]
+
+
 @router.post("/students/{student_id}/verify", status_code=status.HTTP_200_OK)
 def verify_student(
     student_id: str,
@@ -196,7 +239,8 @@ def verify_student(
             detail="Teacher scope does not include the requested department",
         )
 
-    if req.verified_by not in {current_user.id, current_user.email}:
+    verified_by = req.verified_by or current_user.id
+    if verified_by not in {current_user.id, current_user.email}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="verified_by must identify the authenticated verifier",
@@ -224,7 +268,7 @@ def verify_student(
         action="roster.student.verified",
         result="success",
         actor_id=current_user.id,
-        details={"student_id": student_id, "verified_by": req.verified_by},
+        details={"student_id": student_id, "verified_by": verified_by},
     )
     db.commit()
 

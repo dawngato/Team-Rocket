@@ -16,6 +16,7 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 import org.mockito.Mockito
+import retrofit2.Response
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class VotingViewModelTest {
@@ -36,6 +37,13 @@ class VotingViewModelTest {
         val mockContext = Mockito.mock(android.content.Context::class.java)
         encryptedStorage = EncryptedStorage(mockContext, customPrefs = InMemorySharedPreferences())
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
+        kotlinx.coroutines.runBlocking {
+            Mockito.doReturn(Response.success(com.himvote.data.models.ReceiptStatusResponse(
+                status = "COMMITTED_PENDING_WITNESS",
+                receiptHandle = "rcpt_return_handle_999",
+                leafIndex = 0L
+            ))).`when`(mockApiService).getReceiptStatus(electionId, "rcpt_return_handle_999")
+        }
         votingRepository = VotingRepository(mockApiService, encryptedStorage)
         credentialRepository = CredentialRepository(mockApiService, encryptedStorage)
         offlineVerificationHelper = OfflineVerificationHelper()
@@ -66,7 +74,7 @@ class VotingViewModelTest {
     @Test
     fun testAppLinkReturnRecordsReceiptAndDisablesCasting() = runTest(testDispatcher) {
         val receiptHandle = "rcpt_return_handle_999"
-        val ballotHash = "hash_return_ballot_abc123"
+        val ballotHash = offlineVerificationHelper.sha256("return_ballot")
 
         var returnedElectionId: String? = null
         votingViewModel.handleAppLinkReturn(

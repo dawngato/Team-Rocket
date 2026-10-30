@@ -57,7 +57,8 @@ class EncryptedStorage(
     fun saveSession(session: UserSession) {
         val json = gson.toJson(session)
         prefs.edit().putString(KEY_SESSION, json).apply()
-        recordAuditEvent("SESSION_SAVED: ${session.rollNumber}")
+        // Do not retain student identifiers in the local audit trail.
+        recordAuditEvent("SESSION_SAVED")
     }
 
     fun getSession(): UserSession? {
@@ -116,7 +117,9 @@ class EncryptedStorage(
             .putBoolean(PREFIX_CAST_FLAG + electionId, true)
             .putString(PREFIX_RECEIPT + electionId, json)
             .apply()
-        recordAuditEvent("BALLOT_CAST_COMMITTED: $electionId, handle: $receiptHandle")
+        // The receipt is holder-controlled evidence, not an operational log
+        // field. Never duplicate it into an audit trail or diagnostic output.
+        recordAuditEvent("BALLOT_CAST_COMMITTED: election=$electionId")
     }
 
     fun hasCastBallot(electionId: String): Boolean {

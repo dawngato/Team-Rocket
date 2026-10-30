@@ -2,16 +2,13 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { ShieldCheck, CheckCircle2, ArrowRight } from "lucide-react";
+import { ShieldCheck, AlertTriangle, ArrowRight } from "lucide-react";
 
 export default function StudentVerifyAccountPage() {
   const [token, setToken] = useState("");
-  const [verified, setVerified] = useState(false);
-
-  const handleVerify = (e: React.FormEvent) => {
-    e.preventDefault();
-    setVerified(true);
-  };
+  const [error] = useState(
+    "Email verification is not available in this development profile. No account is marked active from a browser-only code entry."
+  );
 
   return (
     <div className="max-w-md mx-auto px-4 py-12 space-y-8">
@@ -27,30 +24,12 @@ export default function StudentVerifyAccountPage() {
         </p>
       </div>
 
-      {verified ? (
-        <div className="rounded-xl border border-[#15805D]/30 bg-white dark:bg-[#132135] p-6 shadow-sm text-center space-y-4">
-          <CheckCircle2 className="w-12 h-12 text-[#15805D] mx-auto" aria-hidden="true" />
-          <h2 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Account Confirmed
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Your university identity token has been validated. You can now authenticate and request cryptographic election credentials.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/auth/login"
-              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm"
-            >
-              <span>Continue to Secure Login</span>
-              <ArrowRight className="w-4 h-4" aria-hidden="true" />
-            </Link>
-          </div>
+      <div className="rounded-xl border border-[#AA6C0B]/30 bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4">
+        <div className="rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-3 text-sm text-[#6B4707] dark:text-[#FBBF24]" role="alert">
+          <AlertTriangle className="inline-block mr-2 size-4 align-text-bottom" aria-hidden="true" />
+          {error}
         </div>
-      ) : (
-        <form
-          onSubmit={handleVerify}
-          className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4"
-        >
+        <form className="space-y-4" onSubmit={(event) => event.preventDefault()}>
           <div>
             <label htmlFor="token-input" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Six Digit Verification Code
@@ -70,9 +49,10 @@ export default function StudentVerifyAccountPage() {
           <div className="pt-2">
             <button
               type="submit"
+              disabled
               className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#15805D]"
             >
-              <span>Verify Enrollment</span>
+              <span>Verification unavailable</span>
               <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </button>
           </div>
@@ -81,7 +61,10 @@ export default function StudentVerifyAccountPage() {
             Need assistance? Contact your department roster officer.
           </div>
         </form>
-      )}
+        <Link href="/auth/login" className="text-[#157E92] dark:text-[#38BDF8] font-bold hover:underline text-sm">
+          Return to sign in
+        </Link>
+      </div>
     </div>
   );
 }

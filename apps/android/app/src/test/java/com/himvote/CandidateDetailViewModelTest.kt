@@ -9,6 +9,7 @@ import com.himvote.ui.screens.CandidateDetailViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
+import retrofit2.Response
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -30,6 +31,15 @@ class CandidateDetailViewModelTest {
         val mockContext = Mockito.mock(android.content.Context::class.java)
         encryptedStorage = EncryptedStorage(mockContext, customPrefs = InMemorySharedPreferences())
         val mockApiService = Mockito.mock(HimVoteApiService::class.java)
+        kotlinx.coroutines.runBlocking {
+            Mockito.doReturn(Response.success(com.himvote.data.models.Election(
+                id = electionId,
+                title = "Synthetic election"
+            ))).`when`(mockApiService).getElectionDetail(electionId)
+            Mockito.doReturn(Response.success(listOf(
+                com.himvote.data.models.Candidate(id = "cand_01", name = "Candidate One")
+            ))).`when`(mockApiService).getCandidates(electionId)
+        }
         electionRepository = ElectionRepository(mockApiService, encryptedStorage)
 
         val savedStateHandle = SavedStateHandle(mapOf("electionId" to electionId))

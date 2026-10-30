@@ -11,9 +11,9 @@ public enum ReceiptStatus: String, Codable, Sendable, CaseIterable {
         case .committedPendingWitness:
             return "Committed Pending Witness"
         case .witnessed:
-            return "Witnessed"
+            return "Witness Reported"
         case .anchored:
-            return "Anchored on Chain"
+            return "Anchor Reported"
         case .rejected:
             return "Rejected"
         }
@@ -89,24 +89,40 @@ public struct ReceiptStatusResponse: Codable, Sendable, Equatable {
     public let handle: String
     public let leafIndex: Int
     public let witnessedAtUtc: String?
+    public let treeSize: Int?
+    public let leafHash: String?
+    public let merkleRoot: String?
+    public let merkleProof: [String]?
     
     public enum CodingKeys: String, CodingKey {
         case status
         case handle
         case leafIndex = "leaf_index"
         case witnessedAtUtc = "witnessed_at_utc"
+        case treeSize = "tree_size"
+        case leafHash = "leaf_hash"
+        case merkleRoot = "merkle_root"
+        case merkleProof = "merkle_proof"
     }
     
     public init(
         status: String,
         handle: String,
         leafIndex: Int,
-        witnessedAtUtc: String? = nil
+        witnessedAtUtc: String? = nil,
+        treeSize: Int? = nil,
+        leafHash: String? = nil,
+        merkleRoot: String? = nil,
+        merkleProof: [String]? = nil
     ) {
         self.status = status
         self.handle = handle
         self.leafIndex = leafIndex
         self.witnessedAtUtc = witnessedAtUtc
+        self.treeSize = treeSize
+        self.leafHash = leafHash
+        self.merkleRoot = merkleRoot
+        self.merkleProof = merkleProof
     }
     
     public var receiptStatus: ReceiptStatus {
@@ -123,6 +139,9 @@ public struct Receipt: Codable, Identifiable, Sendable, Equatable {
     public let nullifierCommitment: String?
     public let witnessedAtUtc: String?
     public let leafHash: String?
+    public let treeSize: Int?
+    public let merkleRoot: String?
+    public let merkleProof: [String]?
     
     public enum CodingKeys: String, CodingKey {
         case electionId = "election_id"
@@ -132,6 +151,9 @@ public struct Receipt: Codable, Identifiable, Sendable, Equatable {
         case nullifierCommitment = "nullifier_commitment"
         case witnessedAtUtc = "witnessed_at_utc"
         case leafHash = "leaf_hash"
+        case treeSize = "tree_size"
+        case merkleRoot = "merkle_root"
+        case merkleProof = "merkle_proof"
     }
     
     public init(
@@ -141,7 +163,10 @@ public struct Receipt: Codable, Identifiable, Sendable, Equatable {
         status: ReceiptStatus,
         nullifierCommitment: String? = nil,
         witnessedAtUtc: String? = nil,
-        leafHash: String? = nil
+        leafHash: String? = nil,
+        treeSize: Int? = nil,
+        merkleRoot: String? = nil,
+        merkleProof: [String]? = nil
     ) {
         self.electionId = electionId
         self.handle = handle
@@ -150,5 +175,8 @@ public struct Receipt: Codable, Identifiable, Sendable, Equatable {
         self.nullifierCommitment = nullifierCommitment
         self.witnessedAtUtc = witnessedAtUtc
         self.leafHash = leafHash
+        self.treeSize = treeSize
+        self.merkleRoot = merkleRoot
+        self.merkleProof = merkleProof
     }
 }

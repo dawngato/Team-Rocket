@@ -560,6 +560,10 @@ def get_evidence(
 ):
     """Returns evidence metadata or streaming ZIP archive."""
     if download or (accept and "application/zip" in accept):
+        # Do not manufacture an archive from mutable or incomplete election
+        # state. A downloadable package exists only after publication has
+        # created the signed evidence metadata record.
+        EvidenceService.get_evidence_metadata(db, id)
         zip_bytes = EvidenceService.generate_evidence_zip_bytes(db, id)
         return StreamingResponse(
             io.BytesIO(zip_bytes),

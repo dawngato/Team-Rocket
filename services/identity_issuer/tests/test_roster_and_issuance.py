@@ -124,7 +124,7 @@ def test_roster_snapshot_approval_and_freezing(client, db_session):
         headers={"Authorization": f"Bearer {admin_token}"},
     )
     assert self_approve_resp.status_code == 403
-    assert "independent person from the importer" in self_approve_resp.json()["detail"]
+    assert "Insufficient permissions" in self_approve_resp.json()["detail"]
 
     # Step 3: Independent Roster Approver signs snapshot
     approver, approver_token = create_authenticated_user(

@@ -109,7 +109,7 @@ class StudentImportRequest(BaseModel):
 
 
 class StudentVerifyRequest(BaseModel):
-    verified_by: str
+    verified_by: Optional[str] = None
     department: str
 
 
