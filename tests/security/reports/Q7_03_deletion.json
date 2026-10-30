@@ -1,7 +1,7 @@
 {
   "actual_result": "VERIFIER_FAILS_ON_DELETED_BALLOT_AND_TRUNCATED_FINAL",
   "database_state_summary": {
-    "chain_anchored_digest": "sha256:30e4c5611527e3ce75fc13f17a89615d141e9cf194d3073fbd25c6317b19e382",
+    "chain_anchored_digest": "sha256:1eda10d18424daa024f91eb98dcf272ce4e8b565b77b4fa18d306071e7de7265",
     "deletion_detected": true,
     "truncated_final_rejected": true,
     "witnessed_ballots": 10

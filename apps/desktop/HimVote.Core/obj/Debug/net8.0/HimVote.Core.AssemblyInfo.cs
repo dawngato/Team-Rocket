@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HimVote.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+247678585b611407bc0493e5ff7ed22ab036e4f6")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+8cdfd2d1f7f6702047d7251d1e147d4a0a2f43fd")]
 [assembly: System.Reflection.AssemblyProductAttribute("HimVote.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HimVote.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -4,7 +4,7 @@
   "manifest_digest": "sha256:d5e69ab4f7e8d6ef119c7e575ae79c338aa792fed0244cf73c11b55c9a1a1b6e",
   "roster_commitment": "sha256:a6f7d081979e0155f77fd9a5cafdba5922820f8ae16ca355e20ce95af450cfd9",
   "roster_version": 1,
-  "signed_at": "2026-10-30T16:41:50.938707+00:00",
+  "signed_at": "2026-10-30T17:37:38.351671+00:00",
   "signed_by": "user_roster_approver_001",
-  "signature": "fUMELtMcUDppHG4Ydz+kgaLRY5L1QhXPuGpS6gBEyEJmwejPHwzdcASN5ws+kH0rQSSfQ202rDxspFRTTcHKBQ=="
+  "signature": "xrM4p+1Enftzvm8X/2OZEoRM1deKrPd0ZUsJSDAi9GZAuphy2C39hE+XkwsvkN1uamRs/k7ZRtJHZ5vbciGVCw=="
 }

@@ -9,7 +9,7 @@
   },
   "engine_version": "electionguard_1.0.0",
   "expected_result": "CASTING_CLOSE_RACE_AND_CRASH_REPLAY_PASS",
-  "manifest_digest": "sha256:06cc9af793baf80393d759d75a40684b56c39a3e32ab7e3ed253ed3538125501",
+  "manifest_digest": "sha256:6d7ce007988a3e3addec721137673ee542597f20a787226b267262e3e4b0a122",
   "notes": "",
   "passed": true,
   "postconditions": [
