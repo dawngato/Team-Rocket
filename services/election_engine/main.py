@@ -33,7 +33,7 @@ except (ImportError, ValueError):
     )
     from constants import PROTOCOL_VERSION
 
-logging.basicConfig(level=os.getenv("LOG_LEVEL", "info"))
+logging.basicConfig(level=getattr(logging, os.getenv("LOG_LEVEL", "INFO").upper(), logging.INFO))
 logger = logging.getLogger("election_engine")
 
 ENGINE_PROVIDER = os.getenv("VOTING_ENGINE_PROVIDER", PROTOCOL_VERSION)
