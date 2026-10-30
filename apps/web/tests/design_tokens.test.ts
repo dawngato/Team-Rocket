@@ -20,6 +20,7 @@ describe("HimVote Design Tokens and State Invariants", () => {
       "ANCHOR_FINALIZED",
       "AUDIT_PASSED",
       "AUDITOR_ATTESTED",
+      "PUBLISHED",
     ];
 
     for (const state of confirmedStates) {

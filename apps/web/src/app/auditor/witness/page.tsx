@@ -38,13 +38,13 @@ export default function AuditorWitnessPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            External Witness Relay
+            Local Witness Emulator
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Fetch Final Witness Checkpoints
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Query external independent nodes to retrieve and verify final election batch signatures.
+            Inspect the local witness emulator. A separately operated witness must be configured outside this development workspace.
           </p>
         </div>
       </div>
@@ -75,7 +75,7 @@ export default function AuditorWitnessPage() {
           className="min-h-[44px] px-5 py-2.5 rounded-lg font-bold text-white bg-[#157E92] hover:bg-[#0E6273] transition-colors flex items-center gap-2 text-sm shadow-sm"
         >
           <RefreshCw className={`w-4 h-4 ${fetching ? "animate-spin" : ""}`} aria-hidden="true" />
-          <span>{fetching ? "Querying Witness..." : "Fetch Direct Witness Checkpoint"}</span>
+          <span>{fetching ? "Loading Fixture..." : "Load Local Checkpoint Fixture"}</span>
         </button>
       </div>
 
@@ -87,7 +87,7 @@ export default function AuditorWitnessPage() {
             </h2>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-[#15805D]/10 text-[#15805D]">
               <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Signature Authenticated</span>
+              <span>Fixture Signature Checked</span>
             </span>
           </div>
 
@@ -99,7 +99,7 @@ export default function AuditorWitnessPage() {
               </strong>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-mono">Total Verified Leaves</span>
+              <span className="text-slate-400 block font-mono">Fixture Leaf Count</span>
               <strong className="text-sm text-[#15805D] font-mono">
                 {witnessReport.treeSize} ballots
               </strong>

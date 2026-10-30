@@ -27,7 +27,7 @@ export default function StudentPortalOverviewPage() {
     {
       title: "Merkle Inclusion Proof",
       href: "/student/receipts/HV_24F8_19C2/inclusion",
-      desc: "Cryptographically prove that your receipt hash exists in the certified witness root.",
+      desc: "Check whether your receipt hash exists in the displayed witness root. This does not reveal your selection.",
       icon: Layers,
       badge: "Interactive Verifier",
     },

@@ -8,8 +8,9 @@ import { ShieldCheck, CheckCircle2, Key, ArrowRight, FileCheck } from "lucide-re
 
 export default function AuditorSignReportPage() {
   const [selectedElectionId, setSelectedElectionId] = useState("elec_cs_2026");
-  const [auditorKey, setAuditorKey] = useState("ed25519_priv_auditor_local_token_77a8b9c0d1e2f3");
+  const [auditorKey, setAuditorKey] = useState("");
   const [isSigning, setIsSigning] = useState(false);
+  const [signingMessage, setSigningMessage] = useState<string | null>(null);
   const [signedAttestation, setSignedAttestation] = useState<{
     signature: string;
     timestamp: string;
@@ -19,15 +20,10 @@ export default function AuditorSignReportPage() {
   const election = INITIAL_ELECTIONS.find((e) => e.id === selectedElectionId) || INITIAL_ELECTIONS[1];
 
   const handleSign = () => {
-    setIsSigning(true);
-    setTimeout(() => {
-      setIsSigning(false);
-      setSignedAttestation({
-        signature: "ed25519_sig_auditor_certified_clean_audit_7a9f1b2c3d4e5f60718293a4b5c6d7e8",
-        timestamp: new Date().toISOString(),
-        attestationHash: "sha256_attest_digest_clean_zero_discrepancy_8829104758291047",
-      });
-    }, 1200);
+    setIsSigning(false);
+    setSigningMessage(
+      "Signing is disabled in the local prototype. Use the standalone verifier and an auditor controlled key or hardware token outside this application."
+    );
   };
 
   return (
@@ -42,7 +38,7 @@ export default function AuditorSignReportPage() {
             Sign Auditor Attestation Report
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Sign election certification using your local auditor key or hardware security module. Never handled by the server.
+            This prototype does not create auditor signatures. An external auditor must use a separately controlled key or hardware token.
           </p>
         </div>
       </div>
@@ -51,7 +47,7 @@ export default function AuditorSignReportPage() {
         <div className="space-y-4">
           <div>
             <label htmlFor="sign-elec" className="block text-xs font-bold text-[#10233F] dark:text-white mb-1">
-              Select Verified Election
+              Select Evidence Package
             </label>
             <select
               id="sign-elec"
@@ -59,6 +55,7 @@ export default function AuditorSignReportPage() {
               onChange={(e) => {
                 setSelectedElectionId(e.target.value);
                 setSignedAttestation(null);
+                setSigningMessage(null);
               }}
               className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
             >
@@ -75,7 +72,7 @@ export default function AuditorSignReportPage() {
               Attestation Statement Formulation
             </span>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed italic">
-              "I hereby certify that I have independently audited the cryptographic evidence archive for {election.title}. All manifest digests, witness signatures, append only Merkle branches, and candidate tallies evaluate with zero discrepancies."
+              "I have independently reviewed the evidence archive for {election.title}. The final statement must be written and signed by the external auditor after the standalone verifier completes."
             </p>
           </div>
 
@@ -92,7 +89,7 @@ export default function AuditorSignReportPage() {
               className="w-full min-h-[44px] px-3 py-2 rounded-lg font-mono text-xs border border-slate-300 dark:border-[#1E3352] bg-transparent focus:outline-none focus:ring-2 focus:ring-[#157E92]"
             />
             <span className="text-[11px] text-slate-500 mt-1 block">
-              Enforces Section 8.3: private key operations occur exclusively inside client memory.
+              This field is a reference only. Private keys are not accepted, generated, or stored by this prototype.
             </span>
           </div>
 
@@ -119,13 +116,18 @@ export default function AuditorSignReportPage() {
           ) : (
             <button
               type="button"
-              disabled={isSigning}
-              onClick={handleSign}
+              disabled
               className="w-full min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#15805D] hover:bg-[#10664A] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#15805D]"
             >
               <FileCheck className="w-4 h-4" aria-hidden="true" />
-              <span>{isSigning ? "Signing Attestation..." : "Sign and Attest Election Report"}</span>
+              <span>Signing Unavailable in Local Prototype</span>
             </button>
+          )}
+
+          {signingMessage && (
+            <div role="status" className="p-4 rounded-xl bg-[#AA6C0B]/10 border border-[#AA6C0B]/30 text-xs text-[#6B4707] dark:text-[#FBBF24]">
+              {signingMessage}
+            </div>
           )}
 
           <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex justify-between items-center text-xs">
@@ -139,7 +141,7 @@ export default function AuditorSignReportPage() {
               href="/results"
               className="font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-white"
             >
-              View Certified Public Results
+              View Published Results
             </Link>
           </div>
         </div>

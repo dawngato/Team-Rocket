@@ -185,7 +185,7 @@ export default function HomePage() {
               Institutional Elections
             </h2>
             <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-              Follow current campus elections and inspect certified historic records.
+              Follow current campus elections and inspect published development records.
             </p>
           </div>
           <Link
@@ -255,10 +255,10 @@ export default function HomePage() {
             02
           </div>
           <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Independent Witness Signatures
+            Witness Checkpoint Workflow
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            Checkpoints are cosigned in batches by external university nodes. A compromised election engine cannot alter the append only leaf sequence.
+            The local fixture records signed checkpoints for repeatable testing. A separately operated witness is required before production claims are enabled.
           </p>
         </div>
 
@@ -267,10 +267,10 @@ export default function HomePage() {
             03
           </div>
           <h3 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Immutable Anchor Finality
+            Checkpoint Anchor Demonstration
           </h3>
           <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            The final Merkle root is anchored on public blockchain infrastructure, ensuring permanent auditability and zero retrospective tampering.
+            The development chain adapter records checkpoint commitments only. External chain finality and independent operation remain unverified release requirements.
           </p>
         </div>
       </section>

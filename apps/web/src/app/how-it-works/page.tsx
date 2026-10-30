@@ -23,57 +23,57 @@ export default function HowItWorksPage() {
   const verificationStages = [
     {
       step: 1,
-      title: "Voter Eligibility and Blind Credential Issuance",
+      title: "Voter Eligibility and Development Credential Flow",
       icon: Key,
-      summary: "Identity registration confirmed against university enrollment sources with blind token derivation.",
+      summary: "The prototype separates identity review from the development credential flow.",
       technical:
-        "Your browser generates a high entropy secret and blinds it using RSA Blind Signatures per RFC 9474. The central registrar verifies that you are an enrolled student and signs the blinded payload without ever seeing the resulting voter token or tying it to your selection.",
-      guarantee: "The university knows you are eligible, but cannot link your credential to your cast ballot.",
+        "The development service exercises RSA blind signature test vectors and keeps identity and casting APIs separate. A maintained external election engine and its approved issuance protocol are still required.",
+      guarantee: "The intended separation is documented and tested locally. Complete unlinkability is not established by this prototype.",
     },
     {
       step: 2,
-      title: "Isolated Ballot Casting and Nullifier Commitments",
+      title: "Isolated Development Casting Flow",
       icon: Vote,
-      summary: "Ballot encrypted in the client booth and submitted to an isolated casting origin.",
+      summary: "The casting service is exercised through a separate origin and database boundary.",
       technical:
-        "The casting service lives on a distinct network cluster and database from student identity. When you cast your encrypted vote, the system verifies your blind credential proof and records a deterministic nullifier commitment to guarantee exactly one vote per voter.",
-      guarantee: "Nullifiers prevent double voting without disclosing student identity or ballot plaintext.",
+        "The local casting service validates development evidence, enforces duplicate constraints and records an append only acceptance path. The external engine gate is not passed.",
+      guarantee: "The local tests demonstrate duplicate rejection. They do not establish production ballot secrecy.",
     },
     {
       step: 3,
       title: "Witnessed Merkle Tree Checkpoints",
       icon: Layers,
-      summary: "Every ballot is committed as an immutable leaf in an append only hash tree.",
+      summary: "Accepted development records are committed as ordered leaves in an append only hash tree.",
       technical:
-        "Ballot records are hashed with RFC 9162 prefix 0x00 and appended to a cryptographic Merkle tree log. Periodically and at election close, an independent witness cosigns the checkpoint root digest with pinned Ed25519 keys.",
-      guarantee: "No ballot can be inserted, deleted, or reordered without invalidating the witness signature.",
+        "Ballot evidence is canonicalized and hashed with the repository's documented RFC 9162 style construction. The local witness emulator signs checkpoint records for testing.",
+      guarantee: "The verifier detects mutations against the supplied checkpoint. Independent witness operation is not present locally.",
     },
     {
       step: 4,
-      title: "Consortium Blockchain Finality Anchor",
+      title: "Development Checkpoint Anchor",
       icon: Globe,
-      summary: "Witnessed checkpoint digests are anchored to a public smart contract registry.",
+      summary: "A local chain adapter can record non identifying checkpoint commitments.",
       technical:
-        "The witness checkpoint root and tree size are published to the consortium Ethereum smart contract. HimVote requires a minimum of 12 block confirmations to ensure immutability beyond blockchain reorganization depth.",
-      guarantee: "Provides independent time stamped proof of ledger state that cannot be modified retrospectively.",
+        "The development relayer exercises checkpoint sequencing and records confirmation metadata on a local chain profile. No public network finality is claimed.",
+      guarantee: "A chain record is supplementary evidence and does not prove voter identity, ballot secrecy, or tally correctness.",
     },
     {
       step: 5,
-      title: "Independent External Audit Verification",
+      title: "Standalone Audit Verification",
       icon: FileCheck,
-      summary: "External auditors independently execute standalone verifiers on airgapped hardware.",
+      summary: "An auditor can run the Python verifier without the application server.",
       technical:
-        "An appointed independent auditor exports complete evidence archives, verifies manifest digests using RFC 8785 canonical JSON, validates every Merkle leaf upward to the anchored root, and verifies witness signatures against pinned keys.",
-      guarantee: "Guarantees mathematical correctness of the tally prior to public release.",
+        "The standalone verifier loads trust pins outside the archive, checks canonical evidence, Merkle history, witness data and chain metadata. The current development profile is rejected by the strict command when native engine tally proof is absent.",
+      guarantee: "The verifier reports the properties it can check. It does not guarantee a live election or complete privacy.",
     },
     {
       step: 6,
-      title: "Certified Public Results and Inclusion Verification",
+      title: "Published Results and Inclusion Verification",
       icon: ShieldCheck,
-      summary: "Certified tallies published only after all cryptographic prerequisites pass.",
+      summary: "Results should be published only after the required independent evidence passes.",
       technical:
         "Results are released to the public observer portal with full evidence bundles. Each individual voter can input their receipt handle to verify their personal leaf inclusion proof offline without revealing their selection.",
-      guarantee: "Universal verifiability: anyone can audit the entire election, and each voter can verify their own vote.",
+      guarantee: "A receipt can support inclusion checking without revealing a candidate choice. It does not prove that a compromised client recorded voter intent.",
     },
   ];
 

@@ -19,7 +19,7 @@ export default function TeacherPublishedElectionsPage() {
             Published Department Elections
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Certified campus contests with complete witness checkpoints and participation statistics.
+            Campus contests with displayed checkpoint status and participation statistics.
           </p>
         </div>
       </div>

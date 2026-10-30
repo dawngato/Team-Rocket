@@ -40,13 +40,13 @@ export default function MyReceiptPage() {
     {
       title: "Witness Cosigned",
       state: "WITNESSED",
-      detail: "Independent university witness nodes cosigned batch checkpoint digest 8f2d34ac.",
+      detail: "The local witness emulator recorded batch checkpoint digest 8f2d34ac.",
       timestamp: "30 Oct 2026, 10:15:30 UTC",
     },
     {
       title: "Chain Finality Anchor",
       state: "ANCHOR_FINALIZED",
-      detail: "The Merkle root reached configured transaction confirmation depth on Ethereum mainnet.",
+      detail: "The local chain adapter recorded the checkpoint at its configured demonstration depth.",
       timestamp: "30 Oct 2026, 10:28:45 UTC",
     },
   ];
@@ -63,13 +63,13 @@ export default function MyReceiptPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            Verified Cryptographic Receipt
+            Development Evidence Receipt
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Voter Evidence Receipt
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Track independent witness checkpoint cosigning and public blockchain finality.
+            Track the development checkpoint and chain states recorded for this fixture. Independent production operation is not established here.
           </p>
         </div>
 

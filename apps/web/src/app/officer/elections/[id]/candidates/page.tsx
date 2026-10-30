@@ -48,7 +48,7 @@ export default function OfficerCandidateManagementPage() {
             {election.title}
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Register and certify ballot contestants before freezing the election manifest.
+            Register and review ballot contestants before freezing the election manifest.
           </p>
         </div>
         <StateBadge state={election.state} size="md" />

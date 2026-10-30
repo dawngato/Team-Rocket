@@ -31,7 +31,7 @@ export default function CandidateReviewPage() {
 
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[#10233F] dark:text-white">
-          Certified Contestants
+          Manifest Candidates
         </h2>
         <p className="text-xs text-slate-600 dark:text-slate-400">
           The candidate list is locked in the election manifest. No modifications can occur during the voting window.
@@ -59,7 +59,7 @@ export default function CandidateReviewPage() {
                     </div>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
-                    {cand.statement || "Official candidate platform statement certified by election officer."}
+                    {cand.statement || "Candidate platform statement supplied for manifest review."}
                   </p>
                 </div>
               </div>

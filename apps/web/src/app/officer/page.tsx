@@ -22,7 +22,7 @@ export default function OfficerOverviewPage() {
             Election Officer Desk
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Build manifests, lock voter rosters, control voting windows, and initiate certified tally publications.
+            Build manifests, lock voter rosters, control voting windows, and request evidence based publication review.
           </p>
         </div>
         <div className="flex items-center gap-3">

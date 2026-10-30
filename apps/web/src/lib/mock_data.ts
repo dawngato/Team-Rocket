@@ -87,7 +87,7 @@ export const INITIAL_ELECTIONS: Election[] = [
     issuance_cutoff_utc: "2026-09-01T07:00:00Z",
     eligible_count: 1200,
     contest: "Academic Senate Delegate",
-    selection_rule: "Approval voting recorded on immutable witness and public blockchain anchor",
+    selection_rule: "Approval voting recorded in development witness and chain evidence",
     min_anonymous_turnout: 30,
     description: "Election for postgraduate academic delegates to the university supreme council.",
     candidates: [
@@ -108,7 +108,7 @@ export const INITIAL_ELECTIONS: Election[] = [
   {
     id: "elec_eng_2025",
     title: "Engineering Guild Representative 2025",
-    state: "AUDITOR_ATTESTED",
+    state: "PUBLISHED",
     manifest_digest: "sha256_1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
     opens_at_utc: "2025-11-01T08:00:00Z",
     closes_at_utc: "2025-11-05T18:00:00Z",

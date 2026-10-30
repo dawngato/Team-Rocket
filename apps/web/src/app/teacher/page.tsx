@@ -36,7 +36,7 @@ export default function TeacherOverviewPage() {
       href: "/teacher/elections",
       count: `${INITIAL_ELECTIONS.length} Contests`,
       icon: Vote,
-      desc: "Inspect active department elections and certified campus results.",
+      desc: "Inspect active department elections and published development results.",
     },
   ];
 

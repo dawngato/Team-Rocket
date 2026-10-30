@@ -18,13 +18,13 @@ export default function StudentResultsPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <Award className="w-3.5 h-3.5" aria-hidden="true" />
-            Certified Campus Outcomes
+            Published Campus Outcomes
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Election Results and Attestations
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Official outcomes verified through independent witness checkpoints and cryptographic tallying.
+            Published development outcomes with visible evidence status. Native engine verification is required for a production result.
           </p>
         </div>
       </div>
@@ -48,7 +48,7 @@ export default function StudentResultsPage() {
                   {elec.title}
                 </h2>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Contest: {elec.contest} | Verified by independent witness nodes
+                  Contest: {elec.contest} | Evidence status: {elec.state}
                 </p>
 
                 {res && (

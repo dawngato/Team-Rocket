@@ -31,7 +31,7 @@ export function getStateBadgeConfig(state: ElectionState): StateBadgeConfig {
         borderColor: "border-[#15805D]/30",
         iconName: "check",
         isConfirmed: true,
-        description: "Cryptographically verified by independent witness checkpoint signature",
+        description: "Witness signature verified against the configured key. Operator independence is not implied",
       };
     case "ANCHOR_FINALIZED":
       return {
@@ -41,7 +41,7 @@ export function getStateBadgeConfig(state: ElectionState): StateBadgeConfig {
         borderColor: "border-[#15805D]/30",
         iconName: "check",
         isConfirmed: true,
-        description: "Recorded on chain and verified beyond reorganization depth",
+        description: "Checkpoint recorded by the configured chain adapter. Public finality is not implied",
       };
     case "AUDIT_PASSED":
       return {
@@ -51,7 +51,7 @@ export function getStateBadgeConfig(state: ElectionState): StateBadgeConfig {
         borderColor: "border-[#15805D]/30",
         iconName: "check",
         isConfirmed: true,
-        description: "Zero discrepancy audit verified against public test vectors",
+        description: "Audit checks passed for the configured evidence profile",
       };
     case "AUDITOR_ATTESTED":
       return {
@@ -61,7 +61,17 @@ export function getStateBadgeConfig(state: ElectionState): StateBadgeConfig {
         borderColor: "border-[#15805D]/30",
         iconName: "check",
         isConfirmed: true,
-        description: "Independent external auditor attestation signed and verified",
+        description: "Auditor attestation signature verified against configured trust material",
+      };
+    case "PUBLISHED":
+      return {
+        label: "PUBLISHED",
+        bgColor: "bg-[#15805D]/10 dark:bg-[#15805D]/20",
+        textColor: "text-[#15805D] dark:text-[#34D399]",
+        borderColor: "border-[#15805D]/30",
+        iconName: "check",
+        isConfirmed: true,
+        description: "Publication gate completed for the configured evidence profile",
       };
     case "PENDING_WITNESS":
       return {

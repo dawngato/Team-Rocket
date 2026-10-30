@@ -47,7 +47,7 @@ export default function PendingAcceptancePage() {
           <div className="flex items-start gap-2.5">
             <Clock className="w-4 h-4 text-[#AA6C0B] flex-shrink-0 mt-0.5" aria-hidden="true" />
             <p>
-              <strong>Batch witness signing:</strong> Independent witness nodes cosign checkpoints periodically. As soon as the batch is processed, your status upgrades to WITNESSED.
+              <strong>Batch witness signing:</strong> The configured witness service may cosign checkpoints periodically. This local status does not prove independent operator control.
             </p>
           </div>
         </div>

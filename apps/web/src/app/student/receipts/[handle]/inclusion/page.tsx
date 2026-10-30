@@ -250,10 +250,10 @@ export default function VerifyInclusionPage() {
             <div className="p-5 rounded-xl bg-[#15805D]/10 border border-[#15805D]/40 space-y-2">
               <div className="flex items-center gap-2 text-[#15805D] font-bold text-sm">
                 <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-                <span>Cryptographic Inclusion Confirmed (Zero Discrepancy)</span>
+                <span>Inclusion Root Match Confirmed</span>
               </div>
               <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                The RFC 9162 Merkle path evaluates exactly to the published witness checkpoint digest. Your ballot leaf is certified and immutable.
+                The RFC 9162 Merkle path evaluates to the displayed development checkpoint digest. This confirms inclusion in the supplied evidence path only. It does not prove voter intent, secrecy, or independent production finality.
               </p>
             </div>
           )}

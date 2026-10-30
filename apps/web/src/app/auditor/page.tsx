@@ -19,16 +19,16 @@ export default function AuditorOverviewPage() {
     {
       title: "Fetch Final Witness",
       href: "/auditor/witness",
-      desc: "Retrieve and verify independent witness checkpoint signatures and Merkle log sizes.",
+      desc: "Inspect the local witness emulator checkpoint signature and Merkle log size.",
       icon: Layers,
-      count: "Ed25519 Verified",
+      count: "Fixture Signature",
     },
     {
       title: "Fetch Chain Anchor",
       href: "/auditor/chain",
-      desc: "Query consortium blockchain finality transactions and confirm block reorganization depth.",
+      desc: "Inspect local chain adapter metadata. Public chain finality is not established.",
       icon: Globe,
-      count: "EVM Finality",
+      count: "Local Chain",
     },
     {
       title: "Offline Evidence Archive",
@@ -40,16 +40,16 @@ export default function AuditorOverviewPage() {
     {
       title: "Full Verification Suite",
       href: "/auditor/verify",
-      desc: "Run comprehensive verifier routines across manifest digests, ballot tallies, and nullifier trees.",
+      desc: "Review the fixture workflow before running the offline verifier with external trust pins.",
       icon: CheckCircle2,
-      count: "Zero Discrepancy",
+      count: "Limited Preview",
     },
     {
       title: "Sign Auditor Attestation",
       href: "/auditor/sign",
-      desc: "Apply hardware backed auditor signature to certify election results for public release.",
+      desc: "Prepare an external auditor attestation. Signing is not performed by this prototype server.",
       icon: ShieldCheck,
-      count: "Hardware Signer",
+      count: "External Key Required",
     },
   ];
 
@@ -59,13 +59,13 @@ export default function AuditorOverviewPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <Shield className="w-3.5 h-3.5" aria-hidden="true" />
-            Independent Audit Authority
+            Audit Review Workspace
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Auditor Console
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Independent cryptographic verification of election logs, witness checkpoints, and chain anchors.
+            Review election logs, witness checkpoints, and chain anchor evidence. This local workspace is not an independent operator.
           </p>
         </div>
       </div>
@@ -77,7 +77,7 @@ export default function AuditorOverviewPage() {
             Attested Historical Contests
           </span>
           <div className="text-3xl font-extrabold text-[#15805D]">
-            {attestedCount} Certified
+            {attestedCount} Attested in Fixture Data
           </div>
           <span className="text-xs text-slate-500">Dual auditor signature recorded</span>
         </div>
@@ -87,7 +87,7 @@ export default function AuditorOverviewPage() {
             Witness Node Network
           </span>
           <div className="text-3xl font-extrabold text-[#157E92]">
-            2 Active Nodes
+            Local Fixture Nodes
           </div>
           <span className="text-xs text-slate-500">Out of band pinned public keys</span>
         </div>
@@ -97,7 +97,7 @@ export default function AuditorOverviewPage() {
             Verifier Integrity Standard
           </span>
           <div className="text-3xl font-extrabold text-[#15805D]">
-            PASS
+            TESTED LOCALLY
           </div>
           <span className="text-xs text-slate-500">Golden test vectors verified</span>
         </div>

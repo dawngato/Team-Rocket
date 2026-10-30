@@ -16,12 +16,10 @@ import {
 import { StateBadge } from "@/components/StateBadge";
 import { INITIAL_ELECTIONS, INITIAL_RESULTS, INITIAL_EVIDENCE } from "@/lib/mock_data";
 
-export default function CertifiedResultsPage() {
+export default function PublishedResultsPage() {
   const publishedElections = INITIAL_ELECTIONS.filter(
     (e) =>
-      e.state === "AUDITOR_ATTESTED" ||
-      e.state === "ANCHOR_FINALIZED" ||
-      e.state === "WITNESSED"
+      e.state === "PUBLISHED"
   );
 
   const [selectedElectionId, setSelectedElectionId] = useState(publishedElections[0]?.id || "elec_cs_2026");
@@ -43,13 +41,13 @@ export default function CertifiedResultsPage() {
     manifest_digest: currentElection.manifest_digest,
     final_checkpoint_digest: "deb3384abb0306e861b04a6e760e9fa992f25a5632507a91454a49538880a7e5",
     anchor_tx_hash: "0x4f82a93c7210e395b018c47f89a2b6d19e04c8f2a573b9e1a82649d038271e9a",
-    auditor_signature: "sig_ed25519_certified_offline_package",
+    auditor_signature: "development_fixture_signature_reference",
   };
 
   const totalVotes = resultsData.total_ballots || 1;
 
-  const handleDownloadCertificate = () => {
-    const certificate = {
+  const handleDownloadEvidenceSummary = () => {
+    const evidenceSummary = {
       institution: "Himachal Pradesh Technical University",
       platform: "HimVote Cryptographic Election System",
       election_id: currentElection.id,
@@ -59,16 +57,16 @@ export default function CertifiedResultsPage() {
       manifest_digest: currentElection.manifest_digest,
       final_checkpoint_root: evidenceData.final_checkpoint_digest,
       anchor_tx_hash: evidenceData.anchor_tx_hash,
-      total_certified_ballots: resultsData.total_ballots,
+      total_ballots: resultsData.total_ballots,
       tally: resultsData.tally,
       attested_at_utc: resultsData.published_at_utc,
-      status: "CRYPTOGRAPHICALLY_CERTIFIED_ZERO_DISCREPANCY",
+      status: "DEVELOPMENT_EVIDENCE_SUMMARY",
     };
-    const blob = new Blob([JSON.stringify(certificate, null, 2)], { type: "application/json" });
+    const blob = new Blob([JSON.stringify(evidenceSummary, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `himvote_certificate_${currentElection.id}.json`;
+    a.download = `himvote_evidence_summary_${currentElection.id}.json`;
     a.click();
   };
 
@@ -79,22 +77,22 @@ export default function CertifiedResultsPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            Certified Public Tallies
+            Published Development Tallies
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Institutional Election Results
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Tallies released exclusively after witness finality, blockchain anchoring, and independent auditor signoff.
+            These sample tallies are shown with their current evidence state. Independent engine verification and production witness finality remain required before live publication.
           </p>
         </div>
         <button
           type="button"
-          onClick={handleDownloadCertificate}
+          onClick={handleDownloadEvidenceSummary}
           className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
         >
           <Download className="w-4 h-4" aria-hidden="true" />
-          <span>Download Audit Certificate</span>
+          <span>Download Evidence Summary</span>
         </button>
       </div>
 
@@ -153,7 +151,7 @@ export default function CertifiedResultsPage() {
         {!resultsData.privacy_limited ? (
           <div className="space-y-4 pt-2">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-              Certified Vote Breakdown
+              Vote Breakdown in Sample Data
             </h3>
             {Object.entries(resultsData.tally).map(([candidate, count]) => {
               const percentage = Math.round((count / totalVotes) * 100);

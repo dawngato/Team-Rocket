@@ -40,13 +40,13 @@ export default function PublicAuditExplorerPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            Universal Verifiability
+            Evidence Explorer
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Public Audit Explorer
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Independently audit manifest digests, witness Merkle checkpoints, and blockchain anchor transactions.
+            Inspect manifest digests, witness Merkle checkpoints, and development chain anchor records. Use the offline verifier for authoritative checks.
           </p>
         </div>
         <Link
@@ -78,7 +78,7 @@ export default function PublicAuditExplorerPage() {
             manifest_digest: elec.manifest_digest,
             final_checkpoint_digest: "deb3384abb0306e861b04a6e760e9fa992f25a5632507a91454a49538880a7e5",
             anchor_tx_hash: "0x4f82a93c7210e395b018c47f89a2b6d19e04c8f2a573b9e1a82649d038271e9a",
-            auditor_signature: "sig_ed25519_certified_offline_package",
+            auditor_signature: "development_fixture_signature_reference",
           };
 
           return (
@@ -110,7 +110,7 @@ export default function PublicAuditExplorerPage() {
                     href={`/results`}
                     className="min-h-[44px] px-3.5 py-2 font-bold text-xs bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] hover:bg-[#157E92]/20 rounded-lg transition-colors flex items-center gap-1.5"
                   >
-                    <span>View Certified Tally</span>
+                    <span>View Published Tally</span>
                     <ArrowRight className="w-3.5 h-3.5" aria-hidden="true" />
                   </Link>
                 </div>

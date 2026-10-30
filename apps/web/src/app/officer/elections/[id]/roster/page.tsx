@@ -38,7 +38,7 @@ export default function OfficerRosterReviewPage() {
         </div>
         <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1">
           <span className="text-xs font-semibold text-slate-500 block">Deduplication Invariant</span>
-          <strong className="text-2xl text-[#15805D] font-mono">100% Unique</strong>
+          <strong className="text-2xl text-[#15805D] font-mono">Unique IDs</strong>
         </div>
         <div className="p-5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-1">
           <span className="text-xs font-semibold text-slate-500 block">Minimum Anonymity Gate</span>

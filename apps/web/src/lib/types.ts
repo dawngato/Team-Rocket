@@ -8,6 +8,7 @@ export type ElectionState =
   | "ANCHOR_FINALIZED"
   | "AUDIT_PASSED"
   | "AUDITOR_ATTESTED"
+  | "PUBLISHED"
   | "FAILED"
   | "DISPUTED";
 

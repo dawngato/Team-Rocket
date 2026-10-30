@@ -100,7 +100,7 @@ export default function AuditorEvidencePage() {
         manifest_digest: election.manifest_digest,
         final_checkpoint_digest: "deb3384abb0306e861b04a6e760e9fa992f25a5632507a91454a49538880a7e5",
         anchor_tx_hash: "0x4f82a93c7210e395b018c47f89a2b6d19e04c8f2a573b9e1a82649d038271e9a",
-        auditor_signature: "sig_ed25519_certified_offline_package",
+        auditor_signature: "development_fixture_signature_reference",
       },
       raw_leaves: rawLeaves,
       exported_at: new Date().toISOString(),
@@ -316,13 +316,13 @@ export default function AuditorEvidencePage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
             <FileArchive className="w-3.5 h-3.5" aria-hidden="true" />
-            Airgapped Cryptographic Verifier
+            Offline Evidence Preview
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Offline Archive Evidence Inspection
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Export certified evidence packages or inspect external archives with safe extraction guards and Merkle integrity verification.
+            Export development evidence packages or inspect an archive with safe extraction guards and Merkle integrity checks. Use the standalone verifier for authoritative results.
           </p>
         </div>
       </div>
@@ -333,7 +333,7 @@ export default function AuditorEvidencePage() {
           <div className="space-y-2">
             <h2 className="font-bold text-lg text-[#10233F] dark:text-white flex items-center gap-2">
               <Download className="w-5 h-5 text-[#157E92]" aria-hidden="true" />
-              <span>Export Certified Evidence Bundle</span>
+              <span>Export Development Evidence Bundle</span>
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
               Downloads complete raw ciphertexts, Merkle leaf proofs, candidate rosters, and checkpoint witness signatures.
@@ -543,7 +543,7 @@ export default function AuditorEvidencePage() {
                 )}
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Witness key {inspectionResult.witnessCheck.signerKeyId} verified against pinned SPKI public key.
+                Witness key {inspectionResult.witnessCheck.signerKeyId} checked against the configured SPKI public key. Local operator independence is not implied.
               </p>
               <span className="text-[10px] font-mono text-slate-400 block">
                 Algorithm: {inspectionResult.witnessCheck.algorithm}
@@ -555,7 +555,7 @@ export default function AuditorEvidencePage() {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-xs text-[#10233F] dark:text-white flex items-center gap-1.5">
                   <Globe className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                  <span>5. Blockchain Anchor Finality</span>
+                  <span>5. Development Chain Anchor Record</span>
                 </span>
                 {inspectionResult.chainCheck.passed ? (
                   <CheckCircle2 className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
@@ -564,7 +564,7 @@ export default function AuditorEvidencePage() {
                 )}
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-400">
-                Transaction finalized at block {inspectionResult.chainCheck.blockNumber} with {inspectionResult.chainCheck.confirmations} confirmations (&gt;= 12 required depth).
+                Local fixture transaction metadata reports block {inspectionResult.chainCheck.blockNumber} with {inspectionResult.chainCheck.confirmations} confirmations. Public finality is not established.
               </p>
               <code className="text-[10px] font-mono text-slate-500 break-all block">
                 Tx: {inspectionResult.chainCheck.txHash}

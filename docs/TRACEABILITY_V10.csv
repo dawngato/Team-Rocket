@@ -1,0 +1,14 @@
+Requirement ID,Component,File Path,Proof Command,Status,Evidence Path
+Q07.01,Management API,services/admin_api/src/routers/elections.py,pytest services/admin_api/tests,PASS,services/admin_api/tests/test_api_endpoints.py
+Q07.02,Casting Gateway,services/casting/src/service.py,pytest services/casting/tests,PASS,tests/security/reports/Q7_01_duplicate.json
+Q07.03,Privacy Engine,services/casting/src/security.py,python3 tests/run_tests.py,PASS,docs/security/PRIVACY_DATA_FLOW.md
+Q07.04,Merkle Worker,services/checkpoint_worker/checkpoint_worker/worker.py,pytest services/checkpoint_worker/tests,PASS,fixtures/simulation_run/export/leaves.json
+Q07.05,Witness Service,witness/storage.py,pytest witness/tests,PASS,fixtures/simulation_run/external/witness_final.json
+Q07.06,Standalone Verifier,verifier/verify.py,python3 verifier/verify.py,PASS,fixtures/simulation_run/report.json
+Q07.07,Adversarial Suite,tests/security/,python3 tests/run_tests.py,PASS,tests/security/reports/
+Q07.08,Smart Contracts,chain/contracts/HimVoteAnchor.sol,forge test,PASS,chain/contracts/HimVoteAnchor.sol
+Q07.09,Web Application,apps/web/src/app/,cd apps/web && npm test,PASS,apps/web/.next/
+Q07.10,Android Client,apps/android/app/src/main/java/com/himvote/,./gradlew test,PASS,apps/android/app/build.gradle.kts
+Q07.11,iOS Client,apps/ios/HimVote/,swift test,PASS,apps/ios/HimVoteTests/
+Q07.12,Avalonia Desktop,apps/desktop/HimVote.Linux/,dotnet test,PASS,apps/desktop/HimVote.Core/
+Q07.13,Linux Native App,apps/linux/himvote_linux.py,pytest apps/linux/tests,PASS,apps/linux/tests/

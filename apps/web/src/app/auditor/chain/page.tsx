@@ -17,13 +17,13 @@ export default function AuditorChainAnchorPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <Blocks className="w-3.5 h-3.5" aria-hidden="true" />
-            Public Chain Ledger
+            Local Chain Demonstration
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Verify Chain Anchor Finality
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Verify transaction receipts on the public blockchain to ensure permanent immutability.
+            Inspect the local chain adapter record. This does not establish public chain finality or permanent immutability.
           </p>
         </div>
       </div>
@@ -50,11 +50,11 @@ export default function AuditorChainAnchorPage() {
         <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-[#1E3352]">
             <h2 className="font-bold text-lg text-[#10233F] dark:text-white">
-              EVM Finality Confirmation
+              Local Anchor Record
             </h2>
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-bold bg-[#15805D]/10 text-[#15805D]">
               <CheckCircle2 className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Finality Confirmed</span>
+              <span>Fixture Record Present</span>
             </span>
           </div>
 
@@ -66,7 +66,7 @@ export default function AuditorChainAnchorPage() {
               </span>
             </div>
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800 space-y-1">
-              <span className="text-slate-400 block font-sans">Block Confirmation Number</span>
+              <span className="text-slate-400 block font-sans">Fixture Confirmation Metadata</span>
               <span className="text-[#15805D] font-bold">
                 Block #{evidence.block_number || 19842103} (64+ confirmations)
               </span>

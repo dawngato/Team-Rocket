@@ -30,32 +30,32 @@ export default function AuditorVerifySuitePage() {
         {
           id: "CHK_01",
           property: "Manifest Digest Verification",
-          outcome: "PASS",
-          detail: "SHA256 recomputed over canonical manifest JSON matches published digest exactly.",
+          outcome: "LIMITED",
+          detail: "Fixture comparison is shown for demonstration. The standalone verifier must recompute this from an imported archive.",
         },
         {
           id: "CHK_02",
           property: "Witness Signature Verification",
-          outcome: "PASS",
-          detail: "Ed25519 signatures from 2 independent witness nodes verified against pinned public keys.",
+          outcome: "LIMITED",
+          detail: "The local preview contains witness shaped data. Independent operator custody is not established.",
         },
         {
           id: "CHK_03",
           property: "Merkle Tree Consistency",
-          outcome: "PASS",
-          detail: "All 816 leaves evaluated sequentially with zero index gaps and zero double spending.",
+          outcome: "LIMITED",
+          detail: "The preview displays a fixture leaf count. Run the offline verifier to check an actual archive.",
         },
         {
           id: "CHK_04",
           property: "Tally Equivalence Check",
-          outcome: "PASS",
-          detail: "Computed ballot sum matches certified total of 816 ballots across all contestants.",
+          outcome: "LIMITED",
+          detail: "The development profile does not provide a native encrypted tally proof.",
         },
         {
           id: "CHK_05",
           property: "Chain Anchor Finality Depth",
-          outcome: "PASS",
-          detail: "Transaction hash confirmed on EVM registry beyond reorganization depth.",
+          outcome: "LIMITED",
+          detail: "The local chain adapter is a demonstration and does not establish public chain finality.",
         },
       ]);
     }, 1200);
@@ -67,13 +67,13 @@ export default function AuditorVerifySuitePage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <ShieldCheck className="w-3.5 h-3.5" aria-hidden="true" />
-            Independent Cryptographic Verifier
+            Development Verifier Preview
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Offline Audit Verification Suite
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Execute deterministic checks over candidate tallies, checkpoint roots, and witness signatures.
+            Review the fixture workflow before running the standalone Python verifier with separately supplied trust pins.
           </p>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function AuditorVerifySuitePage() {
             </div>
             <div>
               <span className="text-slate-400 block font-sans">Locally Computed Root:</span>
-              <span className="text-[#15805D] font-semibold break-all">
+          <span className="text-[#AA6C0B] font-semibold break-all">
                 {evidence?.final_checkpoint_digest || "Pending election close"}
               </span>
             </div>
@@ -142,13 +142,13 @@ export default function AuditorVerifySuitePage() {
             </div>
             <div className="flex justify-between font-semibold">
               <span className="text-slate-600 dark:text-slate-400">Recomputed Valid Ballots:</span>
-              <span className="font-mono text-[#15805D]">
+              <span className="font-mono text-[#AA6C0B]">
                 {published?.total_ballots || 0}
               </span>
             </div>
             <div className="flex justify-between font-semibold">
               <span className="text-slate-600 dark:text-slate-400">Discrepancy:</span>
-              <span className="font-mono text-[#15805D]">0 ballots (Clean match)</span>
+              <span className="font-mono text-[#AA6C0B]">Fixture comparison only</span>
             </div>
           </div>
         </div>
@@ -159,7 +159,7 @@ export default function AuditorVerifySuitePage() {
         <div className="rounded-xl border border-[#15805D]/30 bg-white dark:bg-[#132135] p-6 sm:p-8 shadow-sm space-y-6 animate-fadeIn">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-[#1E3352]">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-6 h-6 text-[#15805D]" aria-hidden="true" />
+              <AlertTriangle className="w-6 h-6 text-[#AA6C0B]" aria-hidden="true" />
               <h2 className="text-xl font-bold text-[#10233F] dark:text-white">
                 Verification Ledger Output
               </h2>
@@ -181,7 +181,7 @@ export default function AuditorVerifySuitePage() {
               >
                 <div className="flex items-center justify-between">
                   <strong className="text-sm text-[#10233F] dark:text-white">{c.property}</strong>
-                  <span className="font-mono font-bold text-xs bg-[#15805D]/10 text-[#15805D] px-2 py-0.5 rounded">
+              <span className="font-mono font-bold text-xs bg-[#AA6C0B]/10 text-[#AA6C0B] px-2 py-0.5 rounded">
                     {c.outcome}
                   </span>
                 </div>

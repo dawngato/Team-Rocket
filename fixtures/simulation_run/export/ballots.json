@@ -2,7 +2,7 @@
   {
     "ballot_id": "ballot_0000000000000001",
     "credential_nullifier": "sha256:863cecddff5b90a31e89e0cd8eaac55b62892878254c0736c6ddee862c2e1141",
-    "credential_proof_b64url": "tHp8RJOz_WtfzJCqTz8I2Jl6iA6OIwFQ4Stt7_5dGAlm1yx0nvF9g0hmzGRFO8TuUP5nczO2ovPjPGo4mnKSCg",
+    "credential_proof_b64url": "g8kc2hfamlbWaaOZ-zL6P5GPCbvWoumThRAVCfyluFbhmY1V6Y--hASWpAWJrD3LVDxwdwQOLaQivdraJ5ZYBg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8wIiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8wIiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -14,7 +14,7 @@
   {
     "ballot_id": "ballot_0000000000000002",
     "credential_nullifier": "sha256:c2329ae54fcf1bb920ca72c08422e24c93765efc75dde1c06d90ea4600bb9f9c",
-    "credential_proof_b64url": "-havOVz5Qo6jPQy7d0mGfK4yig3_WJgKej57-Xoj1WdUZyNdGrl-w6s-axuq2sMr71DcK6isLjxia0giCFhvAg",
+    "credential_proof_b64url": "zGbizgULJwJcsFe3R8IvHq0SSbXq9uIaAyFuf4j8TuLGKIwnzRKv9UdpDOgibq2sEqvK1GZ1g1nv6oG_J4A6DA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xIiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xIiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -26,7 +26,7 @@
   {
     "ballot_id": "ballot_0000000000000003",
     "credential_nullifier": "sha256:38e25b7721077813ab44710352f59743028528415e4f4729e2fa0caf34614d79",
-    "credential_proof_b64url": "ydLcZqQoXRuWTTWcua0ngr0DTxSxe-S6SncIon-Rm01cQMpqCJ5bKWK0JLJquEMGQa_2ftPv-TAxqA0Z927_CA",
+    "credential_proof_b64url": "34AYRjXzIHazgM-d20uNd44EZccBwGnDuRL43I9xbW4JBZSiCJqKUMsyk8RcnD3VYZduqYtQ7HpWZ0H-QcBoAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yIiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yIiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -38,7 +38,7 @@
   {
     "ballot_id": "ballot_0000000000000004",
     "credential_nullifier": "sha256:dd43809be4576d1e901e3b124e3ca993b1c3610eefd847ea7037bbab768947c9",
-    "credential_proof_b64url": "Lbly8bryhNg0bhvrMuPeEbNGyK3dLLxwXv09Q5q2HAxhJw8WVDVbhf8KUhaw_qtT5FehR9uIKGOWVnMHPfIuBg",
+    "credential_proof_b64url": "HyDyNOaEyp5g8dCarq-DBUy8ltK-orAc8nJAQhVU0e9gBsHgRDOlNEo6wldOQTcrR9vpCOW4AbF-bJHNqtVzAw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zIiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zIiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -50,7 +50,7 @@
   {
     "ballot_id": "ballot_0000000000000005",
     "credential_nullifier": "sha256:a12d148c1b77d85034a57f128a12035a884bfa54f34a9b5eb2bac4e051ce5e76",
-    "credential_proof_b64url": "7j1-V2wi6zzEUplpDNaRJcnxwxUiJv_iAAoLYtH55pPSmEG5iD-o9wFuV80XByy-tuuglUw-5nwnq6nYxXTbCA",
+    "credential_proof_b64url": "ntGd-rpWp75wd4Lp5sXVmip8GOhWObYCf3h44nwM2HDkBc7SgFYvKJJDuvw_b7Vv-lYef4Ua7gqk0L4lAbfcAQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -62,7 +62,7 @@
   {
     "ballot_id": "ballot_0000000000000006",
     "credential_nullifier": "sha256:bccfd3c5411fea250810f5cdd2f85fbf608e80cd7918719e952cd216e0d99608",
-    "credential_proof_b64url": "EFPICiI3A5APqEeGeoyl7CSxCbuQ99MOXFiJWwz3BGavQLcXE_CqyZaZ0WtF3wV4zNVV58Q-C7gRwAhra5BjCw",
+    "credential_proof_b64url": "M5X5cINCQN82e0E3ETz-ZhxmAodqC0F4xgaNasKOBkKrWviAlMYLMI_udmKOCqgTpJ0rxqVBYukgYmDh5TUeDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -74,7 +74,7 @@
   {
     "ballot_id": "ballot_0000000000000007",
     "credential_nullifier": "sha256:6a79fa5a3fa9db073ccb882f0661905a4540d0c349d9f3453721e88b38f8e48e",
-    "credential_proof_b64url": "l-4Z1wKnSGDl83Ug37ZLVHa6Z4Pajesdrto6Jz5Jj7jNki8kAEo9j2eRzSlDZTD3KXyFYDbZaSghzI90j6IaDw",
+    "credential_proof_b64url": "FWeWnZJNuS2g5AHZwmN-ifuySS9XqGUW09ZJfzbR1TIwGshe9eDh6X0Jd5WKIUuMmyK2SQGBMugl1DJrC2rcDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -86,7 +86,7 @@
   {
     "ballot_id": "ballot_0000000000000008",
     "credential_nullifier": "sha256:db1590b0415adf357faf4b87d34ee4202351e95fc4b77871918546f3e01bdde0",
-    "credential_proof_b64url": "XhjJ4GaQ9H5RDTN_MQ5OFCDXsjARVQUICaLBBAR3GJcUGpIm-G-M99A9SidX1NaOFsMrHpqYst12xmrAkgoKBA",
+    "credential_proof_b64url": "eEzTDyxN92VhespYZF2RjR1SDkXBJS5WbfEZGyZcLHlCQy5KVRWeC0bqs4pqIE3lsV9d_yuxn3QHRN8t2mIjBw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -98,7 +98,7 @@
   {
     "ballot_id": "ballot_0000000000000009",
     "credential_nullifier": "sha256:6e20608069b9cdccdab4301b76ebab565436cd18c105faa8d96166d85dc1ad03",
-    "credential_proof_b64url": "yYwoD3iu6HmJBbYPAB9RoRWgHdmCi8VKLJRUllEljyrAvSU_t1iiExNSRor-hr5cmja0Ty95VlkkirpOMbFwDQ",
+    "credential_proof_b64url": "o1mED6V6rM7KZiUbVsrf5kGflTxW6DvWbzMtJqtuqqITVt3sCFXe7BmtZA5bAc0oU7G5fUNvdCrdOUy1sx-SDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -110,7 +110,7 @@
   {
     "ballot_id": "ballot_0000000000000010",
     "credential_nullifier": "sha256:28e04d1bc2a6b3d824b5d3b1d987bb4618f0e91a13500ac030d3ca4586006201",
-    "credential_proof_b64url": "yiCxe8_Mjx9zorQ_pWk1trhrf7Pm0Ko197ZXv2NwkBcLScesf8UcXShzhviHy9hcdihqAI5pA8E16B4AITsVCQ",
+    "credential_proof_b64url": "61BVcQanKY3KmZQFTG_LucomVqVzbhYl18LlpGeQQvaohv7ejDIvxXY8y4I7NL4QasXHFlfXkNauwQEfajgCCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85Iiwic2VsZWN0aW9ucyI6eyJjYW5kX2FhcmF2X3NoYXJtYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85IiwicHJvb2ZfdmVyc2lvbiI6ImVsZWN0aW9uZ3VhcmRfdjEiLCJ2YWxpZF9zZWxlY3Rpb24iOnRydWV9",
@@ -122,7 +122,7 @@
   {
     "ballot_id": "ballot_0000000000000011",
     "credential_nullifier": "sha256:d3f1f03316fa8a582cf03a6feddf589383031c5a636fd579e92729f0aa28547e",
-    "credential_proof_b64url": "uDXCtcW9kgQpPs3JuvJe2n6fPhNZDAHrybEsJ3FAhyFDKoj8EKjf7jNpw23oJrPPBpwRrc6O5TjHI08fZDSrAA",
+    "credential_proof_b64url": "OGI-EpBDfQcZLu9lhMQkPmbMfbX4CGS8HloblO0m6zK9OWeaSkuaSlQQahNThydMGths-uz4-ewrjWWwgbYjBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xMCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xMCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -134,7 +134,7 @@
   {
     "ballot_id": "ballot_0000000000000012",
     "credential_nullifier": "sha256:0fcb4d1f60eada40f81a00758933546ad7d18e4e1e88939103ca424922ddc7ee",
-    "credential_proof_b64url": "nBwM7wNnxm4s4wGZj4PTaEDq4i9xmv4oi27LnkD5VqVIq8moSt29SFqTiWFI2aZolul9Lje7Zm5M8Kq_JHMdBQ",
+    "credential_proof_b64url": "dljZDPYjVIoJBY4zbML3Jz5egPobPKlFqKED3Ig12nPlzpLUr29Rf5L92U87V3OTWJXHjQxzxBW08BY6PZM_Cw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xMSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xMSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -146,7 +146,7 @@
   {
     "ballot_id": "ballot_0000000000000013",
     "credential_nullifier": "sha256:7826a27ae84fd433da7b4363c9f4c23d21811f14d19ec3e256423aa8958def2e",
-    "credential_proof_b64url": "8JEd9ja_HFC6_LZI_B-zMkdzVdGIiOK_PJem2nD57ckz2es1pjZsPUH98bQC6i6Ow35naPMCmGm3f_WuocaNDw",
+    "credential_proof_b64url": "4VqNOmGCy3EBxgGGt3rmREQ640-R-22sGg-ZBupkQJBOlFojyGaEgfW6zykPYCOgSc-VofDnWfXmovBAQ_bWCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xMiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xMiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -158,7 +158,7 @@
   {
     "ballot_id": "ballot_0000000000000014",
     "credential_nullifier": "sha256:b7ebc5cd5eb98cc0eac48777a10dae4b59bafedab21482c2af81e75710d40a1f",
-    "credential_proof_b64url": "1sVYgzVXtN915V5taK2U0l4RGB1XkgqOEvyh1IKi4aOXs8TckfVNWflJxxZu_9UrPaLfNj0XmiTOuKuBPsnhDQ",
+    "credential_proof_b64url": "S6uWrnDwsKav85w0sLoUEZAGpT3CGj1l6TdIO59q66tjOoOexYr4_SFml8y-H1pD6Bu1ysxmRgkJPSNwFBPWCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xMyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xMyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -170,7 +170,7 @@
   {
     "ballot_id": "ballot_0000000000000015",
     "credential_nullifier": "sha256:b2ece1a07f014ed6356e8ce211f0797374d68b55e4d58e8dd22dbcdddff7dccc",
-    "credential_proof_b64url": "JqT9DPhUSXW2tpeAS4-QrqQkQnnpvY1LvHxBOiHgzRYnI9vm253efMYk9AUh-QrhRCNRyy6ttPNc6VCzeTzxAQ",
+    "credential_proof_b64url": "EWl1Aox9If0iUBmaDzdLtos1LRqEnhBIMOSGFOSFnnha0VhONxPw6v3KeUCgK4lf4DKerYVgSe2ONgeMmKVbDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xNCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xNCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -182,7 +182,7 @@
   {
     "ballot_id": "ballot_0000000000000016",
     "credential_nullifier": "sha256:a191ee43e118b614c03a32c037faa23a5c241fa5db5b6e6e5508b62115af5d64",
-    "credential_proof_b64url": "TR_FrdKN9Q_aZTtcUf2-WMnc21UB8Kr4BD97N-M6kV89A7JeWlWhyssKVGLs_4jOdLQWXDjb63jcnbEGFMatAg",
+    "credential_proof_b64url": "_3UmENu8Li5LtAV93ewTQmvwhPSktZ9uHI87FghS3mA_1E_fq-lwHKyjzNFxx7lvZ5ITv33BAdMn7RK-W8heBQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xNSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xNSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -194,7 +194,7 @@
   {
     "ballot_id": "ballot_0000000000000017",
     "credential_nullifier": "sha256:49fed26c059a14f929171cdd67789694529c1c2ca2c7455d8cf21db5aeb774d6",
-    "credential_proof_b64url": "nr-0s4TnW5Kr_-IUcw7fmHfXplffJcdWPhgYMaAKnn-j-g3lp6DDRfqFwfqrrkekO8Q08_ZL_D0jlj2-5wZhDg",
+    "credential_proof_b64url": "O0LLTefcC-Betgx8IbZJTpWJna7z7wxiixpW5Fo-NeiK9iEeh3u3IqYzZPs8t9z1Vh3vDKukEgDMYcrUMp0nDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xNiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xNiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -206,7 +206,7 @@
   {
     "ballot_id": "ballot_0000000000000018",
     "credential_nullifier": "sha256:1704bff9b2f2501fcd4796bf42ed2fabec275ca40eb28cc225d19efed65b376f",
-    "credential_proof_b64url": "3ZH5ebwWu0_RG9zOEtBYFhGuS_wH0HGy_5JZtSBICKP3UCeSZSR05jIT45vAZaaGyNLExvjHx7GtOUE3BWJXBg",
+    "credential_proof_b64url": "rYNGFYQ9Fq76_qvHutoBlJxMXFUHRePti2IOyeMOF6NcMvVd7Bm4AxssdmB3PMAOQMHDeu-75mqwVWJ-kxWtDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xNyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xNyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -218,7 +218,7 @@
   {
     "ballot_id": "ballot_0000000000000019",
     "credential_nullifier": "sha256:8e15e5d93d0292774aa02cd093b9565b24e3e1077c8c6430bc333ab118d207e5",
-    "credential_proof_b64url": "Ej5LCGTlvRf1GDHea8WYhHql3CCTCjJSwOFPrXHVif_ai_lLwi6gQGNZJQM9mN7LITkjMrIpRI_KBatyra3zDQ",
+    "credential_proof_b64url": "vKa0VUEIaEtyKODGk4_0AZ3J8QMlkqv_zYbJtmMuqwjRfivfl0aIpnw0p6CWBkFLcJ5x4iA-SFVC4VgH72ITAQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xOCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xOCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -230,7 +230,7 @@
   {
     "ballot_id": "ballot_0000000000000020",
     "credential_nullifier": "sha256:8249dd7435ef17902cd7034fb5a4a6970f43f6ff44c02a143e28c00d1c0e2a25",
-    "credential_proof_b64url": "-eGMqzwWxbZwuBMTw6V4bMl6bMDIv2gi5cWhdwV3NX81gC5GeuL5JxJYeoXqE3H3dlgzwVb3K0PlbxX2RmWVDQ",
+    "credential_proof_b64url": "lE-PoSoIBPAj5j4ZIPkelvmUWsJXQslzn5HW8_B4PDTDIbFcfkdtjYNvoCXa1SznmK9YCHLScm2VsNYz1yxjDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8xOSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8xOSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -242,7 +242,7 @@
   {
     "ballot_id": "ballot_0000000000000021",
     "credential_nullifier": "sha256:6426940c0af0aa09410fbcaffb7e7c5a7c21cf80c1f29ac559c96ff5b9717c83",
-    "credential_proof_b64url": "wOcZMHaDtJWPnMwdy5qXHo-ySbLsJXGc3J76F7Scz_cAOIRPAIz4lawnVZLW3UnKIrjeFqc_LWxyd7ycL8V7Cg",
+    "credential_proof_b64url": "nd1OWRwo5793_qGIxEYRbFCySY9sNwKwDiXaDlA7t04FDiaqcXZ6NmEhRkgwcwOm2kPzHDJmopm9HtpYbiUFAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yMCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yMCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -254,7 +254,7 @@
   {
     "ballot_id": "ballot_0000000000000022",
     "credential_nullifier": "sha256:1b44b3067f58bd57bf248c38e273fe0adeeb2d931e04d3bc5c67426d67c3f64b",
-    "credential_proof_b64url": "1Luh_H9elCRxcvPVfQphJOJ_ntpzOnsR4hVq2h4CKb1fpLyKa91339K3oD3Pet1qPofRx7FJQd3MFbg2tcQ6Dw",
+    "credential_proof_b64url": "cGmVS6qS8IHFlk9HHcd6ythVv78Dm0znryEJ9EQH_Q1gQ19zzVEZ3rYRousJowU1UA_4iWl4o94wBndLfMoFCA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yMSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yMSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -266,7 +266,7 @@
   {
     "ballot_id": "ballot_0000000000000023",
     "credential_nullifier": "sha256:d76b77c2e3829ab0db9eb253bdd298def6bcdb5dfb58f7c767fa11ad356714cf",
-    "credential_proof_b64url": "R2A_JSNrAGSyVm-ITBtW8shZFiv6HOmHX-kC3rMtqCitu5fYb15RNjMbYvmwRrKur1SYwZ0rgAa3WDU-mysPDA",
+    "credential_proof_b64url": "aXCVvUKNpN4pcQ5mf5ow8C1J3bCNXJLOZpR6cOJD9XQOC9X1PPAp_0_WlZhCtF1RxjCXit3dbgS6Vl78WtPaDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yMiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yMiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -278,7 +278,7 @@
   {
     "ballot_id": "ballot_0000000000000024",
     "credential_nullifier": "sha256:20091853eb29fd2a8fdfad2f139c6f582d1181f1348d8ff2f3c6f8d349e82107",
-    "credential_proof_b64url": "1zqrdLjcma6nCS86cPVwZbxZFM_H0eWq3WmdM3mEv93KzwsVz7CW0GJNOwKhdfz3DeqQIlfAx9COO1vgsDALBg",
+    "credential_proof_b64url": "gaV2a0hLEmtd8hqJOcVrENHFkARj5-EHHK-0Dc47_c-IakwhiW4GfjMWi4Kr9BuaS9k_yxtjJvoM25GvNrmlAQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yMyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yMyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -290,7 +290,7 @@
   {
     "ballot_id": "ballot_0000000000000025",
     "credential_nullifier": "sha256:a39cb1a0e55ab662d3fa7f5601e52e4bf43552f4b035966da619629751c8cad1",
-    "credential_proof_b64url": "q1R0fx1SVwIRi-ylK3cQLQEoLcY4vYmDfrJIrWSC-ujid6uBuFvXzOObr7BuxOf2s2zeKvD8qOdqjgrx0Iw9Cw",
+    "credential_proof_b64url": "E_FTjQijqhLbbE0xtco_220-dzF5w3hRd14CvxaOI8bEHxKCjaRaAs_TckzL24Lyh_yETUwD2TJrr7VG1eDXBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yNCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yNCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -302,7 +302,7 @@
   {
     "ballot_id": "ballot_0000000000000026",
     "credential_nullifier": "sha256:1356c9fd53d12b181f0c28d7c1a8524aca2dbfe384c8f6feff796e6182ade39a",
-    "credential_proof_b64url": "9y6KbRvtOjPwyF5o9hpwXvn3nE4Ow8mpc-TcWaeTPUTYIOP9D5kZTdSqDfQ_Y1KGrde68w5RNpp1X7-M7zBHDw",
+    "credential_proof_b64url": "cWZSccCwMJOKCxrbqfCerHIwdKPqx8dA3l8QMPxyglndT5-8IUkafBUIXlwpTk0OqyVCHNy3g00UpP8nohW1Bw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yNSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yNSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -314,7 +314,7 @@
   {
     "ballot_id": "ballot_0000000000000027",
     "credential_nullifier": "sha256:80d4bf2a3991d145a085528d1f6c36bf24cfe46cf0407cd51da7b84d73895926",
-    "credential_proof_b64url": "RZ5sDbX8zrAFRHXErEJ9HOaoetlzqmHjtIXztdLaDHV8I9KEbH2NOmTaREzowMFJs_lAo_lGOk6ZWmoUH_KCCQ",
+    "credential_proof_b64url": "Nrm5ZUrIh4pg-MRAyPaw5U2h_onCh87xlPUjV524i-eZWWrpAoTJqDE7Y0z63VWwhzZpPLcC3pK_Nmi7JdFTDw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yNiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yNiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -326,7 +326,7 @@
   {
     "ballot_id": "ballot_0000000000000028",
     "credential_nullifier": "sha256:384d3a9a62af9c03c7a5fee004138e010a44c82e9d0a390f1678ca97d50a2e8b",
-    "credential_proof_b64url": "E1dvmK1m9yfoHWQ-b_rLLX26cLXt_ig_XnyuplLKP4pK-VycZobEhif1BAX1zin1rl70Q8yrTqkvuvjYzw5iAw",
+    "credential_proof_b64url": "u3lIcKxvMyUUmabSklgCbZM2tdap5R0DyUQ177AZVlHwJiA_bU4owS-zPVPDG9Si9Kg24LgWMjf-TTzRPKqNCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yNyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yNyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -338,7 +338,7 @@
   {
     "ballot_id": "ballot_0000000000000029",
     "credential_nullifier": "sha256:9068f663cddde50e2cc91b7c87661e17db331e9d43629e21e6fa734cb8504d5f",
-    "credential_proof_b64url": "BZKJiMy6NjTVf_-IqkDuRMaojM6tR8X0ImY_8lvFQSbe7VQHH5zGApVw7MRVsdPqnuNbzwnS-vM3gOSv91HtDg",
+    "credential_proof_b64url": "VzpaS6QN2bWHMZPBRGMu_aynN2U5PAP4pQ6u2IZTTnj4cSItFg65nlgAK7xB-jqhkxP5ep0b4omUwLBAxIGZCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yOCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yOCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -350,7 +350,7 @@
   {
     "ballot_id": "ballot_0000000000000030",
     "credential_nullifier": "sha256:3df1847a841ecda651b7ca4c58f9d84e0f489309f1d03be5415cf590e999b908",
-    "credential_proof_b64url": "6fIPBcdEKwH1095ACbo_s--TlmDiLrzJKue-Wb0OklyL_vLxaefjpCGJqfuAodQlVeamLzXMQfG0tWirHlQjBQ",
+    "credential_proof_b64url": "fuYvUwtZ1IrS3L28srlyKcLw2VIuRJXbSasOAYjwl19wggUvVixU1DAEF0RmD9-nSRJTMzEVJz3E4rJhgRp8CQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8yOSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8yOSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -362,7 +362,7 @@
   {
     "ballot_id": "ballot_0000000000000031",
     "credential_nullifier": "sha256:7adc2895fc7a21513c79ab5548ed86afb48fe36147a1f6272e24b959b7522ec1",
-    "credential_proof_b64url": "nayY8OubnkrxvhVs6KlmawEB6phN1qdhZZl9Vy1eeTbOX4_yMBdbOm40qL9Z0jtSHpL89tSJMGBG1zDtv46iDQ",
+    "credential_proof_b64url": "6MP2vftyC28jAoofZemyLlEfQFiwBZS6ccysKLWmEKwYSNpEhFPcGmR0FIcAAhvzTBOx5M86SKl07PTnEvFgDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zMCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zMCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -374,7 +374,7 @@
   {
     "ballot_id": "ballot_0000000000000032",
     "credential_nullifier": "sha256:5b3ab1f0755b8f6c44d9be647486a5a26332cb3c4d3687e6c383d0012060d251",
-    "credential_proof_b64url": "Fsq7ViWArjtH1M55MnwE20AyAqm3f4fb_Y7Oa-USV40c25sSs92vye16Pyzm5Gufvo1igq1CfbYsVNedN_oTAg",
+    "credential_proof_b64url": "pomVtuonGhTKD2dAcPLuKdTR9gSW1DpIfNmvznW2LdFyYLeTYZdJYEg--ollROgi1BaaO_tIEolza2UyrYd7CQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zMSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zMSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -386,7 +386,7 @@
   {
     "ballot_id": "ballot_0000000000000033",
     "credential_nullifier": "sha256:34c12f4f3c5164a22047039f1543ea609981c1252f8f979ed1a5776075f59426",
-    "credential_proof_b64url": "1joTPvk23NAnNe_5PiGoyOrFQOee5RENeQXjqqPD5VU8_8wz37Uu7HFyUXMpGC2Oxbc13TnHIDwlxAsulXwoCw",
+    "credential_proof_b64url": "9MmTItHi96_2Dz98fKlgo_Iwbm6RSpSUVKu33ftyM2exlrvyCn8WW7WdMmK15I-Q5Lp1QGfuIxWSs3ZpP6tZCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zMiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zMiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -398,7 +398,7 @@
   {
     "ballot_id": "ballot_0000000000000034",
     "credential_nullifier": "sha256:27ef1259de6f5217a6849ceddac1636774a703e8a86cbe97047aef77bbf628d4",
-    "credential_proof_b64url": "HRd4e8tI2Uo0T1LaiYeQBVyKqFFYNlK86Oia67sTj9_uQvpF1NVp5f4UHxztFym7UnH0CTLk-wOlWG6x-T9SDQ",
+    "credential_proof_b64url": "Q99-6zoSP6FgVSSpBoHO7zKHpMtJR_QA6t2ai9UjxS-QNctsJP809wUNDV1N6Ji-okcNd-1wQf1jM2VleapLDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zMyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zMyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -410,7 +410,7 @@
   {
     "ballot_id": "ballot_0000000000000035",
     "credential_nullifier": "sha256:e1feebaf07a6ce9118e6116f079aeb99379988000223f6f6b7c4f0fc353ad4f1",
-    "credential_proof_b64url": "VC2ytLTLgFrxbchFG8jIbg9jC3p4wpPS6E7mktrvEzoyJ3nfRIrjjOVLI_1INqgbQoz_ZjbcICBml0qr5AlWAg",
+    "credential_proof_b64url": "VnnGmDZ5xeT1HOTnB_2S23wmGcnZgbk8UOJPj0fcTDtJfFlGfJ4wI04PZV_HRggLpmvMs4dJIywsFfnaRdCbDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zNCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hYXJhdl9zaGFybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zNCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -422,7 +422,7 @@
   {
     "ballot_id": "ballot_0000000000000036",
     "credential_nullifier": "sha256:9860a4eff00da1f3601cdc00742c6a5db290df8d9a6591e7905f198837c02d0a",
-    "credential_proof_b64url": "r72Rd8-ZJzxvq2I5xLovQW-lfAgyjwYySGpVEWMVObClRv12mRno-6WYyTRl5XrJFC3AAnhIRmLL2KusbldmCQ",
+    "credential_proof_b64url": "ANnC3bde6u48tfHn6aXPEBNSQGqNT8hOulQPj9Rw0eEJVRK7aig5qCwQBNlLSTI8_63jqhJ-W2mCByZgxm9jDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zNSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zNSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -434,7 +434,7 @@
   {
     "ballot_id": "ballot_0000000000000037",
     "credential_nullifier": "sha256:d78c17d5451ec086a47f44b3ad0b1f15e3f1d1d621a101475aaafad018bfd761",
-    "credential_proof_b64url": "xmRSHCpU-HjqDTgU4Xt0D_PoVjTrg3UTTicwifbBWetlbnObXTdJlA6xHvp4ptBT9gW5CT6BWBmmroKprdoQAA",
+    "credential_proof_b64url": "65sGSlI3iV-vC1cccTkYuM-8mQe481nevcTfxVp5fUAHuLohxs6CEUCymX71tBfJvkMOHuXhwyq_uxcFh408DA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zNiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zNiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -446,7 +446,7 @@
   {
     "ballot_id": "ballot_0000000000000038",
     "credential_nullifier": "sha256:692d7ca68d811a10f8370fbef8a386b9dc97b783f81db4718b0d6450166f6830",
-    "credential_proof_b64url": "GKT-gBooYRTPAadWyOMLgdVrO0FtoY934lCIgGi2TztZ7YdcXEPhOZg5XTX_lT4lXGVDw9ZiGZ_JAyTmfvBgAA",
+    "credential_proof_b64url": "KvyC-okl4LOPHDp9ja_n3zGI4Nbpy5i1MN7IexN_00mUPUOb3uEIiRMdj5BF1EQoaey0eAWQ4KFWLrDwKh1KDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zNyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zNyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -458,7 +458,7 @@
   {
     "ballot_id": "ballot_0000000000000039",
     "credential_nullifier": "sha256:d02082f2a756fefdb35d4c7d73c380645cbbcf1cff035e915bbcb8ee8fb6adfd",
-    "credential_proof_b64url": "1lfpt4TGrAwut_lGJj7UvcgdjkbLuKi6AYI_wPg6TPhi2ANoSqeTpmsjGpoAm153_2U1diAcYE_Laiapz2E9Aw",
+    "credential_proof_b64url": "rJyf_6L53lBW9w58rTcQahRSWFVe8OJEH7G5OAalBfh2Pyqol1ILLDLCnaJu8GaiV_iRscavjCDl8aEeUHPsAQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zOCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zOCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -470,7 +470,7 @@
   {
     "ballot_id": "ballot_0000000000000040",
     "credential_nullifier": "sha256:cafe6017bcb36ee5126558a2cdd911e8d3fd35fed50fdbfea7e738634dfff43b",
-    "credential_proof_b64url": "E9zLWxxirs7nn5_y_Pa7kTmgRFp7GKVFi_EI9mjVE8ZH4P8NGuS-3YPjinEF-oxOy-VDBMJAausm7kyb0u_xCQ",
+    "credential_proof_b64url": "X5Xhw5wG_x65MTURmI6Fpvrllkn19gnCsL4D67HEUVAl_ItdwmHQwOTyNZjFBxLy9KxoeKz0FfZy2AWkoBYkAw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV8zOSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV8zOSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -482,7 +482,7 @@
   {
     "ballot_id": "ballot_0000000000000041",
     "credential_nullifier": "sha256:997848ef4ca72100c6202bb0323db84bc55671a8cc7f8acc154a4399e76c7ab6",
-    "credential_proof_b64url": "acgMZX2zplxB5RDxkCQZCO5ddu9bnYh9LnCNTjZyLvsJ504wRvL5Oy4ZMeg4bFda58DzKkbZqf2yL0zW8Dx6Aw",
+    "credential_proof_b64url": "uKPQSQO4qnQYl7xoc-Q4MouxaR9ugLkrkKH1CiN2WF5nKaYdsWaxyAq0o-Qx56ZVrns6UjTFv5G5wqWnxDcEBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -494,7 +494,7 @@
   {
     "ballot_id": "ballot_0000000000000042",
     "credential_nullifier": "sha256:d2cee8c2427a22aff15908bffd88409da0d8293c640e80f8c0d982ec28a7fc36",
-    "credential_proof_b64url": "eKxwcXK25UqEz8BKC5VlyR2HMxGOE7-kASJefethtEONzphV22V3sdOLTfaoI7SRERjzfpbakr1G1LsEupB-DQ",
+    "credential_proof_b64url": "hI5OSqM87o6ZZtDyHOqy3E7CXMtRxciBSnaAT_J-bg7OOEFSP_m4Bog9fvq5KDeXDG-8u4tXZc8HPOTLpZB4Cg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -506,7 +506,7 @@
   {
     "ballot_id": "ballot_0000000000000043",
     "credential_nullifier": "sha256:942e4a0cb30ffb9d39c073aa00424c7e06806a3361fd91ba393b00dca5684284",
-    "credential_proof_b64url": "8Q69mROifWeMJ2lE32Ic8XImRTPPBScZHF-fjxxagjSSG_TYGPSW6446UdlMiVNcx5iDjblFvJn1HZMFNDEJAw",
+    "credential_proof_b64url": "99SZM2OL8IjOn_HyC4qmRanKI3XdedEfbG_Ex9rvBTFvUScYge29DGuzEpEmRT8Ea9hAzu3zVEakfGUKTo3xAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -518,7 +518,7 @@
   {
     "ballot_id": "ballot_0000000000000044",
     "credential_nullifier": "sha256:896a3632d5f744bc274437626b3682120a2ce7c890dcd538ccdb5193fa5e08ab",
-    "credential_proof_b64url": "nrHLfr7UMTHrmFvYC5Ovg6ALdMiHE4onZfUsjGXPvYLjhwo_AspJn4eHF81ZPhCQD7UJk7s5JcBY-nW7rncMDg",
+    "credential_proof_b64url": "XxqQh88wDSDmLm261Olmz-BzKpICUxEGRO-wDhdv-84Yrgdm-FfOMeo42rA5TxvOll67gMo2IALyObk2SYyDCg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -530,7 +530,7 @@
   {
     "ballot_id": "ballot_0000000000000045",
     "credential_nullifier": "sha256:57d39f9a98e52b3ed7f5d67b9624859e82d85a15e34727ef21da8f3645ab7f07",
-    "credential_proof_b64url": "vwlOtlIhJUzZTQtNWdZmzDNzAJ6tyzOo52jnP-nace5VFkz3apMptkSuyF5SOhC-3DvREvm30m88eOq-PpjsDw",
+    "credential_proof_b64url": "PkURhhZetnYrmaYOdw9FlnwCNERA5FyJUMi-Ip90peB2Y8hjwr38qNxaGExhz0N4iWg2kfTWJGUo7ysn5ZTnDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -542,7 +542,7 @@
   {
     "ballot_id": "ballot_0000000000000046",
     "credential_nullifier": "sha256:4431d572de2d905666be9b3e2f710e3d279690dffd78b75a336036a030b4c44b",
-    "credential_proof_b64url": "WXobdFZ-G9WmEaHD78z_74QhU3fMNLM3OuYzRFbrAluvWqqPPQnbfMuorehYQ4UpzxebBAAVOCveSzTgo8dUAw",
+    "credential_proof_b64url": "xzuCsxjaWJii5vKkeHmBCdqCOl2aOblasVcOSRHllic8vRIkILKtebUSetwfUORZr81C6tuajhfIOQ1OkOZRCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -554,7 +554,7 @@
   {
     "ballot_id": "ballot_0000000000000047",
     "credential_nullifier": "sha256:8af03d0f5407ba1d989029705e81779952229dcdab1dd3a57dcbb269c1750c5b",
-    "credential_proof_b64url": "_waSuT_UMm8CFxuB2VTUivlctbAOgi-3UUhzBF0bLzTeeS-8FK1wjzxPhI7GH1LbvFgNyNeCcXgYt5Rj6hQ6AA",
+    "credential_proof_b64url": "TOv3vxBG6w_pyFMX1auBmoFFjm-iawiJ2OvhsnR2r6Sf6BrypzX3_t7zREZ2bgMXB_hCGqDw8rohUGxTWdIICA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -566,7 +566,7 @@
   {
     "ballot_id": "ballot_0000000000000048",
     "credential_nullifier": "sha256:ffc002a0c03a3df20d526b7748d44be3799b5e7d25568b8da2b7b68014135ced",
-    "credential_proof_b64url": "2ZbEMzmhgWRNuMdQAXnufk0zxFTwI-PXJyRGhgSnUR7-CpywSNo_oBKqemMRZZVKOjRLQKvBJ7UUGd6p50IJBw",
+    "credential_proof_b64url": "5W9zqf6sTP1eEi6Ocr7J7j9v56ThVp_eR5E70YjiRiQ--lbxlODBnRaY5Gb8AWuIolnJsOl71dSqQfL54vToCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -578,7 +578,7 @@
   {
     "ballot_id": "ballot_0000000000000049",
     "credential_nullifier": "sha256:1f4812dd98f8650063a8a79a7f2893455d80f3068d4c697a3f5a0877338e39af",
-    "credential_proof_b64url": "yYqJIyJNnInBNliFt_lanXZcLZ_LYf8uonueCOUBkk_frATwcHXKKZs2Wjoh1sY2VmgiH-9wplcy76dQGkmfAA",
+    "credential_proof_b64url": "-xK9VPIcUVWbcrPxcR-Mcuxz3Z8sUg-PuSwUk82zByyA7UsP3dporFEUk-2-WpVAGaeJGCRMfYHT9EeCvB7SBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -590,7 +590,7 @@
   {
     "ballot_id": "ballot_0000000000000050",
     "credential_nullifier": "sha256:120a0eb52e89db0fdfa5f511fd46bae36c712f4d91ff9f59f574822a544b8f6e",
-    "credential_proof_b64url": "PXiq-S1oBeNMR9kAY7KxC90Hhw0IJCx3yoxZjPrYlLdCdAZjDvwJafGpy5aSQL1QlN8TbVgsNx5hOjcIb4eUCA",
+    "credential_proof_b64url": "CdB1_mFLx3qJPtUzcaxdHMNpR1qKmNcgt6j6qHzTyuZrX-IpAQ46e32HPV54i9iUxkdutaqyHQX1KopCMh4hBg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV80OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV80OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -602,7 +602,7 @@
   {
     "ballot_id": "ballot_0000000000000051",
     "credential_nullifier": "sha256:9febf47b5e8813ddf5093252afc1b2c2a0422ddc688cea0e1b72533e8a9b6998",
-    "credential_proof_b64url": "EmAqim_ii48azj7YUrZxSPBsVz-Qj9jXvdUZ-iTlYSrLBoyWBhhO0AzbxiraSonsgbTal7U7sg0tiE1bOK9wCQ",
+    "credential_proof_b64url": "1rjEby9388lwVDLO_1buyBHSwa99hEg-wH7YvY8HOCe-V5vE3dRjyaIeT6ovPGRUMTJdAuyF3WTY2JdbuPqPDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -614,7 +614,7 @@
   {
     "ballot_id": "ballot_0000000000000052",
     "credential_nullifier": "sha256:1180eb22d5ff9a5460ea71b53bba5dd205435670897651911d497eb024de0c9e",
-    "credential_proof_b64url": "9ByBkSEOVDkAFu7dJzqD_K0KSDJjO5qW9G95oFSeA1QZ-sCsqaU80UxGPzEnwgi3Q4FFyEncBJKrBLoP-cifAg",
+    "credential_proof_b64url": "L0-r-r1CWDEOxK4mrad6EwQo6p5mOlYcWQvW98WL_gVPiqjevGSJhSd0R3reESt7K83F995XtkJpqMXQvzV1BA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -626,7 +626,7 @@
   {
     "ballot_id": "ballot_0000000000000053",
     "credential_nullifier": "sha256:6444822149f57e8d7ece337e51eea5c00791f566527d0cd84935335ed265203e",
-    "credential_proof_b64url": "Lgppsm0uU_bWrqUbZ1jdV50bvsldfEOZesjLSvKaRE1XtfXPQxPghRbM-Nysh1h5l544BxPHWysYInX0pf91Bg",
+    "credential_proof_b64url": "iB41Kg0ESA35jniwWHrxQq9-r8i6pMPW73oq3oehBj_IVR7EY-uvhMiLLzb80QuGDG5QaWKsroXVrcWb1EfFDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -638,7 +638,7 @@
   {
     "ballot_id": "ballot_0000000000000054",
     "credential_nullifier": "sha256:80b8ac8eab8ab90114f79e0863a68f644f4ddd690bb91bbd12704fec0a473563",
-    "credential_proof_b64url": "ln4pJ442thOw5iG6UMXdwc5SXdQ340sew0MEDrSmtK5cPn85hn5GDSukBrq9bsRLer7bZbDWP-wrElWTcv_GDg",
+    "credential_proof_b64url": "7CDoiqHoudp7SxtE009D0gOgHJE53GkScvseFfHCilGL4QmkMN_W8QbkIO31-jeSNxpz3WTBvWOXvnUStSfdCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -650,7 +650,7 @@
   {
     "ballot_id": "ballot_0000000000000055",
     "credential_nullifier": "sha256:5e70e209c14f8b5f0d2f2a6c8ea87abf0ebcceb9d4bf7184fd57c525d9222ad5",
-    "credential_proof_b64url": "jKZIDbIHzcgzRFtzpXecWCS_NZifnrl26qOeAcI7uoV2s33iu1Ibd88cw4rktsJxKFw5sUArlZmzs2xD7x89Dw",
+    "credential_proof_b64url": "my91tGv6LjUZCMDdMHXl37BU50NNpW6fWD-loTODThqAz02sHNUyB6aYhzcGUUfnGyV2_pudTe5f683pIq0bDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -662,7 +662,7 @@
   {
     "ballot_id": "ballot_0000000000000056",
     "credential_nullifier": "sha256:280f5e4c6a184fe435dce6756cafbe906311adbf8559a991f06dcbb5075a355d",
-    "credential_proof_b64url": "zCAv79WQAWEmRTDl60NuirOugNkPTUZ3HgUH0s1s27EGOC-kSCWmjCi5Z5p6q5z0xZlChrpqtGJzAU2Xg_Y9CQ",
+    "credential_proof_b64url": "78mxv3dgmCs7f0ocKbPMHcn00QRv49JfgbxjCA7BcHkAnaiTi_HoM-va1nkI08ULDOBOGGajwB9r4pLd02WHCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -674,7 +674,7 @@
   {
     "ballot_id": "ballot_0000000000000057",
     "credential_nullifier": "sha256:6319bb2f01ec54d83af0bf260d7cd4a1f033a573eb50a9ecadc3e5499e4df5e1",
-    "credential_proof_b64url": "b6y1s2AC2OEUTGGaNYjpJ9L23H6_257oWbLcp6mMFwxLIAvR5hBUDYja7rAcxx-Ma8jx_9fykEqNFeJjVIBCCQ",
+    "credential_proof_b64url": "i8WQ3Cnvd2bN1sYrse1xfHkTB-uOpKGeMMRcna92HUFNqO0P11zQxkFpAiZ9ua5OKDNS0VDBxRcvmEa-ZJd2AA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -686,7 +686,7 @@
   {
     "ballot_id": "ballot_0000000000000058",
     "credential_nullifier": "sha256:2d85efa724c7662fa93d12f61ef5e4afef9037835fb97f8ca0f483f9c0697a31",
-    "credential_proof_b64url": "7Du8KJHZ6eLHg8T1X5SizsZBseb7naB1LnZ_eH5zE2Ek4B0QoOMM_sxw6r01E5_YN-tevZN5b-XFFzFBgfJdDA",
+    "credential_proof_b64url": "GKWHFk9kMr8M4qzpP8nnUmfJtUFYAp9D7lIqYCUD9puEhNPpcEOAmD3__fgkHfgMJtNGQ_3hGz5bl2wLVFulCg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -698,7 +698,7 @@
   {
     "ballot_id": "ballot_0000000000000059",
     "credential_nullifier": "sha256:99c2821b7cbc77e34cf3f727cf8e9bbc9e278ccf9295690fa4c00bfcde819f71",
-    "credential_proof_b64url": "oVhHQeSvFmwKUIG0Ef6REDG-s7YJXDcePpPu01CSiMr-NlpHUvGCL2-wrOWKUW70qCTkigHeqfiKvApB0BSzBg",
+    "credential_proof_b64url": "8rPzTxSxVbvFZ1FKaVIa9Z3YN-nJubLX_w6zLcUzNDu0nVYzzji_uikNxEhfOUF8JXpHTUMUq-R7J4L6f6GWCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -710,7 +710,7 @@
   {
     "ballot_id": "ballot_0000000000000060",
     "credential_nullifier": "sha256:72e63ee3672a6f1389a6ec89c34ae01aa6aebc236523665cea96546d8e2ca683",
-    "credential_proof_b64url": "PVOEkLGgM6M3PgaFNWdTuAPEE2WXnTxl-sAntmI77IfzOIKG5vKiVFSCJCFDHlEqmWIi5nh5p5BReKdx37bGAQ",
+    "credential_proof_b64url": "jHNtQz0knuxNh4D6pEOJ75qVdgrIF4KVuySHvmaqhINZhex-G4-XwZQGaH5HAUUnJX6yZH5ShsmBZEonQY1SBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV81OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV81OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -722,7 +722,7 @@
   {
     "ballot_id": "ballot_0000000000000061",
     "credential_nullifier": "sha256:eb6f8fc3731998700a06a9925f5fcd4a15e9cc50a9be8fdae17562bae99e3ea6",
-    "credential_proof_b64url": "iTI0-0R9V6z918c11WFBbNts8bl5jYOE-202LVhIkx7F2XKhBGHDjpKsgles1iVxhPbs498_bkxBQBcb0YJ9Aw",
+    "credential_proof_b64url": "znGv8j78AeZwUSEHbZAeXqnheDV8-YtoeyYjDqiUGFeSFypgLuj0eGiuGbqJqmWdYgMafYSF5E6w7puJfR8vBw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -734,7 +734,7 @@
   {
     "ballot_id": "ballot_0000000000000062",
     "credential_nullifier": "sha256:ee8827316a66a31691b207134491e88e229683876eb8740455dbb1a2d3d6f6ff",
-    "credential_proof_b64url": "2VJFrDJcSgM7lZdf0vx8ozWxGmHwCw2eujuYjI9NezYQINay1BQK1glaaWidhHJpOCGCrMwJV4saErfRZgx0CA",
+    "credential_proof_b64url": "OYoYbHKVPSxq9dvM3B7l5mSCW_5uq64t37mkad6ZJ_q-xctTrp7pg5Vh_3k88UjsKCRTWUQgdp6ew2KSjOrQCw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -746,7 +746,7 @@
   {
     "ballot_id": "ballot_0000000000000063",
     "credential_nullifier": "sha256:749c0a4381873a947b28db76ba38be06fb92b9f23162871bd2e71886731e1a2b",
-    "credential_proof_b64url": "h_vYjxOvQMZqsiEy6YIu1pHTSV7hke7icm-zkUq4joFSOc8LOdbL0wNZt_ItDKHkqi8SvRyTQohRXZ0FX1oEDw",
+    "credential_proof_b64url": "XH-KB56Jlxi17CARTKz7n3ss9Cbx3F5VRcyYTr7zrfOZuxZlCmgJWInl7RYLrHXJLSoVrqpcdQ9iJV_r45qNBw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -758,7 +758,7 @@
   {
     "ballot_id": "ballot_0000000000000064",
     "credential_nullifier": "sha256:3f5fa3fb1631e3e3e0d82d11ac61804d4149b1f410dd68136d62e9f365062e39",
-    "credential_proof_b64url": "yf8wYgl7bCKX9fU1KWF8Wv8q_JxlRHUvVDvFSfWEu7BimhRTVzlBQa0k9020yQ_zqOS7RPoQcuxHu7KFUmWUBw",
+    "credential_proof_b64url": "PCRUtvu5Mmtm4_lK2IsT3D9ae3JClvCThZZnU8O5TPIWLMK23h3URoerpQmN4ezBdc_mUcvcvlxDzRV812upCA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -770,7 +770,7 @@
   {
     "ballot_id": "ballot_0000000000000065",
     "credential_nullifier": "sha256:a1af8e6ce4f33749dda23f26527f3bc1e2f4df644e0bfd1b572bf6b9d8830c00",
-    "credential_proof_b64url": "KsR2Czqn3Ge672_pOLNpt94uWH0grDu9J1VfgpZChxkmgdULe0mheSsddnn3TUoLv6hn-IXfRSFePoV459FlCQ",
+    "credential_proof_b64url": "TGjOP7ka5LdEkM59-Oh8qXSZ1Xw2JEmcHaESP74ul73u8OAx49McterJlEso5Ycvd-ebkTszoBFh15Wb88jGDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9hbmFueWFfdmVybWEiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -782,7 +782,7 @@
   {
     "ballot_id": "ballot_0000000000000066",
     "credential_nullifier": "sha256:cd996c69df778321ee538c3f6585eb9b810f07dde2ea2a22ecd91d9126714e48",
-    "credential_proof_b64url": "380sB8kpQlEcvP7s46wRntWQyuyiQA2gWK8PxPMpIMtNScrlEv4ZFCLfgUBp5iilHGW_dtcPOBbA9OPLLqxIDg",
+    "credential_proof_b64url": "Ekp4qng6-crCvOTfWH0uO4bJqVGOjYRvB44Rg48Xf8nJMPJPE_m6BsTcmM4-5EQNurqBX7fkB9v6JAHavVTaAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -794,7 +794,7 @@
   {
     "ballot_id": "ballot_0000000000000067",
     "credential_nullifier": "sha256:a11807659fa34ec469645d701c17b8d43c136eda4f89072c176c4b6e183e017e",
-    "credential_proof_b64url": "pxWvton1uJtDrKv6uSCqBBrCvx7AWvgLyeIQGLB2x49g6rzuhX5UllWFCaqGsTL4ps-N08Auklgk6Btm3gU0Ag",
+    "credential_proof_b64url": "U61aB24Y9P1D_VsUp0pSMZr5uut4dlAsHk688rml7JAkXuRzuI9dleSKJwOA_OeRi_Yfit_s60jqycc9G7k7BQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -806,7 +806,7 @@
   {
     "ballot_id": "ballot_0000000000000068",
     "credential_nullifier": "sha256:fc58434f6f9909bce6b12653760ed52300b27a1a3d28a4f5382919fa05b0d17c",
-    "credential_proof_b64url": "50Lvb5WtssT3prMu7N4yt5k_d3CxYluPsv8vc1uaQ4EwdZ9k8y5QpqKGJwSfS2_3abli8088TPkueQmWmhgtDQ",
+    "credential_proof_b64url": "FTnGiQ1pqP2bNop0Si0asnw6fvQ6WV8uWx7hY9p47eeaz3xi_RdKH9k4F44vIpb367IKCWwP7Ia22tTXPGniBQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -818,7 +818,7 @@
   {
     "ballot_id": "ballot_0000000000000069",
     "credential_nullifier": "sha256:0d49b459b333cb301a4b398943fdeccd75da6c832116b8e5202c53a8aff7bf04",
-    "credential_proof_b64url": "CcZAaShYcOylDuEOw0uaiycZu0gVHRKFjeWl0nqQwbQZ3roDjNVsHAKwRE9Kd5iABwEuXl000NpVuNN51PiUAA",
+    "credential_proof_b64url": "ta4-d-OqaJSaZzCqC4UszcJKFGDArub0cLnOhnelR1mC6R8WccW-tq3j1OHuYoJXVy7g4QxMsLarwxDqUlcbAA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -830,7 +830,7 @@
   {
     "ballot_id": "ballot_0000000000000070",
     "credential_nullifier": "sha256:3cc680a48d81aceec7d7409d05d05e3a58e0b1f398af76789aa5204b24a94629",
-    "credential_proof_b64url": "FDfOmfBbn_4IOwlN2EGpdvxGEMBxSLCumh8vDi0Z3WHvet8UwSm_GExp6b4x2hzULapgMo2mR0cq2UETUvkzAw",
+    "credential_proof_b64url": "bl_rmbfkh2OUmDvzOOeIqGzQofUZEJE8z4UppNJnFHN7P-flTWCjqaYFq4c1PJLVqEARJ1mO8_Cgffpdyay2Bg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV82OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV82OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -842,7 +842,7 @@
   {
     "ballot_id": "ballot_0000000000000071",
     "credential_nullifier": "sha256:4a3a9f59a0a227cde00e1985871501a40c5462bc8213ec3948544f35f7a952d6",
-    "credential_proof_b64url": "LKTTQRp1fGuIDwePtALh6Hyl6wdrq7sqdu9YG0mZESvNp2-iJ4xGJKU11fXi2HQxb-15wcI4JBGR94XCJ56WDw",
+    "credential_proof_b64url": "Qd3jN5c5VK7OCY095N3K399D4Gs1xt_4qN-UxxLNLyEUSk8qyq7MKHd6w9jJA-rIqt4PihM4R0CMHZJXNCruDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -854,7 +854,7 @@
   {
     "ballot_id": "ballot_0000000000000072",
     "credential_nullifier": "sha256:140c02885fb0d0affe27ef83f455235761d5a35978b68481ece82a2bc71eff8c",
-    "credential_proof_b64url": "4KgkoMjf4nY3vVAnGqhVZFXl-UWg5jlr7y2ZbidXgcQ5nNn4niv3qfv--nT-XNjtLFdz_MT8toLt1WGgePHkDw",
+    "credential_proof_b64url": "1LHZkiW57XT0qRADnM5G6fFL7g2-BeeBDuWkQHE9mXjoNfsC0tIB_uQpP1ERvh56rEQFN3f16h62iwbDq_k6Ag",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -866,7 +866,7 @@
   {
     "ballot_id": "ballot_0000000000000073",
     "credential_nullifier": "sha256:10a7b8a65aa52b6ecee9f1a34b6669cd25fbd22bb0ef6afb6e38aa91eaf691f8",
-    "credential_proof_b64url": "cWM46xr0SJL-TkSYG-bpn6wpoLYwOtA2ApcOCUrcHzevnUiH9bxDF9f5SCuClxeYXIO3VvbLexOF3RIwbHxvBg",
+    "credential_proof_b64url": "DoIprYUNceR1_yHINvVcikau87MT0Nd1pvoS658-Efp4NkX1zeITFIWdlAeWbz7uHpZ_QbVyUVEXRAXVMqHODQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -878,7 +878,7 @@
   {
     "ballot_id": "ballot_0000000000000074",
     "credential_nullifier": "sha256:dc2bb04dfe0f0e1ae42282a2330459c7e32ee0b6136006799b1a06fa248b280a",
-    "credential_proof_b64url": "FwAT8zb7rZCrrOOfN69jshDyTMb47UIHYhB_8ogcO40qODK4A5d___RR08iapgjDTvrVffYRoxb_Edvk0kWnCw",
+    "credential_proof_b64url": "XF1GMXnteVdVm7ZfQEycUOARaAOLS_JxtAcEUl-drBXwXOLsT5N3cmba0PGaodp5B8sXvIBEj0wbOiuxD3NVCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -890,7 +890,7 @@
   {
     "ballot_id": "ballot_0000000000000075",
     "credential_nullifier": "sha256:a1c5ce90b67a1077253989073e0cda0afd4c84340a893ea679f88cbb01758a0a",
-    "credential_proof_b64url": "al-1700rb0cZZfu-F86mzSy97-RFKldDOoGFwCKSi15xOI7xxlzSK9PAA_SQINcMPN7GDngXcLPNESYg89exCA",
+    "credential_proof_b64url": "omA8JXApMdzryUY5I4gL31ugRhpvrpnj7XAWvLs7ehOaPR4MET7HPqd_W5xwpM_VnV4en72cTp74FAH-l8-RCg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -902,7 +902,7 @@
   {
     "ballot_id": "ballot_0000000000000076",
     "credential_nullifier": "sha256:c2c8f4448990ce3607dbe9cc7d75560b73aba541512b9605e4185a6dc10f3a90",
-    "credential_proof_b64url": "9oq7dcNbE7pqDhrXMBsacc-mUMgkzRzla6M175IPr3d27tBTN9LsK1199wPVc0X1Jfv2e-IeW8Zp6gJ17fKqCQ",
+    "credential_proof_b64url": "9Pw6DGNtBPrlQAaAAq-dJ6ZLQjQWk_qSm8M08UaUSbD8vFjht4T83omSKB1R9WQlrJ8jqCDso4TbrNFAld7qCQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -914,7 +914,7 @@
   {
     "ballot_id": "ballot_0000000000000077",
     "credential_nullifier": "sha256:abf80c0fc0b9a2542296ef9239871d8505f7b8ddb9dcb23184ba9f3c39227309",
-    "credential_proof_b64url": "v9uIOZ-19mKfcR07MpMwvG9mrnlUFJx5HkmfM0DsdS2iIMF8H3Bp-DeC_hZ9zQEq3uvs3FWwjG2eTGYuHw7IBw",
+    "credential_proof_b64url": "dw410py2db839rDi2OCdHTWXkSoPREQ-YV76nRGfXs9fwK9fX4GKjETKOfKWI9rDPxpQvtIaIc4m47uvWxQcAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -926,7 +926,7 @@
   {
     "ballot_id": "ballot_0000000000000078",
     "credential_nullifier": "sha256:a2a9917535105d932c4acce3225cd68d6cd76c929c22e9e818e7aa96670f55c3",
-    "credential_proof_b64url": "_HTr39Tq3aitz4_Sw_stvWVwD2n0Scvsq40MDobKpUxHfv10TKYSk_Wt8Zyc15DWSbkndKzErz63XKJ8JZKECw",
+    "credential_proof_b64url": "mzBrwWvDmmPnZrFrLypmNjDQksn9hXNywDArmrUfAaAOustm6iSsvs-IsThxw_gvNTJL6p2uTKiqVTTFbVtGDw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -938,7 +938,7 @@
   {
     "ballot_id": "ballot_0000000000000079",
     "credential_nullifier": "sha256:045c0f0701a3280d81696da0a291a1e8196762b4c9d33259bccd2af1abf269bb",
-    "credential_proof_b64url": "6E2btFgTeEGii1MztiwlEL9RgHDwCXpw998VlHIKfFpP4pwxx_c6DGNDZu5y4DD61rKabLsS8W-uWO_wLe1ADQ",
+    "credential_proof_b64url": "BTjAMBWtUkaA3wzf5tkCI_Er6a0GA61XJ51BDGs0ybtMHp1uoxHlvt6YZyRYXE69xc2_ZmYIxP4zVVGP0a5ZDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -950,7 +950,7 @@
   {
     "ballot_id": "ballot_0000000000000080",
     "credential_nullifier": "sha256:1701549d0b470577c6e91c02fdc29881ecf9f50a364ae188634b8d608ae0ec63",
-    "credential_proof_b64url": "yRP6iuaBTs4teGUbR95orTa_ewrDsv_HSWQDTikJCf-klNorBWYqzc4jDn_9vUnf3h6AKA7Ir9ftL1_HSC4yBg",
+    "credential_proof_b64url": "dBazM4JiwUIKXWWCmW1Tjkgl1k69wB7QcN_Usk6W3fw6rQ6IKxppEJ5kSbxnrqBc8imFNt7il5OfijYfnndDAw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV83OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV83OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -962,7 +962,7 @@
   {
     "ballot_id": "ballot_0000000000000081",
     "credential_nullifier": "sha256:941bf5d99befbae9af6e39748b137dd48d55de9361047bc267039cf5ba3e6e11",
-    "credential_proof_b64url": "I6I02VcaeYckd4rbbICcoFhDuC7r6vgex1TGSfpw1LG0I7z0n3xuVlr-bJj4iUxABuYXwFPMR7f1jJvMUx2dCA",
+    "credential_proof_b64url": "qhzKZ9fMTQ3W3Rh_LhogoX61RjDXzJQmi_BQu9MfS0F5b53aZnroTUi2fG_SO-QE5Dgpf4wRnj0qYckg8ZUrBQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -974,7 +974,7 @@
   {
     "ballot_id": "ballot_0000000000000082",
     "credential_nullifier": "sha256:d79c0577d91619fedc064ee13c61094a71cd1f6b1ac60975ef88b037cdef073a",
-    "credential_proof_b64url": "CYI22lwNj8L_jE6U3Kk9aI_1NGqRFUP2zgPtRvD1LnQ8aaI4pOaSr11z_51YypMjcsDg0VWiyGUXoAZDhHnpAg",
+    "credential_proof_b64url": "Br6rmpHFqC0vQJtm_C-tbUsBrUVtvpQFSkFtQT0h8dEAn9N0ehURjCp_nzxf9qlPoSKG9bHMbT5IDiI3oG52Bw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -986,7 +986,7 @@
   {
     "ballot_id": "ballot_0000000000000083",
     "credential_nullifier": "sha256:0b18131d2150a6aa330de915c1641e5077f7b139d83ee7e06927938949cb0fc4",
-    "credential_proof_b64url": "CEwf80L_nVIPJJK4Bx6Abn7QvjLrsw-9UHno9m8fXJ10_h7C1kJKWlPKl17V2ND72CNcpHdYvMo6I6cbGHHPCQ",
+    "credential_proof_b64url": "qBUkc0NENR8USB_XFnfrBDbXQ6ebmhG-wwwhGuqH_5R7lUzlS3kM-rx3L2doTk2g1Ava5dQ1c3C8rA-_ZPx3Dw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -998,7 +998,7 @@
   {
     "ballot_id": "ballot_0000000000000084",
     "credential_nullifier": "sha256:3b793d1e6a13a50ff4a345b97a0d146931c948fdde3ecbbceadf71d0a8645758",
-    "credential_proof_b64url": "SQFjSf5Bg-oEZedtgLHT4IbHcoqJcTn0WIP8gUEWqVrVKirpeZbIvAWaiWGPu7Jif3wSoJgfgiaPH3_0bPSWBg",
+    "credential_proof_b64url": "-GIsJqOCcPslfpODbvcjUfpJYAnsT2Tx-Sc7_aW4dGaQlQ6PytJT_SOZ1_V7DsYAV5ZiporbY0SuB1--J4DZBA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1010,7 +1010,7 @@
   {
     "ballot_id": "ballot_0000000000000085",
     "credential_nullifier": "sha256:de66104cb6a6fa63c5540474849374153d596616531d60e319ac8faa5169e6dc",
-    "credential_proof_b64url": "2yDy0IwV-WkhyQZe2vxMAn56TwAEQhGWELx2fnymEIZScZO9KTpltaaKIftIvHnuYN5MWOnMlg16bDLmAW4iCw",
+    "credential_proof_b64url": "WaZW_9m_-p6lTxWOnu0Mqta-gNB2y1KQDfxLDdk76znAxKXk4Hp6dMdTfCx2sXaIX5-3SrQCrRFUH__IbTxQDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9yb2hpdF90aGFrdXIiOjF9fQ",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1022,7 +1022,7 @@
   {
     "ballot_id": "ballot_0000000000000086",
     "credential_nullifier": "sha256:b5284248fe33a948d1e4a0eb61d7ed80ee8911181884c853d123be1751b06153",
-    "credential_proof_b64url": "2wQJ2Bne4KlCU33zLJKW5RtcZHIY8WHpxS39NKMSRL9LgnjIlHFb3M0Lk3w1GHepkaMCIytqZH3CLg1sRlP-Bw",
+    "credential_proof_b64url": "FfzEykuN1mDgtUdkBzobYhPWkOp6TxeUUMjQibpENKnXMoSrKzrJDk0jtNaHcLcA3C_tMBp0xNtjSSOmB53MAA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1034,7 +1034,7 @@
   {
     "ballot_id": "ballot_0000000000000087",
     "credential_nullifier": "sha256:0200f87c46c5820ab4ecc1e3ac6f4c4d52f5668df5687482657a31c999656b59",
-    "credential_proof_b64url": "Q7FH6gcW9tDvpmrsuGGYN8BM-hIlrnDqU53Rle0a0YnVfzuu49Crr2w3G0C3xSbQNRTVdjbx0Ni-r48SBb9dBg",
+    "credential_proof_b64url": "HnoXk_Tmpm4Vih-1H5INEVI9BBdsKlD6Y_5kevwlrcpNpESwQNr9-afmVfFjny3IjQpgifebCIom_wd-BcwDAQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1046,7 +1046,7 @@
   {
     "ballot_id": "ballot_0000000000000088",
     "credential_nullifier": "sha256:a7b87bdf127997375a6eaa009e3d0a209001afb1c93659363f9189393b52cf80",
-    "credential_proof_b64url": "YvnIWspUZzemo7LIwj7e2YBuyhj9c0NO_jy7KaQr5EEnF22AZBqGMJksc6_dn06uiHcuM33_1Jr-IzJ4bZwaBQ",
+    "credential_proof_b64url": "M1-OIzUXrhFi6GorkBEh2RkJG_5MnW_E9Dq5KBdBe9zULFyAM7NtD1-nFvnkdPNivdPKuKdbcEVyn-1JGrCFBQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1058,7 +1058,7 @@
   {
     "ballot_id": "ballot_0000000000000089",
     "credential_nullifier": "sha256:ab6a9bd83b8ede4a93bd4bc678b553986c4c82b056014fbd8196534a0ac6b248",
-    "credential_proof_b64url": "TKagS4KeHTGumnogORe2zMPkkqB_YDw2FytuLcdO8PZ2iBs1now6OlbplvGJRKwP_yePLDWAIZaXHWLxTGRLCw",
+    "credential_proof_b64url": "rXdu_BwVhe4lVX419lZVLtm64TGK00JukzUsNe2xoOHpS04Fzb7JcIg6ivXK6RA_TFL2EJfZ9hJGfoz-oaJjAg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1070,7 +1070,7 @@
   {
     "ballot_id": "ballot_0000000000000090",
     "credential_nullifier": "sha256:cea38e252a13eac8509091fa82c6f1ed05d7581fc27dd1eb8004f24efed7c440",
-    "credential_proof_b64url": "1l7uZT3F2weHZ6RhvVrz_-6CjiSQuiRxRmBRI_o8pyEJVywgcpXINtOM7kU8hZYp5KGWTAeY76VcMP1-h8e2Cw",
+    "credential_proof_b64url": "hb_1eook1Yb2h9USn4qytSeuMVVxUyDAZjKndvimZzZ29Bv3LTi2vgtQnBhgsEUhH9HysS_bW4W-73cmt94_Dw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV84OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV84OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1082,7 +1082,7 @@
   {
     "ballot_id": "ballot_0000000000000091",
     "credential_nullifier": "sha256:bd69292e08a2b08a0f1a1a0ee130272dddf8467b05390b74c2c25b251e5b768b",
-    "credential_proof_b64url": "gQ-Iv8Ub6sDTUuBOmp9wQy7WIVLPgrhQGLc2zLCZgQksckGdZ_q-CBGpLC4-3EvVy_E8Z7PZmXHItrp3q9JJDg",
+    "credential_proof_b64url": "pLMVKpad2HfDigckEJXC6xMPcyT1FjQqRuQGJR0XW7nWxMlhUJhKX_7I9M4_kIAz3LVrAglCVJdWVsJfXrXvDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85MCIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85MCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1094,7 +1094,7 @@
   {
     "ballot_id": "ballot_0000000000000092",
     "credential_nullifier": "sha256:017f7695f88cdd8873c589feec1cbe23199d8eff87b2ef0d5b26e153af06ad70",
-    "credential_proof_b64url": "CTF9Tm9P_Ko0Stj_yqcBO6MEcR04hTHyqrz1JzbNxvvzTh4_ft_bTWL9NmgRP_-Dka0IUvQWEia3v_ADIT7IDA",
+    "credential_proof_b64url": "Spbu7jv7r_DbDhQNzvu1pNek7OjKSCY7zdan_-bI55vRossdAFPjQ32coOF6oGbOa0Vo8ctJs8cFbpOf8iiTDw",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85MSIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85MSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1106,7 +1106,7 @@
   {
     "ballot_id": "ballot_0000000000000093",
     "credential_nullifier": "sha256:00b4a722443cae4061ecb15f18746b9d571c603c1f788450aba2a9cfd92a64a8",
-    "credential_proof_b64url": "LQyAtMuBK1o6VdhbwPMR1MjGfiYGDyXMc-Yyp4PCXuCVRUSUh1SDblmvOw_hjlVKxEOeiiFjWoE-N5tBZ436Bw",
+    "credential_proof_b64url": "Vep5cwj8nYtwqXxavt99uJ88JC5ZVWYOwzuTsA63k337XwUe0BFuOGRINiBid9rOhNbN9z978SiKntzmwt9jCg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85MiIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85MiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1118,7 +1118,7 @@
   {
     "ballot_id": "ballot_0000000000000094",
     "credential_nullifier": "sha256:1ceb1fe3202038ff633216cac9d456bf0902b2b7c3bf46a8f257214f496db64f",
-    "credential_proof_b64url": "aA_zzRwcc8gQ838pFt0ra1Pfiv_wR6yQx0zHKVZCntNGfbfI2e62Uc75gxKmCq24P0mRuZC8z7XqK4sZBITUCg",
+    "credential_proof_b64url": "gTe_VUsvpB0IknfWVzTYhMY2eHSLwRAydFVhr6VshBZtpP4XZRFf_Tl_u669pvuj0IT6o-jUAoYF2UNxAk37CA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85MyIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85MyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1130,7 +1130,7 @@
   {
     "ballot_id": "ballot_0000000000000095",
     "credential_nullifier": "sha256:2f2da93354249c2897af72f5a1f789ca1e41e4b9e28eadebfbacb6bb1ddda1da",
-    "credential_proof_b64url": "Gy4fIQrtBlg7KTZal1Z1A-h12UBoYu2t5Dx5_9igapueFdMNdoGAPHyFP3fNhlLMzGXsaKl_X-fQJ3FgJ0EjAQ",
+    "credential_proof_b64url": "rts6hYTdkbE9XhA4nXBAEASf9qZbzZPnBE_39xMgL9qYcHSd6BmTnAr5E7CwGAnBA_WAvKPjAFDC3sqS45NaAA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85NCIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85NCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1142,7 +1142,7 @@
   {
     "ballot_id": "ballot_0000000000000096",
     "credential_nullifier": "sha256:b033c3563d0d95ddddc8e7ae228546e78be9decb9f12a749281a7059137f2188",
-    "credential_proof_b64url": "qhNa64270rwy_6AdbBZjCUgCKmc0tclG8FWc3rzda9lagAnVu4AlP8KggWxe98wfQBQ4EqzAa8GzEw7pi2OiCQ",
+    "credential_proof_b64url": "s0rK0OzI9cyXEP6rgPbqizXsNm5vhUUgSSIWN65laPwxjgS1B73el6EQgp7vRPabGKtEtg4JmWOnwLXgfEUHCA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85NSIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85NSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1154,7 +1154,7 @@
   {
     "ballot_id": "ballot_0000000000000097",
     "credential_nullifier": "sha256:579b3a7a53d15e5b27164cd0c56cb4d161f70b6de2bd9793e0fbc4aed10f5ccb",
-    "credential_proof_b64url": "NMWJWYpvceqWvVqTDoFDSmetuJEf-yQG2m0qv0XOko9tVj8zng7I8JPBxGrnzdlOfMKn-A911R_b6_ykTMYsAA",
+    "credential_proof_b64url": "9GTQBQJyz5SngcCQC4Vul53hrCP8C00f6XrLNtBLK-cbkbZrty873N8PpVEQ05UU-2OVJ2iNyxi0fONDEWKFDQ",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85NiIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85NiIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1166,7 +1166,7 @@
   {
     "ballot_id": "ballot_0000000000000098",
     "credential_nullifier": "sha256:3f9583b9928470927981c17ca9c26f1903f9fd23e610cb0bb37611e6a90c2ce1",
-    "credential_proof_b64url": "JJ1wotbfIq4U-xeljov-AYShUfZWTvFjo7u5kxpOO9FJbzbHk-vKsKeq6WK6x34jGUEqHrWwO1OT1F-8IJtJBg",
+    "credential_proof_b64url": "J9SRk3kbQytJCqe3yQywHMSsWyNH_0P4edVX7ZMdeVrSD58axV9nn2gUtIPb6TKxX9tsV_hKjYAgBGDmtJIKDA",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85NyIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85NyIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1178,7 +1178,7 @@
   {
     "ballot_id": "ballot_0000000000000099",
     "credential_nullifier": "sha256:b2c9723348d8617126728cb4f3fdcafee25ab5daea05cb090fea93b90b3be2d3",
-    "credential_proof_b64url": "6i93U5HJhI9hqOYVObcfDRkHik1w1r4OdVg71uIwfVovlgOKniqYXot3a7EkHCOuJxTrz577EXvbIZn6gPz9BQ",
+    "credential_proof_b64url": "M2XDIOnzW_rgEhO8vRcyyAuiT7Xz7iGwVX0pRU0P1tNTl0jFjIWzQz-9Qmq7Gh7NWX4ePl5eGxSS02FiGDEyDg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85OCIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85OCIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",
@@ -1190,7 +1190,7 @@
   {
     "ballot_id": "ballot_0000000000000100",
     "credential_nullifier": "sha256:7ac715d99cf1b7fe0671994c81f0f6af461bd43e50fcdc4b2ec525d7be7078c1",
-    "credential_proof_b64url": "peHPlYHEeWY8435VEUwU1CWMEqpabV0cUQQ3xzoFCyqRihf0EsZXkOo10J4td-u3L87DxNRZpmkzGv0A71WcAg",
+    "credential_proof_b64url": "vVtiaaMl2Ll3kN5iR45aUOoYiRuy2LjnIB0Q84OODUAC9GInAYatpzeonSgZ8ijf60oU8K2edNCUqFZJLc0JBg",
     "election_id": "elec_hptu_sc_2026",
     "engine_ballot_b64url": "eyJjb250ZXN0X2lkIjoiY29udGVzdF9wcmVzaWRlbnQiLCJlbGVjdGlvbl9pZCI6ImVsZWNfaHB0dV9zY18yMDI2Iiwibm9uY2UiOiJub25jZV85OSIsInNlbGVjdGlvbnMiOnsiY2FuZF9wcml5YV9kb2dyYSI6MX19",
     "engine_proofs_b64url": "eyJjb21taXRtZW50IjoiY29tbV85OSIsInByb29mX3ZlcnNpb24iOiJlbGVjdGlvbmd1YXJkX3YxIiwidmFsaWRfc2VsZWN0aW9uIjp0cnVlfQ",

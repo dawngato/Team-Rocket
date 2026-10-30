@@ -41,7 +41,7 @@ export default function AuditorTrustedPinsPage() {
             Auditor Trusted Pins Store
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Pinned public keys for independent witness nodes, identity authorities, and blockchain anchor contracts.
+            Configured public keys for the witness emulator, identity authorities, and development chain adapter. Production pins must be distributed out of band.
           </p>
         </div>
 

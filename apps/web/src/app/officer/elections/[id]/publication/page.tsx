@@ -28,7 +28,7 @@ export default function OfficerPublicationRequestPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">
             <Send className="w-3.5 h-3.5" aria-hidden="true" />
-            Publication Certification
+          Publication Evidence Review
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Official Result Publication Request
@@ -46,7 +46,7 @@ export default function OfficerPublicationRequestPage() {
             Formal Publication Submission
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            Submitting a publication request packages the encrypted ballots, Merkle leaves, and preliminary tally. Independent auditor attestations and external witness signatures will be gathered before the results become certified public records.
+            Submitting a publication request packages the ballot evidence, Merkle leaves, and preliminary tally. Independent auditor attestations and separately operated witness signatures are required before results can be described as independently attested public records.
           </p>
         </div>
 
