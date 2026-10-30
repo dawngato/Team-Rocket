@@ -16,8 +16,6 @@ PARENT = ROOT.parent
 # election_engine is imported as services.election_engine only. Putting its
 # directory on sys.path would shadow the top-level verifier/ package.
 SERVICE_PATHS = [
-    ROOT / "services" / "casting",
-    ROOT / "services" / "admin_api",
     ROOT / "services" / "checkpoint_worker",
     ROOT / "services" / "anchor_relayer",
     ROOT / "packages" / "himvote_crypto",

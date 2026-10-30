@@ -25,3 +25,4 @@ class RelayerConfig:
     witness_base_url: str = os.getenv("WITNESS_BASE", "http://127.0.0.1:8086")
     database_url: Optional[str] = os.getenv("DATABASE_URL", None)
     log_level: str = os.getenv("LOG_LEVEL", "INFO")
+    max_retries: int = int(os.getenv("MAX_RETRIES", "5"))

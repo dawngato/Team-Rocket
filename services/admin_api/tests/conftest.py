@@ -3,11 +3,17 @@ Pytest fixtures and test configuration for HimVote Admin API.
 Uses in memory SQLite database isolated for every test run.
 """
 
+import sys
+from pathlib import Path
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
+
+_SERVICE_DIR = str(Path(__file__).resolve().parents[1])
+if _SERVICE_DIR not in sys.path:
+    sys.path.insert(0, _SERVICE_DIR)
 
 from src.models.database import Base
 from src.db import get_db

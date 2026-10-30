@@ -12,7 +12,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-interface StateBadgeProps {
+export interface StateBadgeProps {
   state: ElectionState;
   size?: "sm" | "md" | "lg";
   showDescription?: boolean;

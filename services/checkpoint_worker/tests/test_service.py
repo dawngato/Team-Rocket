@@ -7,7 +7,10 @@ from checkpoint_worker.service import ServiceRunner
 from checkpoint_worker.worker import CheckpointWorker
 from checkpoint_worker.witness_client import WitnessClient
 from checkpoint_worker.models.database import ElectionState, utcnow
-from tests.test_worker import make_leaf, mock_witness_response
+try:
+    from test_worker import make_leaf, mock_witness_response
+except (ImportError, ModuleNotFoundError):
+    from tests.test_worker import make_leaf, mock_witness_response
 
 
 def test_service_runner_graceful_shutdown():

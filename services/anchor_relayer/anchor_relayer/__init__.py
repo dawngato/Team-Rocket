@@ -14,7 +14,11 @@ from anchor_relayer.models import (
 )
 from anchor_relayer.poller import ConfirmationPoller
 from anchor_relayer.reorg_detector import ReorgCheckResult, ReorgDetector
-from anchor_relayer.service import AnchorRelayerService
+from anchor_relayer.service import (
+    AnchorRelayer,
+    AnchorRelayerService,
+    Relayer,
+)
 from anchor_relayer.signer import BaseSigner, KMSSigner, LocalSigner
 from anchor_relayer.storage import OutboxRepository, SQLiteOutboxRepository
 from anchor_relayer.tx_builder import (
@@ -36,6 +40,8 @@ __all__ = [
     "ReorgCheckResult",
     "ReorgDetector",
     "AnchorRelayerService",
+    "AnchorRelayer",
+    "Relayer",
     "BaseSigner",
     "KMSSigner",
     "LocalSigner",

@@ -5,6 +5,8 @@ Uses SQLite in memory database with async SQLAlchemy 2 session.
 
 import base64
 import json
+import sys
+from pathlib import Path
 import pytest
 from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator
@@ -14,6 +16,10 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine
 )
+
+_SERVICE_DIR = str(Path(__file__).resolve().parents[1])
+if _SERVICE_DIR not in sys.path:
+    sys.path.insert(0, _SERVICE_DIR)
 
 from src.database import get_db
 from src.main import create_app

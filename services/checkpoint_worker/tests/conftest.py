@@ -2,9 +2,15 @@
 Test fixtures and shared helpers for checkpoint worker test suite.
 """
 
+import sys
+from pathlib import Path
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
+_SERVICE_DIR = str(Path(__file__).resolve().parents[1])
+if _SERVICE_DIR not in sys.path:
+    sys.path.insert(0, _SERVICE_DIR)
 
 from checkpoint_worker.models.database import Base, Election, ElectionState, utcnow
 from checkpoint_worker.crypto.signatures import generate_ed25519_keypair

@@ -1,11 +1,12 @@
 """
 Core AnchorRelayer service orchestrator.
 Manages transactional outbox processing, broadcasting, and polling.
+Hardened against blockchain reorganizations and gas price spikes.
 """
 
 import logging
 import time
-from typing import List, Optional
+from typing import Dict, List, Optional
 from web3 import Web3
 from anchor_relayer.config import RelayerConfig
 from anchor_relayer.contract_client import HimVoteAnchorClient
@@ -27,7 +28,7 @@ logger = logging.getLogger(__name__)
 class AnchorRelayerService:
     """
     Main service coordinating checkpoint retrieval, transaction submission,
-    and confirmation tracking with reorg recovery.
+    and confirmation tracking with blockchain reorg recovery and gas spike resilience.
     """
 
     def __init__(
@@ -76,6 +77,7 @@ class AnchorRelayerService:
             contract_client=self.contract_client,
             reorg_detector=self.reorg_detector,
             required_confirmations=config.required_confirmations,
+            receipt_timeout_seconds=config.receipt_timeout_seconds,
         )
 
         self.witness_client = witness_client or WitnessClient(
@@ -83,6 +85,7 @@ class AnchorRelayerService:
         )
 
         self._running = False
+        self._retry_counts: Dict[str, int] = {}
 
     def ingest_checkpoint(self, checkpoint: WitnessedCheckpoint) -> OutboxRecord:
         """
@@ -142,6 +145,7 @@ class AnchorRelayerService:
                     self.repository.mark_finalized(record.id, contract_block, dummy_hash, conf_count)
                 else:
                     self.repository.mark_confirming(record.id, contract_block, dummy_hash, conf_count)
+                self._retry_counts.pop(record.id, None)
                 return self.repository.get_by_id(record.id)
 
             latest_seq = self.contract_client.get_latest_sequence(election_commitment)
@@ -167,21 +171,43 @@ class AnchorRelayerService:
             tx_hash = self.tx_builder.broadcast_transaction(raw_signed)
 
             self.repository.mark_submitted(record.id, tx_hash)
+            self._retry_counts.pop(record.id, None)
             logger.info(
                 f"Broadcast transaction {tx_hash} for election {election_commitment} seq {sequence}"
             )
             return self.repository.get_by_id(record.id)
 
-        except (GasLimitExceededError, GasPriceExceededError) as exc:
+        except GasLimitExceededError as exc:
             err = f"Gas threshold exceeded: {exc}"
             logger.error(err)
             self.repository.mark_failed(record.id, err)
+            self._retry_counts.pop(record.id, None)
             return self.repository.get_by_id(record.id)
+
+        except GasPriceExceededError as exc:
+            retries = self._retry_counts.get(record.id, 0) + 1
+            self._retry_counts[record.id] = retries
+            err = f"Gas price spike detected: {exc}. Retrying when network gas price normalizes."
+            logger.warning(err)
+            self.repository.reset_to_pending(record.id, reason=err)
+            return self.repository.get_by_id(record.id)
+
         except Exception as exc:
-            err = f"Failed to submit transaction for record {record.id}: {exc}"
-            logger.exception(err)
-            self.repository.mark_failed(record.id, err)
-            return self.repository.get_by_id(record.id)
+            retries = self._retry_counts.get(record.id, 0) + 1
+            self._retry_counts[record.id] = retries
+            max_retries = getattr(self.config, "max_retries", 5)
+
+            if retries <= max_retries:
+                err = f"Transient submission failure attempt {retries} of {max_retries}: {exc}. Retrying on subsequent cycle."
+                logger.warning(err)
+                self.repository.reset_to_pending(record.id, reason=err)
+                return self.repository.get_by_id(record.id)
+            else:
+                err = f"Failed to submit transaction for record {record.id}: {exc}"
+                logger.exception(err)
+                self.repository.mark_failed(record.id, err)
+                self._retry_counts.pop(record.id, None)
+                return self.repository.get_by_id(record.id)
 
     def poll_confirmations(self) -> int:
         """
@@ -215,3 +241,8 @@ class AnchorRelayerService:
         Stops the daemon loop.
         """
         self._running = False
+
+
+# Public aliases
+AnchorRelayer = AnchorRelayerService
+Relayer = AnchorRelayerService

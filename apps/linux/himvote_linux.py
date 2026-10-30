@@ -144,6 +144,8 @@ class HimVoteLinuxApp(tk.Tk):
         style.configure("Nav.TButton", background=NAVY, foreground=WHITE, padding=(12, 10), anchor="w", font=("DejaVu Sans", 10, "bold"))
         style.map("Nav.TButton", background=[("active", NAVY_SOFT)])
         style.configure("Status.TLabel", background=WHITE, foreground=TEAL, font=("DejaVu Sans", 9, "bold"))
+        style.configure("Mode.TLabel", background="#E8F3F5", foreground=TEAL, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
+        style.configure("DemoMode.TLabel", background="#FFF2D8", foreground=AMBER, padding=(10, 5), font=("DejaVu Sans", 9, "bold"))
 
     def _build_shell(self) -> None:
         root = ttk.Frame(self, style="App.TFrame")
@@ -184,8 +186,12 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Button(toolbar, text="Refresh elections", command=self._load_elections, style="Action.TButton").pack(side="left")
         self.election_status = ttk.Label(toolbar, text="", style="Muted.TLabel")
         self.election_status.pack(side="left", padx=14)
+        self.mode_badge = ttk.Label(toolbar, text="LOCAL DEMO MODE", style="DemoMode.TLabel")
+        self.mode_badge.pack(side="right")
         self.election_list = ttk.Frame(self.content, style="App.TFrame")
         self.election_list.pack(fill="both", expand=True, padx=42, pady=(0, 30))
+        self.election_list.columnconfigure(0, weight=1)
+        self.election_list.columnconfigure(1, weight=1)
         self._load_elections()
 
     def _load_elections(self) -> None:
@@ -193,26 +199,30 @@ class HimVoteLinuxApp(tk.Tk):
             self.elections = self.api_client.get_elections() if self.api_client else demo_elections()
             mode = "Connected to the institutional API" if self.api_client else "Local demo mode. No ballots can be cast."
             self.mode_label.configure(text=mode)
+            self.mode_badge.configure(text="CONNECTED API" if self.api_client else "LOCAL DEMO MODE", style="Mode.TLabel" if self.api_client else "DemoMode.TLabel")
             self.election_status.configure(text=f"{len(self.elections)} elections loaded")
         except ApiError as exc:
             self.elections = demo_elections()
             self.mode_label.configure(text="API unavailable. Showing local demo data only.")
+            self.mode_badge.configure(text="API UNAVAILABLE", style="DemoMode.TLabel")
             self.election_status.configure(text=str(exc))
         for child in self.election_list.winfo_children():
             child.destroy()
-        for election in self.elections:
-            self._election_card(election)
+        for index, election in enumerate(self.elections):
+            self._election_card(election, index)
 
-    def _election_card(self, election: Election) -> None:
+    def _election_card(self, election: Election, index: int) -> None:
         card = ttk.Frame(self.election_list, style="Card.TFrame", padding=22)
-        card.pack(fill="x", pady=7)
+        card.grid(row=index // 2, column=index % 2, sticky="nsew", padx=7, pady=7)
+        card.columnconfigure(0, weight=1)
         top = ttk.Frame(card, style="Card.TFrame")
         top.pack(fill="x")
         status = ttk.Label(top, text=f"  {election.state}  ", style="Status.TLabel", foreground=status_colour(election.state))
         status.pack(side="left")
         ttk.Label(top, text=f"Closes {election.closes_at}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(side="right")
-        ttk.Label(card, text=election.title, background=WHITE, foreground=NAVY, font=("DejaVu Sans", 15, "bold")).pack(anchor="w", pady=(14, 5))
-        ttk.Label(card, text=f"{election.candidate_count} candidates   Election ID {election.election_id}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 10)).pack(anchor="w")
+        ttk.Label(card, text=election.title, background=WHITE, foreground=NAVY, font=("DejaVu Sans", 15, "bold"), wraplength=390).pack(anchor="w", pady=(14, 5))
+        ttk.Label(card, text=f"{election.candidate_count} candidates", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 10)).pack(anchor="w")
+        ttk.Label(card, text=f"Election ID  {election.election_id}", background=WHITE, foreground=MUTED, font=("DejaVu Sans", 9)).pack(anchor="w", pady=(4, 0))
 
     def _show_receipt(self) -> None:
         self._clear_content()

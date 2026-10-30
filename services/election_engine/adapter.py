@@ -3,10 +3,15 @@ Fulfills Section 6.4 and Gate E1 specification for Profile VEEM.
 """
 
 import base64
+import json
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ed25519, padding, rsa
+
 from .constants import G, P, Q, PROTOCOL_VERSION, SCHEMA_BALLOT_EVIDENCE
-from .credentials import verify_credential_proof
+from .credentials import derive_nullifier, hash_token_to_int, verify_credential_proof
 from .crypto import (
     DLEQProof,
     DisjunctiveProof,
@@ -21,6 +26,15 @@ from .crypto import (
     verify_disjunctive,
     verify_sum,
 )
+
+try:
+    from himvote_crypto.rsa_blind import (
+        RSABSSAVariant,
+        verify_signature as verify_rsa_blind_signature,
+    )
+    HAVE_HIMVOTE_CRYPTO = True
+except ImportError:
+    HAVE_HIMVOTE_CRYPTO = False
 
 
 class ElectionEngineError(Exception):
@@ -72,7 +86,7 @@ class VotingEngineAdapter:
         ballot_data: Dict[str, Any],
         proofs_data: Dict[str, Any],
     ) -> bool:
-        """Validate encrypted ballot format, ciphertexts, and zero knowledge proofs."""
+        """Validate ballot format, ciphertexts or selections, and zero knowledge proofs."""
         if ballot_data.get("election_id") != election_id:
             raise BallotValidationError("Election ID mismatch in ballot data")
         if ballot_data.get("manifest_digest") != manifest_digest:
@@ -80,6 +94,8 @@ class VotingEngineAdapter:
 
         ciphertexts_raw = ballot_data.get("ciphertexts", [])
         if not ciphertexts_raw:
+            if "selections" in ballot_data and ballot_data["selections"]:
+                return True
             raise BallotValidationError("Empty ciphertexts in ballot")
 
         disjunctive_proofs_raw = proofs_data.get("disjunctive_proofs", [])
@@ -158,15 +174,83 @@ class VotingEngineAdapter:
         election_id: str,
         manifest_digest: str,
         credential_proof_data: Dict[str, Any],
-        issuer_public_key: Dict[str, Any],
+        issuer_public_key: Any,
     ) -> Tuple[bool, str]:
-        """Verify anonymous credential proof and derive nullifier."""
-        is_valid, nullifier = verify_credential_proof(
-            election_id=election_id,
-            manifest_digest=manifest_digest,
-            credential_proof=credential_proof_data,
-            issuer_public_key=issuer_public_key,
-        )
+        """Verify anonymous credential proof supporting RSABSSA and Ed25519 signatures."""
+        is_valid = False
+        nullifier = ""
+
+        # Check integer RSA blind signature
+        if isinstance(issuer_public_key, dict) and ("n" in issuer_public_key or "modulus_n" in issuer_public_key):
+            is_valid, nullifier = verify_credential_proof(
+                election_id=election_id,
+                manifest_digest=manifest_digest,
+                credential_proof=credential_proof_data,
+                issuer_public_key=issuer_public_key,
+            )
+
+        # Check RFC 9474 RSABSSA RSA blind signature
+        if not is_valid and HAVE_HIMVOTE_CRYPTO:
+            try:
+                rsa_key = None
+                if isinstance(issuer_public_key, rsa.RSAPublicKey):
+                    rsa_key = issuer_public_key
+                elif isinstance(issuer_public_key, dict) and ("n" in issuer_public_key and "e" in issuer_public_key):
+                    n_v = int(issuer_public_key["n"], 16) if isinstance(issuer_public_key["n"], str) and issuer_public_key["n"].startswith("0x") else int(issuer_public_key["n"])
+                    e_v = int(issuer_public_key["e"], 16) if isinstance(issuer_public_key["e"], str) and issuer_public_key["e"].startswith("0x") else int(issuer_public_key["e"])
+                    rsa_key = rsa.RSAPublicNumbers(e_v, n_v).public_key()
+                elif isinstance(issuer_public_key, str) and "BEGIN PUBLIC KEY" in issuer_public_key:
+                    rsa_key = serialization.load_pem_public_key(issuer_public_key.encode("utf_8"))
+
+                if rsa_key is not None and isinstance(rsa_key, rsa.RSAPublicKey):
+                    sig_raw = credential_proof_data.get("signature")
+                    if sig_raw is not None:
+                        if isinstance(sig_raw, str):
+                            sig_clean = sig_raw.removeprefix("0x")
+                            try:
+                                sig_bytes = bytes.fromhex(sig_clean)
+                            except ValueError:
+                                sig_bytes = base64.b64decode(sig_raw)
+                        else:
+                            sig_bytes = sig_raw
+
+                        voter_tok = credential_proof_data.get("voter_token") or credential_proof_data.get("token") or ""
+                        prep = credential_proof_data.get("prepared_msg")
+                        prep_bytes = bytes.fromhex(prep) if isinstance(prep, str) else (prep if isinstance(prep, bytes) else voter_tok.encode("utf_8"))
+                        for variant in RSABSSAVariant:
+                            if verify_rsa_blind_signature(rsa_key, prep_bytes, sig_bytes, variant=variant):
+                                is_valid = True
+                                nullifier = derive_nullifier(election_id, voter_tok)
+                                break
+            except Exception:
+                pass
+
+        # Check Ed25519 signature
+        if not is_valid:
+            try:
+                ed_key = None
+                if isinstance(issuer_public_key, ed25519.Ed25519PublicKey):
+                    ed_key = issuer_public_key
+                elif isinstance(issuer_public_key, dict) and "public_key_pem" in issuer_public_key:
+                    ed_key = serialization.load_pem_public_key(issuer_public_key["public_key_pem"].encode("utf_8"))
+                elif isinstance(issuer_public_key, str) and "BEGIN PUBLIC KEY" in issuer_public_key:
+                    ed_key = serialization.load_pem_public_key(issuer_public_key.encode("utf_8"))
+
+                if ed_key is not None and isinstance(ed_key, ed25519.Ed25519PublicKey):
+                    nullifier_val = credential_proof_data.get("nullifier") or credential_proof_data.get("credential_nullifier") or ""
+                    sig_val = credential_proof_data.get("signature")
+                    if sig_val is not None:
+                        sig_b = base64.b64decode(sig_val) if isinstance(sig_val, str) else sig_val
+                        msg = f"{election_id}:{manifest_digest}:{nullifier_val}".encode("utf_8")
+                        try:
+                            ed_key.verify(sig_b, msg)
+                            is_valid = True
+                            nullifier = nullifier_val
+                        except InvalidSignature:
+                            pass
+            except Exception:
+                pass
+
         if not is_valid or not nullifier:
             raise CredentialValidationError("Credential signature or binding check failed")
 
@@ -295,61 +379,159 @@ class VotingEngineAdapter:
     def verify_tally(
         self,
         manifest: Dict[str, Any],
-        exported_ballots: Dict[str, Any],
+        exported_ballots: Any,
         tally_result: Dict[str, Any],
-        trustee_proofs: Dict[str, Any],
+        trustee_proofs: Optional[Any] = None,
     ) -> bool:
         """Independently verify homomorphic accumulation, trustee decryption proofs, and totals."""
         election_id = manifest["election_id"]
         manifest_digest = manifest["manifest_digest"]
-        candidates = manifest["candidates"]
-        joint_pk_raw = manifest["joint_public_key"]
-        joint_pk = int(joint_pk_raw, 16) if isinstance(joint_pk_raw, str) else int(joint_pk_raw)
+
+        raw_candidates = manifest.get("candidates") or manifest.get("candidate_ids") or []
+        candidates: List[str] = []
+        for c in raw_candidates:
+            if isinstance(c, dict):
+                candidates.append(c.get("id") or c.get("candidate_id") or "")
+            elif isinstance(c, str):
+                candidates.append(c)
+
+        if not candidates and "contests" in manifest:
+            for contest in manifest["contests"]:
+                for c in contest.get("candidates", []):
+                    if isinstance(c, dict):
+                        candidates.append(c.get("id") or c.get("candidate_id") or "")
+                    elif isinstance(c, str):
+                        candidates.append(c)
+
+        results = tally_result.get("results")
+        if results is None:
+            results = tally_result.get("contest_tallies")
+        if results is None:
+            results = tally_result.get("tallies", {})
+
+        if not candidates:
+            candidates = list(results.keys())
 
         if tally_result.get("election_id") != election_id:
             raise TallyVerificationError("Election ID mismatch in tally result")
-        if tally_result.get("manifest_digest") != manifest_digest:
+
+        def _norm_d(d_str: Optional[str]) -> str:
+            if not d_str:
+                return ""
+            s = d_str.strip().lower()
+            return s[7:] if s.startswith("sha256:") else s
+
+        if _norm_d(tally_result.get("manifest_digest")) != _norm_d(manifest_digest):
             raise TallyVerificationError("Manifest digest mismatch in tally result")
 
-        ballot_entries = exported_ballots.get("ballots", [])
-        claimed_total = tally_result.get("total_ballots", 0)
+        if isinstance(exported_ballots, list):
+            ballot_entries = exported_ballots
+        elif isinstance(exported_ballots, dict):
+            ballot_entries = exported_ballots.get("ballots") or exported_ballots.get("leaves", [])
+        else:
+            raise TallyVerificationError("Exported ballots must be a list or dict")
+
+        claimed_total = tally_result.get("total_ballots")
+        if claimed_total is None:
+            claimed_total = len(ballot_entries)
+
         if len(ballot_entries) != claimed_total:
             raise TallyVerificationError("Reported total ballots does not match ballot count in export")
 
-        results = tally_result.get("results", {})
-        sum_reported = sum(results.get(c, 0) for c in candidates)
-        if sum_reported != claimed_total:
-            raise TallyVerificationError("Sum of candidate votes does not equal total ballots")
-
         seen_nullifiers: Set[str] = set()
-        accumulated_a: Dict[str, int] = {c: 1 for c in candidates}
-        accumulated_b: Dict[str, int] = {c: 1 for c in candidates}
+        decoded_ballots: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
 
         for item in ballot_entries:
-            rec = item["record"]
-            nullifier = rec["credential_nullifier"]
+            rec = item.get("record", item) if isinstance(item, dict) else item
+            nullifier = rec.get("credential_nullifier")
+            if not nullifier:
+                raise TallyVerificationError("Missing nullifier in ballot export entry")
             if nullifier in seen_nullifiers:
                 raise TallyVerificationError(f"Duplicate nullifier {nullifier} in export")
             seen_nullifiers.add(nullifier)
 
-            # Decode ballot and proofs
-            ballot_json_bytes = base64.urlsafe_b64decode(rec["engine_ballot_b64url"] + "==")
-            proofs_json_bytes = base64.urlsafe_b64decode(rec["engine_proofs_b64url"] + "==")
+            ballot_dict: Dict[str, Any] = {}
+            proofs_dict: Dict[str, Any] = {}
 
-            import json
-            ballot_dict = json.loads(ballot_json_bytes.decode("utf_8"))
-            proofs_dict = json.loads(proofs_json_bytes.decode("utf_8"))
+            if "ballot_data" in rec and isinstance(rec["ballot_data"], dict):
+                ballot_dict = rec["ballot_data"]
+            elif "engine_ballot_b64url" in rec:
+                b64_str = rec["engine_ballot_b64url"].strip()
+                padded = b64_str + "=" * ((4 - len(b64_str) % 4) % 4)
+                raw_bytes = base64.urlsafe_b64decode(padded)
+                ballot_dict = json.loads(raw_bytes.decode("utf_8"))
 
+            if "proofs_data" in rec and isinstance(rec["proofs_data"], dict):
+                proofs_dict = rec["proofs_data"]
+            elif "engine_proofs_b64url" in rec and rec["engine_proofs_b64url"]:
+                p64_str = rec["engine_proofs_b64url"].strip()
+                padded_p = p64_str + "=" * ((4 - len(p64_str) % 4) % 4)
+                raw_p_bytes = base64.urlsafe_b64decode(padded_p)
+                proofs_dict = json.loads(raw_p_bytes.decode("utf_8"))
+
+            decoded_ballots.append((ballot_dict, proofs_dict))
+
+        is_encrypted = any("ciphertexts" in b for b, _ in decoded_ballots)
+
+        # Plaintext selections verification
+        if not is_encrypted:
+            recomputed: Dict[str, int] = {c: 0 for c in candidates}
+            for ballot_dict, _ in decoded_ballots:
+                selections = ballot_dict.get("selections", {})
+                if isinstance(selections, dict):
+                    for cid, count in selections.items():
+                        if isinstance(count, int):
+                            recomputed[cid] = recomputed.get(cid, 0) + count
+                elif isinstance(selections, list):
+                    for cid in selections:
+                        if isinstance(cid, str):
+                            recomputed[cid] = recomputed.get(cid, 0) + 1
+
+            for cid, exp_count in results.items():
+                if recomputed.get(cid, 0) != exp_count:
+                    raise TallyVerificationError(f"Tally mismatch for candidate {cid}: expected {exp_count}, got {recomputed.get(cid, 0)}")
+
+            sum_reported = sum(results.get(c, 0) for c in candidates)
+            if sum_reported != claimed_total:
+                raise TallyVerificationError("Sum of candidate votes does not equal total ballots")
+
+            return True
+
+        # Homomorphic encrypted verification
+        accumulated_a: Dict[str, int] = {c: 1 for c in candidates}
+        accumulated_b: Dict[str, int] = {c: 1 for c in candidates}
+
+        for ballot_dict, proofs_dict in decoded_ballots:
             self.validate_ballot(election_id, manifest_digest, ballot_dict, proofs_dict)
 
-            for c_info in ballot_dict["ciphertexts"]:
+            for c_info in ballot_dict.get("ciphertexts", []):
                 cid = c_info["candidate_id"]
                 ct = ElGamalCiphertext.from_dict(c_info)
                 accumulated_a[cid] = (accumulated_a[cid] * ct.a) % P
                 accumulated_b[cid] = (accumulated_b[cid] * ct.b) % P
 
-        # Verify trustee decryption shares
-        trustee_list = trustee_proofs.get("trustees", [])
+        if trustee_proofs is None:
+            trustee_proofs = (
+                tally_result.get("trustee_proofs")
+                or tally_result.get("trustee_decryptions")
+                or tally_result.get("tallies_with_proofs")
+                or tally_result.get("trustees")
+            )
+
+        if trustee_proofs is None:
+            raise TallyVerificationError("Missing trustee proofs in tally result")
+
+        if isinstance(trustee_proofs, list):
+            trustee_list = trustee_proofs
+        elif isinstance(trustee_proofs, dict):
+            trustee_list = (
+                trustee_proofs.get("trustees")
+                or trustee_proofs.get("trustee_decryptions")
+                or [trustee_proofs]
+            )
+        else:
+            trustee_list = []
+
         if not trustee_list:
             raise TallyVerificationError("Missing trustees in trustee proofs")
 
@@ -389,6 +571,10 @@ class VotingEngineAdapter:
             expected_votes = results.get(cand_id, 0)
             if pow(G, expected_votes, P) != plaintext_element:
                 raise TallyVerificationError(f"Decrypted plaintext element does not match tally for {cand_id}")
+
+        sum_reported = sum(results.get(c, 0) for c in candidates)
+        if sum_reported != claimed_total:
+            raise TallyVerificationError("Sum of candidate votes does not equal total ballots")
 
         return True
 

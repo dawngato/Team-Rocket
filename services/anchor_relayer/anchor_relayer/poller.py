@@ -4,6 +4,7 @@ Monitors transaction receipts, counts block confirmations, and handles reorgs.
 """
 
 import logging
+from datetime import datetime, timezone
 from typing import Optional
 from hexbytes import HexBytes
 from web3 import Web3
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 class ConfirmationPoller:
     """
     Polls EVM node for block receipts and required confirmations.
+    Enforces reorganization detection and timeout recovery.
     """
 
     def __init__(
@@ -28,12 +30,14 @@ class ConfirmationPoller:
         contract_client: HimVoteAnchorClient,
         reorg_detector: ReorgDetector,
         required_confirmations: int = 12,
+        receipt_timeout_seconds: float = 120.0,
     ):
         self.w3 = w3
         self.repository = repository
         self.contract_client = contract_client
         self.reorg_detector = reorg_detector
         self.required_confirmations = required_confirmations
+        self.receipt_timeout_seconds = receipt_timeout_seconds
 
     def _normalize_hash(self, hash_val) -> str:
         if isinstance(hash_val, (bytes, HexBytes)):
@@ -56,15 +60,51 @@ class ConfirmationPoller:
         return record
 
     def _handle_submitted_record(self, record: OutboxRecord) -> OutboxRecord:
+        receipt = None
         try:
             receipt = self.w3.eth.get_transaction_receipt(record.tx_hash)
         except TransactionNotFound:
-            return record
+            receipt = None
         except Exception as exc:
             logger.warning(f"Error fetching receipt for tx {record.tx_hash}: {exc}")
-            return record
+            receipt = None
 
         if not receipt:
+            # Check if checkpoint was already anchored on chain despite missing local receipt
+            already_anchored = self.contract_client.is_already_anchored(
+                record.election_commitment,
+                record.sequence,
+                record.digest,
+            )
+            if already_anchored:
+                current_block = self.w3.eth.block_number
+                seq, _, _, _, contract_block, _ = self.contract_client.get_checkpoint(
+                    record.election_commitment,
+                    record.sequence,
+                )
+                conf_count = max(0, current_block - contract_block + 1)
+                dummy_hash = "0x" + "0" * 64
+                if conf_count >= self.required_confirmations:
+                    self.repository.mark_finalized(record.id, contract_block, dummy_hash, conf_count)
+                else:
+                    self.repository.mark_confirming(record.id, contract_block, dummy_hash, conf_count)
+                updated = self.repository.get_by_id(record.id)
+                return updated or record
+
+            # Calculate submission elapsed time for timeout check
+            now = datetime.now(timezone.utc)
+            record_time = record.updated_at or record.created_at
+            if record_time.tzinfo is None:
+                record_time = record_time.replace(tzinfo=timezone.utc)
+            elapsed_seconds = (now - record_time).total_seconds()
+
+            if elapsed_seconds > self.receipt_timeout_seconds:
+                reason = f"Transaction {record.tx_hash} receipt timed out after {elapsed_seconds:.1f}s"
+                logger.warning(f"Resetting record {record.id} to ANCHOR_PENDING: {reason}")
+                self.repository.reset_to_pending(record.id, reason=reason)
+                updated = self.repository.get_by_id(record.id)
+                return updated or record
+
             return record
 
         receipt_status = receipt.get("status")

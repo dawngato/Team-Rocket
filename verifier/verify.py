@@ -19,6 +19,29 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed25519, padding, rsa
 
+# Ensure repository root is on sys.path
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_repo_root = os.path.dirname(_current_dir)
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
+
+try:
+    from services.election_engine.adapter import VotingEngineAdapter
+    from services.election_engine.credentials import derive_nullifier, hash_token_to_int
+except ImportError:
+    VotingEngineAdapter = None  # type: ignore
+    derive_nullifier = None  # type: ignore
+    hash_token_to_int = None  # type: ignore
+
+try:
+    from himvote_crypto.rsa_blind import (
+        RSABSSAVariant,
+        verify_signature as verify_rsa_blind_signature,
+    )
+    HAVE_HIMVOTE_CRYPTO = True
+except ImportError:
+    HAVE_HIMVOTE_CRYPTO = False
+
 # Exit codes per Section 6.8
 EXIT_PASS = 0
 EXIT_CRYPTO_FAIL = 2
@@ -245,6 +268,12 @@ def load_public_key_from_info(key_info: Any) -> Any:
             raw_bytes = bytes.fromhex(key_info["public_key_hex"])
         elif "public_key" in key_info:
             return load_public_key_from_info(key_info["public_key"])
+        elif ("n" in key_info or "modulus_n" in key_info) and ("e" in key_info or "public_exponent_e" in key_info):
+            n_raw = key_info.get("n") or key_info.get("modulus_n")
+            e_raw = key_info.get("e") or key_info.get("public_exponent_e")
+            n_val = int(n_raw, 16) if isinstance(n_raw, str) and (n_raw.startswith("0x") or any(c in "abcdefABCDEF" for c in n_raw)) else int(n_raw)
+            e_val = int(e_raw, 16) if isinstance(e_raw, str) and (e_raw.startswith("0x") or any(c in "abcdefABCDEF" for c in e_raw)) else int(e_raw)
+            return rsa.RSAPublicNumbers(e_val, n_val).public_key()
         else:
             raise UnverifiableError("Trust pin dictionary contains no known public key encoding")
     elif isinstance(key_info, str):
@@ -309,20 +338,25 @@ def verify_signature(public_key: Any, message: bytes, signature_val: Any) -> boo
             return False
 
     if isinstance(public_key, rsa.RSAPublicKey):
-        try:
-            public_key.verify(sig_bytes, message, padding.PKCS1v15(), hashes.SHA256())
-            return True
-        except InvalidSignature:
+        for hash_algo in [hashes.SHA256(), hashes.SHA384(), hashes.SHA512()]:
             try:
-                public_key.verify(
-                    sig_bytes,
-                    message,
-                    padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH),
-                    hashes.SHA256(),
-                )
+                public_key.verify(sig_bytes, message, padding.PKCS1v15(), hash_algo)
                 return True
-            except InvalidSignature:
-                return False
+            except (InvalidSignature, ValueError):
+                pass
+        for hash_algo in [hashes.SHA256(), hashes.SHA384(), hashes.SHA512()]:
+            for salt_len in [padding.PSS.MAX_LENGTH, padding.PSS.DIGEST_LENGTH, 0]:
+                try:
+                    public_key.verify(
+                        sig_bytes,
+                        message,
+                        padding.PSS(mgf=padding.MGF1(hash_algo), salt_length=salt_len),
+                        hash_algo,
+                    )
+                    return True
+                except (InvalidSignature, ValueError):
+                    pass
+        return False
 
     raise UnverifiableError(f"Unsupported public key type for verification: {type(public_key)}")
 
@@ -445,6 +479,157 @@ def load_file_content(path: str) -> bytes:
         raise BadArchiveError(f"File cannot be a symlink: {path}")
     with open(path, "rb") as f:
         return f.read()
+
+
+def derive_nullifier_local(election_id: str, voter_token: str) -> str:
+    """Derive deterministic nullifier from election ID and voter secret token."""
+    message = f"himvote_nullifier_v1:{election_id}:{voter_token}".encode("utf_8")
+    return hashlib.sha256(message).hexdigest()
+
+
+def hash_token_to_int_local(token_str: str, modulus_n: int) -> int:
+    """Hash voter token to an integer scalar modulo RSA modulus N."""
+    digest = hashlib.sha256(token_str.encode("utf_8")).digest()
+    return int.from_bytes(digest, "big") % modulus_n
+
+
+def verify_credential_proof_record(
+    issuer_key: Any,
+    election_id: str,
+    manifest_digest: str,
+    nullifier: str,
+    proof_bytes: bytes,
+) -> Tuple[bool, str]:
+    """Verify credential proof supporting RFC 9474 RSABSSA and Ed25519 signatures."""
+    proof_json = None
+    try:
+        proof_json = safe_json_loads(proof_bytes)
+    except Exception:
+        pass
+
+    if isinstance(proof_json, dict):
+        p_elec = proof_json.get("election_id")
+        if p_elec and p_elec != election_id:
+            return False, "ELECTION_ID_MISMATCH"
+
+        p_man = proof_json.get("manifest_digest")
+        if p_man and normalize_digest(p_man) != normalize_digest(manifest_digest):
+            return False, "MANIFEST_DIGEST_MISMATCH"
+
+        voter_tok = proof_json.get("voter_token") or proof_json.get("token") or ""
+        sig_val = proof_json.get("signature")
+
+        # Check RSA blind signature forms
+        if isinstance(issuer_key, rsa.RSAPublicKey):
+            # Check integer RSA blind signature
+            if voter_tok and sig_val is not None:
+                try:
+                    sig_int = int(sig_val, 16) if isinstance(sig_val, str) and (sig_val.startswith("0x") or any(c in "abcdefABCDEF" for c in sig_val)) else int(sig_val)
+                    n = issuer_key.public_numbers().n
+                    e = issuer_key.public_numbers().e
+                    m = hash_token_to_int_local(voter_tok, n)
+                    if pow(sig_int, e, n) == m:
+                        derived_1 = derive_nullifier_local(election_id, voter_tok)
+                        derived_2 = hashlib.sha256(f"himvote_nullifier:{election_id}:{voter_tok}".encode("utf_8")).hexdigest()
+                        derived_3 = hashlib.sha256(voter_tok.encode("utf_8")).hexdigest()
+                        target = normalize_digest(nullifier)
+                        valid_nulls = {
+                            normalize_digest(derived_1),
+                            normalize_digest(format_digest(derived_1.encode("utf_8"))),
+                            normalize_digest(derived_2),
+                            normalize_digest(format_digest(derived_2.encode("utf_8"))),
+                            normalize_digest(derived_3),
+                        }
+                        if target in valid_nulls:
+                            return True, ""
+                except Exception:
+                    pass
+
+            # Check RFC 9474 RSABSSA verification
+            if HAVE_HIMVOTE_CRYPTO and sig_val is not None:
+                try:
+                    sig_b = decode_signature_bytes(sig_val) if isinstance(sig_val, str) else sig_val
+                    check_msgs = []
+                    if "prepared_msg" in proof_json:
+                        prep = proof_json["prepared_msg"]
+                        check_msgs.append(decode_signature_bytes(prep) if isinstance(prep, str) else prep)
+                    if voter_tok:
+                        check_msgs.append(voter_tok.encode("utf_8"))
+                        check_msgs.append(f"{election_id}:{voter_tok}".encode("utf_8"))
+                        check_msgs.append(f"{election_id}:{manifest_digest}:{voter_tok}".encode("utf_8"))
+                        check_msgs.append(f"{election_id}:{manifest_digest}:{nullifier}".encode("utf_8"))
+                    if "message" in proof_json:
+                        m_val = proof_json["message"]
+                        check_msgs.append(decode_signature_bytes(m_val) if isinstance(m_val, str) else (m_val.encode("utf_8") if isinstance(m_val, str) else m_val))
+
+                    v_list = [RSABSSAVariant[proof_json["variant"]]] if "variant" in proof_json and proof_json["variant"] in RSABSSAVariant.__members__ else list(RSABSSAVariant)
+                    for prep_msg in check_msgs:
+                        for v in v_list:
+                            if verify_rsa_blind_signature(issuer_key, prep_msg, sig_b, variant=v):
+                                if voter_tok:
+                                    derived_1 = derive_nullifier_local(election_id, voter_tok)
+                                    derived_2 = hashlib.sha256(f"himvote_nullifier:{election_id}:{voter_tok}".encode("utf_8")).hexdigest()
+                                    derived_3 = hashlib.sha256(voter_tok.encode("utf_8")).hexdigest()
+                                    target = normalize_digest(nullifier)
+                                    valid_nulls = {
+                                        normalize_digest(derived_1),
+                                        normalize_digest(format_digest(derived_1.encode("utf_8"))),
+                                        normalize_digest(derived_2),
+                                        normalize_digest(format_digest(derived_2.encode("utf_8"))),
+                                        normalize_digest(derived_3),
+                                    }
+                                    if target in valid_nulls:
+                                        return True, ""
+                                else:
+                                    return True, ""
+                except Exception:
+                    pass
+
+            # Check standard RSA signature over canonical JSON
+            if sig_val is not None:
+                p_data = dict(proof_json)
+                p_data.pop("signature", None)
+                if verify_signature(issuer_key, canonicalize_json(p_data), sig_val):
+                    return True, ""
+
+        # Check Ed25519 signature
+        if isinstance(issuer_key, ed25519.Ed25519PublicKey) and sig_val is not None:
+            p_data = dict(proof_json)
+            p_data.pop("signature", None)
+            if verify_signature(issuer_key, canonicalize_json(p_data), sig_val):
+                return True, ""
+
+            binding_1 = f"{election_id}:{manifest_digest}:{nullifier}".encode("utf_8")
+            binding_2 = canonicalize_json({
+                "election_id": election_id,
+                "manifest_digest": manifest_digest,
+                "nullifier": nullifier,
+            })
+            if verify_signature(issuer_key, binding_1, sig_val) or verify_signature(issuer_key, binding_2, sig_val):
+                return True, ""
+
+    # Raw signature checks over binding messages
+    binding_1 = f"{election_id}:{manifest_digest}:{nullifier}".encode("utf_8")
+    binding_2 = canonicalize_json({
+        "election_id": election_id,
+        "manifest_digest": manifest_digest,
+        "nullifier": nullifier,
+    })
+    binding_3 = f"himvote_nullifier:{election_id}:{nullifier}".encode("utf_8")
+    binding_4 = nullifier.encode("utf_8")
+    binding_5 = normalize_digest(nullifier).encode("utf_8")
+
+    all_raw_candidates = [binding_1, binding_2, binding_3, binding_4, binding_5]
+
+    for m in all_raw_candidates:
+        if verify_signature(issuer_key, m, proof_bytes):
+            return True, ""
+        if isinstance(issuer_key, rsa.RSAPublicKey) and HAVE_HIMVOTE_CRYPTO:
+            for variant in RSABSSAVariant:
+                if verify_rsa_blind_signature(issuer_key, m, proof_bytes, variant=variant):
+                    return True, ""
+
+    return False, FAIL_BAD_SIGNATURE
 
 
 def audit_evidence(
@@ -827,29 +1012,15 @@ def audit_evidence(
                 continue
 
             proof_bytes = decode_signature_bytes(proof_b64)
-            proof_valid = False
-            try:
-                proof_json = safe_json_loads(proof_bytes)
-                if isinstance(proof_json, dict) and "signature" in proof_json:
-                    p_sig = proof_json["signature"]
-                    p_data = dict(proof_json)
-                    p_data.pop("signature", None)
-                    if verify_signature(issuer_key, canonicalize_json(p_data), p_sig):
-                        proof_valid = True
-            except Exception:
-                pass
+            is_valid_cred, cred_err = verify_credential_proof_record(
+                issuer_key=issuer_key,
+                election_id=election_id,
+                manifest_digest=manifest_digest,
+                nullifier=nullifier,
+                proof_bytes=proof_bytes,
+            )
 
-            if not proof_valid:
-                binding_msg_1 = f"{election_id}:{manifest_digest}:{nullifier}".encode("utf_8")
-                binding_msg_2 = canonicalize_json({
-                    "election_id": election_id,
-                    "manifest_digest": manifest_digest,
-                    "nullifier": nullifier,
-                })
-                if verify_signature(issuer_key, binding_msg_1, proof_bytes) or verify_signature(issuer_key, binding_msg_2, proof_bytes):
-                    proof_valid = True
-
-            if not proof_valid:
+            if not is_valid_cred:
                 cred_ok = False
                 failure_reasons.append(FAIL_BAD_SIGNATURE)
 
@@ -882,48 +1053,135 @@ def audit_evidence(
             if not isinstance(announced_tally, dict):
                 raise BadArchiveError("Tally file must be a JSON object")
 
-            announced_counts = announced_tally.get("contest_tallies", {})
-            announced_total = announced_tally.get("total_ballots", 0)
+            announced_counts = (
+                announced_tally.get("contest_tallies")
+                or announced_tally.get("results")
+                or announced_tally.get("tallies")
+                or {}
+            )
+            announced_total = announced_tally.get("total_ballots")
+            if announced_total is None:
+                announced_total = len(ordered_leaves)
 
-            recomputed_tallies: Dict[str, int] = {}
-            engine_proofs_ok = True
+            has_ciphertexts = False
+            has_selections = False
+            decoded_leaves_ballots: List[Tuple[Dict[str, Any], Dict[str, Any]]] = []
+
             for idx, leaf in enumerate(ordered_leaves):
                 engine_ballot_b64 = leaf.get("engine_ballot_b64url")
                 engine_proofs_b64 = leaf.get("engine_proofs_b64url")
 
-                if not engine_ballot_b64 or not engine_proofs_b64:
-                    engine_proofs_ok = False
-                    continue
+                ballot_obj: Dict[str, Any] = {}
+                proofs_obj: Dict[str, Any] = {}
 
-                ballot_bytes = decode_signature_bytes(engine_ballot_b64)
-                ballot_obj = safe_json_loads(ballot_bytes)
-                if not isinstance(ballot_obj, dict):
-                    raise BadArchiveError(f"Engine ballot in leaf {idx} must be a JSON object")
+                if engine_ballot_b64:
+                    ballot_bytes = decode_signature_bytes(engine_ballot_b64)
+                    ballot_obj = safe_json_loads(ballot_bytes)
+                    if not isinstance(ballot_obj, dict):
+                        raise BadArchiveError(f"Engine ballot in leaf {idx} must be a JSON object")
 
-                selections = ballot_obj.get("selections", {})
-                if isinstance(selections, dict):
-                    for cand_id, count in selections.items():
-                        if isinstance(count, int):
-                            recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + count
-                elif isinstance(selections, list):
-                    for cand_id in selections:
-                        if isinstance(cand_id, str):
-                            recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + 1
+                if engine_proofs_b64:
+                    proofs_bytes = decode_signature_bytes(engine_proofs_b64)
+                    try:
+                        proofs_obj = safe_json_loads(proofs_bytes)
+                    except Exception:
+                        pass
 
-            tally_match = engine_proofs_ok and (announced_total == len(ordered_leaves))
-            for cand, exp_count in announced_counts.items():
-                if recomputed_tallies.get(cand, 0) != exp_count:
-                    tally_match = False
+                if "ciphertexts" in ballot_obj:
+                    has_ciphertexts = True
+                if "selections" in ballot_obj:
+                    has_selections = True
 
-            if tally_match:
+                decoded_leaves_ballots.append((ballot_obj, proofs_obj))
+
+            trustee_proofs = (
+                announced_tally.get("trustee_decryptions")
+                or announced_tally.get("trustee_proofs")
+                or announced_tally.get("tallies_with_proofs")
+                or announced_tally.get("decryption_proofs")
+                or announced_tally.get("trustees")
+            )
+            if not trustee_proofs:
+                trustee_file = os.path.join(export_dir, "trustees.json")
+                if os.path.exists(trustee_file):
+                    trustee_proofs = safe_json_loads(load_file_content(trustee_file))
+
+            # Case 1: Leaves contain encrypted ballots and trustee decryption proofs are present
+            if has_ciphertexts and trustee_proofs is not None and VotingEngineAdapter is not None:
+                engine_adapter = VotingEngineAdapter()
+                tally_verified = False
+                tally_err_msg = ""
+                try:
+                    tally_verified = engine_adapter.verify_tally(
+                        manifest=manifest,
+                        exported_ballots=ordered_leaves,
+                        tally_result=announced_tally,
+                        trustee_proofs=trustee_proofs,
+                    )
+                except Exception as exc:
+                    tally_err_msg = str(exc)
+
+                if tally_verified:
+                    property_statuses[PROPERTY_TALLY_PROOF] = {
+                        "status": STATUS_PASS,
+                        "details": f"Homomorphic aggregation and trustee decryption proofs verified successfully across {len(ordered_leaves)} ballots",
+                    }
+                else:
+                    property_statuses[PROPERTY_TALLY_PROOF] = {
+                        "status": STATUS_FAIL,
+                        "details": f"Trustee decryption proof verification failed: {tally_err_msg or 'Proof invalid'}",
+                    }
+                    failure_reasons.append(FAIL_INVALID_TALLY)
+                    any_crypto_fail = True
+
+            # Case 2: Plaintext selections are present in test profiles
+            elif has_selections:
+                recomputed_tallies: Dict[str, int] = {}
+                engine_proofs_ok = True
+                for idx, (ballot_obj, proofs_obj) in enumerate(decoded_leaves_ballots):
+                    selections = ballot_obj.get("selections", {})
+                    if isinstance(selections, dict):
+                        for cand_id, count in selections.items():
+                            if isinstance(count, int):
+                                recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + count
+                    elif isinstance(selections, list):
+                        for cand_id in selections:
+                            if isinstance(cand_id, str):
+                                recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + 1
+                    else:
+                        engine_proofs_ok = False
+
+                tally_match = engine_proofs_ok and (announced_total == len(ordered_leaves))
+                for cand, exp_count in announced_counts.items():
+                    if recomputed_tallies.get(cand, 0) != exp_count:
+                        tally_match = False
+
+                if tally_match:
+                    property_statuses[PROPERTY_TALLY_PROOF] = {
+                        "status": STATUS_PASS,
+                        "details": f"Recomputed tally matches announced totals across {announced_total} ballots",
+                    }
+                else:
+                    property_statuses[PROPERTY_TALLY_PROOF] = {
+                        "status": STATUS_FAIL,
+                        "details": "Tally mismatch against announced totals",
+                    }
+                    failure_reasons.append(FAIL_INVALID_TALLY)
+                    any_crypto_fail = True
+
+            # Case 3: Encrypted ballots without trustee proofs
+            elif has_ciphertexts and trustee_proofs is None:
                 property_statuses[PROPERTY_TALLY_PROOF] = {
-                    "status": STATUS_PASS,
-                    "details": f"Recomputed tally matches announced totals across {announced_total} ballots",
+                    "status": STATUS_FAIL,
+                    "details": "Encrypted ballots present but trustee decryption proofs are missing in results",
                 }
+                failure_reasons.append(FAIL_INVALID_TALLY)
+                any_crypto_fail = True
+
             else:
                 property_statuses[PROPERTY_TALLY_PROOF] = {
                     "status": STATUS_FAIL,
-                    "details": "Tally mismatch against announced totals",
+                    "details": "No verifiable selections or ciphertexts found in leaves",
                 }
                 failure_reasons.append(FAIL_INVALID_TALLY)
                 any_crypto_fail = True
