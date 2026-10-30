@@ -16,6 +16,7 @@ import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import { identityClient } from "@/lib/identity_client";
 import type { Election } from "@/lib/types";
+import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 
 function formatUtc(value: string): string {
   if (!value) return "Not published";
