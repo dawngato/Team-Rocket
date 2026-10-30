@@ -30,13 +30,13 @@ export default function HomePage() {
         <div className="lg:col-span-7 space-y-6">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wider bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/20">
             <span className="w-2 h-2 rounded-full bg-[#157E92] animate-pulse" />
-            Institutional Elections With Verifiable Integrity
+            Educational prototype for verifiable election workflows
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#10233F] dark:text-white tracking-tight leading-tight">
             Institutional voting, made <span className="text-[#157E92]">verifiable.</span>
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">
-            HimVote establishes cryptographic separation between student identity and encrypted ballot submissions. Every tally is witness signed and anchored with immutable public finality.
+            HimVote demonstrates how institutional identity, anonymous casting boundaries, witnessed evidence, and independent review fit together. The external voting engine and production operations remain explicit release gates.
           </p>
 
           <div className="flex flex-wrap gap-4 pt-2">
@@ -59,15 +59,15 @@ export default function HomePage() {
           <div className="pt-4 flex flex-wrap gap-6 text-xs text-slate-600 dark:text-slate-400 font-medium">
             <span className="inline-flex items-center gap-2">
               <BadgeCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              Cryptographic Blind Credentials
+              Blind Credential Test Vectors
             </span>
             <span className="inline-flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              Independent Witness Nodes
+              Witness Checkpoint Workflow
             </span>
             <span className="inline-flex items-center gap-2">
               <LockKeyhole className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-              Zero Voter Identity in Ballots
+              No Identity in Sample Evidence
             </span>
           </div>
         </div>
@@ -79,10 +79,10 @@ export default function HomePage() {
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-[#15805D]" aria-hidden="true" />
                 <span className="font-bold text-sm text-[#10233F] dark:text-white">
-                  Live Election Evidence Record
+                  Development Evidence Preview
                 </span>
               </div>
-              <StateBadge state="WITNESSED" size="sm" />
+              <StateBadge state="PENDING_WITNESS" size="sm" />
             </div>
 
             <div className="py-5 space-y-4 font-mono text-xs">
@@ -97,27 +97,27 @@ export default function HomePage() {
 
               <div className="grid grid-cols-2 gap-4 py-3 border-y border-slate-100 dark:border-[#1E3352]">
                 <div>
-                  <span className="text-slate-400 block text-[11px] font-sans">Tree Size</span>
+                  <span className="text-slate-400 block text-[11px] font-sans">Sample Tree Size</span>
                   <strong className="text-sm font-sans text-[#10233F] dark:text-white">
                     3,120 leaves
                   </strong>
                 </div>
                 <div>
-                  <span className="text-slate-400 block text-[11px] font-sans">Witness Cosigners</span>
-                  <strong className="text-sm font-sans text-[#15805D]">
-                    2 of 2 Valid
+                  <span className="text-slate-400 block text-[11px] font-sans">Witness Configuration</span>
+                  <strong className="text-sm font-sans text-[#AA6C0B]">
+                    Local Fixture
                   </strong>
                 </div>
               </div>
 
               <div className="space-y-2 font-sans text-xs">
                 <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span>Ed25519 Checkpoint Signature</span>
-                  <span className="font-semibold text-[#15805D]">Confirmed</span>
+                  <span>Checkpoint Signature</span>
+                  <span className="font-semibold text-[#AA6C0B]">Fixture Value</span>
                 </div>
                 <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                  <span>Chain Finality Anchor</span>
-                  <span className="font-semibold text-[#15805D]">Confirmed</span>
+                  <span>Chain Anchor</span>
+                  <span className="font-semibold text-[#AA6C0B]">Not Production Finality</span>
                 </div>
               </div>
             </div>
@@ -125,7 +125,7 @@ export default function HomePage() {
             <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
                 <Fingerprint className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                Opaque Nullifier Commitment
+                Opaque Sample Commitment
               </span>
               <span className="font-mono text-[#157E92]">HV 24F8 19C2</span>
             </div>

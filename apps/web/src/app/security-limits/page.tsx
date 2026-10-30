@@ -71,7 +71,7 @@ export default function SecurityLimitsPage() {
           <span>The HimVote Verifier Standard</span>
         </div>
         <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          A security property is presented as confirmed ONLY when proven by automated mathematical verification against published open standards: RSA blind signatures (RFC 9474), Merkle logs (RFC 9162), JSON canonicalization (RFC 8785), and blockchain finality anchors.
+          A security property is presented as confirmed only when proven by the available verifier and trusted evidence. This prototype has test coverage for RFC 9474 blind signature vectors, Merkle logs, RFC 8785 canonicalization, and checkpoint workflows. Its external voting engine and production chain finality remain limited.
         </p>
       </div>
 

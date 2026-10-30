@@ -42,8 +42,10 @@ from verifier.verify import (
     PROPERTY_ROSTER_ATTESTATION,
     PROPERTY_TALLY_PROOF,
     PROPERTY_ANCHOR_FINALITY,
+    PROPERTY_INDEPENDENT_OPERATORS,
     STATUS_PASS,
     STATUS_FAIL,
+    STATUS_LIMITED,
     STATUS_UNVERIFIABLE,
     audit_evidence,
     canonicalize_json,
@@ -967,6 +969,7 @@ def test_audit_evidence_happy_path(election_helper: ElectionFixtureHelper) -> No
     assert properties[PROPERTY_ROSTER_ATTESTATION]["status"] == STATUS_PASS
     assert properties[PROPERTY_TALLY_PROOF]["status"] == STATUS_PASS
     assert properties[PROPERTY_ANCHOR_FINALITY]["status"] == STATUS_PASS
+    assert properties[PROPERTY_INDEPENDENT_OPERATORS]["status"] == STATUS_LIMITED
 
     # Verify report was written to destination
     assert os.path.exists(bundle["report"])
@@ -1311,6 +1314,45 @@ def test_parser_safety_symlink(election_helper: ElectionFixtureHelper) -> None:
     assert "Symlinks are prohibited" in str(exc_info.value)
 
 
+def test_parser_safety_duplicate_zip_entry(election_helper: ElectionFixtureHelper) -> None:
+    """Duplicate filenames must not be allowed to overwrite evidence."""
+    bundle = election_helper.build_valid_election_bundle(num_ballots=1)
+    bad_zip = os.path.join(bundle["bundle_dir"], "duplicate_entry.zip")
+    with zipfile.ZipFile(bad_zip, "w") as zf:
+        zf.writestr("manifest.json", b"{}")
+        zf.writestr("manifest.json", b"{\"replacement\":true}")
+
+    with pytest.raises(BadArchiveError, match="Duplicate archive entry"):
+        audit_evidence(
+            export_path=bad_zip,
+            trust_path=bundle["trust"],
+            final_path=bundle["final"],
+            roster_path=bundle["roster"],
+            issuance_path=bundle["issuance"],
+            chain_path=bundle["chain"],
+            report_path=bundle["report"],
+        )
+
+
+def test_parser_safety_compression_ratio(election_helper: ElectionFixtureHelper) -> None:
+    """Highly compressed repetitive content must be rejected as a bomb."""
+    bundle = election_helper.build_valid_election_bundle(num_ballots=1)
+    bad_zip = os.path.join(bundle["bundle_dir"], "compression_bomb.zip")
+    with zipfile.ZipFile(bad_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("repetitive.json", b"A" * (1024 * 1024))
+
+    with pytest.raises(BadArchiveError, match="compression ratio"):
+        audit_evidence(
+            export_path=bad_zip,
+            trust_path=bundle["trust"],
+            final_path=bundle["final"],
+            roster_path=bundle["roster"],
+            issuance_path=bundle["issuance"],
+            chain_path=bundle["chain"],
+            report_path=bundle["report"],
+        )
+
+
 def test_cli_main_audit_evidence(election_helper: ElectionFixtureHelper) -> None:
     """Test CLI entry point with audit_evidence arguments."""
     bundle = election_helper.build_valid_election_bundle(num_ballots=3)
@@ -1323,9 +1365,42 @@ def test_cli_main_audit_evidence(election_helper: ElectionFixtureHelper) -> None
         "--issuance", bundle["issuance"],
         "--chain", bundle["chain"],
         "--report", bundle["report"],
+        "--allow-development-profile",
     ]
     ret = main(argv)
     assert ret == EXIT_PASS
+
+
+def test_cli_main_rejects_plaintext_development_profile_without_opt_in(
+    election_helper: ElectionFixtureHelper,
+) -> None:
+    """The normal CLI must not report plaintext fixtures as encrypted tally proof."""
+    bundle = election_helper.build_valid_election_bundle(num_ballots=3)
+    ret = main(
+        [
+            "audit_evidence",
+            "--export",
+            bundle["export"],
+            "--trust",
+            bundle["trust"],
+            "--final",
+            bundle["final"],
+            "--roster",
+            bundle["roster"],
+            "--issuance",
+            bundle["issuance"],
+            "--chain",
+            bundle["chain"],
+            "--report",
+            bundle["report"],
+        ]
+    )
+
+    assert ret == EXIT_UNVERIFIABLE
+    report = safe_json_loads(open(bundle["report"], "rb").read())
+    assert report["status"] == STATUS_UNVERIFIABLE
+    assert report["properties"][PROPERTY_TALLY_PROOF]["status"] == STATUS_LIMITED
+    assert "native" in report["properties"][PROPERTY_TALLY_PROOF]["details"]
 
 
 def test_cli_main_verify_inclusion(election_helper: ElectionFixtureHelper) -> None:

@@ -9,6 +9,7 @@ with sync_playwright() as playwright:
     page.goto(os.environ.get("HIMVOTE_WEB_URL", "http://127.0.0.1:3000"), wait_until="networkidle")
     page.screenshot(path="/tmp/himvote-home.png", full_page=True)
 
+    assert page.get_by_text("Educational prototype.", exact=True).is_visible()
     assert page.get_by_role("heading", name="Institutional voting, made verifiable.", exact=False).is_visible()
     assert page.get_by_text("Voter Inclusion Check").is_visible()
     assert page.get_by_role("heading", name="Institutional Elections").is_visible()

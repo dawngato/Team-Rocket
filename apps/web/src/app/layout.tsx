@@ -8,7 +8,7 @@ import { Footer } from "../components/Footer";
 export const metadata: Metadata = {
   title: "HimVote | Institutional Verifiable Election Platform",
   description:
-    "Production grade institutional election platform providing cryptographic verification across student, faculty, and administrative contests.",
+    "Educational institutional election prototype with inspectable evidence and explicit security limits.",
 };
 
 export default function RootLayout({
@@ -22,6 +22,13 @@ export default function RootLayout({
         <QueryProvider>
           <SkipLink />
           <Navbar />
+          <div
+            role="status"
+            className="w-full border-b border-[#AA6C0B]/30 bg-[#AA6C0B]/10 px-4 py-2 text-center text-xs text-[#6B4707] dark:text-[#FBBF24]"
+          >
+            <span className="font-semibold">Educational prototype.</span>{" "}
+            Engine integration and independent production operations remain gated. Do not use for live elections.
+          </div>
           <main id="main-content" className="flex-1 focus-visible:outline-none">
             {children}
           </main>

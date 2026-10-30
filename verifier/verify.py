@@ -12,6 +12,7 @@ import sys
 import tarfile
 import tempfile
 import zipfile
+import unicodedata
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Set, Tuple
 
@@ -98,6 +99,7 @@ FAIL_BAD_DIGEST = "BAD_DIGEST"
 MAX_ARCHIVE_SIZE_BYTES = 100 * 1024 * 1024
 MAX_UNCOMPRESSED_SIZE_BYTES = 500 * 1024 * 1024
 MAX_FILE_COUNT = 10000
+MAX_COMPRESSION_RATIO = 100
 
 
 class BadArchiveError(Exception):
@@ -411,8 +413,19 @@ def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
 
     if zipfile.is_zipfile(archive_path):
         with zipfile.ZipFile(archive_path, "r") as zf:
+            seen_names: Set[str] = set()
             for info in zf.infolist():
                 name = info.filename
+                if "\x00" in name:
+                    raise BadArchiveError("NUL byte in archive entry name")
+                if any(ord(char) > 127 for char in name):
+                    raise BadArchiveError("Non ASCII archive entry names are not permitted")
+                normalized_name = unicodedata.normalize("NFC", name)
+                if normalized_name != name:
+                    raise BadArchiveError("Non canonical Unicode archive entry name")
+                if name in seen_names:
+                    raise BadArchiveError(f"Duplicate archive entry: {name}")
+                seen_names.add(name)
                 if name.startswith("/") or name.startswith("\\") or ".." in name.split("/") or ".." in name.split("\\"):
                     raise BadArchiveError(f"Path traversal detected in archive entry: {name}")
 
@@ -430,14 +443,29 @@ def safe_extract_archive(archive_path: str, extract_dir: str) -> None:
                 total_uncompressed += info.file_size
                 if total_uncompressed > MAX_UNCOMPRESSED_SIZE_BYTES:
                     raise BadArchiveError("Archive uncompressed size exceeds limit")
+                if info.file_size > 0 and info.compress_size > 0:
+                    compression_ratio = info.file_size / info.compress_size
+                    if compression_ratio > MAX_COMPRESSION_RATIO:
+                        raise BadArchiveError("Archive compression ratio exceeds limit")
 
             zf.extractall(extract_dir)
         return
 
     if tarfile.is_tarfile(archive_path):
         with tarfile.open(archive_path, "r:*") as tf:
+            seen_names = set()
             for member in tf.getmembers():
                 name = member.name
+                if "\x00" in name:
+                    raise BadArchiveError("NUL byte in archive entry name")
+                if any(ord(char) > 127 for char in name):
+                    raise BadArchiveError("Non ASCII archive entry names are not permitted")
+                normalized_name = unicodedata.normalize("NFC", name)
+                if normalized_name != name:
+                    raise BadArchiveError("Non canonical Unicode archive entry name")
+                if name in seen_names:
+                    raise BadArchiveError(f"Duplicate archive entry: {name}")
+                seen_names.add(name)
                 if name.startswith("/") or name.startswith("\\") or ".." in name.split("/") or ".." in name.split("\\"):
                     raise BadArchiveError(f"Path traversal detected in tar entry: {name}")
 
@@ -773,8 +801,15 @@ def audit_evidence(
     issuance_path: str,
     chain_path: str,
     report_path: Optional[str] = None,
+    require_native_engine: bool = False,
 ) -> Tuple[int, Dict[str, Any]]:
-    """Execute rigorous audit verification on election evidence per Section 6.8."""
+    """Execute rigorous audit verification on election evidence per Section 6.8.
+
+    The development fixture profile can contain plaintext selections so that the
+    integrity and mutation tests remain executable without a third party voting
+    engine. The normal command line path sets ``require_native_engine`` to true,
+    which prevents that profile from being reported as a verified encrypted tally.
+    """
     temp_dir: Optional[str] = None
     export_dir: str = export_path
 
@@ -1269,38 +1304,48 @@ def audit_evidence(
 
             # Case 2: Plaintext selections are present in test profiles
             elif has_selections:
-                recomputed_tallies: Dict[str, int] = {}
-                engine_proofs_ok = True
-                for idx, (ballot_obj, proofs_obj) in enumerate(decoded_leaves_ballots):
-                    selections = ballot_obj.get("selections", {})
-                    if isinstance(selections, dict):
-                        for cand_id, count in selections.items():
-                            if isinstance(count, int):
-                                recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + count
-                    elif isinstance(selections, list):
-                        for cand_id in selections:
-                            if isinstance(cand_id, str):
-                                recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + 1
-                    else:
-                        engine_proofs_ok = False
-
-                tally_match = engine_proofs_ok and (announced_total == len(ordered_leaves))
-                for cand, exp_count in announced_counts.items():
-                    if recomputed_tallies.get(cand, 0) != exp_count:
-                        tally_match = False
-
-                if tally_match:
+                if require_native_engine:
                     property_statuses[PROPERTY_TALLY_PROOF] = {
-                        "status": STATUS_PASS,
-                        "details": f"Recomputed tally matches announced totals across {announced_total} ballots",
+                        "status": STATUS_LIMITED,
+                        "details": (
+                            "Plaintext development ballot evidence is not accepted by the strict verifier; "
+                            "a vetted engine native ballot and tally proof is required"
+                        ),
                     }
+                    any_unverifiable = True
                 else:
-                    property_statuses[PROPERTY_TALLY_PROOF] = {
-                        "status": STATUS_FAIL,
-                        "details": "Tally mismatch against announced totals",
-                    }
-                    failure_reasons.append(FAIL_INVALID_TALLY)
-                    any_crypto_fail = True
+                    recomputed_tallies: Dict[str, int] = {}
+                    engine_proofs_ok = True
+                    for idx, (ballot_obj, proofs_obj) in enumerate(decoded_leaves_ballots):
+                        selections = ballot_obj.get("selections", {})
+                        if isinstance(selections, dict):
+                            for cand_id, count in selections.items():
+                                if isinstance(count, int):
+                                    recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + count
+                        elif isinstance(selections, list):
+                            for cand_id in selections:
+                                if isinstance(cand_id, str):
+                                    recomputed_tallies[cand_id] = recomputed_tallies.get(cand_id, 0) + 1
+                        else:
+                            engine_proofs_ok = False
+
+                    tally_match = engine_proofs_ok and (announced_total == len(ordered_leaves))
+                    for cand, exp_count in announced_counts.items():
+                        if recomputed_tallies.get(cand, 0) != exp_count:
+                            tally_match = False
+
+                    if tally_match:
+                        property_statuses[PROPERTY_TALLY_PROOF] = {
+                            "status": STATUS_PASS,
+                            "details": f"Recomputed tally matches announced totals across {announced_total} ballots",
+                        }
+                    else:
+                        property_statuses[PROPERTY_TALLY_PROOF] = {
+                            "status": STATUS_FAIL,
+                            "details": "Tally mismatch against announced totals",
+                        }
+                        failure_reasons.append(FAIL_INVALID_TALLY)
+                        any_crypto_fail = True
 
             # Case 3: Encrypted ballots without trustee proofs
             elif has_ciphertexts and trustee_proofs is None:
@@ -1388,8 +1433,8 @@ def audit_evidence(
             "details": "Voter client devices with malware cannot be protected solely by cryptographic verification",
         }
         property_statuses[PROPERTY_INDEPENDENT_OPERATORS] = {
-            "status": STATUS_PASS,
-            "details": "Identity issuer, witness, trustees, auditor, and relayer operate under distinct trust boundaries",
+            "status": STATUS_LIMITED,
+            "details": "Service boundaries are represented, but local witness, relayer, database, and auditor custody are not independently operated",
         }
 
         if any_crypto_fail:
@@ -1521,6 +1566,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     audit_parser.add_argument("--issuance", required=True, help="Path to issuance closure JSON")
     audit_parser.add_argument("--chain", required=True, help="Path to chain anchor JSON")
     audit_parser.add_argument("--report", required=True, help="Path to output report JSON file")
+    audit_parser.add_argument(
+        "--allow-development-profile",
+        action="store_true",
+        help="Allow plaintext development fixtures for local testing only",
+    )
 
     verify_parser = subparsers.add_parser(
         "verify",
@@ -1539,6 +1589,11 @@ def main(argv: Optional[List[str]] = None) -> int:
     verify_parser.add_argument("--issuance", help="Path to issuance closure JSON")
     verify_parser.add_argument("--chain", help="Path to chain anchor JSON")
     verify_parser.add_argument("--report", required=True, help="Path to output report JSON file")
+    verify_parser.add_argument(
+        "--allow-development-profile",
+        action="store_true",
+        help="Allow plaintext development fixtures for local testing only",
+    )
     verify_parser.add_argument(
         "--verify-inclusion",
         dest="inclusion_tracker",
@@ -1599,6 +1654,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 issuance_path=args.issuance,
                 chain_path=args.chain,
                 report_path=args.report,
+                require_native_engine=not args.allow_development_profile,
             )
             return exit_code
         except CryptoAuthError as err:

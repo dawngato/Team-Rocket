@@ -1,0 +1,16 @@
+Clause ID,Requirement Description,Implementation Path,Test Path,Evidence Artifact,Verification Status
+Q7.1,At most one accepted ballot per student,services/casting/src/service.py,tests/security/Q7_01_duplicate_cast_test.py,tests/security/reports/Q7_01_duplicate.json,PASS
+Q7.2,Unauthorized external ballot insertion rejected,services/casting/src/service.py,tests/security/Q7_02_insertion_test.py,tests/security/reports/Q7_02_insertion.json,PASS
+Q7.3,Deleted ballot detected by verifier,verifier/verify.py,tests/security/Q7_03_deletion_test.py,tests/security/reports/Q7_03_deletion.json,PASS
+Q7.4,Modified ballot ciphertext or proof detected,verifier/verify.py,tests/security/Q7_04_modification_test.py,tests/security/reports/Q7_04_modification.json,PASS
+Q7.5,Tally tampering or candidate swap detected,verifier/verify.py,tests/security/Q7_05_tally_tamper_test.py,tests/security/reports/Q7_05_tally.json,PASS
+Q7.6,Identity and casting data separation,services/casting/src/security.py,services/casting/tests/test_security.py,docs/security/PRIVACY_DATA_FLOW.md,PASS
+Q7.7,RFC 9162 Merkle tree append only evidence,services/checkpoint_worker/checkpoint_worker/worker.py,services/checkpoint_worker/tests/test_worker.py,fixtures/simulation_run/export/leaves.json,PASS
+Q7.8,Independent witness checkpoint signing,witness/storage.py,witness/tests/test_witness_api.py,fixtures/simulation_run/external/witness_final.json,PASS
+Q7.9,Solidity smart contract checkpoint anchor,chain/contracts/HimVoteAnchor.sol,chain/test/HimVoteAnchor.t.sol,chain/contracts/HimVoteAnchor.sol,PASS
+Q7.10,Standalone offline verifier CLI,verifier/verify.py,tests/test_verifier.py,fixtures/simulation_run/report.json,PASS
+Q7.11,Seven institutional roles in Web UI,apps/web/src/app/,apps/web/tests/institutional_roles.test.ts,apps/web/.next/,PASS
+Q7.12,Android native client with Chrome Custom Tab booth,apps/android/app/src/main/java/com/himvote/,apps/android/app/src/test/java/com/himvote/,apps/android/app/build.gradle.kts,PASS
+Q7.13,iOS native client with ASWebAuthenticationSession,apps/ios/HimVote/,apps/ios/HimVoteTests/,apps/ios/Package.swift,PASS
+Q7.14,Avalonia desktop client for Windows and Linux,apps/desktop/HimVote.Linux/,apps/desktop/HimVote.Windows.Tests/,apps/desktop/HimVote.Core/,PASS
+Q7.15,Linux native visual inspector,apps/linux/himvote_linux.py,apps/linux/tests/,apps/linux/himvote_linux.py,PASS

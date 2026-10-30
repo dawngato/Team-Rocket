@@ -83,13 +83,13 @@ export default function HowItWorksPage() {
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8]">
           <ShieldCheck className="w-4 h-4" aria-hidden="true" />
-          End to End Verifiable Architecture
+          Reference Verification Workflow
         </div>
         <h1 className="text-4xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
           How HimVote Verification Works
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-          Every meaningful state has a distinct cryptographic proof, invariant, and promise. No state is labeled confirmed until verified mathematically.
+          This page explains the intended HimVote workflow. The local prototype demonstrates selected evidence steps, while external engine integration and independent production operation remain release gates.
         </p>
       </div>
 

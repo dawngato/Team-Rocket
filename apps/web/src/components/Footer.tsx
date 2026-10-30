@@ -16,10 +16,10 @@ export function Footer() {
             <span>HimVote</span>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-            Production grade institutional election platform providing cryptographic verification across student, faculty, and administrative contests.
+            Educational campus election prototype for inspectable workflows, evidence review, and honest security limits.
           </p>
           <div className="text-xs text-slate-500 dark:text-slate-500">
-            Compliant with WCAG 2.2 AA accessibility standards.
+            Accessibility support is implemented in the tested web scope. Platform audits remain in progress.
           </div>
         </div>
 
@@ -40,7 +40,7 @@ export function Footer() {
             </li>
             <li>
               <Link href="/results" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
-                Certified Results
+                Published Results
               </Link>
             </li>
             <li>
