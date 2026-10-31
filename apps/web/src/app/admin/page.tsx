@@ -11,12 +11,8 @@ import {
   CheckCircle2,
   ArrowRight,
   Award,
-  Edit3,
-  Save,
-  RotateCcw,
 } from "lucide-react";
 import { apiClient } from "../../lib/api_client";
-import { getStoredElectionConfig, setStoredElectionConfig, type ElectionConfig } from "../../lib/college_voter_store";
 import type { AuditEvent, Election, StudentRecord, TeacherRecord } from "../../lib/types";
 
 export default function AdminOverviewPage() {
@@ -25,60 +21,6 @@ export default function AdminOverviewPage() {
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
   const [auditEvents, setAuditEvents] = useState<AuditEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  // College Election Parameters State (Admin only controls)
-  const [electionConfig, setElectionConfig] = useState<ElectionConfig>(() => getStoredElectionConfig());
-  const [inputStudentCount, setInputStudentCount] = useState<string>("4800");
-  const [inputCandidatesCount, setInputCandidatesCount] = useState<string>("6");
-  const [inputHoursLeft, setInputHoursLeft] = useState<string>("4");
-  const [isEditingConfig, setIsEditingConfig] = useState<boolean>(false);
-  const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
-
-  useEffect(() => {
-    const initial = getStoredElectionConfig();
-    setElectionConfig(initial);
-    setInputStudentCount(String(initial.totalStudents));
-    setInputCandidatesCount(String(initial.candidatesCount));
-    
-    // Calculate approx hours remaining
-    const diffHours = Math.max(1, Math.round((new Date(initial.endTimeIso).getTime() - Date.now()) / (3600 * 1000)));
-    setInputHoursLeft(String(diffHours));
-  }, []);
-
-  const handleSaveElectionConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const studentsVal = parseInt(inputStudentCount, 10);
-    const candidatesVal = parseInt(inputCandidatesCount, 10);
-    const hoursVal = parseFloat(inputHoursLeft);
-
-    if (isNaN(studentsVal) || studentsVal <= 0) {
-      alert("Please enter a valid positive number for total students.");
-      return;
-    }
-    if (isNaN(candidatesVal) || candidatesVal <= 0) {
-      alert("Please enter a valid number of candidates.");
-      return;
-    }
-    if (isNaN(hoursVal) || hoursVal <= 0) {
-      alert("Please enter valid remaining hours for voting duration.");
-      return;
-    }
-
-    const newEndTimeIso = new Date(Date.now() + hoursVal * 3600 * 1000).toISOString();
-
-    const newConfig: ElectionConfig = {
-      totalStudents: studentsVal,
-      votesCast: electionConfig.votesCast,
-      candidatesCount: candidatesVal,
-      endTimeIso: newEndTimeIso,
-    };
-
-    setStoredElectionConfig(newConfig);
-    setElectionConfig(newConfig);
-    setIsEditingConfig(false);
-    setSaveSuccessMsg(`Updated: ${studentsVal.toLocaleString()} Students, ${candidatesVal} Candidates, Closes in ${hoursVal} hrs.`);
-    setTimeout(() => setSaveSuccessMsg(null), 5000);
-  };
 
   useEffect(() => {
     let active = true;
@@ -103,6 +45,11 @@ export default function AdminOverviewPage() {
   const openCount = elections.filter((e) => e.state === "OPEN").length;
   const verifiedStudents = students.filter((s) => s.verified).length;
   const totalStudents = students.length;
+  const electionStateCounts = elections.reduce<Record<string, number>>((counts, election) => {
+    counts[election.state] = (counts[election.state] || 0) + 1;
+    return counts;
+  }, {});
+  const electionTotal = Math.max(1, elections.length);
 
   const quickLinks = [
     {
@@ -189,136 +136,32 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      {/* QUICK LIVE ELECTORAL STRENGTH & SCHEDULE CONTROLLER */}
-      <div className="rounded-3xl border border-cyan-500/30 bg-gradient-to-r from-cyan-950/30 via-slate-900/80 to-[#10233F]/40 p-6 shadow-md">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 text-xs font-semibold text-cyan-400 uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-              Election Authority Settings (Admin Only)
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-              <div>
-                <span className="text-[11px] text-slate-400 block">Total Eligible Students:</span>
-                <span className="font-mono text-cyan-300 font-extrabold text-2xl">
-                  {electionConfig.totalStudents.toLocaleString()}
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-400 block">Active Candidates:</span>
-                <span className="font-mono text-emerald-300 font-extrabold text-2xl">
-                  {electionConfig.candidatesCount} Nominees
-                </span>
-              </div>
-              <div>
-                <span className="text-[11px] text-slate-400 block">Poll Deadline:</span>
-                <span suppressHydrationWarning className="font-mono text-amber-300 font-extrabold text-xl">
-                  {new Date(electionConfig.endTimeIso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-slate-300 max-w-2xl pt-1">
-              Controls set here directly drive the real-time voting widget and countdown on the Home page.
-              Vote tallies continue incrementing automatically in background.
-            </p>
-            {saveSuccessMsg && (
-              <p className="text-xs font-semibold text-emerald-400 animate-fade-in pt-1">
-                ✓ {saveSuccessMsg}
-              </p>
-            )}
+      <section aria-labelledby="election-state-chart" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="election-state-chart" className="text-base font-bold text-[#10233F] dark:text-white">Election status overview</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Counts come from the election service response. Draft elections are not included in this public summary.</p>
           </div>
-
-          <div className="shrink-0">
-            {!isEditingConfig ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setInputStudentCount(String(electionConfig.totalStudents));
-                  setInputCandidatesCount(String(electionConfig.candidatesCount));
-                  const diffHours = Math.max(1, Math.round((new Date(electionConfig.endTimeIso).getTime() - Date.now()) / (3600 * 1000)));
-                  setInputHoursLeft(String(diffHours));
-                  setIsEditingConfig(true);
-                }}
-                className="inline-flex items-center gap-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 text-xs font-bold shadow-md transition-all active:scale-95"
-              >
-                <Edit3 className="w-4 h-4" />
-                <span>Configure Election & Timer</span>
-              </button>
-            ) : (
-              <form onSubmit={handleSaveElectionConfig} className="bg-slate-900/90 border border-cyan-500/40 rounded-2xl p-4 space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Total Students
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="100000"
-                      value={inputStudentCount}
-                      onChange={(e) => setInputStudentCount(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border border-cyan-500/50 bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      placeholder="e.g. 4800"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Candidates
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="50"
-                      value={inputCandidatesCount}
-                      onChange={(e) => setInputCandidatesCount(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border border-cyan-500/50 bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-cyan-400"
-                      placeholder="e.g. 6"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="text-[10px] uppercase font-bold text-slate-400 block mb-1">
-                      Hours Remaining
-                    </label>
-                    <input
-                      type="number"
-                      min="0.1"
-                      step="0.5"
-                      max="72"
-                      value={inputHoursLeft}
-                      onChange={(e) => setInputHoursLeft(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono font-bold rounded-lg border border-amber-500/50 bg-slate-950 text-white focus:outline-none focus:ring-1 focus:ring-amber-400"
-                      placeholder="e.g. 4"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-1 border-t border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingConfig(false)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 text-xs font-medium border border-slate-700 transition-all"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Cancel</span>
-                  </button>
-                  <button
-                    type="submit"
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 text-xs font-bold shadow transition-all"
-                  >
-                    <Save className="w-3.5 h-3.5" />
-                    <span>Apply Updates</span>
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
+          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:border-[#1E3352] dark:text-slate-400">Service data</span>
         </div>
-      </div>
+        {error ? (
+          <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">Election data is unavailable until the service responds.</p>
+        ) : Object.keys(electionStateCounts).length === 0 ? (
+          <p className="mt-5 text-sm text-slate-500 dark:text-slate-400">No public election records were returned.</p>
+        ) : (
+          <div className="mt-5 space-y-4" role="list" aria-label="Public election counts by state">
+            {Object.entries(electionStateCounts).map(([state, count]) => (
+              <div key={state} role="listitem" className="grid grid-cols-[7rem_minmax(0,1fr)_2.5rem] items-center gap-3">
+                <span className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{state.replaceAll("_", " ")}</span>
+                <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="img" aria-label={`${count} elections in ${state}`}>
+                  <div className="h-full rounded-full bg-[#157E92] dark:bg-cyan-400" style={{ width: `${Math.max(4, (count / electionTotal) * 100)}%` }} />
+                </div>
+                <span className="text-right font-mono text-xs font-bold text-[#10233F] dark:text-white">{count}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
 
       {error && <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FBBF24]" role="status">{error}</div>}
 

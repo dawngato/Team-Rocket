@@ -31,7 +31,7 @@ verification remain blocked.
 | TR-007 | `BLOCKED` | Local witness and local chain are explicitly simulated. Independent operator custody, pinned roots and external history are not established. |
 | TR-008 | `FIXED_UNTESTED` | Development actor headers are loopback restricted and production compose disables them. Deployment exposure tests remain to be run. |
 | TR-009 | `FIXED_UNTESTED` | Removed the public role-preview switcher from desktop and mobile navigation in this checkout. Protected route and role-revocation behavior still needs live authorization testing. |
-| TR-010 | `PARTIAL` | Production middleware redirects requests with no session cookie, but it does not validate the cookie or role. Backend authorization remains incomplete for scoped reads and writes. |
+| TR-010 | `FIXED_UNTESTED` | Middleware now validates the session against identity `/me`, denies roles outside each workspace, and checks exact or institution-wide election scope for direct officer election URLs. Backend APIs repeat authorization; tenant ownership metadata remains a separate TR-003 gap. |
 | TR-011 | `PARTIAL` | Casting strips identity, forwarding and tracing headers at the gateway, but identity and casting still share a gateway operator and residual timing/log correlation risk. |
 | TR-012 | `FIXED_UNTESTED` | Admin uses its own configured database URL and no longer depends on casting credentials. Least-privilege database grants require deployment verification. |
 | TR-013 | `TESTED_PASS` | Shared JCS implementation and canonicalization vectors pass the focused crypto suites. Cross-language golden vectors are not all executed here. |
@@ -45,7 +45,7 @@ verification remain blocked.
 | TR-021 | `FIXED_UNTESTED` | Cookie mutation requests enforce same-site origin checks and secure cookie settings. Cross-site browser attack testing is not complete. |
 | TR-022 | `FIXED_UNTESTED` | Compose secrets are required and internal services are loopback or unexposed; only the gateway is public in production. A deployed port scan is not run here. |
 | TR-023 | `BLOCKED` | Gate E1 verifies only the custom development engine. Publication now fails closed unless an established upstream engine and its independent tally verifier are integrated; no such adapter exists in this checkout. |
-| TR-024 | `FIXED_UNTESTED` | Officer candidate actions call the scoped replace endpoint and reload authoritative state. Persistence, concurrency and freeze rejection need a live admin run. |
+| TR-024 | `FIXED_UNTESTED` | Admin and officer candidate screens use the scoped election API, reload persisted records, and only allow draft edits. The service generates IDs when omitted and rejects moving IDs between elections; deployment concurrency testing remains. |
 | TR-025 | `FIXED_UNTESTED` | Publication no longer shows success before a successful response and requires an external attestation payload. Valid attestation verification is not completed end to end. |
 | TR-026 | `FIXED_UNTESTED` | Lifecycle loads live election state and handles errors around open/close mutations. Production scope and step-up behavior need execution against the service. |
 | TR-027 | `FIXED_UNTESTED` | Roster correction submission and reload use durable identity-service endpoints. Registrar review and cross-user scope need a live workflow run. |
@@ -54,7 +54,7 @@ verification remain blocked.
 | TR-030 | `FIXED_UNTESTED` | Super-admin requests call approval APIs rather than claiming local audit success. Distinct approvers, MFA and immutable audit verification need a live run. |
 | TR-031 | `PARTIAL` | Auditor witness and chain screens consume live evidence clients and show limited status without a pin. Independent witness and chain receipt verification remain unavailable. |
 | TR-032 | `FIXED_UNTESTED` | Auditor signing imports an externally signed attestation and verifies it before submission. A real offline signer and key custody are not present. |
-| TR-033 | `FIXED_UNTESTED` | Hardcoded operational metrics were removed from the evidence illustration. Live verified data is not used in the decorative orbit. |
+| TR-033 | `FIXED_UNTESTED` | Removed fake turnout counters, local candidate/ID verification demos, and pretend admin election controls. The landing readiness panel states prototype limits; admin and super-admin lifecycle charts use scoped election-service data and show unavailable states on errors. |
 | TR-034 | `FIXED_UNTESTED` | Student dashboard reads issuance status and keeps opaque receipt handles in tab-session storage, clearing them at logout so a shared browser does not carry them into the next account. Full personalized eligibility and witnessed stages need service integration. |
 | TR-035 | `FIXED_UNTESTED` | Officer election, roster and schedule pages load typed API data and do not substitute fixtures on failure. Live authorization and reload tests remain. |
 | TR-036 | `TESTED_PASS` | Casting and verifier credential semantics use the same issuer key and election/manifest checks; forged proof tests reject before commit. A complete external verifier run is still separate. |
@@ -66,12 +66,12 @@ verification remain blocked.
 | TR-042 | `FIXED_UNTESTED` | Server-side nullifier uniqueness remains authoritative; Android local storage is only a UX receipt cache. Cross-device duplicate testing is blocked by the async test runtime here. |
 | TR-043 | `PARTIAL` | Shared workspace shell and protected navigation exist, but role layouts and all responsive keyboard behavior are not fully reviewed. |
 | TR-044 | `PARTIAL` | Shared visual tokens and design tests exist, but several pages still contain literal utility colors and need full visual regression cleanup. |
-| TR-045 | `FIXED_UNTESTED` | Landing copy now identifies the educational prototype and removes misleading live metrics. User comprehension testing is not run. |
+| TR-045 | `FIXED_UNTESTED` | Landing and governance copy now describes local witness simulation, unverified engine status, receipt limitations, and metadata correlation instead of promising total privacy or independent custody. User comprehension testing is not run. |
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | The dedicated `tests/security/Q7-01_duplicate_cast_test.py` passes, including 100 concurrent submissions for one credential. The root suite (`tests --ignore=tests/load`) passes 58 tests. Load tests are excluded. |
-| TR-049 | `TESTED_PASS` | Current admin_api suite passes (35/35) and identity_issuer passes (28/28); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
-| TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 94 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
+| TR-049 | `TESTED_PASS` | Current admin_api suite passes (36/36) and identity_issuer passes (28/28); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
+| TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 97 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
 | TR-053 | `FIXED_UNTESTED` | Redundant web `app/lib` fixture shims were removed from reviewed production paths and TypeScript passes. A full import graph audit remains. |
@@ -101,10 +101,10 @@ python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/ad
   21 passed
 
 env TESTING=true python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  63 passed
+  64 passed
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/admin_api/tests
-  35 passed, 1 dependency deprecation warning
+  36 passed, 1 dependency deprecation warning
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/identity_issuer/tests
   28 passed, 1 dependency deprecation warning
@@ -113,7 +113,7 @@ python -m pytest -q tests --ignore=tests/load
   58 passed, 1 warning
 
 npm test (Vitest 5.0.5)
-  16 files passed, 94 tests passed
+  17 files passed, 97 tests passed
 
 npm run typecheck
   PASS

@@ -55,6 +55,53 @@ def test_officer_from_other_election_scope_cannot_open_election(client, test_db,
     assert state.state == "DRAFT"
 
 
+def test_candidate_ids_are_generated_by_service_and_cannot_move_between_elections(client):
+    def create_draft(title: str) -> str:
+        response = client.post(
+            "/v1/elections",
+            headers={"X_Actor_ID": "officer_candidate_id_test"},
+            json={
+                "title": title,
+                "contest": "Synthetic contest",
+                "selection_rule": "plurality",
+                "opens_at_utc": "2026-11-15T09:00:00Z",
+                "closes_at_utc": "2026-11-15T17:00:00Z",
+                "issuance_cutoff_utc": "2026-11-15T08:30:00Z",
+                "min_anonymous_turnout": 1,
+            },
+        )
+        assert response.status_code == 201
+        return response.json()["id"]
+
+    first_id = create_draft("First synthetic election")
+    second_id = create_draft("Second synthetic election")
+    created = client.post(
+        f"/v1/elections/{second_id}/candidates",
+        headers={"X_Actor_ID": "officer_candidate_id_test"},
+        json=[{"name": "Synthetic Candidate", "contest": "Synthetic contest"}],
+    )
+    assert created.status_code == 200
+    second_candidates = client.get(
+        f"/v1/elections/{second_id}/candidates?include_internal=true",
+        headers={"X_Actor_ID": "officer_candidate_id_test"},
+    ).json()
+    assert len(second_candidates) == 1
+    server_id = second_candidates[0]["id"]
+    assert server_id.startswith("cand_")
+
+    moved = client.post(
+        f"/v1/elections/{first_id}/candidates",
+        headers={"X_Actor_ID": "officer_candidate_id_test"},
+        json=[{"id": server_id, "name": "Synthetic Candidate", "contest": "Synthetic contest"}],
+    )
+    assert moved.status_code == 409
+    remaining = client.get(
+        f"/v1/elections/{second_id}/candidates?include_internal=true",
+        headers={"X_Actor_ID": "officer_candidate_id_test"},
+    ).json()
+    assert remaining[0]["id"] == server_id
+
+
 def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roster_approver_keypair, monkeypatch):
     """
     Executes an end to end test exercising all admin endpoints:

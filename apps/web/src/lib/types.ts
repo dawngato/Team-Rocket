@@ -37,6 +37,8 @@ export interface Candidate {
   slate?: string;
 }
 
+export type CandidateDraft = Omit<Candidate, "id"> & { id?: string };
+
 export interface ElectionSummary {
   id: string;
   title: string;

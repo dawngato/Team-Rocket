@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowRight, Plus, ShieldAlert, Trash2 } from "lucide-react";
 import { StateBadge } from "../../../../components/StateBadge";
 import { apiClient } from "@/lib/api_client";
-import type { Candidate, Election } from "@/lib/types";
+import type { Candidate, CandidateDraft, Election } from "@/lib/types";
 
 export default function OfficerCandidateManagementPage() {
   const params = useParams();
@@ -27,7 +27,7 @@ export default function OfficerCandidateManagementPage() {
     }).catch((cause) => setError(cause instanceof Error ? cause.message : "Candidate roster could not be loaded."));
   }, [electionId]);
 
-  const replace = async (next: Candidate[]) => {
+  const replace = async (next: CandidateDraft[]) => {
     setBusy(true); setError(null);
     try { setCandidates(await apiClient.replaceCandidates(electionId, next)); }
     catch (cause) { setError(cause instanceof Error ? cause.message : "Candidate change was rejected by the admin service."); }
@@ -37,7 +37,7 @@ export default function OfficerCandidateManagementPage() {
   const handleAdd = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!candName.trim() || !statement.trim()) return;
-    await replace([...candidates, { id: `cand_${crypto.randomUUID()}`, name: candName.trim(), contest: election?.contest || "Official contest", statement: statement.trim() }]);
+    await replace([...candidates, { name: candName.trim(), contest: election?.contest || "Official contest", statement: statement.trim() }]);
     setCandName(""); setStatement("");
   };
 

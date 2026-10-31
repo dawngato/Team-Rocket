@@ -14,6 +14,14 @@ class Candidate(BaseModel):
     statement: Optional[str] = None
 
 
+class CandidateInput(BaseModel):
+    """Candidate upsert payload; IDs are generated when omitted by the client."""
+    id: Optional[str] = None
+    name: str = Field(min_length=1, max_length=255)
+    contest: str = Field(min_length=1, max_length=255)
+    statement: Optional[str] = None
+
+
 class CreateElectionRequest(BaseModel):
     """Election creation payload for draft election."""
     title: str

@@ -24,6 +24,7 @@ from src.models.schemas import (
     ElectionSummary,
     Election,
     Candidate,
+    CandidateInput,
     CreateElectionRequest,
     UpdateElectionRequest,
     RosterSubmitRequest,
@@ -354,7 +355,7 @@ def list_candidates(
 @router.post("/{id}/candidates", status_code=200)
 def add_candidates(
     id: str,
-    candidates: List[Candidate],
+    candidates: List[CandidateInput],
     actor: ActorContext = Depends(require_permission("candidate.manage")),
     db: Session = Depends(get_db)
 ):
@@ -371,14 +372,22 @@ def add_candidates(
     except StateMachineError as e:
         raise HTTPException(status_code=409, detail=e.message)
 
-    submitted_ids = {candidate.id for candidate in candidates}
+    candidate_ids = [candidate.id or f"cand_{uuid.uuid4().hex[:20]}" for candidate in candidates]
+    if len(candidate_ids) != len(set(candidate_ids)):
+        raise HTTPException(status_code=422, detail="Candidate IDs must be unique within the election")
+    for candidate_id in candidate_ids:
+        existing = db.query(CandidateModel).filter(CandidateModel.id == candidate_id).first()
+        if existing and existing.election_id != id:
+            raise HTTPException(status_code=409, detail="A candidate ID cannot be moved between elections")
+
+    submitted_ids = set(candidate_ids)
     for existing in list(election.candidates):
         if existing.id not in submitted_ids:
             db.delete(existing)
 
-    for c in candidates:
+    for c, candidate_id in zip(candidates, candidate_ids, strict=True):
         cand_model = CandidateModel(
-            id=c.id,
+            id=candidate_id,
             election_id=id,
             name=c.name,
             contest=c.contest,

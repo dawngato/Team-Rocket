@@ -10,6 +10,7 @@ import type {
   TeacherRecord,
   TrustedPin,
   Candidate,
+  CandidateDraft,
   AdminInvitationRecord,
   RosterCorrectionRecord,
 } from "./types";
@@ -299,7 +300,7 @@ export const apiClient = {
     return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates?include_internal=true`);
   },
 
-  async replaceCandidates(electionId: string, candidates: Candidate[]): Promise<Candidate[]> {
+  async replaceCandidates(electionId: string, candidates: CandidateDraft[]): Promise<Candidate[]> {
     await requestJson("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`, { method: "POST", body: JSON.stringify(candidates) });
     return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates?include_internal=true`);
   },

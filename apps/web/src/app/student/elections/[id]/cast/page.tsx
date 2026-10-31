@@ -6,7 +6,6 @@ import { AccessibleDialog } from "@/components/AccessibleDialog";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 import { Vote, ArrowRight, ShieldCheck, Lock, AlertCircle } from "lucide-react";
 import {
   castingClient,

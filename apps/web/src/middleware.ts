@@ -3,7 +3,9 @@ import type { NextRequest } from "next/server";
 
 const PROTECTED_ROUTE_PATTERN = /^\/(student|teacher|admin|officer|super-admin|auditor)(\/|$)/;
 
-function isAuthorizedForPath(pathname: string, rawRoles: string[]): boolean {
+type SessionScope = { scope_type?: string; scope_id?: string; type?: string; id?: string };
+
+export function isAuthorizedForPath(pathname: string, rawRoles: string[], scopes: SessionScope[] = []): boolean {
   const roles = rawRoles.map((r) => r.trim().toLowerCase());
   const isSuperAdmin = roles.includes("super_admin") || roles.includes("superadmin");
   const isAdmin = isSuperAdmin || roles.includes("administrator") || roles.includes("admin");
@@ -15,16 +17,30 @@ function isAuthorizedForPath(pathname: string, rawRoles: string[]): boolean {
     return isAdmin;
   }
   if (pathname === "/officer" || pathname.startsWith("/officer/")) {
-    return isAdmin || roles.includes("election_officer") || roles.includes("officer");
+    if (!isSuperAdmin && !roles.includes("election_officer") && !roles.includes("officer")) return false;
+    const electionRoute = pathname.match(/^\/officer\/elections\/([^/]+)/);
+    if (!electionRoute || isSuperAdmin) return true;
+    let electionId: string;
+    try {
+      electionId = decodeURIComponent(electionRoute[1]);
+    } catch {
+      return false;
+    }
+    return scopes.some((scope) => {
+      const scopeType = String(scope.scope_type ?? scope.type ?? "").toLowerCase();
+      const scopeId = String(scope.scope_id ?? scope.id ?? "");
+      return (scopeType === "election" && scopeId === electionId)
+        || (["global", "institution", "tenant"].includes(scopeType) && scopeId === "*");
+    });
   }
   if (pathname === "/teacher" || pathname.startsWith("/teacher/")) {
-    return isAdmin || roles.includes("teacher");
+    return isSuperAdmin || roles.includes("teacher");
   }
   if (pathname === "/auditor" || pathname.startsWith("/auditor/")) {
     return isSuperAdmin || roles.includes("auditor");
   }
   if (pathname === "/student" || pathname.startsWith("/student/")) {
-    return isAdmin || roles.includes("student");
+    return isSuperAdmin || roles.includes("student");
   }
   return false;
 }
@@ -97,7 +113,8 @@ export async function middleware(request: NextRequest) {
       const profile = await authRes.json();
       const roles: string[] = Array.isArray(profile?.roles) ? profile.roles : [];
 
-      if (!isAuthorizedForPath(pathname, roles)) {
+      const scopes: SessionScope[] = Array.isArray(profile?.scopes) ? profile.scopes : [];
+      if (!isAuthorizedForPath(pathname, roles, scopes)) {
         // Authenticated but unauthorized -> Access Denied
         const deniedUrl = new URL("/auth/login", request.url);
         deniedUrl.searchParams.set("error", "access_denied");
@@ -108,6 +125,7 @@ export async function middleware(request: NextRequest) {
       // Set verified actor details on upstream request headers
       requestHeaders.set("x-user-id", String(profile.user_id || ""));
       requestHeaders.set("x-user-roles", roles.join(","));
+      requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
     } catch {
       // 6. Identity service unavailable -> FAIL CLOSED, never expose private content
       // In local development or standalone offline demo without backend, fall back to safe gate

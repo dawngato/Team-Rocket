@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ShieldAlert,
@@ -12,13 +12,35 @@ import {
   ShieldCheck,
   FileText,
   ArrowRight,
-  CheckCircle2,
   Lock,
 } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
+import { apiClient } from "@/lib/api_client";
+import type { Election } from "@/lib/types";
 
 export default function SuperAdminOverviewPage() {
   const pendingRequestsCount = "Not loaded";
+  const [elections, setElections] = useState<Election[]>([]);
+  const [electionsError, setElectionsError] = useState<string | null>(null);
+  const [loadingElections, setLoadingElections] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    void apiClient.getElections({ includeInternal: true }).then((rows) => {
+      if (active) setElections(rows);
+    }).catch((cause) => {
+      if (active) setElectionsError(cause instanceof Error ? cause.message : "Election status could not be loaded.");
+    }).finally(() => {
+      if (active) setLoadingElections(false);
+    });
+    return () => { active = false; };
+  }, []);
+
+  const electionStateCounts = useMemo(() => elections.reduce<Record<string, number>>((counts, election) => {
+    counts[election.state] = (counts[election.state] || 0) + 1;
+    return counts;
+  }, {}), [elections]);
+  const electionTotal = Math.max(1, elections.length);
 
   const quickCards = [
     {
@@ -65,7 +87,7 @@ export default function SuperAdminOverviewPage() {
       kicker: "Ceremony State",
       title: "Security and Key Ceremony",
       href: "/super-admin/security",
-      count: "Bootstrap Revoked",
+      count: "Not loaded",
       icon: Lock,
       desc: "Hardware keys, emergency lockdown, and cryptographic invariants.",
     },
@@ -107,7 +129,7 @@ export default function SuperAdminOverviewPage() {
               Institution Tenant
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
-              Primary
+              Not checked
             </span>
           </div>
           <div className="text-2xl font-extrabold text-[#10233F] dark:text-white truncate font-mono">
@@ -124,7 +146,7 @@ export default function SuperAdminOverviewPage() {
               Enrolled Student Base
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Live Roster
+              Not connected
             </span>
           </div>
           <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
@@ -138,18 +160,17 @@ export default function SuperAdminOverviewPage() {
         <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Bootstrap Token
+              Bootstrap Status
             </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Locked
+            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
+              Not checked
             </span>
           </div>
-          <div className="text-2xl font-extrabold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5 font-mono">
-            <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <span>REVOKED</span>
+          <div className="text-2xl font-extrabold text-slate-600 dark:text-slate-300 font-mono">
+            Not loaded
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Single use claim permanently disabled
+            Bootstrap state must be confirmed by the identity service
           </span>
         </div>
 
@@ -158,18 +179,39 @@ export default function SuperAdminOverviewPage() {
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               MFA Enforcement
             </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Enforced
+            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
+              Not checked
             </span>
           </div>
-          <div className="text-2xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono tabular-nums">
-            100%
+          <div className="text-2xl font-extrabold text-slate-600 dark:text-slate-300 font-mono tabular-nums">
+            —
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            All administrators enrolled with TOTP
+            No live MFA enrollment summary is connected to this page
           </span>
         </div>
       </div>
+
+      <section aria-labelledby="super-election-status" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 id="super-election-status" className="text-base font-bold text-[#10233F] dark:text-white">Election lifecycle overview</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Scoped records reported by the election service. Lifecycle status is not a cryptographic verification result.</p>
+          </div>
+          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:border-[#1E3352] dark:text-slate-400">Service data</span>
+        </div>
+        {loadingElections ? <p className="mt-5 text-sm text-slate-500" role="status">Loading election states…</p> : electionsError ? <p className="mt-5 text-sm text-amber-700 dark:text-amber-300" role="alert">{electionsError}</p> : Object.keys(electionStateCounts).length === 0 ? <p className="mt-5 text-sm text-slate-500 dark:text-slate-400" role="status">No elections were returned in this scope.</p> : (
+          <div className="mt-5 space-y-4" role="list" aria-label="Election counts by lifecycle state">
+            {Object.entries(electionStateCounts).map(([state, count]) => <div key={state} role="listitem" className="grid grid-cols-[8rem_minmax(0,1fr)_2.5rem] items-center gap-3">
+              <span className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{state.replaceAll("_", " ")}</span>
+              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="img" aria-label={`${count} elections in ${state}`}>
+                <div className="h-full rounded-full bg-[#157E92] dark:bg-cyan-400" style={{ width: `${Math.max(4, (count / electionTotal) * 100)}%` }} />
+              </div>
+              <span className="text-right font-mono text-xs font-bold text-[#10233F] dark:text-white">{count}</span>
+            </div>)}
+          </div>
+        )}
+      </section>
 
       {/* Governance Workspaces */}
       <div className="space-y-4">

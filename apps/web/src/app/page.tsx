@@ -21,15 +21,12 @@ import {
   EyeOff,
   Flame,
   HelpCircle,
-  Shield,
   FileSearch,
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
-import { LiveTurnoutHeroWidget } from "../components/LiveTurnoutHeroWidget";
-import { StudentIdCardVerifier } from "../components/StudentIdCardVerifier";
+import { ElectionReadinessPanel } from "../components/LiveTurnoutHeroWidget";
 import { electionClient } from "../lib/election_client";
 import type { Election } from "../lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "../lib/candidate_store";
 
 function formatUtc(value: string): string {
   const date = new Date(value);
@@ -49,56 +46,13 @@ export default function HomePage() {
 
   useEffect(() => {
     let cancelled = false;
-    void electionClient
-      .getElections()
+    void electionClient.getElections()
       .then((nextElections) => {
         if (!cancelled) setElections(nextElections);
-      })
-      .catch(() => {
+      }).catch((cause) => {
         if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElections([
-            {
-              id: "demo_union_2026",
-              title: "Student Union Council 2026",
-              state: "OPEN",
-              contest: "Council Executive Board",
-              selection_rule: "Choose one president & executive slate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-              eligible_count: 4800,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_union_2026"),
-            },
-            {
-              id: "demo_design_2026",
-              title: "School of Design Representatives",
-              state: "OPEN",
-              contest: "School of Design Cohort",
-              selection_rule: "Select one departmental delegate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 12).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 72).toISOString(),
-              manifest_digest: "sha256:7b4e91c2a8f0d365e1029384756cba9182736450f1e2d3c4b5a6978102f9e8d7",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              eligible_count: 1250,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_design_2026"),
-            },
-            {
-              id: "demo_eng_2026",
-              title: "Engineering Faculty Council 2026",
-              state: "PUBLISHED",
-              contest: "Engineering Faculty Delegation",
-              selection_rule: "Faculty representative vote",
-              opens_at_utc: new Date(Date.now() - 3600000 * 96).toISOString(),
-              closes_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-              manifest_digest: "sha256:4c1e82a9d701f53b829471625340ebca9182736450f1e2d3c4b5a6978102f9e8",
-              issuance_cutoff_utc: new Date(Date.now() - 3600000 * 36).toISOString(),
-              eligible_count: 3200,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_eng_2026"),
-            },
-          ]);
-          setElectionsError(null);
+          setElections([]);
+          setElectionsError(cause instanceof Error ? cause.message : "The election directory is unavailable.");
         }
       })
       .finally(() => {
@@ -137,17 +91,17 @@ export default function HomePage() {
 
             <div className="space-y-3">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#10233F] dark:text-white leading-[1.15]">
-                Democracy at Scale. <br />
+                Campus elections, <br />
                 <span className="bg-gradient-to-r from-[#0284C7] via-[#00D2FF] to-emerald-500 bg-clip-text text-transparent">
-                  Anonymous by Math.
+                  independently checkable.
                 </span>
               </h1>
               <p className="text-sm font-semibold tracking-wide text-cyan-700 dark:text-cyan-400">
                 Na darr kisi ka, na kisi ka zor — Vote tumhara, campus ka daur.
               </p>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
-                Vote for your student council without fear of teacher bias, senior intimidation, or leaked preferences.
-                Protected by verified RFC 9474 blind credentials, append-only Merkle witnesses, and cryptographic receipts.
+                Vote for your student council using a prototype built around private credentials and verifiable records.
+                The ballot engine and witness deployment are development implementations, not independently audited election infrastructure.
               </p>
             </div>
 
@@ -170,26 +124,26 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Verified Trust Architecture Strip */}
+            {/* Prototype capability summary */}
             <div className="pt-5 border-t border-slate-200/60 dark:border-[#1E3352]/60 grid grid-cols-3 gap-4">
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Ballot Secrecy</p>
-                <p className="text-base sm:text-lg font-black text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">RFC 9474</p>
+                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Credential protocol</p>
+                <p className="text-base sm:text-lg font-black text-[#10233F] dark:text-white font-mono mt-0.5">Blind signature</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Auditability</p>
-                <p className="text-base sm:text-lg font-black text-[#10233F] dark:text-white font-mono mt-0.5">Witness Log</p>
+                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Witness status</p>
+                <p className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-300 font-mono mt-0.5">Local demo</p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Consensus</p>
-                <p className="text-base sm:text-lg font-black text-[#10233F] dark:text-white font-mono mt-0.5">Merkle Tree</p>
+                <p className="text-[11px] uppercase tracking-wider text-slate-500 font-bold">Result status</p>
+                <p className="text-base sm:text-lg font-black text-amber-700 dark:text-amber-300 font-mono mt-0.5">Not verified</p>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Turnout Meter */}
+          {/* Right Column: Prototype readiness status */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center w-full">
-            <LiveTurnoutHeroWidget />
+            <ElectionReadinessPanel />
           </div>
         </div>
       </section>
@@ -200,13 +154,13 @@ export default function HomePage() {
           <div className="lg:col-span-5 space-y-1">
             <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#157E92] uppercase tracking-wider">
               <FileSearch className="size-4" />
-              <span>Independent Verification</span>
+              <span>Receipt lookup</span>
             </div>
             <h2 className="text-xl sm:text-2xl font-bold text-[#10233F] dark:text-white">
-              Verify Your Cast Ballot
+              Inspect a ballot receipt
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Hold a ballot receipt handle? Enter it below to inspect Merkle inclusion and witness cosignatures.
+              Hold a receipt handle? Inspect the available record. A path from the same service is not independent verification.
             </p>
           </div>
 
@@ -230,7 +184,7 @@ export default function HomePage() {
                 type="submit"
                 className="min-h-[46px] px-5 py-2.5 rounded-xl bg-[#157E92] hover:bg-[#0E6273] text-white text-sm font-bold shadow-sm transition-all active:scale-[0.98] shrink-0 flex items-center justify-center gap-2"
               >
-                <span>Check Inclusion</span>
+                <span>Check receipt status</span>
                 <ArrowRight className="size-4" />
               </button>
             </form>
@@ -241,9 +195,21 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. STUDENT ID ENROLLMENT & FRAUD PREVENTION */}
-      <section className="space-y-4">
-        <StudentIdCardVerifier />
+      {/* 3. STUDENT ACCOUNT ACCESS */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] sm:p-8">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="max-w-2xl">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#157E92]">Student access</span>
+            <h2 className="mt-1 text-xl font-bold text-[#10233F] dark:text-white">Create an account or sign in</h2>
+            <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+              Student eligibility is checked by the identity service. A photo or roll-number format check in a browser is not proof of enrollment.
+            </p>
+          </div>
+          <div className="flex shrink-0 flex-wrap gap-3">
+            <Link href="/auth/register" className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#157E92] px-5 text-sm font-semibold text-white hover:bg-[#0E6273]">Register</Link>
+            <Link href="/auth/login" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 px-5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-[#1E3352] dark:text-slate-200 dark:hover:bg-[#0E1A2B]">Sign in</Link>
+          </div>
+        </div>
       </section>
 
       {/* 4. CURRENT STUDENT ELECTIONS SHOWCASE */}
@@ -275,7 +241,19 @@ export default function HomePage() {
           </div>
         )}
 
-        {!electionsLoading && activeElections.length > 0 && (
+        {!electionsLoading && electionsError && (
+          <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
+            {electionsError} No sample elections are shown in place of live service data.
+          </div>
+        )}
+
+        {!electionsLoading && !electionsError && activeElections.length === 0 && (
+          <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300" role="status">
+            No public elections are currently available.
+          </div>
+        )}
+
+        {!electionsLoading && !electionsError && activeElections.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {activeElections.map((elec) => (
               <article
@@ -326,7 +304,7 @@ export default function HomePage() {
             Separation Of Powers On Campus
           </h2>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            No single administrator, teacher, or server can alter results or deanonymize a voter.
+            This prototype separates identity and ballot services, but shared operators and infrastructure can still correlate metadata. Independent witness custody is not configured.
           </p>
         </div>
 
@@ -337,7 +315,7 @@ export default function HomePage() {
             </div>
             <h3 className="font-bold text-sm sm:text-base text-[#10233F] dark:text-white">Voter Registrar (Teacher Desk)</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-xs sm:text-sm">
-              Verifies student identity and issues blind eligibility credentials. Has zero access to the ballot box or voter choices.
+              Verifies student identity and issues eligibility credentials. The design does not store a named student choice; operational metadata may still be correlatable.
             </p>
           </div>
 
@@ -347,7 +325,7 @@ export default function HomePage() {
             </div>
             <h3 className="font-bold text-sm sm:text-base text-[#10233F] dark:text-white">Anonymous Casting Gateway</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-xs sm:text-sm">
-              Accepts blind tokens and encrypted ballots. Strips IP and identity headers to guarantee total voter privacy.
+              Accepts credentials and encrypted ballots. The gateway strips selected identity and forwarding headers, but this does not eliminate timing or network correlation.
             </p>
           </div>
 
@@ -357,7 +335,7 @@ export default function HomePage() {
             </div>
             <h3 className="font-bold text-sm sm:text-base text-[#10233F] dark:text-white">Independent Witness & Auditor</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-xs sm:text-sm">
-              Independently cosigns each checkpoint Merkle root. Anyone can re-run the open-source reference verifier CLI offline.
+              The local demo witness records checkpoints. An independently operated witness and external trust pins are required before checkpoint roots can be treated as independent evidence.
             </p>
           </div>
         </div>
