@@ -12,6 +12,8 @@ import {
   RefreshCw,
   X,
   FileX2,
+  Lock,
+  BadgeCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { recordAuthenticVote } from "../lib/college_voter_store";
@@ -342,8 +344,9 @@ export function StudentIdCardVerifier() {
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-300 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5">
-                  🔒 <strong>Privacy Guard:</strong> Your Student ID was used solely to verify eligibility. Your vote choice in the booth will remain 100% anonymous and never tied to this token.
+                <div className="text-[11px] text-slate-300 leading-relaxed bg-black/20 p-3 rounded-xl border border-white/5 flex items-start gap-2">
+                  <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5 text-emerald-400" />
+                  <span><strong>Privacy Guard:</strong> Your Student ID was used solely to verify eligibility. Your vote choice in the booth will remain 100% anonymous and never tied to this token.</span>
                 </div>
 
                 <Link
@@ -394,8 +397,8 @@ export function StudentIdCardVerifier() {
             ) : (
               /* Idle / Instructions Card */
               <div className="rounded-3xl bg-white/[0.03] border border-white/10 p-6 space-y-4">
-                <div className="flex items-center gap-2.5 text-cyan-300 font-bold text-sm">
-                  <span className="text-base">🪪</span>
+                <div className="flex items-center gap-2 text-cyan-300 font-bold text-sm">
+                  <BadgeCheck className="w-4 h-4 text-cyan-400" />
                   <span>How We Verify Student Identity</span>
                 </div>
                 <div className="space-y-3 text-xs text-slate-300 leading-relaxed">

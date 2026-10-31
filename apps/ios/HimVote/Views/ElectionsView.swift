@@ -12,16 +12,32 @@ public struct ElectionsView: View {
         self.electionsViewModel = electionsViewModel
     }
     
+    private var visibleElections: [ElectionSummary] {
+        if authViewModel.currentUser?.role == .student {
+            let openOnly = electionsViewModel.elections.filter { $0.electionState == .open }
+            if !electionsViewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                let q = electionsViewModel.searchQuery.lowercased()
+                return openOnly.filter { $0.title.lowercased().contains(q) }
+            }
+            return openOnly
+        }
+        return electionsViewModel.filteredElections
+    }
+
     public var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 userHeaderBanner
                 
-                filterPicker
+                if authViewModel.currentUser?.role != .student {
+                    filterPicker
+                } else {
+                    studentActiveHeader
+                }
                 
                 contentBody
             }
-            .navigationTitle("HimVote Elections")
+            .navigationTitle(authViewModel.currentUser?.role == .student ? "Open Elections" : "HimVote Elections")
             .searchable(text: $electionsViewModel.searchQuery, prompt: "Search elections by title")
             .safeAreaInset(edge: .bottom) {
                 Color.clear.frame(height: 75)
@@ -50,6 +66,24 @@ public struct ElectionsView: View {
                 ElectionGuidelinesSheet()
             }
         }
+    }
+    
+    private var studentActiveHeader: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(ColorTokens.stateSuccess)
+                .frame(width: 8, height: 8)
+                .beaconPulse(color: ColorTokens.stateSuccess, isActive: true)
+            
+            Text("Active elections open for your ballot. Select an election to vote.")
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+            
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(ColorTokens.tailAdminSuccessBg.opacity(0.3))
     }
     
     private var userHeaderBanner: some View {
@@ -99,11 +133,11 @@ public struct ElectionsView: View {
             ProgressView("Loading institutional ballots...")
                 .font(Typography.callout)
             Spacer()
-        } else if electionsViewModel.filteredElections.isEmpty {
+        } else if visibleElections.isEmpty {
             emptyStateView
                 .transition(.opacity)
         } else {
-            List(electionsViewModel.filteredElections) { election in
+            List(visibleElections) { election in
                 NavigationLink {
                     CandidateListView(
                         electionSummary: election,
@@ -111,7 +145,7 @@ public struct ElectionsView: View {
                         electionsViewModel: electionsViewModel
                     )
                 } label: {
-                    ElectionCardRow(election: election)
+                    ElectionCardRow(election: election, isStudent: authViewModel.currentUser?.role == .student)
                 }
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -120,7 +154,7 @@ public struct ElectionsView: View {
                 })
             }
             .listStyle(.plain)
-            .animation(SpringTokens.fluid, value: electionsViewModel.filteredElections)
+            .animation(SpringTokens.fluid, value: visibleElections)
             .refreshable {
                 HapticFeedback.medium()
                 await refreshData()
@@ -142,25 +176,36 @@ public struct ElectionsView: View {
                     .foregroundStyle(ColorTokens.textTertiary)
             }
             
-            Text("No Elections Found")
-                .font(Typography.sectionHeader)
-                .foregroundStyle(ColorTokens.textPrimary)
-            
-            Text("No elections match the selected filter query.")
-                .font(Typography.caption)
-                .foregroundStyle(ColorTokens.textSecondary)
-                .multilineTextAlignment(.center)
-            
-            Button("Reset Filter") {
-                HapticFeedback.light()
-                withAnimation(SpringTokens.snappy) {
-                    electionsViewModel.activeFilter = .all
-                    electionsViewModel.searchQuery = ""
+            if authViewModel.currentUser?.role == .student {
+                Text("No Open Elections")
+                    .font(Typography.sectionHeader)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                
+                Text("There are currently no open campus elections accepting votes. You will be notified when your next eligible ballot opens.")
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text("No Elections Found")
+                    .font(Typography.sectionHeader)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                
+                Text("No elections match the selected filter query.")
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
+                    .multilineTextAlignment(.center)
+                
+                Button("Reset Filter") {
+                    HapticFeedback.light()
+                    withAnimation(SpringTokens.snappy) {
+                        electionsViewModel.activeFilter = .all
+                        electionsViewModel.searchQuery = ""
+                    }
                 }
+                .font(Typography.captionBold)
+                .foregroundStyle(ColorTokens.brandAccent)
+                .padding(.top, 4)
             }
-            .font(Typography.captionBold)
-            .foregroundStyle(ColorTokens.brandAccent)
-            .padding(.top, 4)
             
             Spacer()
         }
@@ -193,16 +238,18 @@ public struct ElectionsView: View {
 
 public struct ElectionCardRow: View {
     public let election: ElectionSummary
+    public var isStudent: Bool = false
     
-    @ScaledMetric(relativeTo: .caption) private var clockIconSize: CGFloat = 14
+    @ScaledMetric(relativeTo: .caption) private var clockIconSize: CGFloat = 13
     @ScaledMetric(relativeTo: .caption) private var activeDotSize: CGFloat = 8
     
-    public init(election: ElectionSummary) {
+    public init(election: ElectionSummary, isStudent: Bool = false) {
         self.election = election
+        self.isStudent = isStudent
     }
     
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(election.title)
@@ -217,8 +264,9 @@ public struct ElectionCardRow: View {
             }
             
             Divider()
+                .opacity(0.6)
             
-            HStack(spacing: 20) {
+            HStack(spacing: 12) {
                 HStack(spacing: 6) {
                     Image(systemName: "clock")
                         .font(.system(size: clockIconSize))
@@ -232,24 +280,42 @@ public struct ElectionCardRow: View {
                 Spacer()
                 
                 if election.electionState == .open {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Circle()
                             .fill(ColorTokens.stateSuccess)
                             .frame(width: activeDotSize, height: activeDotSize)
                             .beaconPulse(color: ColorTokens.stateSuccess, isActive: true)
                         
-                        Text("Active Now")
+                        Text("Open for Voting")
                             .font(Typography.badgeText)
                             .foregroundStyle(ColorTokens.stateSuccess)
                     }
                 }
             }
+            
+            if isStudent && election.electionState == .open {
+                HStack {
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Text("Vote Now")
+                            .font(.system(size: 13, weight: .semibold))
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(ColorTokens.tailAdminBrand)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .padding(.top, 2)
+            }
         }
         .padding(16)
         .background(ColorTokens.backgroundSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 10)
                 .stroke(ColorTokens.cardBorder, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)

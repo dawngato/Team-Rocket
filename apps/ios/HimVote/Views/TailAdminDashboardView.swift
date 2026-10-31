@@ -133,7 +133,7 @@ public struct TailAdminDashboardView: View {
                         .clipShape(Capsule())
                 }
                 
-                Text(authViewModel.currentUser?.email ?? "Synthetic Voter Node")
+                Text(authViewModel.currentUser?.email ?? "Authorized Session Node")
                     .font(Typography.callout)
                     .foregroundStyle(ColorTokens.textSecondary)
                 

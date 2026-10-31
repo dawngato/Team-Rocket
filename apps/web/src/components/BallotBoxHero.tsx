@@ -25,7 +25,7 @@ export function BallotBoxHero() {
       icon: EyeOff,
       badge: "Nobody Can Peek",
       color: "border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
-      sampleValue: "SEALED-VOTE-🔒-ENCRYPTED",
+      sampleValue: "SEALED-VOTE-ENCRYPTED",
       highlight: "Phone/Laptop Screen",
       description: "Jaise real booth me parda gira hota hai, waise hi aapka vote screen se nikalne se pehle lock ho jata hai. HOD, Principal ya system admin koi bhi nahi dekh sakta aapne kisko chuna."
     },

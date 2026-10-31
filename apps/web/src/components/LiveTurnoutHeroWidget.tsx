@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Vote, Clock, Activity, CheckCircle2, ShieldCheck, ArrowRight, Hourglass, UserCheck } from "lucide-react";
+import { Users, Vote, Clock, Activity, CheckCircle2, ShieldCheck, ArrowRight, Hourglass, UserCheck, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { getStoredElectionConfig, type ElectionConfig } from "../lib/college_voter_store";
 
@@ -215,7 +215,7 @@ export function LiveTurnoutHeroWidget() {
       <div className="relative z-10 bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 rounded-2xl p-3.5 mb-4">
         <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
           <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-[11px] font-semibold">
-            <span className="text-xs">📊</span>
+            <BarChart3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <span>College Turnout</span>
           </span>
           <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">
@@ -224,7 +224,7 @@ export function LiveTurnoutHeroWidget() {
         </div>
         <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-300/70 dark:border-slate-700">
           <div
-            className="bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 dark:from-cyan-500 dark:via-teal-400 dark:to-emerald-400 h-full rounded-full transition-all duration-500 ease-out shadow-sm shadow-emerald-500/30 dark:shadow-cyan-500/50"
+            className="bg-emerald-600 dark:bg-emerald-500 h-full rounded-full transition-all duration-500 ease-out shadow-xs"
             style={{ width: `${turnoutPercent}%` }}
           />
         </div>
