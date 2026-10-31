@@ -40,10 +40,19 @@ export function Navbar() {
 
   useEffect(() => {
     let mounted = true;
-    const current = identityClient.getSession();
-    if (mounted) {
-      setSession(current);
-    }
+    identityClient
+      .getSession()
+      .then((current) => {
+        if (mounted) {
+          setSession(current);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setSession(null);
+        }
+      });
+
     const unsubscribe = identityClient.onSessionChange((nextSession) => {
       if (mounted) {
         setSession(nextSession);
@@ -344,7 +353,7 @@ export function Navbar() {
                   title={session.email}
                 >
                   <UserRound className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
-                  <span className="truncate">{session.displayName || session.email.split("@")[0]}</span>
+                  <span className="truncate">{session.email.split("@")[0]}</span>
                 </Link>
                 <button
                   type="button"
