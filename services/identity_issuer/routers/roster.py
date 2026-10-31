@@ -46,7 +46,21 @@ def list_roster_corrections(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin", "roster_approver"])),
     db: Session = Depends(get_db),
 ):
-    rows = db.query(RosterCorrection).order_by(RosterCorrection.created_at.desc()).limit(500).all()
+    query = db.query(RosterCorrection)
+    
+    # P0-05 Fix: Teachers must strictly be scoped to their assigned department
+    user_roles = [assignment.role.name for assignment in current_user.role_assignments if assignment.role]
+    is_privileged = any(r in {"administrator", "super_admin", "roster_approver"} for r in user_roles)
+    
+    if not is_privileged:
+        staff_profile = db.query(StaffProfile).filter(StaffProfile.email == current_user.email).first()
+        if staff_profile and staff_profile.department:
+            dept_name = staff_profile.department.name
+            query = query.filter(RosterCorrection.department == dept_name)
+        else:
+            return []
+
+    rows = query.order_by(RosterCorrection.created_at.desc()).limit(500).all()
     return [
         RosterCorrectionRecord(
             id=row.id,
@@ -71,6 +85,23 @@ def submit_roster_correction(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin"])),
     db: Session = Depends(get_db),
 ):
+    user_roles = [assignment.role.name for assignment in current_user.role_assignments if assignment.role]
+    is_privileged = any(r in {"administrator", "super_admin"} for r in user_roles)
+    
+    # P0-05 Fix: Enforce department scope on submission
+    if not is_privileged:
+        staff_profile = db.query(StaffProfile).filter(StaffProfile.email == current_user.email).first()
+        if not staff_profile or not staff_profile.department:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Teacher has no assigned department profile",
+            )
+        if staff_profile.department.name.lower() != req.department.strip().lower():
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Teachers may only submit roster corrections for their own assigned department",
+            )
+
     correction = RosterCorrection(
         student_id=req.student_id.strip(),
         student_name=req.student_name.strip(),

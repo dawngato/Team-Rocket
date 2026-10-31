@@ -153,7 +153,12 @@ def provision_teacher(
             detail="A user with this email address already exists",
         )
 
-    pwd_hash, _ = hash_password(req.initial_password or "TeacherSecurePass123!")
+    if not req.initial_password or len(req.initial_password) < 12:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="A strong initial password of at least 12 characters must be explicitly supplied for teacher provisioning.",
+        )
+    pwd_hash, _ = hash_password(req.initial_password)
     teacher_user = User(
         email=str(req.email).lower(),
         password_hash=pwd_hash,

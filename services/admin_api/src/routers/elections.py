@@ -71,16 +71,21 @@ def list_elections(
 ):
     """Lists public elections, or scoped internal elections for operators."""
     query = db.query(ElectionModel).join(ElectionStateModel)
-    if state:
-        query = query.filter(ElectionStateModel.state == state)
-    elif include_internal:
-        # Internal lifecycle views must use the same authenticated actor
-        # boundary as mutations. Public callers never receive draft metadata.
+    
+    # P0-04 Fix: Public callers must never receive internal lifecycle states (DRAFT, REVIEW, APPROVED, DISPUTED, AUDIT_FAILED)
+    PUBLIC_PERMITTED_STATES = ["OPEN", "CLOSED", "PUBLISHED", "FROZEN", "TALLIED"]
+    
+    if include_internal:
+        # P0-04 Fix: Internal lifecycle views strictly require an authenticated administrative actor
         get_current_actor_id(request)
+        if state:
+            query = query.filter(ElectionStateModel.state == state)
     else:
-        query = query.filter(
-            ElectionStateModel.state.notin_(["DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"])
-        )
+        # Public visitor query: regardless of user-supplied state filter, bound strictly to public states
+        if state and state in PUBLIC_PERMITTED_STATES:
+            query = query.filter(ElectionStateModel.state == state)
+        else:
+            query = query.filter(ElectionStateModel.state.in_(PUBLIC_PERMITTED_STATES))
 
     elections = query.all()
     summaries = [
