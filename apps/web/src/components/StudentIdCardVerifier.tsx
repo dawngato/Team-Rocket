@@ -163,8 +163,8 @@ export function StudentIdCardVerifier() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto my-12 px-4">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0b1b2d] to-[#050f1a] border border-cyan-500/25 p-6 md:p-8 shadow-2xl shadow-cyan-950/40">
+    <div className="w-full mx-auto">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0b1b2d] to-[#050f1a] border border-cyan-500/25 p-6 md:p-8 shadow-xl shadow-cyan-950/30">
         {/* Glow Effects */}
         <div className="absolute top-0 right-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
