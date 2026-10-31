@@ -5,7 +5,7 @@ Conforms directly to packages/openapi/himvote.openapi.yaml.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 class LoginRequest(BaseModel):
@@ -33,6 +33,48 @@ class SessionProfile(BaseModel):
     roles: List[str]
     scopes: List[SessionScope]
     mfa_authenticated: bool
+
+
+class ProfileUpdateRequest(BaseModel):
+    """Strict allowlist for self-service profile attributes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    display_name: Optional[str] = Field(default=None, min_length=1, max_length=80)
+    phone_number: Optional[str] = Field(default=None, max_length=16)
+
+    @field_validator("display_name")
+    @classmethod
+    def normalize_display_name(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        normalized = " ".join(value.split())
+        if not normalized:
+            raise ValueError("display_name must contain a non-whitespace character")
+        if len(normalized) > 80:
+            raise ValueError("display_name must be at most 80 characters")
+        return normalized
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone_number(cls, value: Optional[str]) -> Optional[str]:
+        if value == "":
+            return None
+        if value is None:
+            return value
+        if not value.startswith("+") or not value[1:].isascii() or not value[1:].isdigit():
+            raise ValueError("phone_number must use E.164 format, for example +14155552671")
+        digits = value[1:]
+        if not 8 <= len(digits) <= 15 or digits.startswith("0"):
+            raise ValueError("phone_number must contain 8 to 15 E.164 digits")
+        return value
+
+
+class ProfileResponse(BaseModel):
+    id: str
+    display_name: Optional[str]
+    phone_number: Optional[str]
+    updated_at: datetime
 
 
 class InvitationRedeemRequest(BaseModel):

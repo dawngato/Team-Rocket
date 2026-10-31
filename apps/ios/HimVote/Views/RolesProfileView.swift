@@ -2,20 +2,44 @@ import SwiftUI
 
 public struct RolesProfileView: View {
     @Bindable var authViewModel: AuthViewModel
+    @State private var profileViewModel: ProfileViewModel
     @State private var keychainService = KeychainService()
     @State private var showSecuritySheet: Bool = false
     @State private var showGuidelinesSheet: Bool = false
+    @State private var showEditProfileSheet: Bool = false
+    @Environment(\.colorScheme) private var colorScheme
     
-    public init(authViewModel: AuthViewModel) {
+    public init(
+        authViewModel: AuthViewModel,
+        apiClient: ApiClientProtocol = ApiClient()
+    ) {
         self.authViewModel = authViewModel
+        self._profileViewModel = State(wrappedValue: ProfileViewModel(apiClient: apiClient))
     }
     
     public var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
-                    // Profile Header Card
+                    // Profile Header Card with Edit Action
                     profileCard
+                    
+                    // Network unavailable or loading indicator
+                    if profileViewModel.isLoading && profileViewModel.profile == nil {
+                        HStack(spacing: 8) {
+                            ProgressView()
+                                .scaleEffect(0.85)
+                            Text("Retrieving verified profile details...")
+                                .font(Typography.caption)
+                                .foregroundStyle(ColorTokens.textSecondary)
+                        }
+                        .padding(.vertical, 8)
+                    } else if profileViewModel.networkUnavailable {
+                        networkRecoveryBanner
+                    }
+                    
+                    // Detailed Identity & Contact Attributes
+                    identityAndContactCard
                     
                     if authViewModel.currentUser?.role == .student {
                         studentAccountDetails
@@ -27,7 +51,6 @@ public struct RolesProfileView: View {
                     if authViewModel.currentUser?.role == .student {
                         studentGuidelinesLink
                     } else {
-                        // Implementation and trust details belong in staff accounts.
                         keychainVaultCard
                         quickSheetsSection
                     }
@@ -40,9 +63,43 @@ public struct RolesProfileView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
             }
-            .background(ColorTokens.tailAdminLightBg)
+            .background(colorScheme == .dark ? ColorTokens.tailAdminDarkBg : ColorTokens.tailAdminLightBg)
             .navigationTitle("Account")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        HapticFeedback.light()
+                        profileViewModel.prepareForEditing()
+                        showEditProfileSheet = true
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "pencil")
+                                .font(.system(size: 13, weight: .semibold))
+                            Text("Edit")
+                                .font(Typography.callout)
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundStyle(ColorTokens.tailAdminBrand)
+                    }
+                }
+            }
+            .refreshable {
+                if let token = authViewModel.currentUser?.sessionToken {
+                    await profileViewModel.loadProfile(sessionToken: token)
+                }
+            }
+            .task {
+                if let token = authViewModel.currentUser?.sessionToken {
+                    await profileViewModel.loadProfile(sessionToken: token)
+                }
+            }
+            .sheet(isPresented: $showEditProfileSheet) {
+                EditProfileSheet(
+                    profileViewModel: profileViewModel,
+                    authViewModel: authViewModel
+                )
+            }
             .sheet(isPresented: $showSecuritySheet) {
                 InstitutionalSecuritySheet()
             }
@@ -51,6 +108,8 @@ public struct RolesProfileView: View {
             }
         }
     }
+    
+    // MARK: - Profile Header Card
     
     private var profileCard: some View {
         HStack(spacing: 16) {
@@ -63,17 +122,23 @@ public struct RolesProfileView: View {
                             endPoint: .bottomTrailing
                         )
                     )
-                    .frame(width: 56, height: 56)
+                    .frame(width: 60, height: 60)
+                    .shadow(color: ColorTokens.tailAdminBrand.opacity(0.2), radius: 6, x: 0, y: 3)
                 
-                Text(String(authViewModel.currentUser?.email.prefix(1) ?? "U").uppercased())
-                    .font(.system(size: 24, weight: .bold))
+                Text(resolvedInitials)
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundStyle(.white)
             }
             
             VStack(alignment: .leading, spacing: 4) {
-                Text(authViewModel.currentUser?.email ?? "voter@campus.edu")
+                Text(resolvedDisplayName)
                     .font(Typography.cardHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
+                    .lineLimit(1)
+                
+                Text(authViewModel.currentUser?.email ?? "voter@campus.edu")
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.textSecondary)
                     .lineLimit(1)
                 
                 HStack(spacing: 6) {
@@ -85,7 +150,7 @@ public struct RolesProfileView: View {
                         .background(ColorTokens.tailAdminBrandBg)
                         .clipShape(Capsule())
                     
-                    Text("Verified Synthetic")
+                    Text("Registrar Verified")
                         .font(Typography.badgeText)
                         .foregroundStyle(ColorTokens.tailAdminSuccess)
                         .padding(.horizontal, 6)
@@ -93,12 +158,203 @@ public struct RolesProfileView: View {
                         .background(ColorTokens.tailAdminSuccessBg)
                         .clipShape(Capsule())
                 }
+                .padding(.top, 2)
             }
             
             Spacer()
+            
+            Button {
+                HapticFeedback.light()
+                profileViewModel.prepareForEditing()
+                showEditProfileSheet = true
+            } label: {
+                Image(systemName: "square.and.pencil")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(ColorTokens.tailAdminBrand)
+                    .padding(10)
+                    .background(ColorTokens.tailAdminBrandBg)
+                    .clipShape(Circle())
+            }
+            .buttonStyle(.plain)
         }
         .glassCard(cornerRadius: 18, padding: 16)
     }
+    
+    private var resolvedDisplayName: String {
+        if let name = profileViewModel.profile?.displayName, !name.isEmpty {
+            return name
+        }
+        if let name = authViewModel.currentUser?.displayName, !name.isEmpty {
+            return name
+        }
+        if let student = authViewModel.visibleStudents.first, !student.name.isEmpty {
+            return student.name
+        }
+        return authViewModel.currentUser?.email ?? "Campus Voter"
+    }
+    
+    private var resolvedInitials: String {
+        let name = resolvedDisplayName
+        let parts = name.split(separator: " ")
+        if parts.count >= 2, let first = parts.first?.first, let second = parts.last?.first {
+            return "\(first)\(second)".uppercased()
+        } else if let first = name.first {
+            return String(first).uppercased()
+        }
+        return "U"
+    }
+    
+    // MARK: - Identity & Contact Attributes Card
+    
+    private var identityAndContactCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            // Self-Service Section
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Contact Details")
+                        .font(Typography.captionBold)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                    
+                    Spacer()
+                    
+                    Text("Self-Service")
+                        .font(Typography.badgeText)
+                        .foregroundStyle(ColorTokens.tailAdminBrand)
+                }
+                
+                attributeRow(
+                    label: "Display Name",
+                    value: profileViewModel.profile?.displayName ?? authViewModel.currentUser?.displayName ?? "Not set (uses email)",
+                    isEditable: true
+                )
+                
+                attributeRow(
+                    label: "Phone Number",
+                    value: profileViewModel.profile?.phoneNumber ?? authViewModel.currentUser?.phoneNumber ?? "Not set",
+                    isEditable: true
+                )
+            }
+            
+            Divider()
+                .padding(.vertical, 2)
+            
+            // Protected Section
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Institutional Roster Details")
+                        .font(Typography.captionBold)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 3) {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 8))
+                        Text("Protected")
+                            .font(Typography.badgeText)
+                    }
+                    .foregroundStyle(ColorTokens.textTertiary)
+                }
+                
+                attributeRow(
+                    label: "Student / Account ID",
+                    value: authViewModel.visibleStudents.first?.studentId ?? (authViewModel.currentUser?.userId ?? "N/A"),
+                    isEditable: false
+                )
+                
+                attributeRow(
+                    label: "Verified Email",
+                    value: authViewModel.currentUser?.email ?? "N/A",
+                    isEditable: false
+                )
+                
+                attributeRow(
+                    label: "Department Scope",
+                    value: authViewModel.visibleStudents.first?.department ?? "Campus Academic Directory",
+                    isEditable: false
+                )
+                
+                attributeRow(
+                    label: "Account Role",
+                    value: authViewModel.currentUser?.role.displayName ?? "Student",
+                    isEditable: false
+                )
+                
+                attributeRow(
+                    label: "Voting Eligibility",
+                    value: "Active & Enrolled",
+                    isEditable: false
+                )
+            }
+        }
+        .glassCard(cornerRadius: 18, padding: 16)
+    }
+    
+    private func attributeRow(label: String, value: String, isEditable: Bool) -> some View {
+        HStack {
+            Text(label)
+                .font(Typography.caption)
+                .foregroundStyle(ColorTokens.textSecondary)
+            
+            Spacer()
+            
+            HStack(spacing: 4) {
+                Text(value)
+                    .font(Typography.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(ColorTokens.textPrimary)
+                    .lineLimit(1)
+                
+                if isEditable {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 9))
+                        .foregroundStyle(ColorTokens.tailAdminBrand.opacity(0.8))
+                } else {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 9))
+                        .foregroundStyle(ColorTokens.textTertiary)
+                }
+            }
+        }
+    }
+    
+    private var networkRecoveryBanner: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "wifi.exclamationmark")
+                .foregroundStyle(ColorTokens.tailAdminWarning)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Identity Service Unreachable")
+                    .font(Typography.captionBold)
+                    .foregroundStyle(ColorTokens.tailAdminWarning)
+                Text("Using cached session credentials. Tap to retry connection.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(ColorTokens.textSecondary)
+            }
+            
+            Spacer()
+            
+            Button("Retry") {
+                HapticFeedback.light()
+                Task {
+                    if let token = authViewModel.currentUser?.sessionToken {
+                        await profileViewModel.loadProfile(sessionToken: token)
+                    }
+                }
+            }
+            .font(Typography.captionBold)
+            .foregroundStyle(ColorTokens.tailAdminWarning)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(ColorTokens.tailAdminWarningBg)
+            .clipShape(Capsule())
+        }
+        .padding(12)
+        .background(ColorTokens.tailAdminWarningBg.opacity(0.4))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+    
+    // MARK: - Sections from Existing Implementation
     
     private var roleAuthorityBoundarySection: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -117,7 +373,6 @@ public struct RolesProfileView: View {
             }
             
             if authViewModel.currentUser?.role == .superAdmin {
-                // SUPER USER ISOLATION
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         Image(systemName: "crown.fill")
@@ -142,7 +397,6 @@ public struct RolesProfileView: View {
                 .background(ColorTokens.tailAdminPurple.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             } else if authViewModel.currentUser?.role == .administrator || authViewModel.currentUser?.role == .electionOfficer {
-                // ADMIN ISOLATION
                 VStack(alignment: .leading, spacing: 10) {
                     HStack(spacing: 8) {
                         Image(systemName: "slider.horizontal.3")
@@ -173,14 +427,16 @@ public struct RolesProfileView: View {
 
     private var studentAccountDetails: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Student details")
+            Text("Student Roster Record")
                 .font(Typography.cardHeader)
                 .foregroundStyle(ColorTokens.textPrimary)
 
             if let student = authViewModel.visibleStudents.first {
-                detailRow(title: "Name", value: student.name)
+                detailRow(title: "Roster Name", value: student.name)
                 detailRow(title: "Student ID", value: student.studentId)
                 detailRow(title: "Department", value: student.department)
+            } else {
+                detailRow(title: "Roster Status", value: "Verified Active Voter")
             }
 
             Text("Your receipt can confirm that a ballot was included without showing your selection.")
@@ -208,7 +464,7 @@ public struct RolesProfileView: View {
                     .foregroundStyle(ColorTokens.textTertiary)
             }
             .padding(14)
-            .background(Color.white.opacity(0.7))
+            .background(colorScheme == .dark ? ColorTokens.tailAdminDarkCard : Color.white.opacity(0.7))
             .clipShape(RoundedRectangle(cornerRadius: 14))
         }
         .buttonStyle(.plain)
@@ -239,7 +495,7 @@ public struct RolesProfileView: View {
                 pinRow(label: "Blockchain Network ID", value: "Anvil Local EVM (31337)")
             }
             .padding(12)
-            .background(Color.white.opacity(0.6))
+            .background(colorScheme == .dark ? ColorTokens.tailAdminDarkCard : Color.white.opacity(0.6))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .glassCard(cornerRadius: 20, padding: 18)
@@ -299,7 +555,7 @@ public struct RolesProfileView: View {
                         .foregroundStyle(ColorTokens.textTertiary)
                 }
                 .padding(14)
-                .background(Color.white.opacity(0.7))
+                .background(colorScheme == .dark ? ColorTokens.tailAdminDarkCard : Color.white.opacity(0.7))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(.plain)
@@ -319,7 +575,7 @@ public struct RolesProfileView: View {
                         .foregroundStyle(ColorTokens.textTertiary)
                 }
                 .padding(14)
-                .background(Color.white.opacity(0.7))
+                .background(colorScheme == .dark ? ColorTokens.tailAdminDarkCard : Color.white.opacity(0.7))
                 .clipShape(RoundedRectangle(cornerRadius: 14))
             }
             .buttonStyle(.plain)

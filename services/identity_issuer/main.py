@@ -25,6 +25,7 @@ from .routers import (
     admin_router,
     roster_router,
     credentials_router,
+    profile_router,
 )
 
 logger = logging.getLogger("himvote.identity_issuer")
@@ -52,7 +53,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
 )
 
@@ -79,6 +80,7 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(roster_router)
 app.include_router(credentials_router)
+app.include_router(profile_router)
 
 
 @app.get("/health", tags=["system"])

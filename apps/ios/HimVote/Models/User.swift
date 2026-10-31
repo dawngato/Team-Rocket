@@ -106,6 +106,8 @@ public struct User: Codable, Identifiable, Sendable, Equatable {
     public let role: UserRole
     public let sessionToken: String
     public let mfaRequired: Bool
+    public var displayName: String?
+    public var phoneNumber: String?
     
     public enum CodingKeys: String, CodingKey {
         case userId = "user_id"
@@ -113,6 +115,8 @@ public struct User: Codable, Identifiable, Sendable, Equatable {
         case role
         case sessionToken = "session_token"
         case mfaRequired = "mfa_required"
+        case displayName = "display_name"
+        case phoneNumber = "phone_number"
     }
     
     public init(
@@ -120,13 +124,111 @@ public struct User: Codable, Identifiable, Sendable, Equatable {
         email: String,
         role: UserRole,
         sessionToken: String,
-        mfaRequired: Bool = false
+        mfaRequired: Bool = false,
+        displayName: String? = nil,
+        phoneNumber: String? = nil
     ) {
         self.userId = userId
         self.email = email
         self.role = role
         self.sessionToken = sessionToken
         self.mfaRequired = mfaRequired
+        self.displayName = displayName
+        self.phoneNumber = phoneNumber
+    }
+}
+
+public struct UserProfile: Codable, Identifiable, Sendable, Equatable {
+    public let id: String
+    public var displayName: String?
+    public var phoneNumber: String?
+    public let updatedAt: String
+    
+    public enum CodingKeys: String, CodingKey {
+        case id
+        case displayName = "display_name"
+        case phoneNumber = "phone_number"
+        case updatedAt = "updated_at"
+    }
+    
+    public init(
+        id: String,
+        displayName: String? = nil,
+        phoneNumber: String? = nil,
+        updatedAt: String = ""
+    ) {
+        self.id = id
+        self.displayName = displayName
+        self.phoneNumber = phoneNumber
+        self.updatedAt = updatedAt
+    }
+}
+
+public struct ProfileUpdateRequest: Codable, Sendable, Equatable {
+    public var displayName: String?
+    public var phoneNumber: String?
+    public var clearDisplayName: Bool
+    public var clearPhoneNumber: Bool
+    
+    public enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case phoneNumber = "phone_number"
+    }
+    
+    public init(
+        displayName: String? = nil,
+        phoneNumber: String? = nil,
+        clearDisplayName: Bool = false,
+        clearPhoneNumber: Bool = false
+    ) {
+        self.displayName = displayName
+        self.phoneNumber = phoneNumber
+        self.clearDisplayName = clearDisplayName
+        self.clearPhoneNumber = clearPhoneNumber
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        if clearDisplayName {
+            try container.encodeNil(forKey: .displayName)
+        } else if let displayName = displayName {
+            try container.encode(displayName, forKey: .displayName)
+        }
+        
+        if clearPhoneNumber {
+            try container.encodeNil(forKey: .phoneNumber)
+        } else if let phoneNumber = phoneNumber {
+            try container.encode(phoneNumber, forKey: .phoneNumber)
+        }
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        if container.contains(.displayName) {
+            if (try? container.decodeNil(forKey: .displayName)) == true {
+                self.displayName = nil
+                self.clearDisplayName = true
+            } else {
+                self.displayName = try container.decodeIfPresent(String.self, forKey: .displayName)
+                self.clearDisplayName = false
+            }
+        } else {
+            self.displayName = nil
+            self.clearDisplayName = false
+        }
+        
+        if container.contains(.phoneNumber) {
+            if (try? container.decodeNil(forKey: .phoneNumber)) == true {
+                self.phoneNumber = nil
+                self.clearPhoneNumber = true
+            } else {
+                self.phoneNumber = try container.decodeIfPresent(String.self, forKey: .phoneNumber)
+                self.clearPhoneNumber = false
+            }
+        } else {
+            self.phoneNumber = nil
+            self.clearPhoneNumber = false
+        }
     }
 }
 

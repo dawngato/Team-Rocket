@@ -127,6 +127,8 @@ class User(Base):
     id = Column(String, primary_key=True, default=generate_uuid)
     external_id = Column(String(255), unique=True, nullable=False, index=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
+    display_name = Column(String(80), nullable=True)
+    phone_number = Column(String(16), nullable=True)
     password_hash = Column(Text, nullable=False)
     password_algorithm = Column(String(50), nullable=False, default="argon2id")
     password_params = Column(JSON, nullable=False, default=dict)

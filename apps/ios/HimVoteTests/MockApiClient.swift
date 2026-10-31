@@ -101,6 +101,15 @@ public final class MockApiClient: ApiClientProtocol, @unchecked Sendable {
         evidenceUrl: "https://api.himvote.example.in/evidence/elec_2026_stu_council.zip"
     )
     
+    public var profileResponse: UserProfile = UserProfile(
+        id: "user_std_001",
+        displayName: "Ada Student",
+        phoneNumber: "+14155552671",
+        updatedAt: "2026-10-31T08:30:00Z"
+    )
+    public var lastProfileUpdateRequest: ProfileUpdateRequest?
+    public var profileUpdateCallCount: Int = 0
+    
     public init() {}
     
     public func login(request: LoginRequest) async throws -> LoginResponse {
@@ -155,5 +164,32 @@ public final class MockApiClient: ApiClientProtocol, @unchecked Sendable {
     public func fetchEvidence(electionId: String, sessionToken: String) async throws -> EvidencePackage {
         if shouldThrowError { throw errorToThrow }
         return evidencePackage
+    }
+    
+    public func fetchProfile(sessionToken: String) async throws -> UserProfile {
+        if shouldThrowError { throw errorToThrow }
+        return profileResponse
+    }
+    
+    public func updateProfile(request: ProfileUpdateRequest, sessionToken: String) async throws -> UserProfile {
+        if shouldThrowError { throw errorToThrow }
+        profileUpdateCallCount += 1
+        lastProfileUpdateRequest = request
+        
+        var updated = profileResponse
+        if request.clearDisplayName {
+            updated.displayName = nil
+        } else if let name = request.displayName {
+            updated.displayName = name
+        }
+        
+        if request.clearPhoneNumber {
+            updated.phoneNumber = nil
+        } else if let phone = request.phoneNumber {
+            updated.phoneNumber = phone
+        }
+        
+        self.profileResponse = updated
+        return updated
     }
 }

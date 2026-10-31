@@ -22,6 +22,8 @@ servers:
 tags:
 - name: auth
   description: Authentication and session operations
+- name: profile
+  description: Authenticated self-service profile operations
 - name: bootstrap
   description: Initial system setup operations
 - name: admin_governance
@@ -45,6 +47,85 @@ tags:
 - name: results
   description: Public manifests and finalized election results
 paths:
+  /v1/profile/me:
+    get:
+      tags:
+      - profile
+      summary: Read editable profile fields for the authenticated account
+      operationId: getMyProfile
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: Current user's editable profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          description: Authentication required or session invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Authenticated account is not active
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      tags:
+      - profile
+      summary: Update allowlisted profile fields for the authenticated account
+      operationId: updateMyProfile
+      security:
+      - bearerAuth: []
+      - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProfileUpdateRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          description: Authentication required or session invalid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Account is inactive or cookie request failed origin checks
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Empty, invalid, or unsupported profile update field
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Profile update rate limit exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Profile update could not be persisted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /v1/auth/login:
     post:
       tags:
@@ -1239,6 +1320,47 @@ components:
         type: string
         format: uuid
   schemas:
+    ProfileUpdateRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        display_name:
+          type:
+          - string
+          - 'null'
+          minLength: 1
+          maxLength: 80
+          description: Display name; null clears the optional value.
+        phone_number:
+          type:
+          - string
+          - 'null'
+          maxLength: 16
+          pattern: '^\+[1-9][0-9]{7,14}$'
+          description: Optional E.164 phone number; null or empty string clears the value.
+    ProfileResponse:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - display_name
+      - phone_number
+      - updated_at
+      properties:
+        id:
+          type: string
+        display_name:
+          type:
+          - string
+          - 'null'
+        phone_number:
+          type:
+          - string
+          - 'null'
+        updated_at:
+          type: string
+          format: date-time
     LoginRequest:
       type: object
       required:

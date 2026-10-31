@@ -200,6 +200,20 @@ public final class AuthViewModel {
         self.mfaRequired = false
         self.pendingMfaEmail = nil
         self.errorMessage = nil
+        isLoading = false
+    }
+    
+    public func updateUserProfile(displayName: String?, phoneNumber: String?) {
+        guard var user = currentUser else { return }
+        user.displayName = displayName
+        user.phoneNumber = phoneNumber
+        self.currentUser = user
+        if let userProfileData = try? JSONEncoder().encode(user) {
+            try? keychainService.save(data: userProfileData, forKey: Self.userProfileKey)
+        }
+    }
+        self.pendingMfaEmail = nil
+        self.errorMessage = nil
         self.isLoading = false
     }
     

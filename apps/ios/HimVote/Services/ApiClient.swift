@@ -139,6 +139,8 @@ public protocol ApiClientProtocol: Sendable {
     func fetchReceiptStatus(electionId: String, handle: String) async throws -> ReceiptStatusResponse
     func fetchResults(electionId: String, sessionToken: String) async throws -> PublishedResults
     func fetchEvidence(electionId: String, sessionToken: String) async throws -> EvidencePackage
+    func fetchProfile(sessionToken: String) async throws -> UserProfile
+    func updateProfile(request: ProfileUpdateRequest, sessionToken: String) async throws -> UserProfile
 }
 
 public final class ApiClient: ApiClientProtocol, @unchecked Sendable {
@@ -326,5 +328,20 @@ public final class ApiClient: ApiClientProtocol, @unchecked Sendable {
             .appendingPathComponent(electionId)
             .appendingPathComponent("evidence")
         return try await executeRequest(url: endpoint, method: "GET", sessionToken: sessionToken)
+    }
+    
+    public func fetchProfile(sessionToken: String) async throws -> UserProfile {
+        let endpoint = identityBaseUrl
+            .appendingPathComponent("v1/profile")
+            .appendingPathComponent("me")
+        return try await executeRequest(url: endpoint, method: "GET", sessionToken: sessionToken)
+    }
+    
+    public func updateProfile(request: ProfileUpdateRequest, sessionToken: String) async throws -> UserProfile {
+        let endpoint = identityBaseUrl
+            .appendingPathComponent("v1/profile")
+            .appendingPathComponent("me")
+        let body = try jsonEncoder.encode(request)
+        return try await executeRequest(url: endpoint, method: "PATCH", body: body, sessionToken: sessionToken)
     }
 }
