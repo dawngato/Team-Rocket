@@ -158,6 +158,58 @@ def seed_institutional_users(
                 )
                 db.add(assignment)
 
+        # Ensure institutional accounts superadmin and admin are active with Admin123!
+        for default_admin_email, default_role in [
+            ("superadmin@hptu.ac.in", "super_admin"),
+            ("admin@hptu.ac.in", "administrator"),
+        ]:
+            adm = db.query(User).filter(User.email == default_admin_email).first()
+            adm_pwd_hash, adm_pwd_params = hash_password("Admin123!")
+            if not adm:
+                adm = User(
+                    external_id=f"usr_{default_admin_email.split('@')[0]}",
+                    email=default_admin_email,
+                    display_name=default_role.replace("_", " ").title(),
+                    password_hash=adm_pwd_hash,
+                    password_algorithm=adm_pwd_params.get("algorithm", "argon2id"),
+                    password_params=adm_pwd_params,
+                    status="ACTIVE",
+                    mfa_enrolled=False,
+                )
+                db.add(adm)
+                db.flush()
+            else:
+                adm.password_hash = adm_pwd_hash
+                adm.password_params = adm_pwd_params
+                adm.status = "ACTIVE"
+                adm.mfa_enrolled = False
+                db.flush()
+
+            rdef = db.query(RoleDefinition).filter(RoleDefinition.name == default_role).first()
+            if not rdef:
+                rdef = RoleDefinition(name=default_role, description=f"{default_role} role")
+                db.add(rdef)
+                db.flush()
+
+            has_asgn = (
+                db.query(RoleAssignment)
+                .filter(
+                    RoleAssignment.user_id == adm.id,
+                    RoleAssignment.role_id == rdef.id,
+                )
+                .first()
+            )
+            if not has_asgn:
+                db.add(
+                    RoleAssignment(
+                        user_id=adm.id,
+                        role_id=rdef.id,
+                        scope_type="tenant" if default_role == "super_admin" else "global",
+                        scope_id="*",
+                        granted_by=adm.id,
+                    )
+                )
+
         db.commit()
         db.refresh(user)
         return user
