@@ -24,7 +24,7 @@ verification remain blocked.
 |---|---|---|
 | TR-001 | `TESTED_PASS` | Casting verifies issuer RSA signatures, election binding, manifest binding, and rejects malformed or forged proofs before persistence. Covered by `services/casting/tests/test_credential_verification.py`. |
 | TR-002 | `BLOCKED` | The repository contains only the custom Profile VEEM development engine. Gate E1 is an internal regression suite, not integration with Helios, Belenios, ElectionGuard, or another independently reviewed engine. Production startup and publication now fail closed. |
-| TR-003 | `PARTIAL` | The admin API now rejects non-administrative roles and requires an MFA-authenticated identity session for mutations. Election/tenant scope is not yet enforced across every resource; production authorization remains incomplete. |
+| TR-003 | `PARTIAL` | The admin API rejects non-administrative roles, requires an MFA-authenticated session, and checks exact election assignment or an institution-wide grant for internal reads and election mutations. Elections still lack tenant/department ownership metadata, so resource-to-tenant checks remain incomplete. |
 | TR-004 | `TESTED_PASS` | Admin database construction no longer falls back to memory after connection failure. Test SQLite is explicit and production requires `ADMIN_DB_URL` plus a migration version. |
 | TR-005 | `FIXED_UNTESTED` | Credential and encrypted ballot browser handoffs are now produced and validated in the student pages. A fresh real service session is not proven because the current engine is unverified. |
 | TR-006 | `FIXED_UNTESTED` | Approval and role decision screens call service clients and read back server state. Production identity, MFA and two-approver execution need a deployed integration run. |
@@ -38,7 +38,7 @@ verification remain blocked.
 | TR-014 | `PARTIAL` | Browser inclusion checks are live and fail closed without evidence, but the returned root is not independently trusted until a pinned external witness checkpoint verifies it. |
 | TR-015 | `FIXED_UNTESTED` | Android no longer puts credential material in navigation URLs and requires configured HTTPS booth and return endpoints. Device and proxy log review is not run here. |
 | TR-016 | `FIXED_UNTESTED` | iOS rejects credential and ballot artifacts in callback URLs and requires a secure back-channel. The native back-channel is not deployed or smoke-tested. |
-| TR-017 | `FIXED_UNTESTED` | Public election list and detail routes filter draft and internal states; scoped officer/admin read behavior needs production authorization testing. |
+| TR-017 | `FIXED_UNTESTED` | Public election and candidate routes hide DRAFT/internal data. Explicit internal reads require an authorized role plus election scope; deployment authorization still needs a production run. |
 | TR-018 | `FIXED_UNTESTED` | Login fetches `/me` and routes to the server-granted workspace. Role-specific live login runs are not available in this checkout. |
 | TR-019 | `FIXED_UNTESTED` | Browser bearer tokens are memory-only; authentication uses credentialed cookies and production secure cookies. Reload and expiry need a deployed HTTPS run. |
 | TR-020 | `FIXED_UNTESTED` | Identity login has bounded in-process failure throttling and audit events. Distributed gateway rate limits and account recovery monitoring need deployment verification. |
@@ -70,7 +70,7 @@ verification remain blocked.
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | The dedicated `tests/security/Q7-01_duplicate_cast_test.py` passes, including 100 concurrent submissions for one credential. The root suite (`tests --ignore=tests/load`) passes 58 tests. Load tests are excluded. |
-| TR-049 | `TESTED_PASS` | Current admin_api suite passes (33/33) and identity_issuer passes (28/28); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
+| TR-049 | `TESTED_PASS` | Current admin_api suite passes (35/35) and identity_issuer passes (28/28); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
 | TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 94 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
@@ -101,10 +101,10 @@ python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/ad
   21 passed
 
 env TESTING=true python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  61 passed
+  63 passed
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/admin_api/tests
-  33 passed, 1 dependency deprecation warning
+  35 passed, 1 dependency deprecation warning
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/identity_issuer/tests
   28 passed, 1 dependency deprecation warning

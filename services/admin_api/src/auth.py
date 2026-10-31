@@ -137,6 +137,36 @@ def get_authenticated_actor(request: Request) -> str:
     return actor.user_id
 
 
+def actor_has_election_scope(actor: ActorContext, election_id: str) -> bool:
+    """Return whether the verified actor is authorized for this election.
+
+    Election records are not yet linked to tenant/department identifiers, so
+    only an explicit election grant, an institution-wide grant, or a
+    super-admin grant can be safely evaluated here.
+    """
+    roles = {role.strip().lower() for role in actor.roles if isinstance(role, str)}
+    if "super_admin" in roles:
+        return True
+    for scope in actor.scopes:
+        if not isinstance(scope, dict):
+            continue
+        scope_type = str(scope.get("scope_type", scope.get("type", ""))).strip().lower()
+        scope_id = str(scope.get("scope_id", scope.get("id", ""))).strip()
+        if scope_type in {"global", "institution", "tenant"} and scope_id == "*":
+            return True
+        if scope_type == "election" and scope_id == election_id:
+            return True
+    return False
+
+
+def require_election_scope(actor: ActorContext, election_id: str) -> None:
+    if not actor_has_election_scope(actor, election_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The authenticated actor is not assigned to this election",
+        )
+
+
 def require_permission(operation: str):
     """Enforce operation-level authorization policies."""
     def dependency(request: Request) -> ActorContext:

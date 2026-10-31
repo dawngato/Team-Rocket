@@ -296,12 +296,12 @@ export const apiClient = {
   },
 
   async getCandidates(electionId: string): Promise<Candidate[]> {
-    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`);
+    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates?include_internal=true`);
   },
 
   async replaceCandidates(electionId: string, candidates: Candidate[]): Promise<Candidate[]> {
     await requestJson("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`, { method: "POST", body: JSON.stringify(candidates) });
-    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates`);
+    return requestJson<Candidate[]>("admin", `/v1/elections/${encodeURIComponent(electionId)}/candidates?include_internal=true`);
   },
 
   async getAuditEvents(): Promise<AuditEvent[]> {

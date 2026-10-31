@@ -11,6 +11,50 @@ from src.models.database import ElectionModel, ElectionStateModel, WitnessAcknow
 from src.config import settings
 
 
+def test_officer_from_other_election_scope_cannot_open_election(client, test_db, monkeypatch):
+    created = client.post(
+        "/v1/elections",
+        headers={"X_Actor_ID": "officer_scope_test"},
+        json={
+            "title": "Scoped synthetic election",
+            "contest": "Representative",
+            "selection_rule": "plurality",
+            "opens_at_utc": "2026-11-15T09:00:00Z",
+            "closes_at_utc": "2026-11-15T17:00:00Z",
+            "issuance_cutoff_utc": "2026-11-15T08:30:00Z",
+            "min_anonymous_turnout": 1,
+        },
+    )
+    assert created.status_code == 201
+    election_id = created.json()["id"]
+
+    anonymous_candidates = client.get(f"/v1/elections/{election_id}/candidates")
+    assert anonymous_candidates.status_code == 404
+    scoped_candidates = client.get(
+        f"/v1/elections/{election_id}/candidates?include_internal=true",
+        headers={"X_Actor_ID": "officer_scope_test"},
+    )
+    assert scoped_candidates.status_code == 200
+    assert scoped_candidates.json() == []
+
+    from src import auth
+    from src.auth import ActorContext
+    monkeypatch.setattr(
+        auth,
+        "get_authenticated_actor_context",
+        lambda _request: ActorContext(
+            user_id="officer_other_election",
+            roles=["election_officer"],
+            scopes=[{"scope_type": "election", "scope_id": "elec_other"}],
+            mfa_authenticated=True,
+        ),
+    )
+    denied = client.post(f"/v1/elections/{election_id}/open")
+    assert denied.status_code == 403
+    state = test_db.query(ElectionStateModel).filter_by(election_id=election_id).one()
+    assert state.state == "DRAFT"
+
+
 def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roster_approver_keypair, monkeypatch):
     """
     Executes an end to end test exercising all admin endpoints:

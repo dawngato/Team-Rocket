@@ -47,7 +47,7 @@ from src.services.publication_service import PublicationService
 from src.services.evidence_service import EvidenceService
 from src.services.audit_service import AuditService
 from src.crypto.canonical import canonical_json_str
-from src.auth import get_authenticated_actor, require_permission, ActorContext
+from src.auth import get_authenticated_actor, require_permission, require_election_scope, actor_has_election_scope, ActorContext
 
 PUBLIC_STATES = {
     "OPEN",
@@ -98,7 +98,7 @@ def list_elections(
     """Lists public elections, or scoped internal elections for operators."""
     if include_internal:
         if request is not None:
-            require_permission("election.view_internal")(request)
+            actor = require_permission("election.view_internal")(request)
         query = db.query(ElectionModel).join(ElectionStateModel)
         if state:
             query = query.filter(ElectionStateModel.state == state)
@@ -116,6 +116,8 @@ def list_elections(
             )
 
     elections = query.all()
+    if include_internal and request is not None:
+        elections = [election for election in elections if actor_has_election_scope(actor, election.id)]
     summaries = [
         ElectionSummary(
             id=e.id,
@@ -209,7 +211,8 @@ def get_election(
         if not include_internal:
             raise HTTPException(status_code=404, detail="Election not found")
         if request is not None:
-            require_permission("election.view_internal")(request)
+            actor = require_permission("election.view_internal")(request)
+            require_election_scope(actor, id)
 
     candidates = [
         Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
@@ -251,6 +254,7 @@ def update_election(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_election_scope(actor, id)
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     try:
@@ -304,6 +308,7 @@ def delete_election(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_election_scope(actor, id)
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     if state != "DRAFT":
@@ -325,12 +330,20 @@ def delete_election(
 @router.get("/{id}/candidates", response_model=List[Candidate])
 def list_candidates(
     id: str,
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """Lists candidates registered for an election."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    state = election.state_record.state if election.state_record else "UNKNOWN"
+    if state in INTERNAL_STATES:
+        if not include_internal or request is None:
+            raise HTTPException(status_code=404, detail="Election not found")
+        actor = require_permission("election.view_internal")(request)
+        require_election_scope(actor, id)
 
     return [
         Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
@@ -350,6 +363,7 @@ def add_candidates(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_election_scope(actor, id)
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     try:
@@ -393,6 +407,7 @@ def submit_roster(
 ):
     actor_id = actor.user_id
     """Submits roster snapshot for approval."""
+    require_election_scope(actor, id)
     try:
         res = RosterService.submit_roster(
             db=db,
@@ -422,6 +437,7 @@ def approve_roster(
 ):
     actor_id = actor.user_id
     """Independent Roster Approver signs the roster."""
+    require_election_scope(actor, id)
     try:
         res = RosterService.approve_roster(
             db=db,
@@ -452,6 +468,7 @@ def freeze_election(
 ):
     actor_id = actor.user_id
     """Freezes manifest deterministically and enforces immutability."""
+    require_election_scope(actor, id)
     try:
         res = ManifestService.freeze_election(
             db=db,
@@ -486,6 +503,7 @@ def open_election(
     )
     if not state_record:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_election_scope(actor, id)
 
     try:
         if state_record.state == "FROZEN":
@@ -517,6 +535,7 @@ def close_election(
 ):
     actor_id = actor.user_id
     """Closes election and locks final tree size."""
+    require_election_scope(actor, id)
     try:
         state_record = ElectionLifecycleManager.transition(
             db=db,
@@ -550,6 +569,7 @@ def publication_request(
 ):
     actor_id = actor.user_id
     """Auditor signature verification gate for publication."""
+    require_election_scope(actor, id)
     try:
         res = PublicationService.process_publication_request(
             db=db,
@@ -643,6 +663,7 @@ def cancel_election(
 ):
     actor_id = actor.user_id
     """Cancels an election with signed reason while keeping all evidence."""
+    require_election_scope(actor, id)
     try:
         ElectionLifecycleManager.transition(
             db=db,
@@ -673,6 +694,7 @@ def pause_election(
 ):
     actor_id = actor.user_id
     """Pauses election activity."""
+    require_election_scope(actor, id)
     try:
         ElectionLifecycleManager.transition(
             db=db,

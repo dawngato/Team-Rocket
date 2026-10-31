@@ -4,6 +4,7 @@ import pytest
 from fastapi import HTTPException, Request
 
 from src import auth
+from src.auth import ActorContext
 from src.config import settings
 
 
@@ -64,3 +65,19 @@ def test_identity_actor_accepts_mfa_authenticated_election_admin(monkeypatch):
         assert auth.get_authenticated_actor(make_request()) == "officer-1"
     finally:
         settings.allow_dev_actor_headers = original_dev_mode
+
+
+def test_election_scope_requires_exact_assignment_or_institution_wide_grant():
+    assigned = ActorContext(
+        user_id="officer-1",
+        roles=["election_officer"],
+        scopes=[{"scope_type": "election", "scope_id": "elec_A"}],
+    )
+    assert auth.actor_has_election_scope(assigned, "elec_A")
+    assert not auth.actor_has_election_scope(assigned, "elec_B")
+    with pytest.raises(HTTPException) as error:
+        auth.require_election_scope(assigned, "elec_B")
+    assert error.value.status_code == 403
+
+    super_admin = ActorContext(user_id="root-1", roles=["super_admin"], scopes=[])
+    assert auth.actor_has_election_scope(super_admin, "elec_B")
