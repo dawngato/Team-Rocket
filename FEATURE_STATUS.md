@@ -70,8 +70,8 @@ verification remain blocked.
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | Unblocked `Q7-01_duplicate_cast_test.py` on Python 3.14 with installed `aiosqlite` 0.22.1; 100 concurrent duplicate submission test passes. All 59/59 root tests pass with zero skips. |
-| TR-049 | `TESTED_PASS` | The current targeted admin and identity suites pass, including activation, role-scope, roster-scope, and limiter regression tests. Other service dependency and deployment matrices remain separate evidence. |
-| TR-050 | `TESTED_PASS` | Current web typecheck, production build, 91 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
+| TR-049 | `TESTED_PASS` | The current targeted admin and identity suites pass, including activation, notification delivery, role-scope, roster-scope, and limiter regression tests. Other service dependency and deployment matrices remain separate evidence. |
+| TR-050 | `TESTED_PASS` | Current web typecheck, production build, 95 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
 | TR-053 | `FIXED_UNTESTED` | Redundant web `app/lib` fixture shims were removed from reviewed production paths and TypeScript passes. A full import graph audit remains. |
@@ -104,7 +104,7 @@ python -m pytest -q tests --ignore=tests/load
   52 passed, 1 skipped, 1 warning
 
 /usr/bin/node node_modules/vitest/vitest.mjs run
-  15 files passed, 90 tests passed
+  17 files passed, 95 tests passed
 
 npm run typecheck
   PASS
@@ -112,13 +112,13 @@ npm run typecheck
 /usr/bin/node node_modules/next/dist/bin/next build
   PASS
 
-python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --timeout 90 --server "/usr/bin/node node_modules/next/dist/bin/next start" --port 3000 -- python -u tests/browser_smoke.py
+python /home/Kali/.agents/skills/webapp-testing/scripts/with_server.py --timeout 90 --server "./node_modules/.bin/next start -p 3100" --port 3100 -- python -u tests/browser_smoke.py
   PASS
 ```
 
 The repository `npm test` wrapper resolves `node` to Bun 1.4.2 on this host,
 whose esbuild service stops while loading Vitest. Running the same Vitest
-version with the installed system Node binary passes all 90 tests. The skipped
+version with the installed system Node binary passes all 95 tests. The skipped
 Q7 test must be rerun on a supported Python and aiosqlite combination before
 claiming the required concurrency demonstration.
 
@@ -165,9 +165,9 @@ independently secure.
 python -m compileall -q services/admin_api/src services/identity_issuer
   PASS
 python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  PASS 55 tests
+  PASS 58 tests
 cd apps/web && npm test -- --run
-  PASS 91 tests under the installed system Node binary
+  PASS 95 tests under the installed system Node binary
 cd apps/web && npm run typecheck && npm run build
   PASS
 HIMVOTE_WEB_URL=http://127.0.0.1:3100 with_server next start on port 3100 with tests/browser_smoke.py

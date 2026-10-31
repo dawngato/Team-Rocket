@@ -19,9 +19,9 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/elections", label: "Elections" },
-    { href: "/how-it-works", label: "How Verification Works" },
+    { href: "/how-it-works", label: "How It Works" },
     { href: "/results", label: "Results" },
-    { href: "/audit", label: "Audit Explorer" },
+    { href: "/audit", label: "Public Verification" },
     { href: "/security-limits", label: "Security Limits" },
   ];
 
