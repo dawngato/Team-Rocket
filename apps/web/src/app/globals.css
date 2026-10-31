@@ -10,17 +10,17 @@
   --green600: #15805D;
   --amber600: #AA6C0B;
   --red600: #C23C45;
-  --surface: #F3F6FA;
+  --surface: #F8F9FA;
   --white: #FFFFFF;
-  --text: #17233B;
-  --line: #D9E2EC;
+  --text: #0F172A;
+  --line: #E2E8F0;
 }
 
 .dark {
-  --surface: #0B1524;
-  --white: #132135;
-  --text: #E2E8F0;
-  --line: #1E3352;
+  --surface: #0B111A;
+  --white: #121C2B;
+  --text: #F1F5F9;
+  --line: #1E2E42;
 }
 
 * {
@@ -95,10 +95,9 @@ textarea:focus-visible {
 }
 
 .evidence-orbit-grid {
-  background-image: linear-gradient(rgba(113, 163, 190, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(113, 163, 190, 0.08) 1px, transparent 1px);
-  background-size: 32px 32px;
-  mask-image: linear-gradient(to bottom, transparent, black 22%, black 78%, transparent);
+  background-image: linear-gradient(rgba(113, 163, 190, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(113, 163, 190, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
 }
 
 .evidence-orbit-tilt {

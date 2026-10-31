@@ -9,14 +9,14 @@ export function Footer() {
     <footer className="w-full border-t border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#10233F] transition-colors py-12 px-4 sm:px-6 lg:px-8 text-sm">
       <div className="w-full max-w-[1800px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
         <div className="space-y-4">
-          <div className="flex items-center gap-2 font-bold text-lg text-[#10233F] dark:text-white">
-            <span className="w-7 h-7 rounded-lg bg-[#157E92] flex items-center justify-center text-white">
+          <div className="flex items-center gap-2 font-bold text-lg text-[#0F172A] dark:text-white">
+            <span className="w-7 h-7 rounded-md bg-[#10233F] dark:bg-[#157E92] flex items-center justify-center text-white">
               <Vote className="w-4 h-4" aria-hidden="true" />
             </span>
-            <span>HimVote</span>
+            <span>SecureVote</span>
           </div>
           <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
-            Educational campus election prototype for inspectable workflows, evidence review, and honest security limits.
+            Institutional campus election system for inspectable workflows, evidence review, and honest security limits.
           </p>
           <div className="text-xs text-slate-500 dark:text-slate-500">
             Accessibility support is implemented in the tested web scope. Platform audits remain in progress.
@@ -91,7 +91,7 @@ export function Footer() {
 
         <div>
           <h3 className="font-semibold text-xs tracking-wider uppercase text-slate-500 dark:text-slate-400 mb-3">
-            Standards and Compliance
+            Standards and Governance
           </h3>
           <ul className="space-y-2">
             <li>
@@ -100,18 +100,18 @@ export function Footer() {
               </Link>
             </li>
             <li>
-              <span className="text-slate-500 dark:text-slate-500 text-xs block">
-                Languages: English and Hindi
-              </span>
+              <Link href="/terms" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+              <Link href="/privacy" className="text-slate-700 dark:text-slate-300 hover:text-[#157E92] dark:hover:text-[#38BDF8] transition-colors">
+                Privacy Policy
+              </Link>
             </li>
             <li>
               <span className="text-slate-500 dark:text-slate-500 text-xs block">
                 Zero third party tracking cookies
-              </span>
-            </li>
-            <li>
-              <span className="text-slate-500 dark:text-slate-500 text-xs block">
-                Separate Identity and Casting Origins
               </span>
             </li>
           </ul>

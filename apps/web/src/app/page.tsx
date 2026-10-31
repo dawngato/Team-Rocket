@@ -9,7 +9,7 @@ import {
   FileCheck2,
   LockKeyhole,
   ArrowRight,
-  Sparkles,
+  Fingerprint,
   Search,
   Calendar,
 } from "lucide-react";
@@ -76,10 +76,10 @@ export default function HomePage() {
       </section>
 
       {/* Quick Receipt Look Up Widget */}
-      <section className="rounded-2xl bg-[#10233F] text-white p-8 sm:p-10 shadow-lg">
+      <section className="rounded-xl border border-slate-200 dark:border-[#1E2E42] bg-[#10233F] text-white p-8 sm:p-10 shadow-sm">
         <div className="max-w-3xl space-y-4">
           <div className="inline-flex items-center gap-2 text-xs font-semibold text-[#38BDF8] uppercase tracking-wider">
-            <Sparkles className="w-4 h-4" aria-hidden="true" />
+            <Fingerprint className="w-4 h-4" aria-hidden="true" />
             Voter Inclusion Check
           </div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">

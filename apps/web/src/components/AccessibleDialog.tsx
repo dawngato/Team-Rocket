@@ -200,7 +200,7 @@ export function AccessibleDialog({
         aria-modal="true"
         aria-labelledby="dialog-title"
         aria-describedby={description ? "dialog-description" : undefined}
-        className="relative w-full max-w-lg p-6 bg-white dark:bg-[#132135] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#1E3352] origin-center animate-dialog-spring"
+        className="relative w-full max-w-lg p-6 bg-white dark:bg-[#121C2B] rounded-xl shadow-md border border-slate-200 dark:border-[#1E2E42] origin-center animate-dialog-spring"
         tabIndex={-1}
       >
         <h2 id="dialog-title" className="text-xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">

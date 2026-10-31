@@ -50,12 +50,15 @@ export function Navbar() {
           {/* Brand */}
           <Link
             href="/"
-            className="flex items-center gap-2.5 font-bold text-xl text-[#10233F] dark:text-white tracking-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] rounded-md px-1 py-1"
+            className="flex items-center gap-2.5 font-bold text-xl text-[#0F172A] dark:text-white tracking-tight focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] rounded-md px-1 py-1"
           >
-            <span className="w-8 h-8 rounded-lg bg-[#157E92] flex items-center justify-center text-white shadow-sm">
+            <span className="w-8 h-8 rounded-md bg-[#10233F] dark:bg-[#157E92] flex items-center justify-center text-white shadow-sm">
               <Vote className="w-5 h-5" aria-hidden="true" />
             </span>
-            <span>HimVote</span>
+            <span className="font-extrabold tracking-tight">SecureVote</span>
+            <span className="hidden sm:inline-block text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400">
+              Campus
+            </span>
           </Link>
 
           {/* Desktop Nav */}
@@ -101,7 +104,7 @@ export function Navbar() {
 
               {roleMenuOpen && (
                 <div
-                  className="absolute right-0 mt-2 w-56 rounded-xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] shadow-xl py-2 z-50 text-sm origin-top-right animate-popover-spring"
+                  className="absolute right-0 mt-2 w-56 rounded-lg bg-white dark:bg-[#121C2B] border border-slate-200 dark:border-[#1E2E42] shadow-md py-1.5 z-50 text-sm origin-top-right animate-popover-spring"
                   role="menu"
                 >
                   <div className="px-3 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">

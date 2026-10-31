@@ -93,12 +93,11 @@ export function EvidenceOrbit() {
       className="relative mx-auto w-full max-w-[560px]"
     >
       <div
-        className="evidence-orbit-stage relative min-h-[470px] overflow-hidden rounded-[2rem] border border-[#2D5577] bg-[#091827] px-5 pb-5 pt-6 text-white shadow-[0_28px_80px_rgba(16,35,63,0.28)] sm:px-7"
+        className="evidence-orbit-stage relative min-h-[470px] overflow-hidden rounded-xl border border-[#2D5577] bg-[#0A1625] px-5 pb-5 pt-6 text-white shadow-sm sm:px-7"
         onPointerMove={handlePointerMove}
         onPointerLeave={() => setTilt({ x: 0, y: 0 })}
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_24%,rgba(21,126,146,0.28),transparent_36%),radial-gradient(circle_at_20%_86%,rgba(170,108,11,0.16),transparent_34%)]" />
-        <div className="evidence-orbit-grid pointer-events-none absolute inset-0 opacity-40" />
+        <div className="evidence-orbit-grid pointer-events-none absolute inset-0 opacity-30" />
 
         <div className="relative z-10 flex items-start justify-between gap-4">
           <div>
@@ -128,8 +127,8 @@ export function EvidenceOrbit() {
             <div className="evidence-orbit-signal absolute left-1/2 top-[22%] h-[56%] w-px bg-gradient-to-b from-transparent via-[#34D399] to-transparent" />
           </div>
 
-          <div className="absolute left-1/2 top-[104px] flex h-[112px] w-[112px] -translate-x-1/2 items-center justify-center rounded-full border border-[#34D399]/70 bg-[#0A2134]/95 shadow-[0_0_0_14px_rgba(21,126,146,0.08),0_0_55px_rgba(52,211,153,0.22)] [transform:translateZ(42px)] [transform-style:preserve-3d]">
-            <div className="absolute inset-3 rounded-full border border-dashed border-[#34D399]/50" />
+          <div className="absolute left-1/2 top-[104px] flex h-[112px] w-[112px] -translate-x-1/2 items-center justify-center rounded-xl border border-[#34D399]/70 bg-[#0A2134]/95 shadow-sm [transform:translateZ(42px)] [transform-style:preserve-3d]">
+            <div className="absolute inset-2 rounded-lg border border-dashed border-[#34D399]/40" />
             <div className="relative flex flex-col items-center gap-1 text-center">
               <ShieldCheck className="h-6 w-6 text-[#8BE4B7]" aria-hidden="true" />
               <span className="text-[10px] font-semibold tracking-[0.13em] text-[#B6D0DE]">Checkpoint</span>
