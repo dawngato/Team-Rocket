@@ -55,7 +55,7 @@ verification remain blocked.
 | TR-031 | `PARTIAL` | Auditor witness and chain screens consume live evidence clients and show limited status without a pin. Independent witness and chain receipt verification remain unavailable. |
 | TR-032 | `FIXED_UNTESTED` | Auditor signing imports an externally signed attestation and verifies it before submission. A real offline signer and key custody are not present. |
 | TR-033 | `FIXED_UNTESTED` | Hardcoded operational metrics were removed from the evidence illustration. Live verified data is not used in the decorative orbit. |
-| TR-034 | `FIXED_UNTESTED` | Student dashboard reads issuance status and local opaque receipts instead of fixed receipt claims. Full personalized eligibility and witnessed stages need service integration. |
+| TR-034 | `FIXED_UNTESTED` | Student dashboard reads issuance status and keeps opaque receipt handles in tab-session storage, clearing them at logout so a shared browser does not carry them into the next account. Full personalized eligibility and witnessed stages need service integration. |
 | TR-035 | `FIXED_UNTESTED` | Officer election, roster and schedule pages load typed API data and do not substitute fixtures on failure. Live authorization and reload tests remain. |
 | TR-036 | `TESTED_PASS` | Casting and verifier credential semantics use the same issuer key and election/manifest checks; forged proof tests reject before commit. A complete external verifier run is still separate. |
 | TR-037 | `FIXED_UNTESTED` | Production admin routing uses cookie or bearer identity context rather than caller actor headers. A production gateway administration run is not available. |
@@ -70,8 +70,8 @@ verification remain blocked.
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | The dedicated `tests/security/Q7-01_duplicate_cast_test.py` passes, including 100 concurrent submissions for one credential. The root suite (`tests --ignore=tests/load`) passes 58 tests. Load tests are excluded. |
-| TR-049 | `TESTED_PASS` | All per-service test suites clean and verified on this host: admin_api (26/26), casting (35/35), identity_issuer (28/28), election_engine (22/22), and web (91/91). |
-| TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 91 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
+| TR-049 | `TESTED_PASS` | Current admin_api suite passes (33/33) and identity_issuer passes (27/27); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
+| TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 94 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
 | TR-053 | `FIXED_UNTESTED` | Redundant web `app/lib` fixture shims were removed from reviewed production paths and TypeScript passes. A full import graph audit remains. |
@@ -101,13 +101,19 @@ python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/ad
   21 passed
 
 env TESTING=true python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  56 passed
+  60 passed
+
+env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/admin_api/tests
+  33 passed, 1 dependency deprecation warning
+
+env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/identity_issuer/tests
+  27 passed, 1 dependency deprecation warning
 
 python -m pytest -q tests --ignore=tests/load
   58 passed, 1 warning
 
 npm test (Vitest 5.0.5)
-  16 files passed, 91 tests passed
+  16 files passed, 94 tests passed
 
 npm run typecheck
   PASS
