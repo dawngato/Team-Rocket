@@ -36,4 +36,13 @@ class CertificatePinningTest {
 
         assertEquals("Debug mode must route to 10.0.2.2 emulator alias", ApiClient.DEBUG_EMULATOR_URL, client.baseUrl)
     }
+
+    @Test
+    fun testNetworkSecurityConfigPermitsCleartextForEmulator() {
+        val configFile = java.io.File("src/main/res/xml/network_security_config.xml")
+        assertTrue("network_security_config.xml must exist", configFile.exists())
+        val content = configFile.readText()
+        assertTrue("Must permit cleartext for 10.0.2.2 emulator host", content.contains("<domain includeSubdomains=\"true\">10.0.2.2</domain>"))
+        assertTrue("Must have cleartextTrafficPermitted=true", content.contains("cleartextTrafficPermitted=\"true\""))
+    }
 }
