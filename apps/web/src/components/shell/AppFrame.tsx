@@ -11,6 +11,7 @@ import { canAccessWorkspaceRoute } from "../../lib/routes/nav_config";
 
 const PUBLIC_PATHS = [
   "/",
+  "/operations",
   "/elections",
   "/how-it-works",
   "/results",

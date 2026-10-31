@@ -302,6 +302,16 @@ export default function HomePage() {
 
                 <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
                   <Link
+                    href="/operations"
+                    className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2.5 rounded-2xl border border-teal-500/30 bg-teal-500/10 hover:bg-teal-500/20 px-6 text-sm sm:text-base font-bold text-[#157E92] dark:text-cyan-300 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                  >
+                    <Activity className="w-5 h-5 text-[#157E92] dark:text-cyan-400" aria-hidden="true" />
+                    <span>Operations Console</span>
+                  </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                  <Link
                     href="/how-it-works"
                     className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 px-6 text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                   >

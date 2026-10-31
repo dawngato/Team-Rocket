@@ -22,6 +22,7 @@ import {
   Vote,
   BarChart3,
   Search,
+  Activity,
 } from "lucide-react";
 import { useApp } from "../lib/query_provider";
 
@@ -65,6 +66,7 @@ export function Navbar() {
   }, [pathname]);
 
   const primaryNavLinks = [
+    { href: "/operations", label: "Operations Desk", icon: Activity },
     { href: "/elections", label: "Elections", icon: Vote },
     { href: "/results", label: "Results", icon: BarChart3 },
     { href: "/audit", label: "Audit Explorer", icon: Search },
