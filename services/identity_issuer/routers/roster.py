@@ -41,6 +41,7 @@ from ..schemas import (
     RosterCorrectionRecord,
 )
 from ..crypto.hashing import hash_password
+from ..notification_service import NotificationDeliveryError, notification_service
 from .deps import get_current_user, get_user_roles, require_roles, record_audit_event, user_has_scope
 
 router = APIRouter(prefix="/v1", tags=["roster"])
@@ -227,25 +228,45 @@ def register_student(
     db.add(profile)
     db.flush()
     activation_token = secrets.token_urlsafe(32)
-    db.add(AccountActivation(
+    activation = AccountActivation(
         user_id=user.id,
         token_hash=hashlib.sha256(activation_token.encode("utf-8")).hexdigest(),
         status="PENDING",
+        delivery_status="PENDING" if ACTIVATION_DELIVERY_MODE == "configured" else "DEVELOPMENT",
         expires_at=datetime.now(timezone.utc) + timedelta(hours=ACTIVATION_EXPIRE_HOURS),
-    ))
+    )
+    db.add(activation)
+    db.flush()
+    delivery_status = activation.delivery_status
+    if ACTIVATION_DELIVERY_MODE == "configured":
+        try:
+            notification_service.dispatch(
+                recipient=str(req.email).lower(),
+                subject="HimVote student account activation",
+                body=f"Your student account is pending institutional verification. The activation link expires in {ACTIVATION_EXPIRE_HOURS} hour(s).",
+                category="activation",
+                token=activation_token,
+                metadata={"activation_id": activation.id},
+            )
+            activation.delivery_status = "DELIVERED"
+            delivery_status = activation.delivery_status
+        except NotificationDeliveryError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Student activation notification could not be delivered") from exc
+
     record_audit_event(
         db=db,
         action="roster.student.registration_submitted",
         result="pending_verification",
         actor_id=user.id,
-        details={"student_id": req.student_id},
+        details={"student_id": req.student_id, "delivery": delivery_status},
     )
     db.commit()
 
     response = {
         "status": "registration_pending_verification",
         "student_id": req.student_id,
-        "activation_delivery": "pending",
+        "activation_delivery": "configured" if delivery_status == "DELIVERED" else "pending",
     }
     if APP_ENV != "production" and ACTIVATION_DELIVERY_MODE == "development":
         response["activation_delivery"] = "development"

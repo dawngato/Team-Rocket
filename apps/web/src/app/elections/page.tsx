@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Search, Vote, Clock, CheckCircle2, ShieldCheck, Activity, Users } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
+import { WorkspaceState } from "@/components/shell/WorkspaceState";
 import { electionClient } from "@/lib/election_client";
 import type { Election, ElectionState } from "@/lib/types";
 
@@ -113,7 +114,7 @@ export default function ElectionsListPage() {
               Campus Elections & Ballots
             </h1>
             <p className="max-w-2xl text-sm text-slate-600 dark:text-slate-300 leading-relaxed animate-linear-reveal-3">
-              Cryptographically verified university election ballots. Review manifests, access voting booths during active hours, and inspect published Merkle trees.
+              Review publicly released election records, schedules, candidate manifests, and published evidence returned by the authoritative services.
             </p>
           </div>
 
@@ -129,7 +130,7 @@ export default function ElectionsListPage() {
               <ShieldCheck className="size-5 text-emerald-600 dark:text-emerald-400" />
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-wider text-slate-500">Published</p>
-                <p className="text-lg font-bold text-[#10233F] dark:text-white">{stats.published} Verified</p>
+                <p className="text-lg font-bold text-[#10233F] dark:text-white">{stats.published} Published</p>
               </div>
             </div>
           </div>
@@ -137,22 +138,11 @@ export default function ElectionsListPage() {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center p-12 rounded-2xl border border-slate-200 bg-white dark:border-[#1E3352] dark:bg-[#132135]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="size-7 border-2 border-[#157E92] border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Querying authoritative election service...</p>
-          </div>
-        </div>
+        <WorkspaceState kind="loading" title="Loading public elections" description="Querying the authoritative election service. No local election records are substituted." />
       )}
 
       {error && (
-        <div className="rounded-2xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-6 text-sm text-[#8B2630] dark:text-[#FCA5A5] flex items-start gap-3" role="alert">
-          <div>
-            <p className="font-bold">Service Directory Unavailable</p>
-            <p className="mt-1">{error}</p>
-            <button type="button" onClick={() => { setLoading(true); setRetryNonce((value) => value + 1); }} className="mt-4 min-h-11 rounded-lg bg-[#157E92] px-4 py-2 text-xs font-bold text-white hover:bg-[#0E6273]">Retry</button>
-          </div>
-        </div>
+        <WorkspaceState kind="error" title="Election directory unavailable" description={`${error} Fabricated elections are never shown when the authoritative service cannot be reached.`} actionLabel="Retry" onAction={() => { setLoading(true); setRetryNonce((value) => value + 1); }} />
       )}
 
       {!loading && !error && (
@@ -190,14 +180,9 @@ export default function ElectionsListPage() {
           </div>
 
           {elections.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-[#1E3352] dark:bg-[#132135]">
-              <p className="font-bold text-[#10233F] dark:text-white text-base">No elections are currently available. Please check again later.</p>
-            </div>
+            <WorkspaceState kind="empty" title="No elections are currently available" description="Please check again later. Only publicly released elections returned by the authoritative service appear here." />
           ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-[#1E3352] dark:bg-[#132135]">
-              <p className="font-bold text-[#10233F] dark:text-white text-base">No Matching Elections Found</p>
-              <p className="text-xs text-slate-500 mt-1">Try refining your search keyword or switching the filter tab.</p>
-            </div>
+            <WorkspaceState kind="empty" title="No matching elections" description="Try a different search term or a different public status filter." />
           ) : null}
 
           {/* Elevated Interactive Election Cards */}
@@ -227,7 +212,7 @@ export default function ElectionsListPage() {
                         {election.title}
                       </h2>
                       <p className="mt-1 line-clamp-2 text-xs text-slate-500 dark:text-slate-400">
-                        Institutional election governed under RFC 9162 verifiable audit logging standards.
+                        Election details and evidence are displayed only when returned by the authoritative service.
                       </p>
                     </div>
 
@@ -250,7 +235,7 @@ export default function ElectionsListPage() {
                           <span>Contestants:</span>
                         </span>
                         <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          {election.candidates?.length ? `${election.candidates.length} Verified Candidates` : "Roster in progress"}
+                          {election.candidates?.length ? `${election.candidates.length} Official Candidates` : "Candidate roster unavailable"}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">

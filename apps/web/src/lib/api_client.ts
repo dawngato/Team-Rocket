@@ -271,6 +271,7 @@ export const apiClient = {
       role: String(row.role || ""),
       scope: String(row.scope || ""),
       status: String(row.status || ""),
+      delivery_status: String(row.delivery_status || "local_or_dev"),
       expires_at: String(row.expires_at || ""),
       created_at: String(row.created_at || ""),
     }));

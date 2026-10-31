@@ -191,6 +191,7 @@ class Invitation(Base):
     invited_by = Column(String, ForeignKey("users.id"), nullable=False)
     approved_by = Column(String, ForeignKey("users.id"), nullable=True)
     status = Column(String(50), nullable=False, default="PENDING")
+    delivery_status = Column(String(50), nullable=False, default="PENDING")
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
@@ -284,6 +285,7 @@ class RecoveryRequest(Base):
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token_hash = Column(String(255), unique=True, nullable=False, index=True)
     status = Column(String(50), nullable=False, default="PENDING")
+    delivery_status = Column(String(50), nullable=False, default="PENDING")
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     consumed_at = Column(DateTime(timezone=True), nullable=True)
@@ -298,6 +300,7 @@ class AccountActivation(Base):
     user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token_hash = Column(String(255), unique=True, nullable=False, index=True)
     status = Column(String(50), nullable=False, default="PENDING")
+    delivery_status = Column(String(50), nullable=False, default="PENDING")
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     consumed_at = Column(DateTime(timezone=True), nullable=True)

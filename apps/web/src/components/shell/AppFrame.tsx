@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Footer } from "../Footer";
 import { Navbar } from "../Navbar";
 import { AppShell, WorkspaceAccessGate } from "./AppShell";
+import { WorkspaceSkeleton } from "./WorkspaceState";
 import { identityClient, IdentityApiError, type SessionProfile } from "../../lib/identity_client";
 import { canAccessWorkspaceRoute } from "../../lib/routes/nav_config";
 
@@ -76,7 +77,7 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     return (
       <div className="sv-workspace-shell">
         <main id="main-content" className="sv-workspace-loading" role="status" aria-live="polite">
-          <div className="sv-loading-bar" />
+          <WorkspaceSkeleton lines={4} />
           <p>Checking your server-authorized session…</p>
         </main>
       </div>

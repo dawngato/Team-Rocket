@@ -33,6 +33,7 @@ from ..schemas import (
 )
 from ..crypto.hashing import hash_password
 from ..rate_limiter import rate_limiter
+from ..notification_service import NotificationDeliveryError, notification_service
 from .deps import (
     get_current_user,
     get_user_roles,
@@ -60,6 +61,7 @@ def list_admin_invitations(
             role=row.role,
             scope=row.scope,
             status=row.status,
+            delivery_status=row.delivery_status,
             expires_at=row.expires_at,
             created_at=row.created_at,
         )
@@ -182,6 +184,7 @@ def provision_teacher(
         token_hash=invitation_hash,
         invited_by=current_user.id,
         status="PENDING",
+        delivery_status="PENDING" if INVITATION_DELIVERY_MODE == "configured" else "DEVELOPMENT",
         expires_at=datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRE_DAYS),
     )
     db.add(invitation)
@@ -213,6 +216,22 @@ def provision_teacher(
     )
     db.add(assignment)
 
+    if INVITATION_DELIVERY_MODE == "configured":
+        try:
+            notification_service.dispatch(
+                recipient=teacher_user.email,
+                subject="HimVote teacher invitation",
+                body=f"Your scoped teacher account for {req.department.strip()} is ready for one-time setup.",
+                category="invitation",
+                token=invitation_token,
+                metadata={"invitation_id": invitation.id, "role": "teacher"},
+            )
+            invitation.delivery_status = "DELIVERED"
+        except NotificationDeliveryError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Teacher invitation notification could not be delivered") from exc
+
+    delivery_status = invitation.delivery_status
     record_audit_event(
         db=db,
         action="admin.teacher.provisioned",
@@ -222,6 +241,7 @@ def provision_teacher(
             "faculty_id": req.faculty_id.strip(),
             "email": str(req.email).lower(),
             "department": req.department.strip(),
+            "delivery": delivery_status,
         },
     )
     db.commit()
@@ -282,7 +302,7 @@ def create_admin_invitation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invitation scope exceeds the caller's delegated scope",
         )
-    if APP_ENV == "production":
+    if APP_ENV == "production" and INVITATION_DELIVERY_MODE != "configured":
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Invitation delivery requires an independently configured notification adapter",
@@ -309,16 +329,40 @@ def create_admin_invitation(
         token_hash=token_hash,
         invited_by=current_user.id,
         status="PENDING",
+        delivery_status="PENDING" if INVITATION_DELIVERY_MODE == "configured" else "DEVELOPMENT",
         expires_at=expires_at,
     )
     db.add(invitation)
+    db.flush()
+
+    delivery_status = invitation.delivery_status
+    if INVITATION_DELIVERY_MODE == "configured":
+        try:
+            notification_service.dispatch(
+                recipient=str(req.email).lower(),
+                subject="HimVote administrative staff invitation",
+                body=f"You have been invited as {requested_role} for scope {requested_scope}.",
+                category="invitation",
+                token=token,
+                metadata={"invitation_id": invitation.id, "role": requested_role},
+            )
+            invitation.delivery_status = "DELIVERED"
+            delivery_status = invitation.delivery_status
+        except NotificationDeliveryError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Invitation notification could not be delivered") from exc
 
     record_audit_event(
         db=db,
         action="admin.invitation.created",
         result="success",
         actor_id=current_user.id,
-        details={"invited_email": str(req.email).lower(), "role": requested_role, "scope": requested_scope},
+        details={
+            "invited_email": str(req.email).lower(),
+            "role": requested_role,
+            "scope": requested_scope,
+            "delivery": delivery_status,
+        },
     )
     db.commit()
 

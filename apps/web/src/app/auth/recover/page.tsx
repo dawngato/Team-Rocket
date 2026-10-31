@@ -1,15 +1,27 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ShieldAlert, ArrowRight, CheckCircle2, KeyRound } from "lucide-react";
 import { identityClient } from "@/lib/identity_client";
 
 export default function AccountRecoveryPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [resetToken, setResetToken] = useState("");
+  const [resetPassword, setResetPassword] = useState("");
+  const [resetConfirmation, setResetConfirmation] = useState("");
+  const [resetSuccess, setResetSuccess] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) setResetToken(token);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +34,24 @@ export default function AccountRecoveryPage() {
       setError(cause instanceof Error ? cause.message : "Recovery could not be requested.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReset = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    if (resetPassword !== resetConfirmation) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await identityClient.resetPassword(resetToken, resetPassword);
+      setResetSuccess(true);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The recovery link could not be accepted.");
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -39,14 +69,31 @@ export default function AccountRecoveryPage() {
         </p>
       </div>
 
-      {submitted ? (
+      {resetToken ? (
+        resetSuccess ? (
+          <div className="rounded-xl border border-[#15805D]/30 bg-white p-6 text-center shadow-sm dark:bg-[#132135]" role="status">
+            <CheckCircle2 className="mx-auto size-10 text-[#15805D]" aria-hidden="true" />
+            <h2 className="mt-3 text-lg font-bold text-[#10233F] dark:text-white">Password reset complete</h2>
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">Previous sessions were revoked. You can now sign in with the new password.</p>
+            <Link href="/auth/login" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white">Return to sign in</Link>
+          </div>
+        ) : (
+          <form onSubmit={handleReset} className="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+            <div><label htmlFor="reset-token" className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Recovery token</label><input id="reset-token" required minLength={32} value={resetToken} onChange={(event) => setResetToken(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 font-mono text-sm dark:border-[#1E3352]" /></div>
+            <div><label htmlFor="reset-password" className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">New password</label><input id="reset-password" required minLength={16} type="password" autoComplete="new-password" value={resetPassword} onChange={(event) => setResetPassword(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm dark:border-[#1E3352]" /></div>
+            <div><label htmlFor="reset-confirmation" className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300">Confirm new password</label><input id="reset-confirmation" required minLength={16} type="password" autoComplete="new-password" value={resetConfirmation} onChange={(event) => setResetConfirmation(event.target.value)} className="min-h-11 w-full rounded-lg border border-slate-300 bg-transparent px-3 text-sm dark:border-[#1E3352]" /></div>
+            {error && <p className="rounded-lg border border-[#C23C45]/30 bg-[#C23C45]/10 p-3 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</p>}
+            <button type="submit" disabled={resetLoading} className="min-h-11 w-full rounded-lg bg-[#157E92] px-4 text-sm font-bold text-white disabled:opacity-50">{resetLoading ? "Saving password…" : "Reset password"}</button>
+          </form>
+        )
+      ) : submitted ? (
         <div className="rounded-xl border border-[#15805D]/30 bg-white dark:bg-[#132135] p-6 shadow-sm text-center space-y-4">
           <CheckCircle2 className="w-12 h-12 text-[#15805D] mx-auto" aria-hidden="true" />
           <h2 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Recovery Instructions Dispatched
+            Recovery request accepted
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            If an active institutional profile is bound to <strong>{email}</strong>, a single-use cryptographically hashed reset link has been dispatched to your official mailbox.
+            If an active institutional profile is bound to <strong>{email}</strong>, the configured notification service will deliver a single-use reset link. This page never claims delivery when the service has not accepted the message.
           </p>
           <div className="pt-2">
             <Link

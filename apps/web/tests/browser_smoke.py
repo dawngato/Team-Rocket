@@ -117,6 +117,9 @@ def run_smoke() -> None:
         protected_response = page.goto(f"{BASE_URL}/officer/elections", wait_until="domcontentloaded", timeout=60_000)
         assert protected_response is not None and protected_response.ok
         assert "/auth/login" in page.url
+        protected_response = page.goto(f"{BASE_URL}/account", wait_until="domcontentloaded", timeout=60_000)
+        assert protected_response is not None and protected_response.ok
+        assert "/auth/login" in page.url
 
         browser.close()
 

@@ -8,6 +8,7 @@ const protectedRoutes: Array<[string, string[]]> = [
   ["/admin", ["administrator", "super_admin"]],
   ["/super-admin", ["super_admin"]],
   ["/auditor", ["auditor"]],
+  ["/account", ["student", "teacher", "election_officer", "administrator", "super_admin", "auditor"]],
 ];
 
 function normalizeRole(role: unknown): string | null {

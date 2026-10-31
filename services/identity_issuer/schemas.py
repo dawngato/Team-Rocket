@@ -89,6 +89,7 @@ class AdminInvitationRecord(BaseModel):
     role: str
     scope: str
     status: str
+    delivery_status: str
     expires_at: datetime
     created_at: datetime
 

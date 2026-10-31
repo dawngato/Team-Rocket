@@ -1332,6 +1332,59 @@ textarea:focus-visible {
   animation: sv-loading 1.1s ease-in-out infinite;
 }
 
+.sv-skeleton {
+  display: grid;
+  width: min(100%, 520px);
+  gap: 0.7rem;
+}
+
+.sv-skeleton-line {
+  display: block;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--sv-border-subtle), var(--sv-border), var(--sv-border-subtle));
+  background-size: 220% 100%;
+  animation: sv-skeleton 1.4s ease-in-out infinite;
+}
+
+.sv-skeleton-line-1 { width: 42%; height: 1.2rem; }
+.sv-skeleton-line-2 { width: 86%; }
+.sv-skeleton-line-3 { width: 68%; }
+.sv-skeleton-line-4 { width: 52%; }
+
+@keyframes sv-skeleton {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+
+.sv-state {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--sv-border);
+  border-radius: var(--sv-radius-md);
+  color: var(--sv-text-secondary);
+  background: var(--sv-surface);
+}
+
+.sv-state-error {
+  border-color: color-mix(in srgb, var(--sv-danger) 34%, var(--sv-border));
+  background: color-mix(in srgb, var(--sv-danger) 7%, var(--sv-surface));
+}
+
+.sv-state-empty { border-style: dashed; }
+.sv-state-icon { display: inline-flex; flex: 0 0 auto; padding-top: 0.12rem; color: var(--sv-accent); }
+.sv-state-error .sv-state-icon { color: var(--sv-danger); }
+.sv-state-copy { min-width: 0; flex: 1; }
+.sv-state-copy h2 { margin: 0; color: var(--sv-text); font-size: 0.82rem; font-weight: 700; }
+.sv-state-copy p { margin: 0.28rem 0 0; color: var(--sv-text-muted); font-size: 0.76rem; line-height: 1.55; }
+.sv-state-action { min-height: 36px; padding: 0 0.75rem; border: 1px solid var(--sv-border); border-radius: var(--sv-radius-sm); color: var(--sv-text); background: var(--sv-surface-raised); font-size: 0.74rem; font-weight: 650; }
+.sv-state-action:hover { border-color: var(--sv-accent); background: var(--sv-hover); }
+.sv-state-spin { animation: sv-state-spin 1s linear infinite; }
+
+@keyframes sv-state-spin { to { transform: rotate(360deg); } }
+
 @keyframes sv-loading {
   from { transform: translateX(-120%); }
   to { transform: translateX(380%); }
@@ -1537,7 +1590,9 @@ textarea:focus-visible {
   .sv-search-trigger,
   .sv-command-item { transition: none; }
   .sv-loading-bar::after,
-  .sv-command-dialog { animation: none; }
+  .sv-command-dialog,
+  .sv-skeleton-line,
+  .sv-state-spin { animation: none; }
 }
 
 /* Public shell: the same restrained system, with a more open landing-page

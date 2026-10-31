@@ -1,17 +1,24 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { ShieldCheck, AlertTriangle, ArrowRight } from "lucide-react";
 import { identityClient } from "@/lib/identity_client";
 
 export default function StudentVerifyAccountPage() {
+  const searchParams = useSearchParams();
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const suppliedToken = searchParams.get("token");
+    if (suppliedToken) setToken(suppliedToken);
+  }, [searchParams]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
