@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 from hexbytes import HexBytes
 from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 
 @dataclass
@@ -17,6 +18,7 @@ class ReorgCheckResult:
     is_reorg: bool
     reason: Optional[str] = None
     canonical_block_hash: Optional[str] = None
+    is_indeterminate: bool = False
 
 
 class ReorgDetector:
@@ -47,17 +49,26 @@ class ReorgDetector:
             canonical_block = self.w3.eth.get_block(recorded_block_number)
         except Exception as exc:
             return ReorgCheckResult(
-                is_reorg=True,
+                is_reorg=False,
                 reason=f"Block {recorded_block_number} lookup failed: {exc}",
+                is_indeterminate=True,
             )
 
         if not canonical_block:
             return ReorgCheckResult(
-                is_reorg=True,
-                reason=f"Block {recorded_block_number} not found on canonical chain",
+                is_reorg=False,
+                reason=f"Block {recorded_block_number} could not be verified on the current RPC response",
+                is_indeterminate=True,
             )
 
-        canonical_hash = self._normalize_hash(canonical_block.get("hash"))
+        block_hash = canonical_block.get("hash")
+        if not block_hash:
+            return ReorgCheckResult(
+                is_reorg=False,
+                reason=f"Block {recorded_block_number} response did not include a block hash",
+                is_indeterminate=True,
+            )
+        canonical_hash = self._normalize_hash(block_hash)
         expected_hash = self._normalize_hash(recorded_block_hash)
 
         if canonical_hash != expected_hash:
@@ -71,8 +82,10 @@ class ReorgDetector:
             tx = self.w3.eth.get_transaction(tx_hash)
             if not tx:
                 return ReorgCheckResult(
-                    is_reorg=True,
-                    reason=f"Transaction {tx_hash} absent from canonical pool",
+                    is_reorg=False,
+                    reason=f"Transaction {tx_hash} could not be verified by the RPC response",
+                    canonical_block_hash=canonical_hash,
+                    is_indeterminate=True,
                 )
             tx_block_number = tx.get("blockNumber")
             tx_block_hash = self._normalize_hash(tx.get("blockHash"))
@@ -82,10 +95,18 @@ class ReorgDetector:
                     is_reorg=True,
                     reason=f"Transaction moved to block {tx_block_number} with hash {tx_block_hash}",
                 )
-        except Exception as exc:
+        except TransactionNotFound:
             return ReorgCheckResult(
                 is_reorg=True,
+                reason=f"Transaction {tx_hash} is absent from the canonical chain",
+                canonical_block_hash=canonical_hash,
+            )
+        except Exception as exc:
+            return ReorgCheckResult(
+                is_reorg=False,
                 reason=f"Transaction verification failed: {exc}",
+                canonical_block_hash=canonical_hash,
+                is_indeterminate=True,
             )
 
         return ReorgCheckResult(

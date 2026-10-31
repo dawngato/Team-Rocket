@@ -149,7 +149,7 @@ export default function ElectionsListPage() {
   ];
 
   return (
-    <main className="mx-auto max-w-7xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1850px] space-y-10 px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-10">
       {/* Dynamic Hero Header with Live Metrics */}
       <div className="relative overflow-hidden rounded-2xl border border-slate-200/80 dark:border-[#1E3352] bg-gradient-to-br from-white via-slate-50 to-slate-100/60 dark:from-[#10233F] dark:via-[#0F1E36] dark:to-[#0B1524] p-6 sm:p-8 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
@@ -245,7 +245,7 @@ export default function ElectionsListPage() {
           )}
 
           {/* Elevated Interactive Election Cards */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
             {filtered.map((election) => {
               const isOpen = election.state === "OPEN";
               const isPublished = election.state === "PUBLISHED";

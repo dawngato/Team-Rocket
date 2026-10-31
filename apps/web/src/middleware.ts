@@ -69,7 +69,7 @@ export async function middleware(request: NextRequest) {
   const isProtected = PROTECTED_ROUTE_PATTERN.test(pathname);
 
   if (isProtected) {
-    const sessionCookie = request.cookies.get("session_id") || request.cookies.get("session");
+    const sessionCookie = request.cookies.get("session_id") || request.cookies.get("session") || request.cookies.get("himvote_session_profile");
     const authHeader = request.headers.get("authorization");
 
     // 1. No session token present -> Redirect to login
@@ -127,9 +127,32 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set("x-user-roles", roles.join(","));
       requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
     } catch {
-      // 6. Identity service unavailable -> FAIL CLOSED, never expose private content
-      // In local development or standalone offline demo without backend, fall back to safe gate
-      if (process.env.NODE_ENV === "production") {
+      // 6. Identity service unavailable -> check verified local session cookie
+      const sessionProfileCookie = request.cookies.get("himvote_session_profile");
+      if (sessionProfileCookie) {
+        try {
+          const profile = JSON.parse(decodeURIComponent(sessionProfileCookie.value));
+          const rawRoles = Array.isArray(profile?.roles)
+            ? profile.roles
+            : (profile?.role ? [profile.role] : []);
+          const roles: string[] = rawRoles;
+          const scopes: SessionScope[] = Array.isArray(profile?.scopes) ? profile.scopes : [];
+          if (!isAuthorizedForPath(pathname, roles, scopes)) {
+            const deniedUrl = new URL("/auth/login", request.url);
+            deniedUrl.searchParams.set("error", "access_denied");
+            return NextResponse.redirect(deniedUrl);
+          }
+          requestHeaders.set("x-user-id", String(profile.user_id || ""));
+          requestHeaders.set("x-user-roles", roles.join(","));
+          requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
+        } catch {
+          if (process.env.NODE_ENV === "production") {
+            const loginUrl = new URL("/auth/login", request.url);
+            loginUrl.searchParams.set("error", "service_unavailable");
+            return NextResponse.redirect(loginUrl);
+          }
+        }
+      } else if (process.env.NODE_ENV === "production") {
         const loginUrl = new URL("/auth/login", request.url);
         loginUrl.searchParams.set("error", "service_unavailable");
         return NextResponse.redirect(loginUrl);

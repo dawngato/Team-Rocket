@@ -4,11 +4,13 @@ Verifies parsing, encoding, and state lookups.
 """
 
 from unittest.mock import MagicMock, patch
+import requests
+import pytest
 from hexbytes import HexBytes
 from web3 import Web3
 from anchor_relayer.contract_client import HimVoteAnchorClient
 from anchor_relayer.models import WitnessedCheckpoint
-from anchor_relayer.witness_client import WitnessClient
+from anchor_relayer.witness_client import WitnessClient, WitnessServiceError
 
 
 def test_witness_client_fetch_unanchored():
@@ -47,6 +49,16 @@ def test_witness_client_fetch_unanchored():
         assert cps[0].is_final is False
         assert cps[1].sequence == 2
         assert cps[1].is_final is True
+
+
+def test_witness_client_does_not_hide_missing_pending_endpoint():
+    client = WitnessClient(base_url="http://127.0.0.1:8086")
+    mock_response = MagicMock()
+    mock_response.raise_for_status.side_effect = requests.HTTPError("404 Not Found")
+
+    with patch("requests.get", return_value=mock_response):
+        with pytest.raises(WitnessServiceError, match="pending checkpoints"):
+            client.get_unanchored_checkpoints()
 
 
 def test_witness_client_get_final_checkpoint():

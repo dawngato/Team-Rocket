@@ -210,7 +210,7 @@ export default function PublishedResultsPage() {
   };
 
   return (
-    <main className="mx-auto max-w-6xl space-y-10 px-4 py-12 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1850px] space-y-10 px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-12">
       {/* Header Banner */}
       <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center">
         <div>
@@ -261,16 +261,16 @@ export default function PublishedResultsPage() {
           </div>
           <div className="flex items-center gap-2">
             <Link
-              href="/student/elections/demo_union_2026/candidates"
+              href="/auth/login"
               className="px-4 py-2 text-xs font-semibold rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50"
             >
-              Candidates
+              Sign In to Participate
             </Link>
             <Link
-              href="/student/elections/demo_union_2026"
+              href="/auth/login"
               className="px-4 py-2 text-xs font-bold rounded-xl bg-[#157E92] text-white hover:bg-[#0E6273] inline-flex items-center gap-1.5 shadow-sm"
             >
-              Cast Ballot <ArrowRight className="size-3.5" />
+              Portal Login <ArrowRight className="size-3.5" />
             </Link>
           </div>
         </div>

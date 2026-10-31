@@ -1,180 +1,405 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  LogIn,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  Clock,
+  ShieldCheck,
+  CheckCircle2,
+  KeyRound,
+  FileCheck2,
+  ArrowRight,
+  Fingerprint,
+} from "lucide-react";
 import { identityClient } from "@/lib/identity_client";
-
-const ROLE_OPTIONS: Record<string, { label: string; description: string; path: string }> = {
-  super_admin: { label: "Super Administrator", description: "Campus governance, audit events & system configuration", path: "/super-admin" },
-  administrator: { label: "Campus Administrator", description: "Teacher directory, invitations & approval queues", path: "/admin" },
-  election_officer: { label: "Election Officer", description: "Election builder, candidate rosters & lifecycle controls", path: "/officer" },
-  teacher: { label: "Teacher / Faculty", description: "Class rosters & student verification queue", path: "/teacher" },
-  auditor: { label: "Independent Auditor", description: "Trust pins, evidence bundles & cryptographic proof verification", path: "/auditor" },
-  student: { label: "Student Voter", description: "Contests, credentials, voting booth & receipt tracker", path: "/student" },
-};
-
-function normalizeRoleKey(role: string): string {
-  const norm = role.trim().toLowerCase();
-  if (norm === "superadmin") return "super_admin";
-  if (norm === "admin") return "administrator";
-  if (norm === "officer") return "election_officer";
-  return norm;
-}
-
-function workspaceForRole(role: string): string {
-  const key = normalizeRoleKey(role);
-  return ROLE_OPTIONS[key]?.path || "/student";
-}
+import { userAuthStore } from "@/lib/user_auth_store";
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pendingNotice, setPendingNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [grantedRoles, setGrantedRoles] = useState<string[] | null>(null);
-  const [rememberPreference, setRememberPreference] = useState(false);
+
+  // Restore remembered email on client mount
+  useEffect(() => {
+    try {
+      const savedEmail = localStorage.getItem("himvote_remembered_email");
+      if (savedEmail) {
+        setEmail(savedEmail);
+        setRememberMe(true);
+      }
+    } catch {
+      // Ignore localStorage access failures
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    try {
-      const data = await identityClient.login(email, password);
-      const profile = await identityClient.getSession();
-      const availableRoles = profile.roles && profile.roles.length > 0 ? profile.roles : [data.role];
+    setPendingNotice(null);
 
-      // P1-29: For multi-role accounts, check preferred primary workspace or prompt choice
-      if (availableRoles.length > 1) {
-        const preferred = typeof window !== "undefined" ? window.localStorage.getItem("himvote_primary_role") : null;
-        if (preferred && availableRoles.map(normalizeRoleKey).includes(normalizeRoleKey(preferred))) {
-          router.push(workspaceForRole(preferred));
-          return;
+    try {
+      // 1. Authenticate credentials through the identity client
+      await identityClient.login(email, password);
+
+      // Handle remember me preference
+      try {
+        if (rememberMe) {
+          localStorage.setItem("himvote_remembered_email", email);
+        } else {
+          localStorage.removeItem("himvote_remembered_email");
         }
-        setGrantedRoles(availableRoles);
+      } catch {
+        // Ignore localStorage access failures
+      }
+
+      // 2. Query user record in institutional authority store
+      const currentUser = userAuthStore.getUserByEmail(email);
+      if (!currentUser?.role || currentUser.status === "pending_role") {
+        setPendingNotice(
+          "Your institutional account is registered, but an operational role has not yet been assigned. In accordance with university governance policies, only the Super Administrator has the authority to assign roles (Administrator, Election Officer, Faculty Member, or Student Voter). Please await administrator provisioning."
+        );
+        userAuthStore.logoutUser();
+        return;
+      }
+
+      // 3. Route to designated institutional workspace based on the assigned role
+      const role = currentUser.role;
+      if (role === "super_admin") {
+        router.push("/super-admin");
+      } else if (role === "administrator") {
+        router.push("/admin");
+      } else if (role === "election_officer") {
+        router.push("/officer");
+      } else if (role === "teacher") {
+        router.push("/teacher");
+      } else if (role === "student") {
+        router.push("/student");
       } else {
-        router.push(workspaceForRole(availableRoles[0]));
+        router.push("/student");
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The identity service rejected the sign in request.");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Invalid institutional email or password. Please verify your credentials and try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSelectWorkspace = (role: string) => {
-    if (rememberPreference && typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem("himvote_primary_role", normalizeRoleKey(role));
-      } catch {}
-    }
-    router.push(workspaceForRole(role));
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F3F6FA] dark:bg-[#0B1524] px-4">
-      <div className="max-w-md w-full bg-white dark:bg-[#132135] rounded-xl shadow-xl border border-slate-200 dark:border-[#1E3352] p-8">
-        <div className="flex items-center gap-2 mb-6">
-          <span className="w-8 h-8 rounded-lg bg-[#157E92] flex items-center justify-center text-white">
-            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </span>
-          <h1 className="text-xl font-bold text-[#17233B] dark:text-white">
-            {grantedRoles ? "Choose Authorized Workspace" : "Sign in to HimVote"}
-          </h1>
+    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col lg:flex-row bg-[#FAF8F5] dark:bg-[#07111e]">
+      {/* Left Institutional Showcase Column (Stretched & Fluid) */}
+      <section
+        aria-label="Institutional Overview"
+        className="hidden lg:flex lg:w-1/2 xl:w-7/12 flex-col justify-between p-10 xl:p-16 relative overflow-hidden bg-gradient-to-br from-[#0c1a2e] via-[#0f2742] to-[#08121f] text-white border-r border-slate-200/10 dark:border-slate-800/80"
+      >
+        {/* Subtle Decorative Ambient Background Glows */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 bg-[#157E92]/25 rounded-full blur-3xl"
+        />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 bg-[#15805D]/20 rounded-full blur-3xl"
+        />
+
+        {/* Subtle Cryptographic Grid Pattern */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.035] bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:24px_24px]"
+        />
+
+        {/* Top Header: Institutional Identity */}
+        <div className="relative z-10 flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-[#157E92] to-[#0E6273] flex items-center justify-center text-white shadow-lg shadow-[#157E92]/30 ring-1 ring-white/20">
+            <ShieldCheck className="w-6 h-6" aria-hidden="true" />
+          </div>
+          <div>
+            <span className="text-xs font-bold tracking-widest uppercase text-[#38BDF8]">
+              Himachal Pradesh Technical University
+            </span>
+            <h2 className="text-sm font-semibold tracking-wide text-slate-200">
+              HimVote Institutional Election System
+            </h2>
+          </div>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
-            {error}
-          </div>
-        )}
-
-        {grantedRoles ? (
+        {/* Center Presentation: Headline & Cryptographic Pillars */}
+        <div className="relative z-10 my-auto py-10 space-y-8 max-w-2xl">
           <div className="space-y-4">
-            <p className="text-sm text-slate-600 dark:text-slate-300">
-              Your verified account holds multiple delegated roles. Select which authorized workspace to enter for this session:
-            </p>
-            <div className="space-y-2.5">
-              {grantedRoles.map((role) => {
-                const key = normalizeRoleKey(role);
-                const meta = ROLE_OPTIONS[key] || { label: role, description: "Authorized workspace", path: workspaceForRole(role) };
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    onClick={() => handleSelectWorkspace(role)}
-                    className="w-full text-left p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] hover:border-[#157E92] dark:hover:border-[#157E92] hover:bg-slate-50 dark:hover:bg-[#0E1A2B] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-                  >
-                    <div className="font-semibold text-[#17233B] dark:text-white flex items-center justify-between">
-                      <span>{meta.label}</span>
-                      <span className="text-xs text-[#157E92] font-mono">Enter →</span>
-                    </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{meta.description}</p>
-                  </button>
-                );
-              })}
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 text-[#38BDF8] text-xs font-semibold tracking-wide">
+              <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Cryptographically Verifiable Campus Democracy</span>
             </div>
-            <div className="pt-2 flex items-center gap-2">
-              <input
-                id="remember-pref"
-                type="checkbox"
-                checked={rememberPreference}
-                onChange={(e) => setRememberPreference(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-[#157E92] focus:ring-[#157E92]"
-              />
-              <label htmlFor="remember-pref" className="text-xs text-slate-600 dark:text-slate-400">
-                Remember my choice as default workspace
-              </label>
+            <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
+              Tamper-evident elections governed with cryptographic certainty.
+            </h1>
+            <p className="text-sm xl:text-base text-slate-300 leading-relaxed font-normal">
+              HimVote separates voter identity from cast ballots through blinded signatures,
+              anchoring every tally in an immutable Merkle tree with independent verification
+              and centralized Super Administrator governance.
+            </p>
+          </div>
+
+          {/* 4 Pillars Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.07]">
+              <div className="flex items-center gap-2.5 mb-1.5 text-[#38BDF8]">
+                <Fingerprint className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Zero-Knowledge Secrecy
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Ballot selections are mathematically blinded, safeguarding absolute voter privacy.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.07]">
+              <div className="flex items-center gap-2.5 mb-1.5 text-emerald-400">
+                <FileCheck2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Verifiable Audit Tree
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Immutable Merkle inclusion proofs allow every participant to verify tally integrity.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.07]">
+              <div className="flex items-center gap-2.5 mb-1.5 text-amber-400">
+                <ShieldCheck className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Super Admin Governance
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Privileged institutional roles are provisioned exclusively by authorized governance.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-sm transition-all hover:bg-white/[0.07]">
+              <div className="flex items-center gap-2.5 mb-1.5 text-sky-400">
+                <CheckCircle2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
+                  Transparent Tallies
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Publicly inspectable tallies signed with cryptographic witness keys.
+              </p>
             </div>
           </div>
-        ) : (
-          <>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Institutional email</label>
+        </div>
+
+        {/* Bottom System Status Bar */}
+        <div className="relative z-10 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-xs text-slate-400">
+          <div className="flex items-center gap-2.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="font-medium text-slate-300">
+              Institutional Service Node Active
+            </span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
+            <span>Ed25519</span>
+            <span>•</span>
+            <span>BLS12-381 Blind Signatures</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Right Authentication Panel (Stretched & Fluid) */}
+      <section
+        aria-label="User Authentication Form"
+        className="w-full lg:w-1/2 xl:w-5/12 flex flex-col justify-center px-6 sm:px-12 md:px-16 lg:px-12 xl:px-16 py-12 lg:py-16 bg-white dark:bg-[#0B1524] transition-colors"
+      >
+        <div className="w-full max-w-xl mx-auto space-y-8">
+          {/* Form Header */}
+          <div className="space-y-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-md bg-[#157E92]/10 dark:bg-[#157E92]/20 text-[#157E92] dark:text-[#38BDF8] text-xs font-bold tracking-wider uppercase">
+              <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Institutional Sign In</span>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+              Access Your Account
+            </h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              Enter your verified university email and password to access your authorized institutional workspace.
+            </p>
+          </div>
+
+          {/* Authentication Error Alert */}
+          {error && (
+            <div
+              className="p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-300 text-sm flex items-start gap-3 shadow-sm transition-all"
+              role="alert"
+            >
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5 text-red-600 dark:text-red-400" aria-hidden="true" />
+              <div className="space-y-1">
+                <strong className="block font-semibold">Authentication Failed</strong>
+                <p className="leading-snug">{error}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Pending Role Assignment Notice */}
+          {pendingNotice && (
+            <div
+              className="p-5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm flex items-start gap-3.5 shadow-sm transition-all"
+              role="status"
+            >
+              <Clock className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+              <div className="space-y-1.5">
+                <strong className="block font-semibold text-amber-900 dark:text-amber-100">
+                  Institutional Role Assignment Pending
+                </strong>
+                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
+                  {pendingNotice}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Normal Login Form: Strictly No Role Selection */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label
+                htmlFor="login-email"
+                className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200"
+              >
+                Institutional Email Address
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Mail className="w-5 h-5" aria-hidden="true" />
+                </div>
                 <input
                   id="login-email"
                   type="email"
                   required
-                  autoComplete="username"
-                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-                  placeholder="student@university.edu"
+                  autoComplete="email"
+                  className="w-full min-h-[48px] rounded-xl border border-slate-300 dark:border-[#1E3352] bg-[#F8FAFC] dark:bg-[#08121f] text-slate-900 dark:text-white pl-11 pr-4 py-2.5 text-sm focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 focus-visible:outline-none transition-all placeholder:text-slate-400 shadow-sm"
+                  placeholder="e.g. rollnumber@hptu.ac.in or username@university.edu"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-                  <Link
-                    href="/auth/recover"
-                    className="text-xs text-[#157E92] hover:text-[#0E6273] dark:text-[#38BDF8] hover:underline font-medium"
-                  >
-                    Forgot password?
-                  </Link>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="login-password"
+                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200"
+                >
+                  Password
+                </label>
+                <Link
+                  href="/auth/recover"
+                  className="text-xs text-[#157E92] hover:text-[#0E6273] dark:text-[#38BDF8] dark:hover:text-[#60a5fa] hover:underline font-semibold transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <Lock className="w-5 h-5" aria-hidden="true" />
                 </div>
                 <input
                   id="login-password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   autoComplete="current-password"
-                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                  className="w-full min-h-[48px] rounded-xl border border-slate-300 dark:border-[#1E3352] bg-[#F8FAFC] dark:bg-[#08121f] text-slate-900 dark:text-white pl-11 pr-12 py-2.5 text-sm focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 focus-visible:outline-none transition-all placeholder:text-slate-400 shadow-sm"
+                  placeholder="Enter your account password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full min-h-[44px] bg-[#157E92] text-white font-semibold rounded-lg hover:bg-[#0E6273] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] transition-colors"
+            </div>
+
+            {/* Remember Me Option */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-[#157E92] focus:ring-[#157E92] dark:bg-[#08121f] cursor-pointer"
+                />
+                <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                  Remember this device for subsequent sign ins
+                </span>
+              </label>
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full min-h-[50px] bg-[#157E92] hover:bg-[#0E6273] active:bg-[#0b4e5c] text-white font-semibold rounded-xl text-sm transition-all duration-150 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#157E92]"
+            >
+              {loading ? (
+                <>
+                  <span
+                    className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"
+                    aria-hidden="true"
+                  />
+                  <span>Authenticating credentials…</span>
+                </>
+              ) : (
+                <>
+                  <span>Sign In to Workspace</span>
+                  <ArrowRight className="w-4 h-4" aria-hidden="true" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Navigation to Registration */}
+          <div className="pt-6 border-t border-slate-200 dark:border-[#1E3352] text-center space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              New institutional member?{" "}
+              <Link
+                href="/auth/register"
+                className="text-[#157E92] dark:text-[#38BDF8] font-bold hover:underline"
               >
-                {loading ? "Signing in..." : "Sign in"}
-              </button>
-            </form>
-          </>
-        )}
-      </div>
+                Create an account
+              </Link>
+            </p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">
+              Protected by university cryptographic authentication protocols. All authorization events are recorded for audit compliance.
+            </p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

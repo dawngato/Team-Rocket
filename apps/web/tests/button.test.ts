@@ -5,15 +5,11 @@ import { Button } from "../src/components/Button";
 import * as AppComponents from "../src/app/components";
 
 describe("Button Design Engineering and Accessibility", () => {
-  it("includes tactile active state scaling class of scale 0.98", () => {
+  it("uses explicit property transitions instead of transition all", () => {
     const html = renderToString(React.createElement(Button, null, "Cast Vote"));
-    expect(html).toContain("active:scale-[0.98]");
-  });
-
-  it("includes instant feedback transition classes", () => {
-    const html = renderToString(React.createElement(Button, null, "Submit"));
-    expect(html).toContain("transition-all");
-    expect(html).toContain("duration-75");
+    expect(html).toContain("transition-[transform,box-shadow,background-color,color,border-color]");
+    expect(html).not.toContain("transition-all");
+    expect(html).not.toContain("duration-75");
     expect(html).toContain("ease-out");
   });
 
@@ -39,9 +35,8 @@ describe("Button Design Engineering and Accessibility", () => {
     expect(html).toContain("bg-[#C23C45]");
   });
 
-  it("disables tactile active scaling when button is disabled", () => {
+  it("prevents interaction when button is disabled", () => {
     const html = renderToString(React.createElement(Button, { disabled: true }, "Disabled Action"));
-    expect(html).toContain("disabled:active:scale-100");
     expect(html).toContain("disabled:pointer-events-none");
     expect(html).toContain("disabled");
   });

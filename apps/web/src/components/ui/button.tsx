@@ -11,9 +11,9 @@ export interface ButtonProps
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = "default", size = "default", isLoading = false, disabled, children, ...props }, ref) => {
     const baseClasses =
-      "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-all duration-75 ease-out select-none " +
+      "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-semibold transition-[transform,box-shadow,background-color,color,border-color] duration-200 ease-out select-none " +
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2410C] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0C0A09] " +
-      "active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100";
+      "disabled:pointer-events-none disabled:opacity-50";
 
     const variantClasses = {
       default: "bg-[#1C1917] text-[#FAF8F5] hover:bg-[#292524] dark:bg-[#FAF8F5] dark:text-[#1C1917] dark:hover:bg-[#E7E5E4] border border-transparent shadow-sm",

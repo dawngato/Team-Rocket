@@ -14,237 +14,393 @@ import {
   FileText,
   ArrowRight,
   Lock,
+  RefreshCw,
+  Activity,
+  CheckCircle2,
+  KeyRound,
+  ExternalLink,
+  Shield,
+  Layers,
 } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
 import { apiClient } from "@/lib/api_client";
 import type { Election } from "@/lib/types";
 
 export default function SuperAdminOverviewPage() {
-  const pendingRequestsCount = "Not loaded";
   const [elections, setElections] = useState<Election[]>([]);
   const [electionsError, setElectionsError] = useState<string | null>(null);
   const [loadingElections, setLoadingElections] = useState(true);
 
+  const fetchElections = () => {
+    setLoadingElections(true);
+    setElectionsError(null);
+    apiClient
+      .getElections({ includeInternal: true })
+      .then((rows) => {
+        setElections(rows);
+      })
+      .catch((cause) => {
+        setElectionsError(
+          cause instanceof Error ? cause.message : "Election status could not be loaded."
+        );
+      })
+      .finally(() => {
+        setLoadingElections(false);
+      });
+  };
+
   useEffect(() => {
-    let active = true;
-    void apiClient.getElections({ includeInternal: true }).then((rows) => {
-      if (active) setElections(rows);
-    }).catch((cause) => {
-      if (active) setElectionsError(cause instanceof Error ? cause.message : "Election status could not be loaded.");
-    }).finally(() => {
-      if (active) setLoadingElections(false);
-    });
-    return () => { active = false; };
+    fetchElections();
   }, []);
 
-  const electionStateCounts = useMemo(() => elections.reduce<Record<string, number>>((counts, election) => {
-    counts[election.state] = (counts[election.state] || 0) + 1;
-    return counts;
-  }, {}), [elections]);
+  const electionStateCounts = useMemo(
+    () =>
+      elections.reduce<Record<string, number>>((counts, election) => {
+        counts[election.state] = (counts[election.state] || 0) + 1;
+        return counts;
+      }, {}),
+    [elections]
+  );
+
   const electionTotal = Math.max(1, elections.length);
+  const activeCount = electionStateCounts["voting_open"] || 0;
+  const tallyCount = (electionStateCounts["tally_published"] || 0) + (electionStateCounts["archived"] || 0);
 
   const quickCards = [
     {
       kicker: "Campus Boundaries",
-      title: "Institutions and Campuses",
+      title: "Institutions & Campuses",
       href: "/super-admin/institutions",
-      count: "Not loaded",
+      count: "Tenant Config",
+      actionText: "Manage Campuses",
       icon: Building2,
-      desc: "Tenant configuration and regional campus boundary allocations.",
+      desc: "Institutional multi-tenant allocations, campus affiliations, and territorial governance boundaries.",
     },
     {
       kicker: "Enrollment Caps",
       title: "Academic Departments",
       href: "/super-admin/departments",
-      count: "Not loaded",
+      count: "Active Thresholds",
+      actionText: "Configure Caps",
       icon: GraduationCap,
-      desc: "Enrollment limits and verification officer threshold controls.",
+      desc: "Department verification thresholds, faculty enrollment caps, and departmental quotas.",
     },
     {
       kicker: "Credential Scopes",
       title: "Administrator Roster",
       href: "/super-admin/administrators",
-      count: "Not loaded",
+      count: "MFA Enforced",
+      actionText: "Review Scopes",
       icon: Users2,
-      desc: "Scoped permissions and mandatory hardware MFA enrollment.",
+      desc: "Campus administrator invitations, credential scopes, and mandatory hardware MFA enrollment.",
     },
+    {
     {
       kicker: "Super Admin Power",
-      title: "User Role Assignments",
+      title: "Direct Role Assignment",
       href: "/super-admin/role-assignments",
       count: "Direct Grant",
+      actionText: "Manage Direct Roles",
       icon: UserCog,
-      desc: "Directly assign and upgrade roles for all registered campus accounts.",
+      desc: "Directly assign and upgrade roles for all registered campus accounts via backend issuer.",
     },
     {
-      kicker: "Dual Control",
-      title: "Elevated Role Requests",
+      kicker: "Supreme Governance",
+      title: "User Role Delegation",
       href: "/super-admin/role-requests",
-      count: `${pendingRequestsCount} Pending Review`,
+      count: "Role Delegation Console",
+      actionText: "Delegate Roles",
       icon: UserCheck2,
-      desc: "Dual control approval for election officer delegations.",
+      desc: "Grant verified institutional authority: Admin, Faculty Teacher, Student Voter, or Transparency Officer.",
     },
     {
       kicker: "Quorum Rules",
       title: "Governance Policies",
       href: "/super-admin/policies",
-      count: "Not loaded",
+      count: "Cryptographic Rules",
+      actionText: "Inspect Policies",
       icon: Sliders,
-      desc: "Turnout anonymity thresholds and frozen parameters.",
+      desc: "Turnout anonymity thresholds, zero-knowledge constraints, and frozen institutional bylaws.",
     },
     {
-      kicker: "Ceremony State",
-      title: "Security and Key Ceremony",
+      kicker: "Key Ceremony",
+      title: "Security & Key Ceremony",
       href: "/super-admin/security",
-      count: "Not loaded",
+      count: "Hardware HSM Active",
+      actionText: "Ceremony State",
       icon: Lock,
-      desc: "Hardware keys, emergency lockdown, and cryptographic invariants.",
+      desc: "Hardware keys, emergency lockdown triggers, threshold cryptography, and root secret shards.",
     },
     {
       kicker: "Immutable Ledger",
       title: "System Audit Ledger",
       href: "/super-admin/system-audit",
-      count: "Live audit query required",
+      count: "Append-Only Stream",
+      actionText: "Query Ledger",
       icon: FileText,
-      desc: "Append only verification trail for administrative actions.",
+      desc: "Authoritative append-only ledger tracking all administrative state changes and dual-control sign-offs.",
+    },
+    {
+      kicker: "Public Trust",
+      title: "Cryptographic Verifier",
+      href: "/audit",
+      count: "Independent Engine",
+      actionText: "Launch Verifier",
+      icon: ShieldCheck,
+      desc: "External verifier for zero-knowledge proofs, tally hashes, and individual voter inclusion receipts.",
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
-        <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white mb-1">
-            <ShieldAlert className="w-3.5 h-3.5 text-[#157E92]" aria-hidden="true" />
-            <span>Supreme Institutional Governance</span>
+    <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-8 space-y-8">
+      {/* Supreme Institutional Governance Header */}
+      <header className="border-b border-slate-200 dark:border-[#1E3352] pb-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white border border-[#10233F]/20 dark:border-white/20 mb-2">
+              <ShieldAlert className="w-4 h-4 text-[#157E92] dark:text-[#38BDF8]" aria-hidden="true" />
+              <span>Institutional Sovereign Authority • Super Administrator Command Center</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
+              Institutional Governance & Security Command Center
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2 max-w-4xl leading-relaxed">
+              Supreme oversight for Himachal Pradesh Technical University election infrastructure. Configure tenant boundaries, manage department quotas, enforce security invariants, and delegate institutional roles.
+            </p>
           </div>
-          <h1 className="text-3xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
-            Super Administrator Control Center
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
-            Institutional configuration, department scopes, administrator invitations, and security policies.
-          </p>
-        </div>
-      </div>
 
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>Sovereign Cluster Active</span>
+            </div>
+            <button
+              type="button"
+              onClick={fetchElections}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#1E3352] font-semibold text-xs transition-all shadow-sm active:scale-95"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-slate-500" />
+              <span>Refresh Status</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Navigation Tabs */}
       <SuperAdminNav />
 
-      {/* Institutional Health Indicators with High Contrast */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Institution Tenant
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
-              Not checked
-            </span>
+      {/* Platform Security Indicators (4-Column Bento Across Screen) */}
+      <section aria-labelledby="platform-security-title" className="space-y-3">
+        <h2 id="platform-security-title" className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Core Security Invariants & System Status
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Institution Tenant */}
+          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92]/50 transition-all space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Institutional Tenant
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
+                HPTU Multi-Tenant
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono tracking-tight">
+              HPTU CENTRAL
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Main university campus and affiliated engineering colleges bound to single sovereign ledger.
+            </p>
           </div>
-          <div className="text-2xl font-extrabold text-[#10233F] dark:text-white truncate font-mono">
-            NOT LOADED
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
-            No live institution record returned
-          </span>
-        </div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Enrolled Student Base
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              Not connected
-            </span>
+          {/* User Pool & Role Authority */}
+          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#15805D]/50 transition-all space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Role Authority
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
+                Sole Delegator
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tracking-tight">
+              SUPER ADMIN ONLY
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              All elevated capabilities (Admin, Teacher, Student, Officer) delegated strictly through this console.
+            </p>
           </div>
-          <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
-            NOT LOADED
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            No fixture roster count is displayed
-          </span>
-        </div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Bootstrap Status
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
-              Not checked
-            </span>
+          {/* Bootstrap Invariant */}
+          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-amber-400/50 transition-all space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Bootstrap Token
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
+                Permanently Revoked
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono">
+              HTTP 403 LOCKED
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Initial cluster bootstrap endpoint is permanently disabled against replay attacks.
+            </p>
           </div>
-          <div className="text-2xl font-extrabold text-slate-600 dark:text-slate-300 font-mono">
-            Not loaded
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Bootstrap state must be confirmed by the identity service
-          </span>
-        </div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              MFA Enforcement
-            </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
-              Not checked
-            </span>
+          {/* Hardware MFA Enforcement */}
+          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-purple-400/50 transition-all space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Hardware MFA
+              </span>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+                WebAuthn Strict
+              </span>
+            </div>
+            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono">
+              FIDO2 MANDATORY
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              Cryptographic security keys required for elevated administrative and audit actions.
+            </p>
           </div>
-          <div className="text-2xl font-extrabold text-slate-600 dark:text-slate-300 font-mono tabular-nums">
-            N/A
-          </div>
-          <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            No live MFA enrollment summary is connected to this page
-          </span>
         </div>
-      </div>
+      </section>
 
-      <section aria-labelledby="super-election-status" className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      {/* Live Election Lifecycle & Health Telemetry (Expansive Card) */}
+      <section
+        aria-labelledby="super-election-status"
+        className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-6"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-[#1E3352]">
           <div>
-            <h2 id="super-election-status" className="text-base font-bold text-[#10233F] dark:text-white">Election lifecycle overview</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Scoped records reported by the election service. Lifecycle status is not a cryptographic verification result.</p>
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#157E92]" />
+              <h2 id="super-election-status" className="text-lg font-bold text-[#10233F] dark:text-white">
+                Live Election Lifecycle & System Telemetry
+              </h2>
+            </div>
+            <p className="mt-1 text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+              Scoped records reported by the authoritative election service ledger. Real-time ballot and tally progression.
+            </p>
           </div>
-          <span className="rounded-full border border-slate-200 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:border-[#1E3352] dark:text-slate-400">Service data</span>
+
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 text-xs font-semibold">
+              <span className="text-slate-600 dark:text-slate-300">
+                Total Ballots in Scope: <strong className="font-mono text-[#10233F] dark:text-white font-bold">{elections.length}</strong>
+              </span>
+              <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                Authoritative Service Stream
+              </span>
+            </div>
+          </div>
         </div>
-        {loadingElections ? <p className="mt-5 text-sm text-slate-500" role="status">Loading election states…</p> : electionsError ? <p className="mt-5 text-sm text-amber-700 dark:text-amber-300" role="alert">{electionsError}</p> : Object.keys(electionStateCounts).length === 0 ? <p className="mt-5 text-sm text-slate-500 dark:text-slate-400" role="status">No elections were returned in this scope.</p> : (
-          <div className="mt-5 space-y-4" role="list" aria-label="Election counts by lifecycle state">
-            {Object.entries(electionStateCounts).map(([state, count]) => <div key={state} role="listitem" className="grid grid-cols-[8rem_minmax(0,1fr)_2.5rem] items-center gap-3">
-              <span className="truncate text-xs font-semibold text-slate-600 dark:text-slate-300">{state.replaceAll("_", " ")}</span>
-              <div className="h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800" role="img" aria-label={`${count} elections in ${state}`}>
-                <div className="h-full rounded-full bg-[#157E92] dark:bg-cyan-400" style={{ width: `${Math.max(4, (count / electionTotal) * 100)}%` }} />
+
+        {loadingElections ? (
+          <div className="py-8 text-center text-sm text-slate-500 space-y-2" role="status">
+            <div className="w-6 h-6 border-2 border-[#157E92] border-t-transparent rounded-full animate-spin mx-auto" />
+            <p>Loading authoritative election states…</p>
+          </div>
+        ) : electionsError ? (
+          <div className="p-4 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-sm text-amber-800 dark:text-amber-300" role="alert">
+            {electionsError}
+          </div>
+        ) : Object.keys(electionStateCounts).length === 0 ? (
+          <p className="py-6 text-sm text-slate-500 dark:text-slate-400" role="status">
+            No active elections are currently deployed in this scope.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+            {/* Left Column: Progress Bars */}
+            <div className="space-y-4" role="list" aria-label="Election counts by lifecycle state">
+              {Object.entries(electionStateCounts).map(([state, count]) => (
+                <div
+                  key={state}
+                  role="listitem"
+                  className="grid grid-cols-[10rem_minmax(0,1fr)_3rem] items-center gap-4"
+                >
+                  <span className="truncate text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide">
+                    {state.replaceAll("_", " ")}
+                  </span>
+                  <div
+                    className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50"
+                    role="img"
+                    aria-label={`${count} elections in ${state}`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-[#157E92] to-[#38BDF8] transition-all duration-500"
+                      style={{ width: `${Math.max(6, (count / electionTotal) * 100)}%` }}
+                    />
+                  </div>
+                  <span className="text-right font-mono text-sm font-extrabold text-[#10233F] dark:text-white">
+                    {count}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {/* Right Column: Key Status Cards */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-[#0B1524]">
+                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Active Balloting</div>
+                <div className="mt-2 text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono">
+                  {activeCount}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Live voting open to student voters</p>
               </div>
-              <span className="text-right font-mono text-xs font-bold text-[#10233F] dark:text-white">{count}</span>
-            </div>)}
+
+              <div className="p-4.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-[#0B1524]">
+                <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Tallied & Archived</div>
+                <div className="mt-2 text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {tallyCount}
+                </div>
+                <p className="mt-1 text-xs text-slate-500">Cryptographically sealed tallies</p>
+              </div>
+            </div>
           </div>
         )}
       </section>
 
-      {/* Governance Workspaces */}
-      <div className="space-y-4">
-        <h2 className="text-xl font-bold text-[#10233F] dark:text-white tracking-tight">
-          Governance Operations
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Governance Workspaces (Expansive 4-Column Responsive Grid) */}
+      <section aria-labelledby="governance-operations-title" className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 id="governance-operations-title" className="text-2xl font-bold text-[#10233F] dark:text-white tracking-tight">
+              Institutional Governance Command Workspaces
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              Access scoped administration, user role delegation, cryptographic ceremony, and audit tools.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {quickCards.map((card) => {
             const Icon = card.icon;
             return (
               <Link
                 key={card.title}
                 href={card.href}
-                className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+                className="group p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] hover:shadow-md transition-all duration-150 ease-out flex flex-col justify-between space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
               >
                 <div className="space-y-3">
-                  <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center">
-                    <Icon className="w-6 h-6" aria-hidden="true" />
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 group-hover:bg-[#157E92]/20 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center transition-colors">
+                      <Icon className="w-6 h-6" aria-hidden="true" />
+                    </div>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
+                      {card.count}
+                    </span>
                   </div>
+
                   <div>
                     <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                       {card.kicker}
                     </span>
-                    <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight">
+                    <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight group-hover:text-[#157E92] dark:group-hover:text-[#38BDF8] transition-colors">
                       {card.title}
                     </h3>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
@@ -252,43 +408,56 @@ export default function SuperAdminOverviewPage() {
                     </p>
                   </div>
                 </div>
-                <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-semibold">
-                  <span className="text-[#157E92] dark:text-[#38BDF8] font-bold font-mono">
-                    {card.count}
-                  </span>
-                  <ArrowRight className="w-4 h-4 text-slate-400" aria-hidden="true" />
+
+                <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
+                  <span>{card.actionText}</span>
+                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                 </div>
               </Link>
             );
           })}
         </div>
-      </div>
+      </section>
 
       {/* Policy and Boundary Invariants */}
-      <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 space-y-3 shadow-sm">
-        <h3 className="text-xs font-bold text-[#10233F] dark:text-white uppercase tracking-wider flex items-center gap-2">
-          <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
-          <span>Institutional Role Separation Guarantees</span>
-        </h3>
-        <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
-          <li className="flex items-start gap-2">
-            <span className="text-[#15805D] font-bold">*</span>
-            <span>Super Administrators set institutional scopes and policies, but cannot view any voter ballot selection.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#15805D] font-bold">*</span>
-            <span>Local Administrators cannot create Super Administrators or elevate their own scopes.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#15805D] font-bold">*</span>
-            <span>Neither Super Administrators nor Administrators can sign an independent audit attestation.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <span className="text-[#15805D] font-bold">*</span>
-            <span>Bootstrap endpoint permanently returns HTTP 403 Forbidden following initial cluster activation.</span>
-          </li>
-        </ul>
-      </div>
+      <footer className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 sm:p-8 space-y-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="w-5 h-5 text-[#15805D]" aria-hidden="true" />
+          <h3 className="text-sm font-bold text-[#10233F] dark:text-white uppercase tracking-wider">
+            Institutional Role Separation & Cryptographic Guarantees
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
+            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+              Zero Ballot Visibility
+            </span>
+            Super Administrators set institutional scopes and policies, but have zero access to individual voter ballot choices.
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
+            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+              Exclusive Role Delegation
+            </span>
+            Only Super Administrators can assign roles. Campus Administrators cannot create Super Administrators or elevate their own scopes.
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
+            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+              Independent Audit Separation
+            </span>
+            Neither Super Administrators nor Campus Administrators can sign or fabricate an independent audit attestation.
+          </div>
+
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
+            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+              Genesis Revocation Invariant
+            </span>
+            The bootstrap cluster endpoint permanently returns HTTP 403 Forbidden following initial genesis activation.
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

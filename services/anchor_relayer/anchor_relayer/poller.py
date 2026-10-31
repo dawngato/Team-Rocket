@@ -148,6 +148,15 @@ class ConfirmationPoller:
             recorded_block_hash=record.block_hash,
         )
 
+        if reorg_check.is_indeterminate is True:
+            logger.warning(
+                "Canonical chain check is unavailable for record %s at sequence %s: %s",
+                record.id,
+                record.sequence,
+                reorg_check.reason,
+            )
+            return record
+
         if reorg_check.is_reorg:
             logger.warning(
                 f"Reorg detected for record {record.id} at sequence {record.sequence}: {reorg_check.reason}"

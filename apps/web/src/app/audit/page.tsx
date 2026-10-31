@@ -65,7 +65,7 @@ export default function PublicAuditExplorerPage() {
   );
 
   return (
-    <main className="mx-auto max-w-6xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
+    <main className="mx-auto w-full max-w-[1850px] space-y-8 px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-12">
       {/* Header Section */}
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
         <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#157E92]">

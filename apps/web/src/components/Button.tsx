@@ -55,10 +55,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ) => {
     const baseTactileStyles =
       "inline-flex items-center justify-center select-none font-sans " +
-      "transition-all duration-75 ease-out " +
-      "active:scale-[0.98] " +
+      "transition-[transform,box-shadow,background-color,color,border-color] duration-200 ease-out " +
       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135] " +
-      "disabled:opacity-50 disabled:pointer-events-none disabled:active:scale-100";
+      "disabled:opacity-50 disabled:pointer-events-none";
 
     const variantClass = variantStyles[variant];
     const sizeClass = sizeStyles[size];

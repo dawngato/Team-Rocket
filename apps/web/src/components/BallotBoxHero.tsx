@@ -23,33 +23,33 @@ export function BallotBoxHero() {
       title: "1. Secret Digital Curtain",
       subhead: "Inside Your Private Voting Booth",
       icon: EyeOff,
-      badge: "Nobody Can Peek",
+      badge: "Confidentiality Guaranteed",
       color: "border-cyan-500 text-cyan-600 dark:text-cyan-400 bg-cyan-500/10",
       sampleValue: "SEALED-VOTE-ENCRYPTED",
-      highlight: "Phone/Laptop Screen",
-      description: "Jaise real booth me parda gira hota hai, waise hi aapka vote screen se nikalne se pehle lock ho jata hai. HOD, Principal ya system admin koi bhi nahi dekh sakta aapne kisko chuna."
+      highlight: "Client Device Encryption",
+      description: "Just like a physical voting booth curtain, your ballot is cryptographically sealed on your personal device before transmission. No faculty member, administrator, or network observer can inspect your selection."
     },
     {
       step: 2,
-      title: "2. Detach Student ID",
-      subhead: "Identity Separated from Ballot",
+      title: "2. Detach Student Identity",
+      subhead: "Identity Decoupled from Ballot",
       icon: Stamp,
-      badge: "Zero Bias Guaranteed",
+      badge: "Unlinkable Anonymity",
       color: "border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-500/10",
       sampleValue: "SLIP-ID #HIM-2026-X89",
-      highlight: "Digital Parchi Box",
-      description: "Aapki Roll Number aur ID vote se alag kar di jaati hai. Box me sirf ek anonymous vote girta hai jiska kisi student ke naam se koi connection nahi rehta."
+      highlight: "Anonymous Ballot Repository",
+      description: "Your university roll number and identity credentials are permanently separated from your vote using blind cryptographic issuance. Only an anonymous verified ballot enters the institutional repository."
     },
     {
       step: 3,
-      title: "3. Keep Your Receipt",
-      subhead: "Track Your Vote on Counting Day",
+      title: "3. Retain Audit Receipt",
+      subhead: "Independent Verification on Tally Day",
       icon: FileCheck2,
-      badge: "Verified in Ballot Box",
+      badge: "Independently Verifiable",
       color: "border-emerald-500 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10",
       sampleValue: "RECEIPT: 0x8f2a...91bc (Verified)",
-      highlight: "Public Digital Box",
-      description: "Aapko ek secret receipt number milta hai. Counting ke din aap search karke dekh sakte ho ki aapka vote dabba me sach me count hua ya nahi!"
+      highlight: "Public Cryptographic Ledger",
+      description: "You receive an immutable cryptographic tracking receipt upon submission. When official counting concludes, you can independently verify that your ballot was accurately included in the certified tally."
     }
   ];
 

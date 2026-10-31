@@ -164,8 +164,8 @@ export function StudentIdCardVerifier() {
   };
 
   return (
-    <div className="w-full max-w-5xl mx-auto my-12 px-4">
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0b1b2d] to-[#050f1a] border border-cyan-500/25 p-6 md:p-8 shadow-2xl shadow-cyan-950/40">
+    <div className="w-full">
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0b1b2d] to-[#050f1a] border border-cyan-500/25 p-6 sm:p-8 lg:p-10 shadow-2xl shadow-cyan-950/40">
         {/* Glow Effects */}
         <div className="absolute top-0 right-10 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-10 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -350,11 +350,11 @@ export function StudentIdCardVerifier() {
                 </div>
 
                 <Link
-                  href="/student/elections"
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow transition-all"
+                  href="/elections"
+                  className="w-full py-3.5 px-5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all"
                 >
-                  <span>Proceed to Private Voting Booth</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <span>Proceed to Official Ballot Selection</span>
+                  <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
             ) : verificationResult?.valid === false ? (
@@ -408,7 +408,7 @@ export function StudentIdCardVerifier() {
                   </div>
                   <div className="flex gap-2.5 items-start">
                     <span className="size-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 font-bold text-[10px]">2</span>
-                    <span><strong>Roll Number Cross-Check:</strong> Verified against the official student council roster.</span>
+                    <span><strong>Roll Number Cross-Check:</strong> Verified against the official institutional campus roster.</span>
                   </div>
                   <div className="flex gap-2.5 items-start">
                     <span className="size-5 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 font-bold text-[10px]">3</span>

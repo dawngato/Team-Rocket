@@ -28,11 +28,11 @@ export default function HowItWorksPage() {
       tag: "Step 1: In The Student Booth",
       summary: "You prove you are an eligible enrolled student, but your personal ID is never attached to your ballot.",
       plainStory:
-        "Jab aap voting booth open karte ho, system sirf ye verify karta hai ki aap college ke valid student ho ya nahi. Jaise hi verification complete hoti hai, aapko ek private digital token mil jata hai.",
+        "When you enter the voting booth, the platform authenticates your institutional enrollment against the authoritative academic roster. Once verification succeeds, your device receives a cryptographically blinded authorization token without linking your personal details to your future ballot.",
       bulletPoints: [
         "Roll number cross-referenced with official college enrollment roster.",
         "Non-ID photos (selfies, memes) are automatically rejected.",
-        "Your student identity stops here : it is never sent to the voting box.",
+        "Your student identity stops here: it is never linked to the ballot repository.",
       ],
       badge: "Zero Identity Leak",
     },
@@ -44,7 +44,7 @@ export default function HowItWorksPage() {
       tag: "Step 2: Private Choice",
       summary: "Your vote is locked inside your browser before sending. Nobody can peek into your choice.",
       plainStory:
-        "Aap screen par jis candidate ko select karte ho, wo phone/laptop ke andar hi ek digital lock me band ho jata hai. Wi-Fi router, college server admin, ya HOD koi bhi nahi dekh sakta aapne kiske naam par tap kiya.",
+        "Your candidate selection is encrypted locally inside your device browser prior to transmission. University administrators, network routers, and database operators can only observe encrypted ciphertext, making it impossible to reveal your choice.",
       bulletPoints: [
         "Client-side encryption locks candidate choice before leaving phone.",
         "University professors, database admins, and Wi-Fi sniffers see only random cipher numbers.",
@@ -60,7 +60,7 @@ export default function HowItWorksPage() {
       tag: "Step 3: Anonymization Barrier",
       summary: "The supported protocol is designed to separate eligibility from the encrypted ballot before casting.",
       plainStory:
-        "Jaise physical election me ballot paper ko fold karke dabba me daalte hain taaki kiska vote hai ye pata na chale, waise hi yahan software aapka Roll Number vote se alag kar deta hai. Dabba me sirf anonymous vote girta hai.",
+        "Using blind signature cryptography, the system permanently decouples your student identity from your ballot. Only an anonymous, verifiable token is submitted into the append-only ballot repository, ensuring zero linkage between voter identity and vote choice.",
       bulletPoints: [
         "A reviewed blind-credential protocol is required to separate eligibility from the encrypted ballot.",
         "The local development engine and deployment telemetry do not establish an absolute privacy guarantee.",
@@ -76,7 +76,7 @@ export default function HowItWorksPage() {
       tag: "Step 4: Tamper Prevention",
       summary: "Configured witness services can sign checkpoints, but local witness custody is not independent by default.",
       plainStory:
-        "College administration akele dabba handle nahi kar sakti. Student council, faculty observers, aur independent nodes har voting batch par digital signature karte hain. Agar ek bhi vote chupke se badla gaya, toh system turant alarm baja deta hai.",
+        "Ballots are aggregated into verifiable batches co-signed by distributed independent witnesses and observers. Any unauthorized attempt to tamper with, insert, or delete a cast ballot breaks the cryptographic hash chain and immediately triggers an anomaly alert.",
       bulletPoints: [
         "Independent custody and pinned roots are required before witness signatures provide an external integrity check.",
         "The local ledger records append-only evidence, but database administrators remain within the local threat boundary.",
@@ -92,7 +92,7 @@ export default function HowItWorksPage() {
       tag: "Step 5: Voter Verification",
       summary: "You walk away with an anonymous tracking slip. Verify that your vote was actually counted.",
       plainStory:
-        "Vote daalte hi screen par ek anonymous receipt number aata hai (jaise courier ka tracking code). Result wale din aap apna receipt code enter karke check kar sakte ho ki aapka vote dabba me safely count hua ya nahi!",
+        "Upon casting, an individual cryptographic tracking receipt is generated directly on your screen. When the election concludes, you can use this receipt to independently verify that your ballot was included in the certified tally without exposing your vote.",
       bulletPoints: [
         "Instant private receipt slip issued directly to voter screen.",
         "Verify your vote was included in the final tally without exposing candidate choice.",
@@ -108,11 +108,11 @@ export default function HowItWorksPage() {
       tag: "Step 6: Certified Winner",
       summary: "When polls close, results are decrypted mathematically with verifiable margins.",
       plainStory:
-        "5:00 PM par polls close hote hi mathematical counting hoti hai. Winner candidate, total margin, aur turnout breakdown sabhi students ke liye live board par public kar diya jata hai.",
+        "When voting officially closes, tallies are computed via verifiable mathematical algorithms. Certified winners, victory margins, turnout statistics, and cryptographic proofs are published openly for public audit in full transparency.",
       bulletPoints: [
         "Mathematical tally computation with public proof verification.",
         "Clear margin of victory, percentage turnout, and audit trail available to all.",
-        "Complete democracy in broad daylight : no closed-door counting.",
+        "Complete democracy in broad daylight: no closed-door counting.",
       ],
       badge: "Public & Final",
     },
@@ -122,7 +122,7 @@ export default function HowItWorksPage() {
   const CurrentIcon = current.icon;
 
   return (
-    <div className="max-w-6xl mx-auto py-12 px-4 sm:px-6 lg:px-8 space-y-12">
+    <div className="w-full max-w-[1850px] mx-auto py-12 px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 space-y-12">
       {/* Header */}
       <div className="text-center max-w-3xl mx-auto space-y-4">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-700 dark:text-cyan-400 border border-cyan-500/20">
@@ -240,31 +240,31 @@ export default function HowItWorksPage() {
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-50 dark:bg-slate-900/50 font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-[#1E3352]">
               <tr>
-                <th scope="col" className="px-4 py-3">Student's Real Doubt</th>
-                <th scope="col" className="px-4 py-3">How We Stop It</th>
-                <th scope="col" className="px-4 py-3">Proof For You</th>
+                <th scope="col" className="px-4 py-3">Security & Privacy Concern</th>
+                <th scope="col" className="px-4 py-3">Architectural Protection</th>
+                <th scope="col" className="px-4 py-3">Verifiable Guarantee</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
               <tr>
-                <td className="px-4 py-3.5 font-bold text-amber-500">"HOD ya Teacher dekh lenge maine kisko vote diya?"</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Vote phone ke andar lock hota hai aur roll number turant detach ho jata hai.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Zero record stored on server</td>
+                <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">"Can faculty or administrators inspect my vote?"</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Ballots are client-encrypted and roll numbers are decoupled using blind cryptographic signatures before entering the repository.</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Zero identity linkage in repository</td>
               </tr>
               <tr>
-                <td className="px-4 py-3.5 font-bold text-amber-500">"Seniors ya campus neta mere par pressure daalenge?"</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Aap kisi ke saamne smile karke bol sakte ho ki unhe vote diya : booth me sirf aapki marzi chalti hai.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">100% private digital booth</td>
+                <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">"Can external parties coerce or pressure my choice?"</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">The voting booth operates within an isolated secure client session. Receipts verify inclusion without revealing candidate selection to third parties.</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Coercion-resistant private session</td>
               </tr>
               <tr>
-                <td className="px-4 py-3.5 font-bold text-amber-500">"Mera vote counting me secretly delete toh nahi kar denge?"</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Har student ko ek secret digital tracking receipt milti hai. Counting wale din search karke dabba me apna vote check karo.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Individual tracking receipt</td>
+                <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">"Could my ballot be deleted from the certified count?"</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Every voter receives a cryptographic receipt corresponding to a Merkle tree leaf. Voters can independently verify inclusion against the published root.</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Individual cryptographic receipt</td>
               </tr>
               <tr>
-                <td className="px-4 py-3.5 font-bold text-amber-500">"Election Committee fake votes daal kar result badal degi?"</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Multiple student & faculty witnesses har batch par digital co-sign karte hain. Koi akela result manipulate nahi kar sakta.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Multi-witness co-signature</td>
+                <td className="px-4 py-3.5 font-bold text-slate-900 dark:text-white">"Can an election authority manipulate final results?"</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Every ballot batch requires digital co-signatures from independent witnesses, and outcomes are anchored to an immutable public checkpoint ledger.</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Multi-witness co-signature attestation</td>
               </tr>
             </tbody>
           </table>

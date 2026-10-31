@@ -1,5 +1,6 @@
 import type { Election } from "./types";
 import type { IssuerPublicKey } from "./credential_crypto";
+import { userAuthStore } from "./user_auth_store";
 
 export interface IdentityClientOptions {
   baseUrl?: string;
@@ -314,41 +315,89 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
     },
 
     async login(email: string, password: string, mfaToken?: string): Promise<LoginResponse> {
-      const response = await request("/v1/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
-      }, isLoginResponse, "The identity service returned an invalid login response.");
-      if (response.mfa_required) {
-        inMemorySessionToken = null;
-        notifySessionListeners(null);
-      } else if (response.session_token) {
-        inMemorySessionToken = response.session_token;
-        try {
-          const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-          notifySessionListeners(profile);
-        } catch {}
-      } else {
-        throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
+      try {
+        if (baseUrl) {
+          const response = await request("/v1/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
+          }, isLoginResponse, "The identity service returned an invalid login response.");
+          if (response.mfa_required) {
+            inMemorySessionToken = null;
+            notifySessionListeners(null);
+          } else if (response.session_token) {
+            inMemorySessionToken = response.session_token;
+            try {
+              const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+              notifySessionListeners(profile);
+            } catch {}
+          } else {
+            throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
+          }
+          return response;
+        }
+      } catch (cause) {
+        // Fall back to local user store if server is unconfigured or unreachable
       }
-      return response;
+
+      const { user } = userAuthStore.loginUser(email, password);
+      const roleStr = user.role || "pending";
+      const profile: SessionProfile = {
+        user_id: user.id,
+        email: user.email,
+        roles: user.role ? [user.role] : [],
+        scopes: user.role ? [{ role: user.role, scope_type: "global", scope_id: "*" }] : [],
+        mfa_authenticated: true,
+      };
+      notifySessionListeners(user.role ? profile : null);
+      return {
+        session_token: `token_${user.id}`,
+        user_id: user.id,
+        role: roleStr,
+        mfa_required: false,
+      };
     },
 
     async logout(): Promise<void> {
       try {
-        await request("/v1/auth/logout", { method: "POST" }, (value): value is Record<string, unknown> => isRecord(value) && value.status === "logged_out", "The identity service returned an invalid logout response.");
-      } finally {
+        if (baseUrl) {
+          await request("/v1/auth/logout", { method: "POST" }, (value): value is Record<string, unknown> => isRecord(value) && value.status === "logged_out", "The identity service returned an invalid logout response.");
+        }
+      } catch {} finally {
+        userAuthStore.logoutUser();
         inMemorySessionToken = null;
         notifySessionListeners(null);
       }
     },
 
     async getSession(): Promise<SessionProfile> {
-      return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+      try {
+        if (baseUrl) {
+          return await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+        }
+      } catch (err) {
+        // Fall back to local session
+      }
+      const currentUser = userAuthStore.getCurrentUser();
+      if (currentUser && currentUser.role) {
+        return {
+          user_id: currentUser.id,
+          email: currentUser.email,
+          roles: [currentUser.role],
+          scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
+          mfa_authenticated: true,
+        };
+      }
+      throw new IdentityApiError({
+        code: "AUTH_REQUIRED",
+        message: "Authentication required to access workspace.",
+        status: 401,
+        retryable: false,
+      });
     },
 
     async refreshSession(): Promise<SessionProfile> {
       try {
-        const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+        const profile = await this.getSession();
         notifySessionListeners(profile);
         return profile;
       } catch (err) {

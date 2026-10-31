@@ -8,7 +8,7 @@ from hexbytes import HexBytes
 from anchor_relayer.contract_client import HimVoteAnchorClient
 from anchor_relayer.models import OutboxStatus, WitnessedCheckpoint
 from anchor_relayer.poller import ConfirmationPoller
-from anchor_relayer.reorg_detector import ReorgDetector
+from anchor_relayer.reorg_detector import ReorgCheckResult, ReorgDetector
 from anchor_relayer.storage import SQLiteOutboxRepository
 
 
@@ -100,3 +100,47 @@ def test_reorg_detector_direct_canonical_match():
 
     assert result.is_reorg is False
     assert result.canonical_block_hash.lower() == matching_hash.lower()
+
+
+def test_reorg_detector_treats_rpc_lookup_failure_as_indeterminate():
+    mock_w3 = MagicMock()
+    mock_w3.eth.get_block.side_effect = RuntimeError("RPC unavailable")
+
+    result = ReorgDetector(mock_w3).check_for_reorg(
+        tx_hash="0x" + "5" * 64,
+        recorded_block_number=50,
+        recorded_block_hash="0x" + "6" * 64,
+    )
+
+    assert result.is_reorg is False
+    assert result.is_indeterminate is True
+
+
+def test_poller_keeps_confirming_record_when_rpc_cannot_check_canonical_chain(sqlite_repo, sample_checkpoint):
+    mock_w3 = MagicMock()
+    mock_w3.eth.block_number = 105
+    record = sqlite_repo.enqueue(sample_checkpoint)
+    sqlite_repo.mark_submitted(record.id, "0x" + "1" * 64)
+    sqlite_repo.mark_confirming(record.id, block_number=100, block_hash="0x" + "2" * 64, confirmation_count=6)
+
+    reorg_detector = MagicMock(spec=ReorgDetector)
+    reorg_detector.check_for_reorg.return_value = ReorgCheckResult(
+        is_reorg=False,
+        reason="RPC unavailable",
+        is_indeterminate=True,
+    )
+    contract_client = MagicMock(spec=HimVoteAnchorClient)
+    poller = ConfirmationPoller(
+        w3=mock_w3,
+        repository=sqlite_repo,
+        contract_client=contract_client,
+        reorg_detector=reorg_detector,
+        required_confirmations=12,
+    )
+
+    poller.poll_record(sqlite_repo.get_by_id(record.id))
+
+    unchanged = sqlite_repo.get_by_id(record.id)
+    assert unchanged.status == OutboxStatus.CONFIRMING
+    assert unchanged.confirmation_count == 6
+    contract_client.is_already_anchored.assert_not_called()
