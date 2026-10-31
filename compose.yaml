@@ -84,7 +84,8 @@ services:
       - KMS_PROVIDER=local
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
-      - BOOTSTRAP_ALLOWED=${BOOTSTRAP_ALLOWED:-true}
+      - BOOTSTRAP_ALLOWED=${BOOTSTRAP_ALLOWED:-false}
+      - BOOTSTRAP_INVITATION_TOKEN=${BOOTSTRAP_INVITATION_TOKEN:-}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-himvote_dev_redis_pw}@redis:6379/0
     depends_on:
       identity_db:
