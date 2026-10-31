@@ -27,11 +27,7 @@ export default function AdminOverviewPage() {
   const [error, setError] = useState<string | null>(null);
 
   // College Election Parameters State (Admin only controls)
-  const [electionConfig, setElectionConfig] = useState<ElectionConfig>({
-    totalStudents: 4800,
-    endTimeIso: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-    candidatesCount: 6,
-  });
+  const [electionConfig, setElectionConfig] = useState<ElectionConfig>(() => getStoredElectionConfig());
   const [inputStudentCount, setInputStudentCount] = useState<string>("4800");
   const [inputCandidatesCount, setInputCandidatesCount] = useState<string>("6");
   const [inputHoursLeft, setInputHoursLeft] = useState<string>("4");
@@ -72,6 +68,7 @@ export default function AdminOverviewPage() {
 
     const newConfig: ElectionConfig = {
       totalStudents: studentsVal,
+      votesCast: electionConfig.votesCast,
       candidatesCount: candidatesVal,
       endTimeIso: newEndTimeIso,
     };

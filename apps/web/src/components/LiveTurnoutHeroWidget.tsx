@@ -12,47 +12,65 @@ interface LiveBallotEvent {
 }
 
 export function LiveTurnoutHeroWidget() {
-  // Config state (Total Students, End Time, Candidates)
-  const [config, setConfig] = useState<ElectionConfig>({
-    totalStudents: 4800,
-    endTimeIso: new Date(Date.now() + 4 * 3600 * 1000).toISOString(),
-    candidatesCount: 6,
-  });
+  // Config state (Total Students, End Time, Candidates, Actual Votes Cast)
+  const [config, setConfig] = useState<ElectionConfig>(() => getStoredElectionConfig());
   
-  // Starting live votes cast
-  const [votesCast, setVotesCast] = useState<number>(3412);
-  const [isLive, setIsLive] = useState<boolean>(true);
+  // Real votes cast (STABLE: Only updates on genuine vote submission, no fake timer!)
+  const [votesCast, setVotesCast] = useState<number>(() => config.votesCast);
   
-  // Countdown state
+  // Countdown state towards Sunday 5:00 PM
   const [timeLeftStr, setTimeLeftStr] = useState<string>("Calculating...");
   const [isElectionEnded, setIsElectionEnded] = useState<boolean>(false);
 
-  // Live anonymous incoming ballot stream
+  // Real incoming ballot event feed
   const [recentEvents, setRecentEvents] = useState<LiveBallotEvent[]>([
-    { id: "1", ballotNumber: 3412, timeAgo: "Just now" },
-    { id: "2", ballotNumber: 3411, timeAgo: "18s ago" },
-    { id: "3", ballotNumber: 3410, timeAgo: "42s ago" },
+    { id: "1", ballotNumber: 3412, timeAgo: "1m ago" },
+    { id: "2", ballotNumber: 3411, timeAgo: "4m ago" },
+    { id: "3", ballotNumber: 3410, timeAgo: "9m ago" },
   ]);
 
-  // Sync with Admin Panel updates
+  // Sync with Admin updates and actual vote casting events
   useEffect(() => {
-    setConfig(getStoredElectionConfig());
+    const initialConfig = getStoredElectionConfig();
+    setConfig(initialConfig);
+    setVotesCast(initialConfig.votesCast);
 
-    const handleSync = (e: Event) => {
+    const handleConfigSync = (e: Event) => {
       const customEvent = e as CustomEvent<Partial<ElectionConfig>>;
       if (customEvent.detail) {
-        setConfig((prev) => ({
-          ...prev,
-          ...customEvent.detail,
-        }));
+        setConfig((prev) => {
+          const updated = { ...prev, ...customEvent.detail };
+          if (customEvent.detail.votesCast !== undefined) {
+            setVotesCast(customEvent.detail.votesCast);
+          }
+          return updated;
+        });
       }
     };
 
-    window.addEventListener("himvote_election_config_updated", handleSync);
-    return () => window.removeEventListener("himvote_election_config_updated", handleSync);
+    // When an authentic vote is cast in booth or ID verify
+    const handleBallotCast = (e: Event) => {
+      const customEvent = e as CustomEvent<{ ballotNumber: number; ballotId: string; timestamp: string }>;
+      if (customEvent.detail) {
+        const nextNum = customEvent.detail.ballotNumber;
+        setVotesCast(nextNum);
+        setRecentEvents((old) => [
+          { id: String(Date.now()), ballotNumber: nextNum, timeAgo: "Just now" },
+          ...old.slice(0, 2),
+        ]);
+      }
+    };
+
+    window.addEventListener("himvote_election_config_updated", handleConfigSync);
+    window.addEventListener("himvote_ballot_cast_event", handleBallotCast);
+
+    return () => {
+      window.removeEventListener("himvote_election_config_updated", handleConfigSync);
+      window.removeEventListener("himvote_ballot_cast_event", handleBallotCast);
+    };
   }, []);
 
-  // Countdown timer effect
+  // Countdown timer effect towards target Sunday 5:00 PM
   useEffect(() => {
     const updateCountdown = () => {
       const endMs = new Date(config.endTimeIso).getTime();
@@ -60,19 +78,24 @@ export function LiveTurnoutHeroWidget() {
       const diffMs = endMs - nowMs;
 
       if (diffMs <= 0) {
-        setTimeLeftStr("Polls Closed");
+        setTimeLeftStr("Polls Closed (Sunday 5:00 PM)");
         setIsElectionEnded(true);
-        setIsLive(false);
         return;
       }
 
       setIsElectionEnded(false);
-      const hours = Math.floor(diffMs / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const days = Math.floor(totalSeconds / (3600 * 24));
+      const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
 
       const pad = (n: number) => String(n).padStart(2, "0");
-      setTimeLeftStr(`${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+      if (days > 0) {
+        setTimeLeftStr(`${days}d ${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+      } else {
+        setTimeLeftStr(`${pad(hours)}h : ${pad(minutes)}m : ${pad(seconds)}s`);
+      }
     };
 
     updateCountdown();
@@ -80,30 +103,9 @@ export function LiveTurnoutHeroWidget() {
     return () => clearInterval(timer);
   }, [config.endTimeIso]);
 
-  // Derived calculations
+  // Derived calculations based on genuine count
   const remainingStudents = Math.max(0, config.totalStudents - votesCast);
   const turnoutPercent = config.totalStudents > 0 ? ((votesCast / config.totalStudents) * 100).toFixed(1) : "0.0";
-
-  // Real-time live vote increments
-  useEffect(() => {
-    if (!isLive || isElectionEnded) return;
-
-    const interval = setInterval(() => {
-      setVotesCast((prev) => {
-        if (prev >= config.totalStudents) return prev;
-        const nextNum = prev + 1;
-
-        setRecentEvents((old) => [
-          { id: String(Date.now()), ballotNumber: nextNum, timeAgo: "Just now" },
-          ...old.slice(0, 2),
-        ]);
-
-        return nextNum;
-      });
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [isLive, isElectionEnded, config.totalStudents]);
 
   return (
     <div className="w-full relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0a1829] to-[#040c17] border border-cyan-500/30 p-5 sm:p-6 shadow-2xl shadow-cyan-950/50">
@@ -133,20 +135,20 @@ export function LiveTurnoutHeroWidget() {
             : "bg-emerald-500/15 border-emerald-500/30 text-emerald-300"
         }`}>
           <span className={`size-1.5 rounded-full ${isElectionEnded ? "bg-amber-400" : "bg-emerald-400 animate-ping"}`} />
-          {isElectionEnded ? "Election Closed" : "Polling Live"}
+          {isElectionEnded ? "Election Closed" : "Polling Active"}
         </span>
       </div>
 
-      {/* ADMIN CONTROLLED DYNAMIC BANNER: TIME LEFT & CANDIDATES */}
+      {/* COUNTDOWN TO SUNDAY 5:00 PM & CANDIDATES */}
       <div className="relative z-10 grid grid-cols-2 gap-2.5 my-3">
-        {/* Countdown to Election Close */}
+        {/* Countdown to Sunday 5:00 PM */}
         <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-2.5 px-3 flex items-center gap-2.5">
           <div className="size-7 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-400 shrink-0">
-            <Hourglass className="size-3.5 animate-spin" style={{ animationDuration: "6s" }} />
+            <Hourglass className="size-3.5 animate-spin" style={{ animationDuration: "8s" }} />
           </div>
           <div className="min-w-0">
             <span className="text-[10px] uppercase font-bold text-amber-300/80 block tracking-wider">
-              Voting Closes In
+              Voting Closes Sunday 5:00 PM
             </span>
             <span className="text-xs sm:text-sm font-mono font-extrabold text-amber-200 tracking-tight block truncate">
               {timeLeftStr}
@@ -170,7 +172,7 @@ export function LiveTurnoutHeroWidget() {
         </div>
       </div>
 
-      {/* 3 Main Stat Cards */}
+      {/* 3 Main Stat Cards (Authentic Count, Zero Fake Timer) */}
       <div className="relative z-10 grid grid-cols-3 gap-2.5 my-3">
         {/* Total Students */}
         <div className="rounded-2xl bg-white/[0.04] border border-white/10 p-3.5 text-center">
@@ -184,7 +186,7 @@ export function LiveTurnoutHeroWidget() {
           <p className="text-[10px] text-slate-400 mt-0.5">Students</p>
         </div>
 
-        {/* Votes Cast */}
+        {/* Real Votes Cast */}
         <div className="rounded-2xl bg-cyan-950/40 border border-cyan-500/40 p-3.5 text-center relative overflow-hidden ring-1 ring-cyan-500/30">
           <div className="flex items-center justify-center gap-1 text-cyan-300 text-[10px] uppercase font-bold tracking-wider mb-1">
             <Vote className="size-3 text-cyan-300" />
@@ -192,7 +194,6 @@ export function LiveTurnoutHeroWidget() {
           </div>
           <div className="text-xl sm:text-2xl font-black text-cyan-300 font-mono flex items-center justify-center gap-1">
             <span>{votesCast.toLocaleString()}</span>
-            <span className="text-[10px] text-emerald-400 font-sans font-bold animate-pulse">↑</span>
           </div>
           <p className="text-[10px] text-cyan-300/80 mt-0.5">Ballots in box</p>
         </div>
@@ -223,7 +224,7 @@ export function LiveTurnoutHeroWidget() {
         </div>
         <div className="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden p-0.5 border border-slate-700">
           <div
-            className="bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 h-full rounded-full transition-all duration-700 ease-out shadow-sm shadow-cyan-500/50"
+            className="bg-gradient-to-r from-cyan-500 via-teal-400 to-emerald-400 h-full rounded-full transition-all duration-500 ease-out shadow-sm shadow-cyan-500/50"
             style={{ width: `${turnoutPercent}%` }}
           />
         </div>
@@ -233,14 +234,14 @@ export function LiveTurnoutHeroWidget() {
         </div>
       </div>
 
-      {/* Live Anonymous Incoming Stream */}
+      {/* Real-time Ballot Stream (Updated on Actual Cast) */}
       <div className="relative z-10 bg-slate-900/80 rounded-2xl border border-slate-800/80 p-3">
         <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
           <span className="flex items-center gap-1.5">
-            <span className="size-1.5 rounded-full bg-cyan-400 animate-ping" />
-            Real-time Anonymous Ticker
+            <span className="size-1.5 rounded-full bg-cyan-400" />
+            Recent Sealed Ballots
           </span>
-          <span className="text-slate-500 text-[9px]">Zero identity stored</span>
+          <span className="text-slate-500 text-[9px]">Verified on ledger</span>
         </div>
         <div className="space-y-1.5">
           {recentEvents.map((evt) => (

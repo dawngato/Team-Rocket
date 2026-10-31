@@ -15,6 +15,7 @@ import {
   FileX2,
 } from "lucide-react";
 import Link from "next/link";
+import { recordAuthenticVote } from "../lib/college_voter_store";
 
 interface VerificationResult {
   valid: boolean;
@@ -140,6 +141,10 @@ export function StudentIdCardVerifier() {
         // Success: Verified as authentic college ID card
         setIsAnalyzing(false);
         const randomHex = Math.random().toString(16).substring(2, 8).toUpperCase();
+        
+        // Trigger live counter +1 increment in the Live Electorate widget
+        recordAuthenticVote(`BAL-${cleanRoll}`);
+
         setVerificationResult({
           valid: true,
           message: "Student Identity Verified Successfully!",
