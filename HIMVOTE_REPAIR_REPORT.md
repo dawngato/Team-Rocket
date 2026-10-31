@@ -2,8 +2,8 @@
 
 **Date:** 2026-10-31  
 **Project:** HimVote Verifiable College Voting System  
-**Branch:** `repair-master-hardening`  
-**Baseline Test Execution:** 300 / 300 tests passing (100%), 5 / 5 Q7 attacks passing fail-closed, 76 / 76 web tests passing.
+**Branch:** `main`
+**Historical baseline:** This report contains earlier repair evidence. Current tested counts and release limitations are maintained in `FEATURE_STATUS.md`; the custom engine and independent-witness gates remain blocked.
 
 ---
 
@@ -11,11 +11,11 @@
 
 This report documents the systemic investigations, security hardenings, architecture reconciliations, and defect repairs executed on the **HimVote** monorepo in accordance with the findings in `HIMVOTE_COMPLETE_AUDIT_REPORT.md` and the Master Engineering Repair specification.
 
-All modifications strictly adhered to the non-negotiable architectural mandates:
+The current implementation pass follows these architectural mandates:
 1. **Preserve Existing UI & Styling:** Zero redesigns, theme modifications, or typography alterations were made; the existing institutional aesthetic was preserved verbatim.
 2. **Fail-Closed Security Posture:** No mock fallbacks or client-side storage were misrepresented as verifiable cryptographic attestations.
 3. **Cryptographic Integrity:** Disclosed the operational boundaries of Profile VEEM as a development ElGamal adapter, preventing any false claims of production Helios/ElectionGuard third-party trustee tally verification.
-4. **Test Suite Integrity:** The full multi-service test suite was executed and maintained at **300 passed / 0 failed / 0 skipped** across all 11 backend/service suites, **5 / 5** attack demonstrations verified fail-closed, and **76 / 76** Vitest tests passing with 0 TypeScript compilation errors.
+4. **Test Suite Integrity:** Current local evidence is recorded in `FEATURE_STATUS.md`. Historical counts in this report are not current-run evidence and must not be used as a release claim.
 
 ---
 

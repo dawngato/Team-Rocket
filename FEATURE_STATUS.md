@@ -23,7 +23,7 @@ verification remain blocked.
 | Finding | Status | Current evidence and remaining boundary |
 |---|---|---|
 | TR-001 | `TESTED_PASS` | Casting verifies issuer RSA signatures, election binding, manifest binding, and rejects malformed or forged proofs before persistence. Covered by `services/casting/tests/test_credential_verification.py`. |
-| TR-002 | `TESTED_PASS` | Profile VEEM engine verification block passes all Gate E1 steps: encryption, export, independent tally verifier, single-byte tamper detection, and single-cast enforcement. Verified via `python3 services/election_engine/gate_e1.py`. |
+| TR-002 | `BLOCKED` | The custom development engine's internal Gate E1 vectors may pass, but it is not Helios, Belenios, ElectionGuard, or another independently reviewed engine. An established protocol integration and upstream verifier are still required before release. |
 | TR-003 | `FIXED_UNTESTED` | Admin mutations use the identity service session bridge, MFA and role context in production. Production gateway and cross-role end to end execution remain unverified. |
 | TR-004 | `TESTED_PASS` | Admin database construction no longer falls back to memory after connection failure. Test SQLite is explicit and production requires `ADMIN_DB_URL` plus a migration version. |
 | TR-005 | `FIXED_UNTESTED` | Credential and encrypted ballot browser handoffs are now produced and validated in the student pages. A fresh real service session is not proven because the current engine is unverified. |
@@ -44,7 +44,7 @@ verification remain blocked.
 | TR-020 | `FIXED_UNTESTED` | Login, MFA, registration, recovery, reset, invitation redemption, and invitation creation now use a Redis-backed shared limiter. Production fails closed when Redis is unavailable; live multi-worker Redis execution remains unverified. |
 | TR-021 | `FIXED_UNTESTED` | Cookie mutation requests enforce same-site origin checks and secure cookie settings. Cross-site browser attack testing is not complete. |
 | TR-022 | `FIXED_UNTESTED` | Compose secrets are required and internal services are loopback or unexposed; only the gateway is public in production. A deployed port scan is not run here. |
-| TR-023 | `TESTED_PASS` | Dynamic tally verification integrated into `publication_service.py` with Gate E1 adapter. Tally proofs and candidate sums are verified before publication without blocking the release gate. Verified by `tests/test_publication_gate.py`. |
+| TR-023 | `BLOCKED` | Publication validates the current adapter's internal evidence, but the adapter remains the custom unverified engine. The required established-engine tally proof and independent upstream verification are not complete. |
 | TR-024 | `FIXED_UNTESTED` | Officer candidate actions call the scoped replace endpoint and reload authoritative state. Persistence, concurrency and freeze rejection need a live admin run. |
 | TR-025 | `FIXED_UNTESTED` | Publication no longer shows success before a successful response and requires an external attestation payload. Valid attestation verification is not completed end to end. |
 | TR-026 | `FIXED_UNTESTED` | Lifecycle loads live election state and handles errors around open/close mutations. Production scope and step-up behavior need execution against the service. |
@@ -69,9 +69,9 @@ verification remain blocked.
 | TR-045 | `FIXED_UNTESTED` | Landing copy now identifies the educational prototype and removes misleading live metrics. User comprehension testing is not run. |
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
-| TR-048 | `TESTED_PASS` | Unblocked `Q7-01_duplicate_cast_test.py` on Python 3.14 with installed `aiosqlite` 0.22.1; 100 concurrent duplicate submission test passes. All 59/59 root tests pass with zero skips. |
+| TR-048 | `TESTED_PASS` | The current root regression and security command passes 58 tests with one duplicate-ZIP-entry warning, and `tests/load` passes 1 concurrency test. These results are local synthetic evidence, not a production election claim. |
 | TR-049 | `TESTED_PASS` | The current targeted admin and identity suites pass, including activation, notification delivery, role-scope, roster-scope, and limiter regression tests. Other service dependency and deployment matrices remain separate evidence. |
-| TR-050 | `TESTED_PASS` | Current web typecheck, production build, 95 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
+| TR-050 | `TESTED_PASS` | Current web lint, typecheck, production build, 98 Vitest tests under system Node, and browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
 | TR-053 | `FIXED_UNTESTED` | Redundant web `app/lib` fixture shims were removed from reviewed production paths and TypeScript passes. A full import graph audit remains. |
@@ -101,10 +101,13 @@ python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/ad
   21 passed
 
 python -m pytest -q tests --ignore=tests/load
-  52 passed, 1 skipped, 1 warning
+  58 passed, 1 warning
+
+python -m pytest -q tests/load
+  1 passed
 
 /usr/bin/node node_modules/vitest/vitest.mjs run
-  17 files passed, 95 tests passed
+  17 files passed, 98 tests passed
 
 npm run typecheck
   PASS
@@ -118,9 +121,9 @@ python /home/Kali/.agents/skills/webapp-testing/scripts/with_server.py --timeout
 
 The repository `npm test` wrapper resolves `node` to Bun 1.4.2 on this host,
 whose esbuild service stops while loading Vitest. Running the same Vitest
-version with the installed system Node binary passes all 95 tests. The skipped
-Q7 test must be rerun on a supported Python and aiosqlite combination before
-claiming the required concurrency demonstration.
+version with the installed system Node binary passes all 98 tests. The load and
+concurrency suite is a separate command and must be recorded independently
+before claiming the required concurrency demonstration.
 
 ## Latest critical finding register
 
@@ -165,9 +168,9 @@ independently secure.
 python -m compileall -q services/admin_api/src services/identity_issuer
   PASS
 python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  PASS 58 tests
+  PASS 68 tests
 cd apps/web && npm test -- --run
-  PASS 95 tests under the installed system Node binary
+  PASS 98 tests under the installed system Node binary
 cd apps/web && npm run typecheck && npm run build
   PASS
 HIMVOTE_WEB_URL=http://127.0.0.1:3100 with_server next start on port 3100 with tests/browser_smoke.py

@@ -1,5 +1,9 @@
 # HIMVOTE — COMPLETE PROJECT AUDIT & TECHNICAL ERROR REPORT
 
+> Historical audit snapshot. Test totals and environment claims in this report
+> are not current-run evidence; consult `FEATURE_STATUS.md` for the current
+> checkout and for the explicit custom-engine and independent-witness limits.
+
 **System:** HimVote Educational Institutional Election & Verifiable Voting Platform  
 **Audit Type:** Complete Read-Only Technical Architecture, Security, QA, & Codebase Audit  
 **Date:** 31 October 2026  
