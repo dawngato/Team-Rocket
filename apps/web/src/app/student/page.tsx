@@ -115,16 +115,22 @@ export default function StudentPortalOverviewPage() {
     {
       kicker: "Receipt status",
       title: "My receipt timeline",
+      href: latestReceipt
+        ? `/student/receipts/${encodeURIComponent(latestReceipt.handle)}`
+        : "/student/receipts",
       desc: "Open a receipt from a real cast response to inspect accepted, witnessed, and anchored states.",
       icon: FileCheck,
-      badge: "Needs live receipt",
+      badge: latestReceipt ? "Tracker ready" : "Enter tracker",
     },
     {
       kicker: "Inclusion evidence",
       title: "Merkle inclusion proof",
+      href: latestReceipt
+        ? `/student/receipts/${encodeURIComponent(latestReceipt.handle)}/inclusion`
+        : "/student/receipts",
       desc: "A proof is evaluated only when the casting service returns the complete leaf, root, tree size, and path.",
       icon: Layers,
-      badge: "Fail closed",
+      badge: latestReceipt ? "Verify proof" : "Search tracker",
     },
     {
       kicker: "Civic rights",

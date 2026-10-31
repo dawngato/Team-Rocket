@@ -16,6 +16,8 @@ import { apiClient } from "@/lib/api_client";
 import type { StudentRecord } from "@/lib/types";
 import { groupStudentsByDepartment } from "@/lib/teacher_rosters";
 
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+
 export default function TeacherClassesPage() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,17 +56,16 @@ export default function TeacherClassesPage() {
     );
   }, [activeRoster, searchTerm]);
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/teacher" },
+    { label: "My Classes" },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center">
         <div>
-          <Link
-            href="/teacher"
-            className="mb-2 inline-flex min-h-[44px] items-center gap-1 text-xs font-semibold text-[#157E92] hover:underline dark:text-[#38BDF8]"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Back to Teacher Workspace</span>
-          </Link>
           <div className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#15805D]/10 px-2.5 py-0.5 text-xs font-semibold text-[#15805D] dark:text-[#34D399]">
             <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
             Scoped identity roster

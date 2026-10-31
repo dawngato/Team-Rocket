@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, FileCheck2, Terminal } from "lucide-react";
 import { apiClient } from "@/lib/api_client";
 import type { Election, EvidencePackage } from "@/lib/types";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function AuditorVerifySuitePage() {
   const [elections, setElections] = useState<Election[]>([]);
@@ -47,8 +48,14 @@ export default function AuditorVerifySuitePage() {
 
   const selectedElection = elections.find((item) => item.id === selectedElectionId);
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/auditor" },
+    { label: "Verify Suite" },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <Breadcrumbs items={breadcrumbs} />
       <header className="pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#AA6C0B]/10 text-[#AA6C0B] dark:text-[#FBBF24] mb-2">
           <FileCheck2 className="size-3.5" aria-hidden="true" />

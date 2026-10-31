@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { UserCheck, CheckCircle2, XCircle, AlertCircle, Search, Filter } from "lucide-react";
 import { StudentRecord } from "../../../lib/types";
 import { apiClient } from "../../../lib/api_client";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function TeacherVerificationQueuePage() {
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -45,8 +46,14 @@ export default function TeacherVerificationQueuePage() {
     return matchesSearch && matchesDept;
   });
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/teacher" },
+    { label: "Verification Queue" },
+  ];
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <Breadcrumbs items={breadcrumbs} />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] mb-1">

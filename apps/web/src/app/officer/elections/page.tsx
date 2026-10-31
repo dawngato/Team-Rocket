@@ -7,6 +7,7 @@ import { StateBadge } from "@/components/StateBadge";
 import { electionClient, ElectionApiError } from "@/lib/election_client";
 import type { Election, ElectionState } from "@/lib/types";
 import { filterOfficerElections, formatUtcDate } from "@/lib/officer_elections";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 const stateFilters: Array<ElectionState | "ALL"> = ["ALL", "DRAFT", "OPEN", "FROZEN", "WITNESSED", "ANCHOR_FINALIZED", "PUBLISHED"];
 
@@ -39,14 +40,16 @@ export default function OfficerElectionsPage() {
     [elections, searchQuery, stateFilter],
   );
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/officer" },
+    { label: "Assigned Elections" },
+  ];
+
   return (
-    <div className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mx-auto max-w-7xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
       <div className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 dark:border-[#1E3352] sm:flex-row sm:items-center">
         <div>
-          <Link href="/officer" className="mb-2 inline-flex min-h-[44px] items-center gap-1 text-xs font-semibold text-[#157E92] hover:underline dark:text-[#38BDF8]">
-            <ArrowRight className="h-3.5 w-3.5 rotate-180" aria-hidden="true" />
-            Back to Officer Desk
-          </Link>
           <div className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
             <Award className="h-3.5 w-3.5" aria-hidden="true" />
             Election portfolio

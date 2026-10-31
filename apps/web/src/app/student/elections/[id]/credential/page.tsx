@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertCircle, ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldCheck } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, CheckCircle2, KeyRound, Lock, ShieldCheck } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { VotingStepper } from "@/components/VotingStepper";
 import { electionClient } from "@/lib/election_client";
 import {
   CREDENTIAL_ENGINE_HANDOFF_TYPE,
@@ -100,20 +102,33 @@ export default function GetCredentialPage() {
     }
   };
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/student" },
+    { label: "Elections", href: "/student/elections" },
+    { label: election?.title || `Election ${electionId.substring(0, 8)}`, href: `/student/elections/${encodeURIComponent(electionId)}` },
+    { label: "Blind Credential" },
+  ];
+
   if (state === "LOADING") {
-    return <div className="mx-auto max-w-2xl px-4 py-12 text-sm text-slate-600 dark:text-slate-300" role="status">Loading the authoritative election and credential status…</div>;
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-sm text-slate-600 dark:text-slate-300" role="status">
+        <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-[#157E92] border-t-transparent" />
+        Loading authoritative election and credential status…
+      </div>
+    );
   }
 
   if (state === "ERROR" || !election) {
     return (
-      <div className="mx-auto max-w-2xl space-y-5 px-4 py-12">
+      <main className="mx-auto max-w-2xl space-y-5 px-4 py-12">
+        <Breadcrumbs items={breadcrumbs} />
         <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
           {error || "Credential issuance is unavailable because the authoritative service did not return an election."}
         </div>
         <Link href={`/student/elections/${encodeURIComponent(electionId)}`} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold dark:border-[#1E3352]">
           <ArrowLeft className="size-4" aria-hidden="true" /> Back to election
         </Link>
-      </div>
+      </main>
     );
   }
 
@@ -122,59 +137,127 @@ export default function GetCredentialPage() {
     : !handoff
       ? "No supported engine credential handoff is available. This page will not generate a blind request or credential locally."
       : issuanceStatus === "DELIVERED" || issued
-        ? "The identity service has already delivered the credential signature for this election. Continue in the supported engine booth to unblind it and prepare the encrypted ballot."
+        ? "The identity service has already delivered the credential signature for this election."
         : null;
 
   return (
-    <main className="mx-auto max-w-2xl space-y-8 px-4 py-12">
-      <header className="space-y-2 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-xl bg-[#157E92] text-white shadow-md"><KeyRound className="size-6" aria-hidden="true" /></div>
-        <h1 className="text-2xl font-bold text-[#10233F] dark:text-white">Anonymous Credential Issuance</h1>
-        <p className="text-xs text-slate-600 dark:text-slate-400">{election.title}</p>
+    <main className="mx-auto max-w-3xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+
+      {/* Stepper */}
+      <VotingStepper
+        currentStep={1}
+        electionId={election.id}
+        hasCredential={issued}
+      />
+
+      <header className="space-y-2 text-center pt-2">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-[#157E92] text-white shadow-md">
+          <KeyRound className="size-6" aria-hidden="true" />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white">
+          Anonymous Credential Issuance
+        </h1>
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+          {election.title}
+        </p>
       </header>
 
-      <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3 dark:border-[#1E3352]">
-          <span className="text-sm font-bold text-[#10233F] dark:text-white">Identity issuer status</span>
+      <section className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-[#1E3352]">
+          <div className="space-y-0.5">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Authority Status</span>
+            <h2 className="text-sm font-bold text-[#10233F] dark:text-white">Identity Registrar</h2>
+          </div>
           <StateBadge state={election.state} size="sm" />
         </div>
 
-        <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-          This browser creates a fresh blinded request locally, sends only the blinded value to the identity issuer, verifies the returned blind signature, and stores the election-bound proof in session storage.
+        <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          This browser created a fresh blinded request locally. The registrar signs only the blinded value and never learns your final ballot token or serial number. Once unblinded, the credential binds strictly to this election manifest.
         </p>
 
-        {error && <div className="rounded-lg border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-xs text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
+        {error && (
+          <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-xs sm:text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
+            {error}
+          </div>
+        )}
 
         {unavailableReason && !issued && (
-          <div className="flex items-start gap-2 rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-xs leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status">
+          <div className="flex items-start gap-2.5 rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-xs sm:text-sm leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status">
             <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
             <span>{unavailableReason}</span>
           </div>
         )}
 
         {!issued && (
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/40">
-            <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300"><Lock className="size-4 text-[#157E92]" aria-hidden="true" />Credential handoff</div>
-            <p className="mt-2 text-slate-500">{handoff ? `Prepared ${CREDENTIAL_ENGINE_HANDOFF_TYPE} with a browser-generated blinding factor.` : "Waiting for a valid blinded request."}</p>
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs dark:border-slate-800 dark:bg-slate-900/40">
+            <div className="flex items-center gap-2 font-semibold text-slate-700 dark:text-slate-300">
+              <Lock className="size-4 text-[#157E92]" aria-hidden="true" />
+              <span>Blinded Protocol Request</span>
+            </div>
+            <p className="mt-1.5 text-slate-500 dark:text-slate-400">
+              {handoff
+                ? `Prepared ${CREDENTIAL_ENGINE_HANDOFF_TYPE} with RFC 9474 blinding factor.`
+                : "Waiting for a valid blinded request token."}
+            </p>
           </div>
         )}
 
         {issued && (
-          <div className="space-y-3 rounded-lg border border-[#15805D]/30 bg-[#15805D]/10 p-4 text-xs text-[#0F5B43] dark:text-[#86EFAC]" role="status">
-            <div className="flex items-center gap-2 font-bold"><CheckCircle2 className="size-5" aria-hidden="true" />Identity service delivered a blind signature</div>
-            <p>The signed value was verified locally and transformed into an election-bound credential proof without exposing the voter token to the identity service.</p>
+          <div className="space-y-3 rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-5 text-xs sm:text-sm text-[#0F5B43] dark:text-[#86EFAC]" role="status">
+            <div className="flex items-center gap-2 font-bold text-sm">
+              <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+              <span>Blind Signature Verified & Unblinded Locally</span>
+            </div>
+            <p className="leading-relaxed">
+              Your anonymous credential proof is safely stored in this browser session. The identity registrar cannot link this credential to your cast ballot.
+            </p>
           </div>
         )}
 
-        {!issued && (
-          <button type="button" onClick={handleIssue} disabled={!canRequest || state === "ISSUING"} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#157E92] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-[#0E6273] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]">
-            {state === "ISSUING" ? "Requesting signature from identity service…" : "Request signature from identity service"}
-          </button>
-        )}
+        {/* Action Controls */}
+        <div className="pt-2 space-y-4">
+          {!issued && (
+            <button
+              type="button"
+              onClick={handleIssue}
+              disabled={!canRequest || state === "ISSUING"}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#157E92] px-6 text-sm font-bold text-white shadow-sm transition-all duration-75 ease-out hover:bg-[#0E6273] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92]"
+            >
+              {state === "ISSUING" ? (
+                <>
+                  <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Requesting signature from identity service…</span>
+                </>
+              ) : (
+                <>
+                  <KeyRound className="size-4" aria-hidden="true" />
+                  <span>Request Anonymous Credential</span>
+                </>
+              )}
+            </button>
+          )}
 
-        {issued && <div className="flex items-start gap-2 rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-xs leading-relaxed text-[#6B4707] dark:text-[#FCD34D]" role="status"><ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" /><span>Continue to the browser booth to encrypt your selected candidate with the election engine’s public key.</span></div>}
+          {issued && (
+            <Link
+              href={`/student/elections/${encodeURIComponent(election.id)}/cast`}
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#15805D] px-6 text-sm font-bold text-white shadow-sm transition-all duration-75 ease-out hover:bg-[#10664A] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15805D]"
+            >
+              <Lock className="size-4" aria-hidden="true" />
+              <span>Step 2: Proceed to Voting Booth</span>
+              <ArrowRight className="size-4" aria-hidden="true" />
+            </Link>
+          )}
 
-        <Link href={`/student/elections/${encodeURIComponent(election.id)}`} className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#157E92] hover:underline"><ArrowLeft className="size-4" aria-hidden="true" /> Back to election details</Link>
+          <div className="flex justify-center pt-2">
+            <Link
+              href={`/student/elections/${encodeURIComponent(election.id)}`}
+              className="inline-flex min-h-10 items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+            >
+              <ArrowLeft className="size-3.5" aria-hidden="true" /> Back to election details
+            </Link>
+          </div>
+        </div>
       </section>
     </main>
   );

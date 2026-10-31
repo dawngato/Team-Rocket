@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AlertTriangle, Download, FileArchive, ShieldCheck, Upload } from "lucide-react";
 import { apiClient, ApiClientError } from "@/lib/api_client";
 import type { Election, EvidencePackage } from "@/lib/types";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function AuditorEvidencePage() {
   const [elections, setElections] = useState<Election[]>([]);
@@ -82,8 +83,14 @@ export default function AuditorEvidencePage() {
     setError(null);
   };
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/auditor" },
+    { label: "Evidence Archive" },
+  ];
+
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+      <Breadcrumbs items={breadcrumbs} />
       <header className="pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-2">
           <FileArchive className="size-3.5" aria-hidden="true" />

@@ -8,7 +8,7 @@ import {
   Clock,
   Fingerprint,
   GraduationCap,
-  HelpCircle,
+  KeyRound,
   Lock,
   ShieldAlert,
   ShieldCheck,
@@ -18,6 +18,7 @@ import { identityClient, type SessionProfile } from "@/lib/identity_client";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
 import { StateBadge } from "@/components/StateBadge";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
 
 export default function StudentEligibilityPage() {
   const [session, setSession] = useState<SessionProfile | null>(null);
@@ -39,7 +40,11 @@ export default function StudentEligibilityPage() {
       })
       .catch((err) => {
         if (!active) return;
-        setError(err instanceof Error ? err.message : "Unable to verify student eligibility from identity service.");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to verify student eligibility from identity service."
+        );
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -53,29 +58,43 @@ export default function StudentEligibilityPage() {
     session?.roles?.some((r) => r.toLowerCase() === "student")
   );
 
+  const breadcrumbs = [
+    { label: "Workspace", href: "/student" },
+    { label: "Voting Eligibility" },
+  ];
+
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Breadcrumbs items={breadcrumbs} />
+
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
         <div className="mb-2 inline-flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-[#157E92] dark:text-[#38BDF8]">
           <Fingerprint className="size-4" aria-hidden="true" />
           Voter Identity Authority
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
           Voting Eligibility &amp; Verification Status
         </h1>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+        <p className="mt-2 max-w-2xl text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-400">
           HimVote establishes voting eligibility through verified university enrollment records and privacy-preserving blind credentials. An active account alone does not grant ballot access.
         </p>
       </header>
 
       {loading && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-[#1E3352] dark:bg-[#132135]" role="status">
-          Querying authoritative enrollment authority...
+        <div
+          className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 dark:border-[#1E3352] dark:bg-[#132135]"
+          role="status"
+        >
+          <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-[#157E92] border-t-transparent" />
+          Querying authoritative enrollment authority…
         </div>
       )}
 
       {error && (
-        <div className="rounded-2xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
+        <div
+          className="rounded-2xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]"
+          role="alert"
+        >
           {error}
         </div>
       )}
@@ -112,32 +131,23 @@ export default function StudentEligibilityPage() {
             </div>
 
             <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
-                <span className="text-slate-500 block mb-1">Identity Verification</span>
-                <span className="font-bold text-[#10233F] dark:text-white text-sm">
-                  {isVerifiedStudent ? "Roster Approved" : "Awaiting Verification"}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-slate-400 font-semibold block mb-1">Roster Roles</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  {session.roles.join(", ") || "None"}
                 </span>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Confirmed by authorized campus department.
-                </p>
               </div>
-              <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
-                <span className="text-slate-500 block mb-1">MFA Security</span>
-                <span className="font-bold text-[#10233F] dark:text-white text-sm">
-                  {session.mfa_authenticated ? "Authenticated" : "Optional for Students"}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-slate-400 font-semibold block mb-1">Session Integrity</span>
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <ShieldCheck className="size-3.5" /> Identity Issuer Verified
                 </span>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Hardware or TOTP verification status.
-                </p>
               </div>
-              <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800/60">
-                <span className="text-slate-500 block mb-1">Assigned Scopes</span>
-                <span className="font-bold text-[#10233F] dark:text-white text-sm truncate block">
-                  {session.scopes?.length ? session.scopes.map((s) => s.scope_id).join(", ") : "Campus-wide"}
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-100 dark:border-slate-800">
+                <span className="text-slate-400 font-semibold block mb-1">Ballot Privacy</span>
+                <span className="font-bold text-slate-800 dark:text-slate-200">
+                  Zero Linkage Guaranteed
                 </span>
-                <p className="mt-1 text-[11px] text-slate-500">
-                  Electoral boundaries assigned to your identity.
-                </p>
               </div>
             </div>
           </section>

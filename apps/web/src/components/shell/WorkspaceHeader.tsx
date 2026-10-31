@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronDown,
-  ChevronRight,
   CircleHelp,
   LogOut,
   Moon,
@@ -19,20 +18,16 @@ import { CommandSearch } from "./CommandSearch";
 import { MobileMenuButton } from "./WorkspaceSidebar";
 import { workspaceHome } from "@/lib/routes/nav_config";
 import { useApp } from "@/lib/query_provider";
+import { Breadcrumbs, type BreadcrumbItem } from "@/components/Breadcrumbs";
 
 interface WorkspaceHeaderProps {
   session: SessionProfile;
   onOpenMenu: () => void;
 }
 
-interface Crumb {
-  label: string;
-  href?: string;
-}
-
-function resolveBreadcrumbs(pathname: string, roles: string[]): Crumb[] {
+function resolveBreadcrumbs(pathname: string, roles: string[]): BreadcrumbItem[] {
   const home = workspaceHome(roles);
-  const crumbs: Crumb[] = [{ label: "Workspace", href: home }];
+  const crumbs: BreadcrumbItem[] = [{ label: "Workspace", href: home }];
 
   // Student paths
   if (pathname.startsWith("/student/elections/")) {
@@ -46,7 +41,8 @@ function resolveBreadcrumbs(pathname: string, roles: string[]): Crumb[] {
   }
   if (pathname.startsWith("/student/receipts/")) {
     crumbs.push({ label: "Receipts", href: "/student/receipts" });
-    crumbs.push({ label: "Merkle Inclusion Proof" });
+    if (pathname.includes("/inclusion")) crumbs.push({ label: "Merkle Inclusion Proof" });
+    else crumbs.push({ label: "Receipt Tracker" });
     return crumbs;
   }
   if (pathname === "/student/elections") {
@@ -112,34 +108,31 @@ function resolveBreadcrumbs(pathname: string, roles: string[]): Crumb[] {
     crumbs.push({ label: "Governance", href: "/super-admin" });
     if (pathname === "/super-admin/institutions") crumbs.push({ label: "Institutions & Campuses" });
     else if (pathname === "/super-admin/departments") crumbs.push({ label: "Academic Departments" });
-    else if (pathname === "/super-admin/administrators") crumbs.push({ label: "Administrator Roster" });
-    else if (pathname === "/super-admin/role-requests") crumbs.push({ label: "Access Approval Requests" });
-    else if (pathname === "/super-admin/policies") crumbs.push({ label: "Governance Policies" });
-    else if (pathname === "/super-admin/system-audit") crumbs.push({ label: "System Audit Ledger" });
-    else if (pathname === "/super-admin/security") crumbs.push({ label: "Security Oversight" });
+    else if (pathname === "/super-admin/administrators") crumbs.push({ label: "Administrators" });
+    else if (pathname === "/super-admin/role-requests") crumbs.push({ label: "Elevated Role Requests" });
+    else if (pathname === "/super-admin/policies") crumbs.push({ label: "Election Policies" });
+    else if (pathname === "/super-admin/security") crumbs.push({ label: "Security & Keys" });
+    else if (pathname === "/super-admin/system-audit") crumbs.push({ label: "System Audit Trail" });
     return crumbs;
   }
 
   // Auditor paths
   if (pathname.startsWith("/auditor")) {
-    crumbs.push({ label: "Election Auditing", href: "/auditor" });
-    if (pathname === "/auditor/evidence") crumbs.push({ label: "Election Evidence Archive" });
-    else if (pathname === "/auditor/trusted-pins") crumbs.push({ label: "Trusted Verification Keys" });
-    else if (pathname === "/auditor/witness") crumbs.push({ label: "Witness Checkpoints" });
-    else if (pathname === "/auditor/verify") crumbs.push({ label: "Cryptographic Verification" });
-    else if (pathname === "/auditor/sign") crumbs.push({ label: "Auditor Signatures" });
+    crumbs.push({ label: "Independent Auditor", href: "/auditor" });
+    if (pathname === "/auditor/evidence") crumbs.push({ label: "Evidence Packages" });
+    else if (pathname === "/auditor/witness") crumbs.push({ label: "Witness Co-Signatures" });
+    else if (pathname === "/auditor/verify") crumbs.push({ label: "Offline Verification" });
+    else if (pathname === "/auditor/sign") crumbs.push({ label: "Sign & Attest" });
+    else if (pathname === "/auditor/chain") crumbs.push({ label: "Blockchain Anchor State" });
+    else if (pathname === "/auditor/trusted-pins") crumbs.push({ label: "Pinned Public Keys" });
     return crumbs;
   }
 
-  if (pathname === "/account") {
-    crumbs.push({ label: "Account Settings" });
-    return crumbs;
-  }
-
-  // Generic fallback
-  const segments = pathname.split("/").filter(Boolean);
-  const last = segments.at(-1) || "Dashboard";
-  crumbs.push({ label: last.replaceAll("-", " ").replace(/\b\w/g, (c) => c.toUpperCase()) });
+  // Fallback title formatting
+  const parts = pathname.split("/").filter(Boolean);
+  const last = parts.at(-1) || "overview";
+  const title = last.replaceAll("-", " ").replace(/\b\w/g, (l) => l.toUpperCase());
+  crumbs.push({ label: title });
   return crumbs;
 }
 
@@ -150,40 +143,31 @@ export function WorkspaceHeader({ session, onOpenMenu }: WorkspaceHeaderProps) {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
 
-  const crumbs = resolveBreadcrumbs(pathname, session.roles);
+  const breadcrumbs = resolveBreadcrumbs(pathname, session.roles);
+
   const helpHref = session.roles.some((role) => role.toLowerCase() === "student")
     ? "/student/help"
     : "/security-limits";
 
-  // Close account menu on click outside or Escape
+  // Close context menu on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (accountMenuRef.current && !accountMenuRef.current.contains(event.target as Node)) {
+      if (
+        accountMenuRef.current &&
+        !accountMenuRef.current.contains(event.target as Node)
+      ) {
         setAccountMenuOpen(false);
       }
     }
-    function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setAccountMenuOpen(false);
-      }
-    }
-    if (accountMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("keydown", handleKeyDown);
-    }
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [accountMenuOpen]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     try {
       if (typeof window !== "undefined") {
-        try {
-          window.sessionStorage.removeItem("himvote_session_receipts");
-          window.localStorage.removeItem("himvote_receipts");
-        } catch {}
+        window.sessionStorage.removeItem("himvote_session_receipts");
+        window.localStorage.removeItem("himvote_receipts");
       }
       await identityClient.logout();
     } finally {
@@ -191,31 +175,13 @@ export function WorkspaceHeader({ session, onOpenMenu }: WorkspaceHeaderProps) {
     }
   };
 
-  const primaryRole = session.roles[0]?.replaceAll("_", " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "Member";
+  const primaryRole = session.roles[0] || "User";
 
   return (
     <header className="sv-workspace-header">
       <div className="sv-header-left">
         <MobileMenuButton onClick={onOpenMenu} />
-        <nav className="sv-breadcrumbs" aria-label="Breadcrumb">
-          {crumbs.map((crumb, idx) => {
-            const isLast = idx === crumbs.length - 1;
-            return (
-              <React.Fragment key={crumb.label}>
-                {idx > 0 && <ChevronRight size={14} className="text-slate-400" aria-hidden="true" />}
-                {isLast || !crumb.href ? (
-                  <span className="font-semibold text-slate-900 dark:text-white" aria-current={isLast ? "page" : undefined}>
-                    {crumb.label}
-                  </span>
-                ) : (
-                  <Link href={crumb.href} className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
-                    {crumb.label}
-                  </Link>
-                )}
-              </React.Fragment>
-            );
-          })}
-        </nav>
+        <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <div className="sv-header-actions">
