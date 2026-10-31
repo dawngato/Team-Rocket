@@ -34,6 +34,7 @@ from ..crypto.hashing import hash_password
 from .deps import (
     get_current_user,
     get_user_roles,
+    get_user_scopes,
     require_roles,
     record_audit_event,
     GRANTABLE_ROLES,
@@ -49,8 +50,14 @@ def list_admin_invitations(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return invitation metadata only. Invitation secrets are never recoverable."""
-    rows = db.query(Invitation).order_by(Invitation.created_at.desc()).limit(500).all()
+    """Return invitation metadata filtered by caller's permitted scope. Invitation secrets are never recoverable."""
+    caller_roles = get_user_roles(current_user, db)
+    query = db.query(Invitation).order_by(Invitation.created_at.desc())
+    if "super_admin" not in caller_roles:
+        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
+        if "*" not in caller_scopes:
+            query = query.filter(Invitation.scope.in_(caller_scopes))
+    rows = query.limit(500).all()
     return [
         AdminInvitationRecord(
             id=row.id,
@@ -71,13 +78,22 @@ def list_admin_approvals(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return the durable approval queue used by the super-admin UI."""
-    query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc()).limit(500)
+    """Return the durable approval queue filtered by the approver's actual authority."""
+    caller_roles = get_user_roles(current_user, db)
+    query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc())
     if status_filter.lower() == "pending":
         query = query.filter(ApprovalRequest.decision.is_(None))
     elif status_filter.lower() in {"approved", "rejected"}:
         query = query.filter(ApprovalRequest.decision == status_filter.lower())
-    rows = query.all()
+
+    if "super_admin" not in caller_roles:
+        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
+        # Ordinary administrators cannot approve administrator requests, only super_admin can
+        query = query.filter(ApprovalRequest.requested_role != "administrator")
+        if "*" not in caller_scopes:
+            query = query.filter(ApprovalRequest.requested_scope.in_(caller_scopes))
+
+    rows = query.limit(500).all()
     users = {
         user.id: user
         for user in db.query(User).filter(
@@ -108,15 +124,19 @@ def list_teachers(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return persisted teacher identities and their delegated scopes."""
-    rows = (
+    """Return persisted teacher identities and their delegated scopes filtered by caller's permitted scope."""
+    caller_roles = get_user_roles(current_user, db)
+    query = (
         db.query(User, RoleAssignment, RoleDefinition)
         .join(RoleAssignment, RoleAssignment.user_id == User.id)
         .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
         .filter(RoleDefinition.name == "teacher")
-        .order_by(User.created_at.desc())
-        .all()
     )
+    if "super_admin" not in caller_roles:
+        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
+        if "*" not in caller_scopes:
+            query = query.filter(RoleAssignment.scope_id.in_(caller_scopes))
+    rows = query.order_by(User.created_at.desc()).all()
     output = []
     for user, assignment, role_definition in rows:
         invitation = db.query(Invitation).filter(
@@ -146,6 +166,18 @@ def provision_teacher(
     """
     Provision a persistent teacher identity and assign the teacher role within the specified department scope.
     """
+    caller_roles = get_user_roles(current_user, db)
+    if "super_admin" not in caller_roles and not user_has_scope(
+        current_user,
+        db,
+        ["administrator"],
+        req.department.strip(),
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teacher provisioning scope exceeds the caller's delegated scope",
+        )
+
     existing = db.query(User).filter(User.email == str(req.email).lower()).first()
     if existing:
         raise HTTPException(
@@ -385,7 +417,10 @@ def decide_approval(
 ):
     """
     Decide on an approval request.
-    Strict enforcement: The approver MUST be a different person from the requester.
+    Strict enforcement:
+    1. The approver MUST be a different person from the requester (prevent self-decision).
+    2. Authority over requested role and scope is enforced for BOTH approval and rejection.
+    3. Every decision is recorded in append-only audit events.
     """
     approval = db.query(ApprovalRequest).filter(ApprovalRequest.id == approval_id).first()
     if not approval:
@@ -394,11 +429,11 @@ def decide_approval(
             detail="Approval request not found",
         )
 
-    # Creators can never approve their own request
+    # Creators can never decide their own request (neither approve nor reject)
     if approval.requester_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Self approval forbidden. Creator cannot approve their own request.",
+            detail="Self approval forbidden. Creator cannot decide their own request.",
         )
 
     if approval.decision is not None:
@@ -407,33 +442,36 @@ def decide_approval(
             detail="Approval request has already been decided",
         )
 
+    if (
+        approval.request_type != "role_grant"
+        or not approval.target_user_id
+        or not approval.requested_role
+        or not approval.requested_scope
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Approval request has invalid grant data",
+        )
+
+    # Scope and role authorization checks apply to BOTH approved and rejected decisions
+    approver_roles = get_user_roles(current_user, db)
+    if approval.requested_role == "administrator" and "super_admin" not in approver_roles:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only a Super Administrator may decide on an Administrator grant",
+        )
+    if "super_admin" not in approver_roles and not user_has_scope(
+        current_user,
+        db,
+        ["administrator"],
+        approval.requested_scope,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Decision scope exceeds the decider's delegated authority",
+        )
+
     if req.decision == "approved":
-        if (
-            approval.request_type != "role_grant"
-            or not approval.target_user_id
-            or not approval.requested_role
-            or not approval.requested_scope
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Approval request has invalid grant data",
-            )
-        approver_roles = get_user_roles(current_user, db)
-        if approval.requested_role == "administrator" and "super_admin" not in approver_roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Only a Super Administrator may approve an Administrator grant",
-            )
-        if "super_admin" not in approver_roles and not user_has_scope(
-            current_user,
-            db,
-            ["administrator"],
-            approval.requested_scope,
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Approval scope exceeds the approver's delegated authority",
-            )
         role_definition = db.query(RoleDefinition).filter(RoleDefinition.name == approval.requested_role).first()
         if not role_definition:
             role_definition = RoleDefinition(
@@ -480,7 +518,7 @@ def decide_approval(
         action="admin.approval.decided",
         result=req.decision,
         actor_id=current_user.id,
-        details={"approval_id": approval_id, "reason": req.reason},
+        details={"approval_id": approval_id, "decision": req.decision, "reason": req.reason},
     )
     db.commit()
 

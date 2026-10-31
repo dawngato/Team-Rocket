@@ -11,7 +11,7 @@ from src.models.database import ElectionModel, ElectionStateModel, WitnessAcknow
 from src.config import settings
 
 
-def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roster_approver_keypair):
+def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roster_approver_keypair, monkeypatch):
     """
     Executes an end to end test exercising all admin endpoints:
     1. Create draft election
@@ -28,6 +28,14 @@ def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roste
     12. Query audit events log
     """
     settings.auditor_public_key_fingerprint = auditor_keypair["fingerprint"]
+    # Audit-log reads use the identity issuer session bridge. Stub the verified
+    # development profile here; the bridge itself is covered in auth tests.
+    from src.routers import audit as audit_router
+    monkeypatch.setattr(
+        audit_router,
+        "_identity_profile",
+        lambda _request: {"user_id": "officer_dave", "roles": ["administrator"], "mfa_authenticated": True},
+    )
 
     # 1. Create Draft Election
     create_payload = {

@@ -27,6 +27,7 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   roles?: WorkspaceRole[];
+  requiredScopeType?: string;
   keywords?: string;
 }
 
@@ -115,15 +116,39 @@ export function normalizeRole(role: string): WorkspaceRole | null {
     : null;
 }
 
-export function canSeeItem(item: NavItem, roles: string[]): boolean {
+export function canSeeItem(
+  item: NavItem,
+  roles: string[],
+  scopes?: Array<{ role: string; scope_type: string; scope_id: string }>
+): boolean {
   if (!item.roles?.length) return true;
   const normalized = roles.map(normalizeRole).filter((role): role is WorkspaceRole => Boolean(role));
-  return item.roles.some((role) => normalized.includes(role));
+  const hasRole = item.roles.some((role) => normalized.includes(role));
+  if (!hasRole) return false;
+
+  // Super administrators retain broad system visibility
+  if (normalized.includes("super_admin")) return true;
+
+  // P1-27: If item requires an assigned scope type (e.g. election, department), verify the user possesses it
+  if (item.requiredScopeType && scopes) {
+    const hasMatchingScope = scopes.some(
+      (s) =>
+        s.scope_id === "*" ||
+        s.scope_type === "global" ||
+        s.scope_type === item.requiredScopeType
+    );
+    if (!hasMatchingScope) return false;
+  }
+
+  return true;
 }
 
-export function visibleWorkspaceNav(roles: string[]): NavGroup[] {
+export function visibleWorkspaceNav(
+  roles: string[],
+  scopes?: Array<{ role: string; scope_type: string; scope_id: string }>
+): NavGroup[] {
   return workspaceNav
-    .map((group) => ({ ...group, items: group.items.filter((item) => canSeeItem(item, roles)) }))
+    .map((group) => ({ ...group, items: group.items.filter((item) => canSeeItem(item, roles, scopes)) }))
     .filter((group) => group.items.length > 0);
 }
 
@@ -137,7 +162,12 @@ export function workspaceHome(roles: string[]): string {
   return "/student";
 }
 
-export function canAccessWorkspaceRoute(pathname: string, roles: string[]): boolean {
+export function canAccessWorkspaceRoute(
+  pathname: string,
+  roles: string[],
+  scopes?: Array<{ role: string; scope_type: string; scope_id: string }>,
+  targetScopeId?: string
+): boolean {
   const normalized = roles.map(normalizeRole).filter((role): role is WorkspaceRole => Boolean(role));
   const routeRoles: Array<[string, WorkspaceRole[]]> = [
     ["/student", ["student"]],
@@ -148,5 +178,18 @@ export function canAccessWorkspaceRoute(pathname: string, roles: string[]): bool
     ["/auditor", ["auditor"]],
   ];
   const match = routeRoles.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-  return match ? match[1].some((role) => normalized.includes(role)) : false;
+  if (!match) return false;
+  const hasRole = match[1].some((role) => normalized.includes(role));
+  if (!hasRole) return false;
+
+  if (normalized.includes("super_admin")) return true;
+
+  // P1-27: If an action or page is scoped to a specific entity, verify user holds that scope
+  if (targetScopeId && scopes) {
+    return scopes.some(
+      (s) => s.scope_id === "*" || s.scope_type === "global" || s.scope_id === targetScopeId
+    );
+  }
+
+  return true;
 }

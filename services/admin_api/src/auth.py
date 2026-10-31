@@ -46,12 +46,6 @@ def _identity_profile(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response was invalid") from exc
     if not isinstance(profile, dict) or not isinstance(profile.get("user_id"), str):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response was invalid")
-    roles = profile.get("roles")
-    if not isinstance(roles, list):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
-    normalized_roles = {role.strip().lower() for role in roles if isinstance(role, str)}
-    if not normalized_roles.intersection(ELECTION_ADMIN_ROLES):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An election administration role is required")
     if not profile.get("mfa_authenticated"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for administrative actions")
     return profile
@@ -73,4 +67,9 @@ def get_authenticated_actor(request: Request) -> str:
         # Existing unit tests and local fixture deployments use this only in
         # development. Production never reaches this branch.
         return "election_officer_default"
-    return _identity_profile(request)["user_id"]
+    profile = _identity_profile(request)
+    roles = profile.get("roles")
+    normalized_roles = {role.strip().lower() for role in roles if isinstance(role, str)} if isinstance(roles, list) else set()
+    if not normalized_roles.intersection(ELECTION_ADMIN_ROLES):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An election administration role is required")
+    return profile["user_id"]

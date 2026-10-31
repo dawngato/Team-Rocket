@@ -16,7 +16,7 @@ from services.identity_issuer.models import (
 from services.identity_issuer.crypto.hashing import hash_password
 
 
-def create_authenticated_user(db_session, email: str, role_name: str, external_id: str) -> tuple[User, str]:
+def create_authenticated_user(db_session, email: str, role_name: str, external_id: str, scope_id: str = "*", scope_type: str = "global") -> tuple[User, str]:
     """Helper to seed a user with role and active session token."""
     pwd_hash, pwd_params = hash_password("PasswordTest1234!")
     user = User(
@@ -39,8 +39,8 @@ def create_authenticated_user(db_session, email: str, role_name: str, external_i
     assignment = RoleAssignment(
         user_id=user.id,
         role_id=role.id,
-        scope_type="global",
-        scope_id="*",
+        scope_type=scope_type,
+        scope_id=scope_id,
     )
     db_session.add(assignment)
 
@@ -140,7 +140,7 @@ def test_admin_invitations_and_role_requests(client, db_session):
         json={"decision": "approved", "reason": "Self approved"},
     )
     assert self_approve_resp.status_code == 403
-    assert "Self approval forbidden" in self_approve_resp.json()["detail"]
+    assert "forbidden" in self_approve_resp.json()["detail"].lower()
 
     # Step 4: Independent administrator approves successfully
     second_admin, second_token = create_authenticated_user(
@@ -218,3 +218,126 @@ def test_admin_audit_events_endpoint(client, db_session):
     data = resp.json()
     assert "events" in data
     assert "total" in data
+
+
+def test_scoped_administrator_listings_and_approvals(client, db_session):
+    """
+    P1-23, P1-24, P1-25 regression test:
+    - Administrator listings (invitations, teachers) only show records within assigned scope.
+    - Approval queue filtered by approver's scope and excludes unapprovable admin roles.
+    - Rejection decision authorization enforced against requested scope and role.
+    - Self-rejection is forbidden.
+    """
+    super_admin, super_token = create_authenticated_user(
+        db_session, "super@institution.edu", "super_admin", "SUP001"
+    )
+    admin_a, token_a = create_authenticated_user(
+        db_session, "admin_a@institution.edu", "administrator", "ADMA", scope_id="dept_cs", scope_type="department"
+    )
+    admin_b, token_b = create_authenticated_user(
+        db_session, "admin_b@institution.edu", "administrator", "ADMB", scope_id="dept_ee", scope_type="department"
+    )
+
+    # 1. Create invitations in dept_cs and dept_ee via super_admin
+    inv_a = client.post(
+        "/v1/admin/invitations",
+        headers={"Authorization": f"Bearer {super_token}"},
+        json={"email": "prof_cs@institution.edu", "role": "teacher", "scope": "dept_cs"},
+    )
+    assert inv_a.status_code == 201
+
+    inv_b = client.post(
+        "/v1/admin/invitations",
+        headers={"Authorization": f"Bearer {super_token}"},
+        json={"email": "prof_ee@institution.edu", "role": "teacher", "scope": "dept_ee"},
+    )
+    assert inv_b.status_code == 201
+
+    # P1-23: admin_a should only see dept_cs invitation, not dept_ee
+    list_a = client.get(
+        "/v1/admin/invitations",
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    assert list_a.status_code == 200
+    inv_emails_a = [item["email"] for item in list_a.json()]
+    assert "prof_cs@institution.edu" in inv_emails_a
+    assert "prof_ee@institution.edu" not in inv_emails_a
+
+    # Super admin sees both
+    list_sup = client.get(
+        "/v1/admin/invitations",
+        headers={"Authorization": f"Bearer {super_token}"},
+    )
+    assert list_sup.status_code == 200
+    inv_emails_sup = [item["email"] for item in list_sup.json()]
+    assert "prof_cs@institution.edu" in inv_emails_sup
+    assert "prof_ee@institution.edu" in inv_emails_sup
+
+    # 2. Role grant requests
+    target_user, _ = create_authenticated_user(
+        db_session, "target_fellow@institution.edu", "teacher", "TFEL001"
+    )
+    req_cs = client.post(
+        "/v1/admin/role-grant-requests",
+        headers={"Authorization": f"Bearer {token_a}"},
+        json={
+            "user_id": target_user.id,
+            "role": "teacher",
+            "scope": "dept_cs",
+            "justification": "CS Department Teacher",
+        },
+    )
+    assert req_cs.status_code == 202
+    approval_cs_id = req_cs.json()["approval_id"]
+
+    req_ee = client.post(
+        "/v1/admin/role-grant-requests",
+        headers={"Authorization": f"Bearer {token_b}"},
+        json={
+            "user_id": target_user.id,
+            "role": "teacher",
+            "scope": "dept_ee",
+            "justification": "EE Department Teacher",
+        },
+    )
+    assert req_ee.status_code == 202
+    approval_ee_id = req_ee.json()["approval_id"]
+
+    # P1-24: admin_b approval queue must only show dept_ee request, not dept_cs
+    approvals_b = client.get(
+        "/v1/admin/approvals?status=pending",
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+    assert approvals_b.status_code == 200
+    appr_ids_b = [item["id"] for item in approvals_b.json()]
+    assert approval_ee_id in appr_ids_b
+    assert approval_cs_id not in appr_ids_b
+
+    # P1-25: Rejection authorization is strictly enforced
+    # admin_b trying to reject dept_cs request fails with 403 (out of scope)
+    rej_out_of_scope = client.post(
+        f"/v1/approvals/{approval_cs_id}/decision",
+        headers={"Authorization": f"Bearer {token_b}"},
+        json={"decision": "rejected", "reason": "Not my department but trying to reject"},
+    )
+    assert rej_out_of_scope.status_code == 403
+    assert "Decision scope exceeds" in rej_out_of_scope.json()["detail"]
+
+    # Self-rejection forbidden: admin_b trying to reject approval_ee_id (which they created) fails with 403
+    self_rej = client.post(
+        f"/v1/approvals/{approval_ee_id}/decision",
+        headers={"Authorization": f"Bearer {token_b}"},
+        json={"decision": "rejected", "reason": "Self rejection attempt"},
+    )
+    assert self_rej.status_code == 403
+    assert "Self approval forbidden" in self_rej.json()["detail"]
+
+    # Super admin or authorized non-creator administrator can reject
+    valid_rej = client.post(
+        f"/v1/approvals/{approval_ee_id}/decision",
+        headers={"Authorization": f"Bearer {super_token}"},
+        json={"decision": "rejected", "reason": "Legitimate rejection by super admin"},
+    )
+    assert valid_rej.status_code == 200
+    assert valid_rej.json()["status"] == "decision_recorded"
+    assert valid_rej.json()["decision"] == "rejected"

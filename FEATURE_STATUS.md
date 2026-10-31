@@ -100,6 +100,9 @@ python -m pytest -q packages/himvote_crypto/tests
 python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/admin_api/tests/test_publication_gate.py services/admin_api/tests/test_roster_approval.py services/admin_api/tests/test_state_machine.py
   21 passed
 
+env TESTING=true python -m pytest -q services/admin_api/tests services/identity_issuer/tests
+  56 passed
+
 python -m pytest -q tests --ignore=tests/load
   58 passed, 1 warning
 
