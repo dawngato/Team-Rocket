@@ -1,8 +1,24 @@
-# HimVote Python Linux Desktop Client
+# HimVote Linux Application
 
-This directory contains a Python/Tk desktop client, a command-line archive inspection mode, a static HTML preview, desktop integration files, and Python tests. It is distinct from the Avalonia client in apps/desktop/HimVote.Linux.
+This is the Linux client for HimVote — the modern **Flutter** application is the primary client, alongside the original Python/Tk desktop client and CLI auditor.
 
-The client is a development and educational prototype. Its interface includes a local-demo disclosure that explains that ballot selections are stored locally and are not protected by an isolated voting enclave. Do not use this application to conduct a real election. Review the [repository status and limitations](../../README.md).
+## Flutter application (primary, recommended)
+
+The Flutter port is the current, actively developed Linux client. It is a single cross-platform codebase (same app builds for Linux, Windows, macOS, Android, iOS and web) with a Material 3 design system, classic-light (white) default theme with dark-mode and WCAG AAA high-contrast toggles, and the full set of HimVote screens: Elections, Receipt Verification, Audit Explorer, Architecture/Explain, Trust Model, Session, Settings, and Admin Audit.
+
+Run it (requires the [Flutter SDK](https://flutter.dev)):
+```bash
+cd apps/linux
+flutter run -d linux      # native Linux desktop build
+flutter run -d chrome     # or web preview of the same code
+```
+Tests: `flutter test` (Phase 1 foundation + Phase 2 screens). A development mock `/v1` server for all three origins lives in `apps/linux/dev/mock_v1_server.py`.
+
+## Python client (legacy / CLI auditor)
+
+The original Python/Tk client (`himvote_linux.py`) is retained for its command-line archive inspection, Merkle verification, and report export modes. It is distinct from the Avalonia client in apps/desktop/HimVote.Linux.
+
+The clients are development and educational prototypes. Their interface includes a local-demo disclosure that explains that ballot selections are stored locally and are not protected by an isolated voting enclave. Do not use this application to conduct a real election. Review the [repository status and limitations](../../README.md).
 
 ## Contents
 
