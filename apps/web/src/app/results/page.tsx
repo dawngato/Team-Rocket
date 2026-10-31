@@ -283,7 +283,7 @@ export default function PublishedResultsPage() {
             Select Certified Election ({elections.length} Available)
           </span>
           <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400">
-            ✓ Cryptographically Sealed
+            Cryptographically Sealed
           </span>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2" role="tablist" aria-label="Published elections">

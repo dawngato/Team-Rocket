@@ -215,7 +215,7 @@ export default function HowItWorksPage() {
               <ul className="space-y-2 text-xs text-slate-300">
                 {current.bulletPoints.map((pt, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-emerald-400 font-bold shrink-0">✓</span>
+                    <span className="text-slate-400 font-bold shrink-0">•</span>
                     <span>{pt}</span>
                   </li>
                 ))}

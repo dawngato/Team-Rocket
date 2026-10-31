@@ -242,7 +242,7 @@ export function StudentIdCardVerifier() {
                     Accepts JPG, PNG • Clear photo showing photo, name, and roll number
                   </p>
                   <span className="inline-block mt-3 px-2.5 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300 text-[10px] font-medium">
-                    ⚠️ Random photos or selfies will be rejected
+                    Valid physical student ID card required
                   </span>
                 </div>
               ) : (
@@ -334,7 +334,7 @@ export function StudentIdCardVerifier() {
                   </div>
                   <div className="flex justify-between text-slate-400">
                     <span>Document:</span>
-                    <span className="text-emerald-400">Official Student ID ✓</span>
+                    <span className="text-emerald-400">Official Student ID Validated</span>
                   </div>
                   <div className="flex justify-between text-slate-400 border-t border-white/10 pt-2">
                     <span>Private Voter Token:</span>

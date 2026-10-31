@@ -221,9 +221,8 @@ export default function HomePage() {
             <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
               01
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
-              <span className="text-[#15805D]">✓</span>
-              <span>Voter Registrar</span>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
+              Voter Registrar
             </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Verifies student identity and issues blind eligibility credentials. Has zero access to the ballot box.
@@ -234,9 +233,8 @@ export default function HomePage() {
             <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
               02
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
-              <span className="text-[#157E92]">✓</span>
-              <span>Anonymous Casting Gateway</span>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
+              Anonymous Casting Gateway
             </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Accepts blind tokens and encrypted ballots. Strips IP and identity headers to guarantee total voter privacy.
@@ -247,9 +245,8 @@ export default function HomePage() {
             <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
               03
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
-              <span className="text-[#15805D]">✓</span>
-              <span>Witness & Offline Verifier</span>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
+              Witness & Offline Verifier
             </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Independently cosigns each checkpoint Merkle root. Anyone can re-run the open-source verifier CLI offline.

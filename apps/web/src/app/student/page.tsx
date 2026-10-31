@@ -221,7 +221,6 @@ export default function StudentPortalOverviewPage() {
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Privacy status</span>
           <strong className="flex items-center gap-1.5 text-lg font-bold text-[#15805D] dark:text-[#34D399]">
-            <span>✓</span>
             <span>Cryptographic boundary active</span>
           </strong>
           <span className="text-xs text-slate-500">• Identity decoupled from ballot handoff</span>

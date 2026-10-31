@@ -99,7 +99,7 @@ export function VotingStepper({
                   </span>
                   {item.isCompleted && (
                     <span className="text-[10px] font-semibold text-[#15805D] dark:text-[#34D399]">
-                      ✓ Ready
+                      Completed
                     </span>
                   )}
                 </div>
