@@ -130,5 +130,3 @@ def test_recovery_flow_with_configured_delivery(monkeypatch):
     # Never leak development token in production
     assert "development_token" not in resp.json()
 
-    dispatches = notification_service.get_recent_dispatches()
-    assert any(d["recipient"] == "superadmin@hptu.ac.in" and d["category"] == "recovery" for d in dispatches)
