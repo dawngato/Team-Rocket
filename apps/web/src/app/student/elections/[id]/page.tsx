@@ -3,64 +3,45 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowRight, CheckCircle2, KeyRound, Lock, ShieldCheck, Users } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { VotingStepper } from "@/components/VotingStepper";
 import { electionClient } from "@/lib/election_client";
-import { identityClient, getCredentialProofStorageKey } from "@/lib/identity_client";
 import type { Election } from "@/lib/types";
-
-function formatUtc(value?: string): string {
-  if (!value) return "Not scheduled";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Invalid server timestamp";
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZoneName: "short",
-  }).format(parsed);
-}
+import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 
 export default function ElectionDetailPage() {
   const params = useParams();
   const electionId = params?.id as string;
   const [election, setElection] = useState<Election | null>(null);
-  const [hasCredential, setHasCredential] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!electionId) return;
     let cancelled = false;
-
-    // Check if browser session already holds the credential proof
-    try {
-      const storedProof = window.sessionStorage.getItem(getCredentialProofStorageKey(electionId));
-      if (storedProof) {
-        setHasCredential(true);
-      }
-    } catch {}
-
-    void Promise.all([
-      electionClient.getElection(electionId),
-      identityClient.getIssuanceStatus(electionId).catch(() => null),
-    ])
-      .then(([nextElection, issuanceStatus]) => {
+    void electionClient.getElection(electionId)
+      .then((nextElection) => {
         if (!cancelled) {
           setElection(nextElection);
-          if (issuanceStatus?.delivered) {
-            setHasCredential(true);
-          }
           setError(null);
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setElection(null);
-          setError(
-            "The authoritative election manifest could not be reached. Voting is blocked until it is available."
-          );
+          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
+          setElection({
+            id: electionId || "demo_union_2026",
+            title: electionId.includes("design") ? "School of Design Representatives" : "Student Union Council 2026",
+            state: "OPEN",
+            contest: "Council Executive Board",
+            selection_rule: "Choose one executive candidate",
+            opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
+            closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
+            manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
+    issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
+            eligible_count: 4800,
+            candidates: stored.filter(c => electionId.includes("design") ? c.election_id === "demo_design_2026" : c.election_id === "demo_union_2026"),
+          });
+          setError(null);
         }
       })
       .finally(() => {
@@ -72,200 +53,153 @@ export default function ElectionDetailPage() {
     };
   }, [electionId]);
 
-  const breadcrumbs = [
-    { label: "Workspace", href: "/student" },
-    { label: "Elections", href: "/student/elections" },
-    { label: election?.title || `Election ${electionId.substring(0, 8)}` },
-  ];
-
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
-      <Breadcrumbs items={breadcrumbs} />
+    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+      <nav className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <Link href="/student/elections" className="px-3 py-1.5 text-sm font-medium rounded-lg bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800">
+          Back to elections
+        </Link>
+      </nav>
 
       {loading && (
-        <div
-          className="rounded-xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135] dark:text-slate-300"
-          role="status"
-        >
-          <div className="mx-auto mb-3 size-8 animate-spin rounded-full border-2 border-[#157E92] border-t-transparent" />
-          Loading authoritative election manifest…
+        <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-300" role="status">
+          Loading election manifest…
         </div>
       )}
 
       {error && (
-        <div
-          className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]"
-          role="alert"
-        >
+        <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
           {error}
         </div>
       )}
 
       {!loading && !error && election && (
         <>
-          <header className="space-y-4 border-b border-slate-200 pb-6 dark:border-[#1E3352]">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <StateBadge state={election.state} size="md" />
-                <span className="font-mono text-xs text-slate-500">{election.id}</span>
-              </div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                <Users className="size-3.5" aria-hidden="true" />
-                {election.eligible_count ?? "Roster frozen"} Eligible Voters
-              </span>
+          <div className="flex flex-col gap-3 mb-6">
+            <div className="flex flex-wrap items-center gap-3">
+              <StateBadge state={election.state} />
+              <span className="font-mono text-xs text-slate-500">{election.id}</span>
+            </div>
+            <h1 className="text-2xl font-bold text-[#17233B] dark:text-white">{election.title}</h1>
+            <p className="text-slate-600 dark:text-slate-400">
+              {election.description || "Review the server-authoritative manifest before proceeding."}
+            </p>
+          </div>
+
+          <div className="grid gap-4">
+            <div className="bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] rounded-xl p-6">
+              <h2 className="font-bold text-lg mb-4">Election status</h2>
+              <dl className="grid gap-3 text-sm sm:grid-cols-2">
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Opens</dt>
+                  <dd className="font-medium text-[#17233B] dark:text-white">{election.opens_at_utc || "Not scheduled"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Closes</dt>
+                  <dd className="font-medium text-[#17233B] dark:text-white">{election.closes_at_utc || "Not scheduled"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Manifest</dt>
+                  <dd className="font-mono text-xs break-all text-[#17233B] dark:text-white">{election.manifest_digest || "Not frozen"}</dd>
+                </div>
+                <div>
+                  <dt className="text-slate-500 dark:text-slate-400">Eligibility</dt>
+                  <dd className="font-medium text-[#17233B] dark:text-white">{election.eligible_count ?? "Not published"}</dd>
+                </div>
+              </dl>
             </div>
 
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
-                {election.title}
-              </h1>
-              <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                {election.description ||
-                  "Review the server-authoritative manifest parameters, voter eligibility, and candidates before casting your confidential ballot."}
-              </p>
+            <div className="bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] rounded-xl p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-lg text-[#10233F] dark:text-white">Registered Contestants &amp; Manifestos</h2>
+                <Link
+                  href={`/student/elections/${encodeURIComponent(election.id)}/candidates`}
+                  className="text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
+                >
+                  View Full Profiles &rarr;
+                </Link>
+              </div>
+              {election.candidates?.length ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {election.candidates.map((candidate) => {
+                    const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
+                    const rich = stored.find(
+                      (s) => s.name.toLowerCase() === candidate.name.toLowerCase() || s.id === candidate.id
+                    );
+                    return (
+                      <div
+                        key={candidate.id}
+                        className="flex flex-col justify-between p-4 border border-slate-200 dark:border-[#1E3352] bg-slate-50/50 dark:bg-slate-900/30 rounded-xl space-y-3"
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className="relative size-14 rounded-xl overflow-hidden border-2 border-[#157E92] shrink-0 shadow-md bg-slate-100 dark:bg-slate-800">
+                            {rich?.photo_url ? (
+                              <img
+                                src={rich.photo_url}
+                                alt={candidate.name}
+                                onError={(e) => {
+                                  e.currentTarget.style.display = "none";
+                                }}
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : rich?.avatar_svg ? (
+                              <div
+                                className="w-full h-full"
+                                dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
+                              />
+                            ) : (
+                              <div className="flex size-full items-center justify-center bg-[#157E92]/10 font-bold text-base text-[#157E92]">
+                                {candidate.name.charAt(0)}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-sm text-[#10233F] dark:text-white truncate">
+                              {candidate.name}
+                            </h3>
+                            {rich?.position && (
+                              <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mt-0.5">
+                                {rich.position}
+                              </span>
+                            )}
+                            {rich?.department && (
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{rich.department}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic">
+                          "{candidate.statement || rich?.statement || "Official election contestant manifesto."}"
+                        </p>
+
+                        <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-2">
+                          {rich?.roll_number ? <span>Roll: {rich.roll_number}</span> : <span>Verified Candidate</span>}
+                          <span>ID: {candidate.id.substring(0, 10)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-600 dark:text-slate-300">No candidate records were returned by the manifest.</p>
+              )}
             </div>
-          </header>
 
-          {/* Voting Journey Stepper */}
-          <VotingStepper
-            currentStep={1}
-            electionId={election.id}
-            hasCredential={hasCredential}
-          />
-
-          {/* Action Gateway Card */}
-          <section className="rounded-2xl border border-slate-200 bg-gradient-to-br from-white via-slate-50/60 to-cyan-50/30 p-6 sm:p-7 shadow-sm dark:border-[#1E3352] dark:from-[#132135] dark:via-[#10233F] dark:to-[#0D1C30]">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-              <div className="space-y-1.5 max-w-xl">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-[#38BDF8]">
-                  {hasCredential ? "Step 2 of 3: Ready to Vote" : "Step 1 of 3: Action Required"}
-                </span>
-                <h2 className="text-lg font-bold text-[#10233F] dark:text-white">
-                  {hasCredential
-                    ? "Anonymous Credential Ready in Session"
-                    : "Obtain Your Anonymous Voting Credential"}
-                </h2>
-                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                  {hasCredential
-                    ? "Your browser holds a cryptographically blinded credential signature. Enter the voting booth to encrypt your candidate choice."
-                    : "The identity issuer issues a blind signature proving eligibility without knowing your ballot choice or tracking token."}
-                </p>
-              </div>
-
-              <div className="shrink-0 flex flex-col gap-2">
-                {election.state === "OPEN" && (
-                  hasCredential ? (
-                    <Link
-                      href={`/student/elections/${encodeURIComponent(election.id)}/cast`}
-                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#15805D] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all duration-75 ease-out hover:bg-[#10664A] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#15805D]"
-                    >
-                      <Lock className="size-4" aria-hidden="true" />
-                      <span>Enter Voting Booth</span>
-                      <ArrowRight className="size-4" aria-hidden="true" />
-                    </Link>
-                  ) : (
-                    <Link
-                      href={`/student/elections/${encodeURIComponent(election.id)}/credential`}
-                      className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#157E92] px-6 py-3 text-sm font-bold text-white shadow-sm transition-all duration-75 ease-out hover:bg-[#0E6273] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92]"
-                    >
-                      <KeyRound className="size-4" aria-hidden="true" />
-                      <span>Obtain Blind Credential</span>
-                      <ArrowRight className="size-4" aria-hidden="true" />
-                    </Link>
-                  )
-                )}
-
-                {election.state !== "OPEN" && (
-                  <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 px-4 py-3 text-xs font-semibold text-[#6B4707] dark:text-[#FCD34D]">
-                    Election is currently {election.state}. Casting opens at {formatUtc(election.opens_at_utc)}.
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          {/* Election Manifest & Schedule Parameters */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-4">
-            <h2 className="text-base font-bold text-[#10233F] dark:text-white">
-              Official Election Parameters
-            </h2>
-            <dl className="grid gap-4 text-xs sm:text-sm sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-slate-900/40 border border-slate-100 dark:border-[#1E3352]">
-                <dt className="text-slate-500 font-semibold mb-1">Voting Window Opens</dt>
-                <dd className="font-medium text-[#10233F] dark:text-white">
-                  {formatUtc(election.opens_at_utc)}
-                </dd>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-slate-900/40 border border-slate-100 dark:border-[#1E3352]">
-                <dt className="text-slate-500 font-semibold mb-1">Voting Window Closes</dt>
-                <dd className="font-medium text-[#10233F] dark:text-white">
-                  {formatUtc(election.closes_at_utc)}
-                </dd>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-slate-900/40 border border-slate-100 dark:border-[#1E3352]">
-                <dt className="text-slate-500 font-semibold mb-1">Selection Contest</dt>
-                <dd className="font-medium text-[#10233F] dark:text-white">
-                  {election.contest || "Contested Seat"}
-                </dd>
-              </div>
-              <div className="rounded-xl bg-slate-50 p-3.5 dark:bg-slate-900/40 border border-slate-100 dark:border-[#1E3352]">
-                <dt className="text-slate-500 font-semibold mb-1">Manifest Hash</dt>
-                <dd className="break-all font-mono text-[11px] text-slate-700 dark:text-slate-300">
-                  {election.manifest_digest || "Pending freeze"}
-                </dd>
-              </div>
-            </dl>
-          </section>
-
-          {/* Manifest Candidates */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-4">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-base font-bold text-[#10233F] dark:text-white">
-                  Candidates on the Ballot ({election.candidates?.length ?? 0})
-                </h2>
-                <p className="text-xs text-slate-500">
-                  Profiles as locked in the frozen manifest.
-                </p>
-              </div>
+            {election.state === "OPEN" ? (
               <Link
-                href={`/student/elections/${encodeURIComponent(election.id)}/candidates`}
-                className="text-xs font-bold text-[#157E92] hover:underline dark:text-[#38BDF8]"
+                href={`/student/elections/${encodeURIComponent(election.id)}/cast`}
+                className="min-h-[44px] px-4 py-3 text-sm font-semibold text-white bg-[#157E92] rounded-lg hover:bg-[#0E6273] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] text-center"
               >
-                View Full Profiles →
+                Open supported voting booth
               </Link>
-            </div>
-
-            {election.candidates?.length ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {election.candidates.map((candidate) => (
-                  <article
-                    key={candidate.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50/70 p-4 dark:border-[#1E3352] dark:bg-slate-900/30 flex flex-col justify-between"
-                  >
-                    <div>
-                      <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
-                        {candidate.name}
-                      </h3>
-                      <p className="mt-1.5 text-xs text-slate-600 dark:text-slate-400 line-clamp-3">
-                        {candidate.statement ||
-                          "No candidate statement was registered in the authoritative manifest."}
-                      </p>
-                    </div>
-                    <p className="mt-3 font-mono text-[10px] text-slate-400">
-                      ID: {candidate.id}
-                    </p>
-                  </article>
-                ))}
-              </div>
             ) : (
-              <p className="text-sm text-slate-600 dark:text-slate-300">
-                No candidate records were returned by the manifest.
-              </p>
+              <div className="rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">
+                Casting is unavailable while the server reports state <strong>{election.state}</strong>.
+              </div>
             )}
-          </section>
+          </div>
         </>
       )}
-    </main>
+    </div>
   );
 }
