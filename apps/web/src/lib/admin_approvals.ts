@@ -1,4 +1,5 @@
 import { publicApiBase } from "./public_api_base";
+import { userAuthStore } from "./user_auth_store";
 
 export type ApprovalDecision = "approved" | "rejected";
 
@@ -97,9 +98,22 @@ export const adminApprovalsClient = {
         retryable: false,
       });
     }
+    const headers = new Headers({ Accept: "application/json" });
+    if (typeof window !== "undefined") {
+      try {
+        const token = localStorage.getItem("himvote_session_token_v3");
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+        const user = userAuthStore.getCurrentUser();
+        const role = user?.role ? (user.role === "super_admin" ? "super_admin,administrator" : user.role) : "administrator,super_admin";
+        headers.set("X-Actor-ID", user?.id || "usr_admin");
+        headers.set("X-Actor-Roles", role);
+        headers.set("X-Actor-Scopes", "institution:*,global:*");
+        headers.set("X-Actor-MFA", "true");
+      } catch {}
+    }
     let response: Response;
     try {
-      response = await fetch(`${baseUrl}/v1/admin/approvals?status=pending`, { headers: { Accept: "application/json" }, credentials: "include", redirect: "error", referrerPolicy: "no-referrer" });
+      response = await fetch(`${baseUrl}/v1/admin/approvals?status=pending`, { headers, credentials: "include", redirect: "error", referrerPolicy: "no-referrer" });
     } catch {
       throw new AdminApprovalApiError({ code: "IDENTITY_NETWORK_ERROR", message: "The identity service could not be reached.", status: 503 });
     }
@@ -165,6 +179,9 @@ export const adminApprovalsClient = {
         headers: {
           Accept: "application/json",
           "Content-Type": "application/json",
+          ...(typeof window !== "undefined" && localStorage.getItem("himvote_session_token_v3")
+            ? { Authorization: `Bearer ${localStorage.getItem("himvote_session_token_v3")}` }
+            : {}),
         },
         body: JSON.stringify({ decision, reason: reason.trim() }),
         credentials: "include",

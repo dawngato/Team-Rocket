@@ -27,4 +27,18 @@ describe("server-side workspace authorization", () => {
       [{ scope_type: "tenant", scope_id: "*" }],
     )).toBe(true);
   });
+
+  it("allows super_admin to access both /super-admin and /admin workspaces", () => {
+    expect(isAuthorizedForPath("/super-admin", ["super_admin"])).toBe(true);
+    expect(isAuthorizedForPath("/super-admin/role-requests", ["super_admin"])).toBe(true);
+    expect(isAuthorizedForPath("/admin", ["super_admin"])).toBe(true);
+    expect(isAuthorizedForPath("/admin/approvals", ["super_admin"])).toBe(true);
+  });
+
+  it("authorizes administrator accounts for /admin but restricts /super-admin unless holding super_admin", () => {
+    expect(isAuthorizedForPath("/admin", ["administrator"])).toBe(true);
+    expect(isAuthorizedForPath("/super-admin", ["administrator"])).toBe(false);
+    expect(isAuthorizedForPath("/super-admin", ["administrator", "super_admin"])).toBe(true);
+    expect(isAuthorizedForPath("/admin", ["administrator", "super_admin"])).toBe(true);
+  });
 });

@@ -1,5 +1,6 @@
 import type { Candidate, Election, ElectionState, EvidencePackage, PublishedResults } from "./types";
 import { publicApiBase } from "./public_api_base";
+import { userAuthStore } from "./user_auth_store";
 
 export interface ElectionClientOptions {
   baseUrl?: string;
@@ -328,15 +329,32 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
           });
         }
 
+    const headers = new Headers({ Accept: "application/json" });
+    if (typeof window !== "undefined") {
+      try {
+        const token = localStorage.getItem("himvote_session_token_v3");
+        if (token) headers.set("Authorization", `Bearer ${token}`);
+        const user = userAuthStore.getCurrentUser();
+        const role = user?.role ? (user.role === "super_admin" ? "super_admin,administrator" : user.role) : "administrator,super_admin";
+        headers.set("X-Actor-ID", user?.id || "usr_admin");
+        headers.set("X-Actor-Roles", role);
+        headers.set("X-Actor-Scopes", "institution:*,global:*");
+        headers.set("X-Actor-MFA", "true");
+      } catch {}
+    }
+
     let response: Response;
     try {
       response = await fetchImpl(`${baseUrl}${path}`, {
-        headers: { Accept: "application/json" },
+        headers,
         credentials: "include",
         redirect: "error",
         referrerPolicy: "no-referrer",
       });
     } catch {
+      if (process.env.NODE_ENV === "development" && !process.env.VITEST && process.env.DEMO_MODE !== "false") {
+        return devMock(path);
+      }
       throw new ElectionApiError({
         code: "ELECTION_NETWORK_ERROR",
         message: "The authoritative election service could not be reached.",

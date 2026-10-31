@@ -109,6 +109,7 @@ function resolveBreadcrumbs(pathname: string, roles: string[]): BreadcrumbItem[]
     if (pathname === "/super-admin/institutions") crumbs.push({ label: "Institutions & Campuses" });
     else if (pathname === "/super-admin/departments") crumbs.push({ label: "Academic Departments" });
     else if (pathname === "/super-admin/administrators") crumbs.push({ label: "Administrators" });
+    else if (pathname === "/super-admin/role-assignments") crumbs.push({ label: "Role Assignments" });
     else if (pathname === "/super-admin/role-requests") crumbs.push({ label: "Elevated Role Requests" });
     else if (pathname === "/super-admin/policies") crumbs.push({ label: "Election Policies" });
     else if (pathname === "/super-admin/security") crumbs.push({ label: "Security & Keys" });

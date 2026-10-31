@@ -216,13 +216,27 @@ def get_authenticated_context(request: Request) -> ActorContext:
             ),
             "election_officer_default",
         )
-        raw_roles = request.headers.get("X-Actor-Roles", "election_officer")
+        raw_roles = next(
+            (
+                request.headers.get(header_name)
+                for header_name in ["X-Actor-Roles", "x-actor-roles", "X_Actor_Roles", "x_actor_roles", "actor_roles"]
+                if request.headers.get(header_name)
+            ),
+            "election_officer",
+        )
         roles = frozenset(
             ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
             for role in raw_roles.split(",")
             if role.strip()
         )
-        raw_scopes = request.headers.get("X-Actor-Scopes", "")
+        raw_scopes = next(
+            (
+                request.headers.get(header_name)
+                for header_name in ["X-Actor-Scopes", "x-actor-scopes", "X_Actor_Scopes", "x_actor_scopes", "actor_scopes"]
+                if request.headers.get(header_name)
+            ),
+            "",
+        )
         parsed_scopes = []
         for item in raw_scopes.split(","):
             parts = item.split(":", 2)
@@ -232,11 +246,19 @@ def get_authenticated_context(request: Request) -> ActorContext:
                     scope_type=parts[1].strip().lower(),
                     scope_id=parts[2].strip(),
                 ))
+        mfa_header = next(
+            (
+                request.headers.get(header_name)
+                for header_name in ["X-Actor-MFA", "x-actor-mfa", "X_Actor_MFA", "x_actor_mfa", "actor_mfa"]
+                if request.headers.get(header_name)
+            ),
+            "true",
+        )
         context = ActorContext(
             actor_id=actor_id,
             roles=roles,
             scopes=tuple(parsed_scopes) or (ScopeGrant(role=next(iter(roles), "election_officer"), scope_type="global", scope_id="*"),),
-            mfa_authenticated=request.headers.get("X-Actor-MFA", "true").strip().lower() in {"1", "true", "yes"},
+            mfa_authenticated=mfa_header.strip().lower() in {"1", "true", "yes"},
             development=True,
         )
     else:

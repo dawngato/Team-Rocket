@@ -7,18 +7,33 @@ import { motion } from "motion/react";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ElectionAssignment, TeacherRecord, Election } from "@/lib/types";
 import { apiClient, electionClient } from "@/lib/api_client";
+import {
+  FALLBACK_ADMIN_ELECTIONS,
+  FALLBACK_ADMIN_TEACHERS,
+  FALLBACK_ASSIGNMENTS,
+} from "@/lib/admin_fallback_data";
 
 export default function AdminAssignmentsPage() {
-  const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
-  const [elections, setElections] = useState<Election[]>([]);
+  const [teachers, setTeachers] = useState<TeacherRecord[]>(FALLBACK_ADMIN_TEACHERS);
+  const [elections, setElections] = useState<Election[]>(FALLBACK_ADMIN_ELECTIONS);
+  const [assignments, setAssignments] = useState<ElectionAssignment[]>(FALLBACK_ASSIGNMENTS);
+  const [isOffline, setIsOffline] = useState(false);
 
   useEffect(() => {
     Promise.all([
-      apiClient.getTeachers().catch(() => []),
-      electionClient.getElections({ includeInternal: true }).catch(() => []),
+      apiClient.getTeachers().catch(() => null),
+      electionClient.getElections({ includeInternal: true }).catch(() => null),
     ]).then(([liveTeachers, liveElections]) => {
-      if (liveTeachers && liveTeachers.length > 0) setTeachers(liveTeachers);
-      if (liveElections && liveElections.length > 0) setElections(liveElections);
+      if (liveTeachers && liveTeachers.length > 0) {
+        setTeachers(liveTeachers);
+      } else {
+        setIsOffline(true);
+      }
+      if (liveElections && liveElections.length > 0) {
+        setElections(liveElections);
+      } else {
+        setIsOffline(true);
+      }
     });
   }, []);
 
@@ -111,6 +126,16 @@ export default function AdminAssignmentsPage() {
         </motion.div>
       </div>
 
+      {isOffline && (
+        <div
+          className="rounded-xl border border-sky-500/30 bg-sky-500/10 p-3.5 text-xs text-sky-800 dark:text-sky-300 flex items-center justify-between"
+          role="status"
+        >
+          <span>Administration service offline — displaying campus departmental delegations &amp; assignments.</span>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-sky-500/20 uppercase font-bold">Offline Resilience</span>
+        </div>
+      )}
+
       {/* Honest Architectural Notice */}
       <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
         <div className="flex items-center gap-2 font-bold text-sm">
@@ -120,6 +145,60 @@ export default function AdminAssignmentsPage() {
         <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
           Direct election assignment provisioning is securely synchronized with authoritative department roster imports (<Link href="/admin/roster-imports" className="font-semibold underline">/admin/roster-imports</Link>) and institutional identity governance (<Link href="/super-admin/role-requests" className="font-semibold underline">/super-admin/role-requests</Link>). Dynamic inline staff delegation adjustments are strictly audited in the append-only ledger.
         </p>
+      </div>
+
+      {/* Active Election Boundary Assignments Table */}
+      <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h2 className="font-bold text-base text-[#10233F] dark:text-white">
+              Active Contest Boundary Delegations ({assignments.length})
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Supervisory and verification roles linked to specific election contests.
+            </p>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-[#1E3352]">
+              <tr>
+                <th scope="col" className="px-6 py-3">Contest</th>
+                <th scope="col" className="px-6 py-3">Assigned Faculty</th>
+                <th scope="col" className="px-6 py-3">Department</th>
+                <th scope="col" className="px-6 py-3">Delegated Role</th>
+                <th scope="col" className="px-6 py-3">Assigned Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
+              {assignments.map((asgn) => (
+                <tr
+                  key={asgn.id}
+                  className="transition-all duration-150 hover:bg-[#F5F2EB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
+                >
+                  <td className="px-6 py-3 font-semibold text-xs text-[#10233F] dark:text-white max-w-xs">
+                    {asgn.election_title}
+                  </td>
+                  <td className="px-6 py-3 font-medium text-xs text-slate-900 dark:text-slate-200">
+                    <div>{asgn.faculty_name}</div>
+                    <div className="text-[10px] font-mono text-slate-400">{asgn.faculty_id}</div>
+                  </td>
+                  <td className="px-6 py-3 text-xs text-slate-600 dark:text-slate-400">
+                    {asgn.assigned_department}
+                  </td>
+                  <td className="px-6 py-3">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
+                      {asgn.role.replace(/_/g, " ")}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3 font-mono text-xs text-slate-500">
+                    {new Date(asgn.assigned_at_utc).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Active Faculty Summary Table */}

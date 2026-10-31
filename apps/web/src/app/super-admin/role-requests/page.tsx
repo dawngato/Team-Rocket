@@ -42,6 +42,15 @@ export default function SuperAdminRoleRequestsPage() {
 
   useEffect(() => {
     loadUsers();
+
+    const handleSync = () => loadUsers();
+    window.addEventListener("himvote_users_updated", handleSync);
+    window.addEventListener("storage", handleSync);
+
+    return () => {
+      window.removeEventListener("himvote_users_updated", handleSync);
+      window.removeEventListener("storage", handleSync);
+    };
   }, []);
 
   const handleAssignRole = (userId: string, newRole: UserRole) => {
@@ -56,6 +65,21 @@ export default function SuperAdminRoleRequestsPage() {
       }
 
       const updated = userAuthStore.assignRole(userId, newRole, "Super Administrator");
+
+      // Non-blocking sync to backend identity service if active
+      if (newRole) {
+        fetch("/api/identity/v1/admin/roles/assign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            user_email_or_id: updated.email,
+            role: newRole,
+            scope: "global",
+          }),
+        }).catch(() => {});
+      }
+
       const roleName = newRole ? getRoleLabel(newRole) : "Pending Assignment";
       setFeedback({
         type: "success",
@@ -154,6 +178,8 @@ export default function SuperAdminRoleRequestsPage() {
         return "Student Voter";
       case "election_officer":
         return "Transparency Officer";
+      case "auditor":
+        return "Independent Auditor";
       default:
         return "Pending Role Assignment";
     }
@@ -186,6 +212,11 @@ export default function SuperAdminRoleRequestsPage() {
           pill: "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-300 dark:border-amber-800",
           dot: "bg-amber-600 dark:bg-amber-400",
         };
+      case "auditor":
+        return {
+          pill: "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800",
+          dot: "bg-indigo-600 dark:bg-indigo-400",
+        };
       default:
         return {
           pill: "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border-rose-300 dark:border-rose-800",
@@ -201,6 +232,7 @@ export default function SuperAdminRoleRequestsPage() {
   const teacherCount = users.filter((u) => u.role === "teacher").length;
   const studentCount = users.filter((u) => u.role === "student").length;
   const officerCount = users.filter((u) => u.role === "election_officer").length;
+  const auditorCount = users.filter((u) => u.role === "auditor").length;
 
   // Filtered users
   const filteredUsers = useMemo(() => {
@@ -551,6 +583,19 @@ export default function SuperAdminRoleRequestsPage() {
             <FileCheck2 className="w-3 h-3" />
             <span>Transparency Officers ({officerCount})</span>
           </button>
+
+          <button
+            type="button"
+            onClick={() => setFilterRole("auditor")}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              filterRole === "auditor"
+                ? "bg-indigo-700 text-white shadow-sm"
+                : "bg-indigo-100/70 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-200/80"
+            }`}
+          >
+            <Shield className="w-3 h-3" />
+            <span>Auditors ({auditorCount})</span>
+          </button>
         </div>
       </div>
 
@@ -725,7 +770,20 @@ export default function SuperAdminRoleRequestsPage() {
                               <option value="teacher">Academic Faculty</option>
                               <option value="student">Student Voter</option>
                               <option value="election_officer">Transparency Officer</option>
+                              <option value="auditor">Independent Auditor</option>
                             </select>
+
+                            {/* One-Click Approval for Pending Registrants */}
+                            {(!user.role || user.status === "pending_role") && (
+                              <button
+                                type="button"
+                                onClick={() => handleAssignRole(user.id, "student")}
+                                title="Instantly approve as Student Voter"
+                                className="h-9 px-3 py-1 text-xs font-bold rounded-xl bg-cyan-600 hover:bg-cyan-700 text-white shadow-sm transition-all"
+                              >
+                                + Student
+                              </button>
+                            )}
 
                             {/* Quick Button: Campus Administrator */}
                             <button
@@ -785,6 +843,21 @@ export default function SuperAdminRoleRequestsPage() {
                               }`}
                             >
                               Officer
+                            </button>
+
+                            {/* Quick Button: Independent Auditor */}
+                            <button
+                              type="button"
+                              onClick={() => handleAssignRole(user.id, "auditor")}
+                              disabled={user.role === "auditor"}
+                              title="Assign Independent Auditor role"
+                              className={`h-9 px-2.5 py-1 text-xs font-semibold rounded-xl border transition-all ${
+                                user.role === "auditor"
+                                  ? "bg-indigo-600 text-white border-indigo-600 shadow-sm opacity-90 cursor-default"
+                                  : "border-slate-300 dark:border-[#1E3352] bg-slate-50 dark:bg-[#1E3352] text-slate-700 dark:text-slate-200 hover:border-indigo-400 hover:text-indigo-600"
+                              }`}
+                            >
+                              Auditor
                             </button>
 
                             {/* Revoke Role Button */}

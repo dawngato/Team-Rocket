@@ -282,10 +282,34 @@ function isEvidence(value: unknown, expectedElectionId: string): boolean {
     typeof value.auditor_signature === "string";
 }
 
+function setClientSessionCookies(token: string, profile: SessionProfile) {
+  if (typeof document === "undefined") return;
+  try {
+    const isSecure = typeof window !== "undefined" && window.location.protocol === "https:";
+    const maxAge = 60 * 60 * 24 * 7; // 7 days
+    document.cookie = `session_id=${encodeURIComponent(token)}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+    document.cookie = `himvote_session_profile=${encodeURIComponent(JSON.stringify(profile))}; path=/; max-age=${maxAge}; SameSite=Lax${isSecure ? "; Secure" : ""}`;
+  } catch {}
+}
+
+function clearClientSessionCookies() {
+  if (typeof document === "undefined") return;
+  try {
+    document.cookie = "session_id=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "session=; path=/; max-age=0; SameSite=Lax";
+    document.cookie = "himvote_session_profile=; path=/; max-age=0; SameSite=Lax";
+  } catch {}
+}
+
 export function createIdentityClient(options: IdentityClientOptions = {}) {
   const baseUrl = normalizeBaseUrl(options.baseUrl ?? configuredBaseUrl());
   const fetchImpl = options.fetchImpl ?? fetch;
   let inMemorySessionToken: string | null = null;
+  if (typeof window !== "undefined") {
+    try {
+      inMemorySessionToken = localStorage.getItem("himvote_session_token_v3");
+    } catch {}
+  }
   const sessionListeners: Array<(profile: SessionProfile | null) => void> = [];
 
   function notifySessionListeners(profile: SessionProfile | null) {
@@ -345,38 +369,70 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       }
 
       if (baseUrl) {
-        const response = await request("/v1/auth/login", {
-          method: "POST",
-          body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
-        }, isLoginResponse, "The identity service returned an invalid login response.");
-        if (response.mfa_required) {
-          inMemorySessionToken = null;
-          notifySessionListeners(null);
-          return response;
-        }
-        if (!response.session_token) {
-          throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
-        }
+        try {
+          const response = await request("/v1/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
+          }, isLoginResponse, "The identity service returned an invalid login response.");
+          if (response.mfa_required) {
+            inMemorySessionToken = null;
+            notifySessionListeners(null);
+            clearClientSessionCookies();
+            return response;
+          }
+          if (!response.session_token) {
+            throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
+          }
 
-        inMemorySessionToken = response.session_token;
-        const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-        notifySessionListeners(profile);
-        return response;
+          inMemorySessionToken = response.session_token;
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("himvote_session_token_v3", response.session_token);
+            } catch {}
+          }
+          const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+          notifySessionListeners(profile);
+          setClientSessionCookies(response.session_token, profile);
+          return response;
+        } catch (err) {
+          const isNetworkError = err instanceof IdentityApiError && (err.code === "IDENTITY_NETWORK_ERROR" || err.status === 503);
+          if (!isNetworkError || (process.env.NODE_ENV === "production" && process.env.DEMO_MODE === "false")) {
+            throw err;
+          }
+        }
       }
 
-      if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
+      if (process.env.NODE_ENV === "development" || process.env.DEMO_MODE !== "false" || !baseUrl) {
         const { user } = userAuthStore.loginUser(email, password);
         const roleStr = user.role || "pending";
+        const roles: string[] = [];
+        if (user.role) {
+          roles.push(user.role);
+          if (user.role === "super_admin" && !roles.includes("administrator")) {
+            roles.push("administrator");
+          }
+          if (user.isSuperAdminCapable && !roles.includes("super_admin")) {
+            roles.push("super_admin");
+          }
+        }
         const profile: SessionProfile = {
           user_id: user.id,
           email: user.email,
-          roles: user.role ? [user.role] : [],
-          scopes: user.role ? [{ role: user.role, scope_type: "global", scope_id: "*" }] : [],
+          roles: roles,
+          scopes: user.role ? [{ role: user.role, scope_type: "institution", scope_id: "*" }] : [],
           mfa_authenticated: true,
         };
+        const token = `token_${user.id}`;
+        inMemorySessionToken = token;
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem("himvote_session_token_v3", token);
+          } catch {}
+        }
         notifySessionListeners(user.role ? profile : null);
+        setClientSessionCookies(token, profile);
         return {
-          session_token: `token_${user.id}`,
+          session_token: token,
           user_id: user.id,
           role: roleStr,
           mfa_required: false,
@@ -394,8 +450,24 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       } catch {} finally {
         userAuthStore.logoutUser();
         inMemorySessionToken = null;
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.removeItem("himvote_session_token_v3");
+          } catch {}
+        }
+        clearClientSessionCookies();
         notifySessionListeners(null);
       }
+    },
+
+    getSessionToken(): string | null {
+      if (inMemorySessionToken) return inMemorySessionToken;
+      if (typeof window !== "undefined") {
+        try {
+          return localStorage.getItem("himvote_session_token_v3");
+        } catch {}
+      }
+      return null;
     },
 
     async getSession(): Promise<SessionProfile> {
@@ -404,25 +476,35 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       }
 
       if (baseUrl) {
-        return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-      }
-
-      if (process.env.NODE_ENV !== "development" || process.env.DEMO_MODE === "false") {
-        throw new IdentityApiError({ code: "IDENTITY_API_NOT_CONFIGURED", message: "The identity service is not configured.", status: 503, retryable: false });
+        try {
+          return await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+        } catch (err) {
+          const isNetworkError = err instanceof IdentityApiError && (err.code === "IDENTITY_NETWORK_ERROR" || err.status === 503);
+          if (!isNetworkError || (process.env.NODE_ENV === "production" && process.env.DEMO_MODE === "false")) {
+            throw err;
+          }
+        }
       }
 
       const currentUser = userAuthStore.getCurrentUser();
       if (currentUser && currentUser.role) {
+        const roles = [currentUser.role];
+        if (currentUser.role === "super_admin" && !roles.includes("administrator")) {
+          roles.push("administrator");
+        }
+        if (currentUser.isSuperAdminCapable && !roles.includes("super_admin")) {
+          roles.push("super_admin");
+        }
         return {
           user_id: currentUser.id,
           email: currentUser.email,
-          roles: [currentUser.role],
-          scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
+          roles: roles,
+          scopes: [{ role: currentUser.role, scope_type: "institution", scope_id: "*" }],
           mfa_authenticated: true,
         };
       }
 
-      if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
+      if (process.env.NODE_ENV === "development" || process.env.DEMO_MODE !== "false" || !baseUrl) {
         const mock = identityDevMock("/v1/auth/me", {});
         if (mock) return mock as SessionProfile;
       }

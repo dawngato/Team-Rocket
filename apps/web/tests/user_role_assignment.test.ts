@@ -94,4 +94,83 @@ describe("User Registration, Authentication, and Super Admin Role Assignment", (
     expect(loginRes.rolePath).toBe("/super-admin");
     expect(workspaceHome(["super_admin"])).toBe("/super-admin");
   });
+
+  it("seeds arungaming1973@gmail.com with administrator role and supports both Admin123! and UserPassword123!", () => {
+    const arun = userAuthStore.getUserByEmail("arungaming1973@gmail.com");
+    expect(arun).toBeDefined();
+    expect(arun?.role).toBe("administrator");
+    expect(arun?.status).toBe("active");
+    expect(arun?.isSuperAdminCapable).toBe(true);
+
+    // Login with Admin123!
+    const loginRes1 = userAuthStore.loginUser("arungaming1973@gmail.com", "Admin123!");
+    expect(loginRes1.user.role).toBe("administrator");
+    expect(loginRes1.rolePath).toBe("/admin");
+
+    // Login with UserPassword123!
+    const loginRes2 = userAuthStore.loginUser("arungaming1973@gmail.com", "UserPassword123!");
+    expect(loginRes2.user.role).toBe("administrator");
+    expect(loginRes2.rolePath).toBe("/admin");
+
+    // Can elevate to super_admin if requested
+    const elevated = userAuthStore.elevateToSuperAdmin("arungaming1973@gmail.com");
+    expect(elevated.role).toBe("super_admin");
+    const loginElevated = userAuthStore.loginUser("arungaming1973@gmail.com", "Admin123!");
+    expect(loginElevated.rolePath).toBe("/super-admin");
+  });
+
+  it("defaults role to administrator when registering arungaming1973@gmail.com or superadmin email", () => {
+    const regSuper = userAuthStore.registerUser("Campus Super", "new_superadmin@hptu.ac.in", "PassWord123!");
+    expect(regSuper.user.role).toBe("administrator");
+    expect(regSuper.user.status).toBe("active");
+  });
+
+  it("allows assigning roles by email address directly", () => {
+    const email = `email_assign_${Date.now()}@hptu.ac.in`;
+    userAuthStore.registerUser("Email Assignee", email, "Password123!");
+
+    // Assign by email
+    const updated = userAuthStore.assignRole(email, "election_officer", "Super Admin");
+    expect(updated.email).toBe(email);
+    expect(updated.role).toBe("election_officer");
+    expect(updated.status).toBe("active");
+
+    const check = userAuthStore.getUserByEmail(email);
+    expect(check?.role).toBe("election_officer");
+  });
+
+  it("supports assigning and logging in with the auditor role", () => {
+    const email = `auditor_${Date.now()}@hptu.ac.in`;
+    const reg = userAuthStore.registerUser("Auditor Officer", email, "AuditorPass123!");
+
+    const updated = userAuthStore.assignRole(reg.user.id, "auditor", "Super Admin");
+    expect(updated.role).toBe("auditor");
+    expect(updated.status).toBe("active");
+
+    const loginRes = userAuthStore.loginUser(email, "AuditorPass123!");
+    expect(loginRes.rolePath).toBe("/auditor");
+  });
+
+  it("auto-provisions unseen email when assigned role directly", () => {
+    const newEmail = `direct_new_${Date.now()}@hptu.ac.in`;
+    const assigned = userAuthStore.assignRole(newEmail, "teacher", "Super Admin");
+
+    expect(assigned.email).toBe(newEmail);
+    expect(assigned.role).toBe("teacher");
+    expect(assigned.status).toBe("active");
+
+    const fetched = userAuthStore.getUserByEmail(newEmail);
+    expect(fetched).toBeDefined();
+    expect(fetched?.role).toBe("teacher");
+  });
+
+  it("protects root superadmin from demotion or role revocation", () => {
+    expect(() => {
+      userAuthStore.assignRole("usr_superadmin", null, "Attacker");
+    }).toThrow("Root Super Administrator account cannot be demoted or revoked.");
+
+    expect(() => {
+      userAuthStore.assignRole("superadmin@hptu.ac.in", "student", "Attacker");
+    }).toThrow("Root Super Administrator account cannot be demoted or revoked.");
+  });
 });
