@@ -38,15 +38,39 @@ export default function StudentPortalOverviewPage() {
 
   useEffect(() => {
     try {
-      const raw = window.localStorage.getItem("himvote_receipts");
-      if (raw) {
-        const parsed = JSON.parse(raw);
+      const sessionRaw = window.sessionStorage.getItem("himvote_session_receipts");
+      if (sessionRaw) {
+        const parsed = JSON.parse(sessionRaw);
         if (Array.isArray(parsed) && parsed.length > 0 && parsed[0]?.handle) {
           setLatestReceipt(parsed[0]);
+          return;
         }
       }
+      // Remove legacy records from builds that persisted receipts across logout.
+      window.localStorage.removeItem("himvote_receipts");
     } catch {}
   }, []);
+
+  const handleDownloadReceiptTracker = () => {
+    if (!latestReceipt) return;
+    const blob = new Blob([JSON.stringify(latestReceipt, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `himvote_receipt_${latestReceipt.handle.substring(0, 12)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleClearSavedReceipts = () => {
+    try {
+      window.sessionStorage.removeItem("himvote_session_receipts");
+      window.localStorage.removeItem("himvote_receipts");
+    } catch {}
+    setLatestReceipt(null);
+  };
   const activeElections = useMemo(
     () => elections.filter((election) => election.state === "OPEN"),
     [elections],
@@ -154,13 +178,34 @@ export default function StudentPortalOverviewPage() {
         <div className="flex flex-col gap-1.5 rounded-xl border border-slate-200 bg-white p-5 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Last cast receipt</span>
           {latestReceipt ? (
-            <Link
-              href={`/student/receipts/${encodeURIComponent(latestReceipt.handle)}`}
-              className="text-xs font-mono font-bold text-[#15805D] hover:underline dark:text-[#34D399] truncate block"
-              title={latestReceipt.handle}
-            >
-              {latestReceipt.handle.substring(0, 16)}…
-            </Link>
+            <>
+              <Link
+                href={`/student/receipts/${encodeURIComponent(latestReceipt.handle)}`}
+                className="text-xs font-mono font-bold text-[#15805D] hover:underline dark:text-[#34D399] truncate block"
+                title={latestReceipt.handle}
+              >
+                {latestReceipt.handle.substring(0, 16)}…
+              </Link>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleDownloadReceiptTracker}
+                  className="text-[10px] text-[#157E92] hover:underline font-semibold"
+                  title="Download receipt tracker as JSON"
+                >
+                  Download tracker
+                </button>
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <button
+                  type="button"
+                  onClick={handleClearSavedReceipts}
+                  className="text-[10px] text-red-500 hover:underline font-semibold"
+                  title="Clear receipt from this browser"
+                >
+                  Clear from browser
+                </button>
+              </div>
+            </>
           ) : (
             <strong className="text-lg text-[#10233F] dark:text-white">Not available</strong>
           )}

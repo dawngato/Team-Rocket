@@ -83,9 +83,12 @@ export default function CastBallotPage() {
     try {
       const response = await castingClient.castBallot(engineHandoff);
       try {
-        const stored = JSON.parse(window.localStorage.getItem("himvote_receipts") || "[]");
-        stored.unshift({ electionId: election.id, title: election.title, handle: response.handle, timestamp: new Date().toISOString() });
-        window.localStorage.setItem("himvote_receipts", JSON.stringify(stored.slice(0, 20)));
+        const receiptItem = { electionId: election.id, title: election.title, handle: response.handle, timestamp: new Date().toISOString() };
+        // P1-30: Session-scoped storage clears on logout to protect shared devices
+        const sessionStored = JSON.parse(window.sessionStorage.getItem("himvote_session_receipts") || "[]");
+        sessionStored.unshift(receiptItem);
+        window.sessionStorage.setItem("himvote_session_receipts", JSON.stringify(sessionStored.slice(0, 20)));
+
       } catch {}
       setIsReviewOpen(false);
       router.push(`/student/elections/${election.id}/pending?handle=${encodeURIComponent(response.handle)}`);

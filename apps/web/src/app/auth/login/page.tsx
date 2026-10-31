@@ -134,61 +134,63 @@ export default function LoginPage() {
             </div>
           </div>
         ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Institutional email</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  required
+                  autoComplete="username"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                  placeholder="student@university.edu"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
+                <input
+                  id="login-password"
+                  type="password"
+                  required
+                  autoComplete="current-password"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                />
+              </div>
+              <div>
+                <label htmlFor="login-mfa-token" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">MFA token (if required)</label>
+                <input
+                  id="login-mfa-token"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+                  placeholder="6-digit code"
+                  value={mfaToken}
+                  onChange={(e) => setMfaToken(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full min-h-[44px] bg-[#157E92] text-white font-semibold rounded-lg hover:bg-[#0E6273] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] transition-colors"
+              >
+                {loading ? "Signing in..." : "Sign in"}
+              </button>
+            </form>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="login-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Institutional email</label>
-            <input
-              id="login-email"
-              type="email"
-              required
-              autoComplete="username"
-              className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-              placeholder="student@university.edu"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Password</label>
-            <input
-              id="login-password"
-              type="password"
-              required
-              autoComplete="current-password"
-              className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <div>
-            <label htmlFor="login-mfa-token" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">MFA token (if required)</label>
-            <input
-              id="login-mfa-token"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-              placeholder="6-digit code"
-              value={mfaToken}
-              onChange={(e) => setMfaToken(e.target.value)}
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full min-h-[44px] bg-[#157E92] text-white font-semibold rounded-lg hover:bg-[#0E6273] disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] transition-colors"
-          >
-            {loading ? "Signing in..." : "Sign in"}
-          </button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
-          First time? <Link href="/auth/register" className="text-[#157E92] hover:underline font-medium">Create account</Link>
-        </p>
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-          <Link href="/auth/recover" className="text-[#157E92] hover:underline font-medium">Account recovery</Link>
-        </p>
+            <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
+              First time? <Link href="/auth/register" className="text-[#157E92] hover:underline font-medium">Create account</Link>
+            </p>
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+              <Link href="/auth/recover" className="text-[#157E92] hover:underline font-medium">Account recovery</Link>
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

@@ -179,10 +179,10 @@ export function canAccessWorkspaceRoute(
   ];
   const match = routeRoles.find(([prefix]) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   if (!match) return false;
+  // Super administrators can enter any institutional workspace.
+  if (normalized.includes("super_admin")) return true;
   const hasRole = match[1].some((role) => normalized.includes(role));
   if (!hasRole) return false;
-
-  if (normalized.includes("super_admin")) return true;
 
   // P1-27: If an action or page is scoped to a specific entity, verify user holds that scope
   if (targetScopeId && scopes) {

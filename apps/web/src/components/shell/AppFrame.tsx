@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { Footer } from "../Footer";
 import { Navbar } from "../Navbar";
@@ -38,6 +38,23 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
   const [sessionState, setSessionState] = useState<"loading" | "ready" | "unauthorized" | "unavailable">(protectedPath ? "loading" : "ready");
   const [profile, setProfile] = useState<SessionProfile | null>(null);
 
+  const refreshAuth = useCallback(async () => {
+    try {
+      const nextProfile = await identityClient.refreshSession();
+      setProfile(nextProfile);
+      if (!canAccessWorkspaceRoute(pathname, nextProfile.roles, nextProfile.scopes)) {
+        setSessionState("unauthorized");
+      } else {
+        setSessionState("ready");
+      }
+      return nextProfile;
+    } catch (cause) {
+      setProfile(null);
+      setSessionState(cause instanceof IdentityApiError && cause.status === 401 ? "unauthorized" : "unavailable");
+      return null;
+    }
+  }, [pathname]);
+
   useEffect(() => {
     let cancelled = false;
     if (!protectedPath) {
@@ -50,7 +67,11 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
     void identityClient.getSession().then((nextProfile) => {
       if (!cancelled) {
         setProfile(nextProfile);
-        setSessionState("ready");
+        if (!canAccessWorkspaceRoute(pathname, nextProfile.roles, nextProfile.scopes)) {
+          setSessionState("unauthorized");
+        } else {
+          setSessionState("ready");
+        }
       }
     }).catch((cause) => {
       if (cancelled) return;
@@ -58,8 +79,41 @@ export function AppFrame({ children }: { children: React.ReactNode }) {
       setSessionState(cause instanceof IdentityApiError && cause.status === 401 ? "unauthorized" : "unavailable");
     });
 
-    return () => { cancelled = true; };
-  }, [protectedPath, pathname]);
+    // P1-28: Immediate role change / revocation refresh on window focus, visibility change, and heartbeat
+    const handleRevalidate = () => {
+      if (!cancelled) {
+        void refreshAuth();
+      }
+    };
+
+    window.addEventListener("focus", handleRevalidate);
+    document.addEventListener("visibilitychange", handleRevalidate);
+    const interval = window.setInterval(handleRevalidate, 30000);
+
+    // Listen to identity client logout / session updates
+    const unsubscribe = identityClient.onSessionChange((updatedProfile) => {
+      if (cancelled) return;
+      if (!updatedProfile) {
+        setProfile(null);
+        setSessionState("unauthorized");
+      } else {
+        setProfile(updatedProfile);
+        if (!canAccessWorkspaceRoute(pathname, updatedProfile.roles, updatedProfile.scopes)) {
+          setSessionState("unauthorized");
+        } else {
+          setSessionState("ready");
+        }
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener("focus", handleRevalidate);
+      document.removeEventListener("visibilitychange", handleRevalidate);
+      window.clearInterval(interval);
+      unsubscribe();
+    };
+  }, [protectedPath, pathname, refreshAuth]);
 
   if (!protectedPath) {
     return (

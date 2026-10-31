@@ -11,7 +11,19 @@ import { WorkspaceSidebar } from "./WorkspaceSidebar";
 export function AppShell({ session, children }: { session: SessionProfile; children: React.ReactNode }) {
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const logout = async () => { try { await identityClient.logout(); } finally { router.replace("/auth/login"); } };
+  const logout = async () => {
+    try {
+      if (typeof window !== "undefined") {
+        try {
+          window.sessionStorage.removeItem("himvote_session_receipts");
+          window.localStorage.removeItem("himvote_receipts");
+        } catch {}
+      }
+      await identityClient.logout();
+    } finally {
+      router.replace("/auth/login");
+    }
+  };
   return <div className="sv-workspace-shell"><WorkspaceSidebar session={session} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} onLogout={logout} /><div className="sv-workspace-column"><WorkspaceHeader session={session} onOpenMenu={() => setMobileOpen(true)} /><div className="sv-prototype-notice" role="status"><span className="sv-status-dot" aria-hidden="true" /><span><strong>Educational prototype.</strong> Verification statuses are shown only when backed by authoritative evidence.</span></div><main id="main-content" className="sv-workspace-main">{children}</main></div></div>;
 }
 

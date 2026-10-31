@@ -240,6 +240,15 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
   const baseUrl = normalizeBaseUrl(options.baseUrl ?? configuredBaseUrl());
   const fetchImpl = options.fetchImpl ?? fetch;
   let inMemorySessionToken: string | null = null;
+  const sessionListeners: Array<(profile: SessionProfile | null) => void> = [];
+
+  function notifySessionListeners(profile: SessionProfile | null) {
+    for (const listener of sessionListeners) {
+      try {
+        listener(profile);
+      } catch {}
+    }
+  }
 
   async function request<T>(path: string, init: RequestInit, validate: (value: unknown) => value is T, message: string): Promise<T> {
     if (baseUrl === null) {
@@ -270,6 +279,14 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
   }
 
   return {
+    onSessionChange(callback: (profile: SessionProfile | null) => void): () => void {
+      sessionListeners.push(callback);
+      return () => {
+        const index = sessionListeners.indexOf(callback);
+        if (index >= 0) sessionListeners.splice(index, 1);
+      };
+    },
+
     async login(email: string, password: string, mfaToken?: string): Promise<LoginResponse> {
       const response = await request("/v1/auth/login", {
         method: "POST",
@@ -277,8 +294,13 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       }, isLoginResponse, "The identity service returned an invalid login response.");
       if (response.mfa_required) {
         inMemorySessionToken = null;
+        notifySessionListeners(null);
       } else if (response.session_token) {
         inMemorySessionToken = response.session_token;
+        try {
+          const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+          notifySessionListeners(profile);
+        } catch {}
       } else {
         throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
       }
@@ -290,11 +312,23 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
         await request("/v1/auth/logout", { method: "POST" }, (value): value is Record<string, unknown> => isRecord(value) && value.status === "logged_out", "The identity service returned an invalid logout response.");
       } finally {
         inMemorySessionToken = null;
+        notifySessionListeners(null);
       }
     },
 
     async getSession(): Promise<SessionProfile> {
       return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+    },
+
+    async refreshSession(): Promise<SessionProfile> {
+      try {
+        const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+        notifySessionListeners(profile);
+        return profile;
+      } catch (err) {
+        notifySessionListeners(null);
+        throw err;
+      }
     },
 
     async registerStudent(input: { student_id: string; email: string; full_name: string }): Promise<RegistrationResponse> {
