@@ -210,6 +210,8 @@ export default function ElectionsListPage() {
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" aria-hidden="true" />
               <input
+                id="elections-search-input"
+                aria-label="Search elections"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
                 placeholder="Search election by title, contest, or ID..."
