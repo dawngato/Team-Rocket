@@ -41,7 +41,7 @@ verification remain blocked.
 | TR-017 | `FIXED_UNTESTED` | Public election list and detail routes filter draft and internal states; scoped officer/admin read behavior needs production authorization testing. |
 | TR-018 | `FIXED_UNTESTED` | Login fetches `/me` and routes to the server-granted workspace. Role-specific live login runs are not available in this checkout. |
 | TR-019 | `FIXED_UNTESTED` | Browser bearer tokens are memory-only; authentication uses credentialed cookies and production secure cookies. Reload and expiry need a deployed HTTPS run. |
-| TR-020 | `FIXED_UNTESTED` | Identity login has bounded in-process failure throttling and audit events. Distributed gateway rate limits and account recovery monitoring need deployment verification. |
+| TR-020 | `FIXED_UNTESTED` | Login, MFA, registration, recovery, reset, invitation redemption, and invitation creation now use a Redis-backed shared limiter. Production fails closed when Redis is unavailable; live multi-worker Redis execution remains unverified. |
 | TR-021 | `FIXED_UNTESTED` | Cookie mutation requests enforce same-site origin checks and secure cookie settings. Cross-site browser attack testing is not complete. |
 | TR-022 | `FIXED_UNTESTED` | Compose secrets are required and internal services are loopback or unexposed; only the gateway is public in production. A deployed port scan is not run here. |
 | TR-023 | `TESTED_PASS` | Dynamic tally verification integrated into `publication_service.py` with Gate E1 adapter. Tally proofs and candidate sums are verified before publication without blocking the release gate. Verified by `tests/test_publication_gate.py`. |
@@ -70,8 +70,8 @@ verification remain blocked.
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | Unblocked `Q7-01_duplicate_cast_test.py` on Python 3.14 with installed `aiosqlite` 0.22.1; 100 concurrent duplicate submission test passes. All 59/59 root tests pass with zero skips. |
-| TR-049 | `TESTED_PASS` | All per-service test suites clean and verified on this host: admin_api (26/26), casting (35/35), identity_issuer (28/28), election_engine (22/22), and web (91/91). |
-| TR-050 | `FIXED_UNTESTED` | Web typecheck, production build, 90 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
+| TR-049 | `TESTED_PASS` | The current targeted admin and identity suites pass, including activation, role-scope, roster-scope, and limiter regression tests. Other service dependency and deployment matrices remain separate evidence. |
+| TR-050 | `TESTED_PASS` | Current web typecheck, production build, 91 Vitest tests under system Node, and Playwright browser smoke pass. Full viewport screenshot and axe matrix is not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
 | TR-053 | `FIXED_UNTESTED` | Redundant web `app/lib` fixture shims were removed from reviewed production paths and TypeScript passes. A full import graph audit remains. |
@@ -121,3 +121,55 @@ whose esbuild service stops while loading Vitest. Running the same Vitest
 version with the installed system Node binary passes all 90 tests. The skipped
 Q7 test must be rerun on a supported Python and aiosqlite combination before
 claiming the required concurrency demonstration.
+
+## Latest critical finding register
+
+This register covers the additional P0 and P1 findings reviewed in the latest
+source report. `TESTED_PASS` means the relevant local source and regression
+tests passed; it does not certify a production deployment, independent witness,
+or vetted election engine.
+
+| Finding | Status | Current evidence and remaining boundary |
+|---|---|---|
+| P0-01 | `TESTED_PASS` | Public navigation no longer exposes role portals or a role switcher. Browser smoke verifies the privileged links are absent. |
+| P0-02 | `TESTED_PASS` | Middleware validates the session through the identity service before protected rendering, redirects guests, clears invalid sessions, and fails closed on identity outage. |
+| P0-03 | `TESTED_PASS` | Admin operations use explicit role, institution, election assignment, MFA, and operation policy checks. Positive and negative policy tests pass. |
+| P0-04 | `TESTED_PASS` | Public election reads are restricted to public states. Internal reads require scoped internal-read permission and cannot be enabled by an unauthenticated query parameter. |
+| P0-05 | `TESTED_PASS` | Roster correction listing and submission use authoritative student department and teacher department/class scope. Cross-scope regression tests pass. |
+| P0-06 | `FIXED_UNTESTED` | Audit reads require scoped audit permission and redact sensitive details. A deployed multi-institution authorization run remains outstanding. |
+| P0-07 | `FIXED_UNTESTED` | Login, MFA, recovery, registration, and invitation paths use the shared Redis limiter and production fails closed if Redis is unavailable. A multi-worker deployment run remains outstanding. |
+| P0-08 | `TESTED_PASS` | Student registration no longer claims that email was sent. It creates a pending activation and exposes a development token only in an explicit development delivery mode. |
+| P0-09 | `TESTED_PASS` | Student onboarding uses a single-use expiring activation token and password setup. Activation is consumed before login is enabled. |
+| P0-10 | `TESTED_PASS` | The public ID-card component no longer claims identity verification and is not part of the live homepage eligibility path. |
+| P0-11 | `TESTED_PASS` | Teacher provisioning rejects caller-supplied initial passwords and creates an expiring invitation flow with no reusable default password. |
+| P1-12 | `FIXED_UNTESTED` | Recovery and staff invitations fail closed until an approved notification adapter is configured. Token persistence, expiry, and acceptance are implemented; external delivery is not claimed. |
+| P1-13 | `TESTED_PASS` | Student verification resolves department from the authoritative enrollment profile and does not trust a browser-supplied department. |
+| P0-14 | `TESTED_PASS` | Public elections show service errors or an honest empty state; fabricated demo elections are not substituted after API failure. |
+| P0-15 | `TESTED_PASS` | Student election list and detail pages fail closed when the authoritative election service is unavailable. |
+| P0-16 | `TESTED_PASS` | Casting requires the real election manifest, frozen candidate mapping, digest, lifecycle state, and encryption parameters; no fake manifest fallback remains. |
+| P0-17 | `TESTED_PASS` | Public and student results render only authoritative result responses and do not substitute sample tallies after failure. |
+| P0-18 | `TESTED_PASS` | Homepage eligibility metrics are not hardcoded and the privacy copy no longer claims an absolute guarantee without evidence. |
+| P0-19 | `TESTED_PASS` | Live turnout no longer simulates browser events or ballot times; the live component reports that authoritative turnout is unavailable until a privacy-reviewed feed exists. |
+| P1-20 | `TESTED_PASS` | CampusLivePulse no longer increments fake activity and is not imported by production routes. |
+| P0-21 | `TESTED_PASS` | Candidate management uses scoped server APIs, server-generated IDs, readback, and draft-only mutation checks; browser candidate storage was removed. |
+| P0-22 | `TESTED_PASS` | The administrator dashboard no longer edits election statistics in browser storage. Counts and deadlines are read-only service data. |
+
+The approved notification provider, independently operated witness, pinned
+external checkpoints, and established independently reviewed election engine
+remain release blockers. The custom development engine must not be described as
+independently secure.
+
+## Current verification commands
+
+```text
+python -m compileall -q services/admin_api/src services/identity_issuer
+  PASS
+python -m pytest -q services/admin_api/tests services/identity_issuer/tests
+  PASS 55 tests
+cd apps/web && npm test -- --run
+  PASS 91 tests under the installed system Node binary
+cd apps/web && npm run typecheck && npm run build
+  PASS
+HIMVOTE_WEB_URL=http://127.0.0.1:3100 with_server next start on port 3100 with tests/browser_smoke.py
+  PASS
+```

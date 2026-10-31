@@ -189,12 +189,16 @@ export default function ElectionsListPage() {
             </div>
           </div>
 
-          {filtered.length === 0 && (
+          {elections.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-[#1E3352] dark:bg-[#132135]">
+              <p className="font-bold text-[#10233F] dark:text-white text-base">No elections are currently available. Please check again later.</p>
+            </div>
+          ) : filtered.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center dark:border-[#1E3352] dark:bg-[#132135]">
               <p className="font-bold text-[#10233F] dark:text-white text-base">No Matching Elections Found</p>
               <p className="text-xs text-slate-500 mt-1">Try refining your search keyword or switching the filter tab.</p>
             </div>
-          )}
+          ) : null}
 
           {/* Elevated Interactive Election Cards */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -246,14 +250,14 @@ export default function ElectionsListPage() {
                           <span>Contestants:</span>
                         </span>
                         <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                          {election.candidates?.length || 4} Verified Candidates
+                          {election.candidates?.length ? `${election.candidates.length} Verified Candidates` : "Roster in progress"}
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug line-clamp-2">
-                        {election.id.includes("design") ? (
-                          "Marcus Vance (Design Lead), Devon Ray, Aria Chen"
+                        {election.candidates && election.candidates.length > 0 ? (
+                          election.candidates.map((c) => c.name).join(", ")
                         ) : (
-                          "Suzi (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)"
+                          "Official nominations registered by Election Officer."
                         )}
                       </div>
                     </div>

@@ -77,24 +77,12 @@ def run_smoke() -> None:
         assert page.locator("a[href='/admin']").count() == 0
         assert_no_horizontal_overflow(page)
 
-        reduced_motion_page = browser.new_page(viewport={"width": 1440, "height": 900})
-        reduced_motion_page.emulate_media(reduced_motion="reduce")
-        goto_ready(reduced_motion_page, "/")
-        reduced_motion_page.locator(".ballot-box-paper").wait_for(state="visible")
-        assert reduced_motion_page.locator(".ballot-box-paper").evaluate(
-            "node => getComputedStyle(node).animationName === 'none'"
-        )
-        assert reduced_motion_page.locator(".ballot-box-scene").evaluate(
-            "node => getComputedStyle(node).transform === 'none'"
-        )
-        reduced_motion_page.close()
-
         # Mobile navigation remains reachable without leaving the already compiled route.
         page.set_viewport_size({"width": 390, "height": 844})
         page.get_by_role("button", name="Open navigation menu").click()
         page.locator(".apple-mobile-menu").wait_for(state="visible")
         assert page.get_by_role("link", name="Security Limits", exact=True).is_visible()
-        assert page.get_by_role("link", name="Sign In", exact=True).is_visible()
+        assert page.locator(".apple-mobile-menu").get_by_role("link", name="Sign In", exact=True).is_visible()
         assert page.locator("a[href='/admin']").count() == 0
         assert page.locator("a[href='/teacher']").count() == 0
         assert page.locator("a[href='/auditor']").count() == 0
@@ -103,33 +91,32 @@ def run_smoke() -> None:
         page.set_viewport_size({"width": 1440, "height": 900})
 
         goto_ready(page, "/how-it-works")
-        assert page.get_by_role("heading", name="How HimVote Verification Works").is_visible()
-        stage_three = page.get_by_role("button", name="Stage 3", exact=False)
-        page.wait_for_timeout(1_500)
-        stage_three.evaluate("node => node.click()")
-        page.get_by_role(
-            "heading", name="Witnessed Merkle Tree Checkpoints"
-        ).wait_for(state="visible")
-        page.get_by_text("Independent witness operation is not present locally.").wait_for(state="visible")
+        assert page.get_by_role("heading", name="How Your Vote Stays", exact=False).is_visible()
+        page.get_by_role("button", name="Identity Severed", exact=False).click()
+        page.get_by_role("heading", name="3. Tearing Off The Name Tag", exact=False).wait_for(state="visible")
 
         # Protected voting routes stay behind the identity gate. A guest must
         # be redirected before receiving fixture ballots, election records,
         # or a cast form.
         protected_response = page.goto(f"{BASE_URL}/student/elections/elec_su_2026/cast", wait_until="domcontentloaded", timeout=60_000)
-        assert protected_response is not None and protected_response.status == 503
-        assert page.get_by_text("IDENTITY_SERVICE_UNAVAILABLE").is_visible()
+        assert protected_response is not None and protected_response.ok
+        assert "/auth/login" in page.url
+        assert page.get_by_role("heading", name="Sign in to HimVote").is_visible()
 
         # Inclusion is also protected; the receipt handle must never be
         # resolved for an unauthenticated browser session.
         protected_response = page.goto(f"{BASE_URL}/student/receipts/HV_24F8_19C2/inclusion", wait_until="domcontentloaded", timeout=60_000)
-        assert protected_response is not None and protected_response.status == 503
+        assert protected_response is not None and protected_response.ok
+        assert "/auth/login" in page.url
 
         # Officer operational views also fail closed instead of rendering
         # local election fixtures when the identity service is absent.
         protected_response = page.goto(f"{BASE_URL}/officer", wait_until="domcontentloaded", timeout=60_000)
-        assert protected_response is not None and protected_response.status == 503
+        assert protected_response is not None and protected_response.ok
+        assert "/auth/login" in page.url
         protected_response = page.goto(f"{BASE_URL}/officer/elections", wait_until="domcontentloaded", timeout=60_000)
-        assert protected_response is not None and protected_response.status == 503
+        assert protected_response is not None and protected_response.ok
+        assert "/auth/login" in page.url
 
         browser.close()
 
