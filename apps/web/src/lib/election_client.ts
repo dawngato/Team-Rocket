@@ -227,6 +227,57 @@ function normalizeBaseUrl(value: string): string | null {
   }
 }
 
+// DEV-ONLY mock data so role portals render visible content when no backend is
+// running. Guarded by NODE_ENV !== production; never reachable in a real build.
+function devMock(path: string): Promise<unknown> {
+  const now = new Date();
+  const iso = (minsFromNow: number) => new Date(now.getTime() + minsFromNow * 60000).toISOString();
+  const past = (minsAgo: number) => new Date(now.getTime() - minsAgo * 60000).toISOString();
+  const digest = "ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12cd34ef56ab12";
+
+  const elections: Election[] = [
+    {
+      id: "election_council_2026", title: "Himachal Technical University Student Council Election 2026",
+      state: "OPEN", opens_at_utc: past(120), closes_at_utc: iso(120),
+      manifest_digest: digest, issuance_cutoff_utc: iso(60), eligible_count: 4800,
+      contest: "University Student Council President", selection_rule: "plurality",
+      description: "Campus-wide student council election with end-to-end verifiable cryptographic evidence.",
+      candidates: [
+        { id: "cand_alice", name: "Alice Patel", contest: "University Student Council President", position: "President", department: "Computer Science", slate: "Unity" },
+        { id: "cand_bob", name: "Bob Chen", contest: "University Student Council President", position: "President", department: "Electrical Engineering", slate: "Progress" },
+        { id: "cand_clara", name: "Clara Rossi", contest: "University Student Council President", position: "President", department: "Mechanical Engineering", slate: "Voice" },
+      ],
+    },
+    {
+      id: "election_class_reps_2026", title: "Department Class Representative Elections",
+      state: "SCHEDULED", opens_at_utc: iso(180), closes_at_utc: iso(1440),
+      manifest_digest: digest, issuance_cutoff_utc: iso(300), eligible_count: 1200,
+      contest: "Class Representative", selection_rule: "plurality",
+    },
+    {
+      id: "election_festsoc_2026", title: "Fest & Cultural Society Chairperson",
+      state: "CLOSED", opens_at_utc: past(2000), closes_at_utc: past(1400),
+      manifest_digest: digest, issuance_cutoff_utc: past(1500), eligible_count: 2100,
+      contest: "Fest Society Chairperson", selection_rule: "plurality",
+      published_results: { election_id: "election_festsoc_2026", manifest_digest: digest, tally: { cand_alice: 812, cand_bob: 640, cand_clara: 401 }, total_ballots: 1853, published_at_utc: past(1300), privacy_limited: false },
+    },
+  ];
+  const props = elections.map((e) => toElectionSummary(e));
+
+  if (/\/v1\/elections?$/.test(path)) return Promise.resolve(props);
+  if (path === "/v1/engine/protocol_version") return Promise.resolve({ protocol: "himvote-1", version: "1.0.0" });
+  const electionMatch = path.match(/^\/v1\/elections\/([^/?#]+)/);
+  if (electionMatch) {
+    const id = decodeURIComponent(electionMatch[1]);
+    const el = elections.find((e) => e.id === id);
+    if (path.endsWith("/candidates")) return Promise.resolve(el?.candidates ?? []);
+    if (path.endsWith("/results")) return Promise.resolve(el?.published_results ?? { election_id: id, manifest_digest: digest, tally: { cand_alice: 12, cand_bob: 9, cand_clara: 7 }, total_ballots: 28, published_at_utc: iso(0), privacy_limited: true });
+    if (path.endsWith("/evidence")) return Promise.resolve({ election_id: id, manifest_digest: digest, final_checkpoint_digest: "0a0b0c0d0e0f", anchor_tx_hash: "0xdeadbeef", auditor_signature: "sig-avali" });
+    if (el) return Promise.resolve(el);
+  }
+  return Promise.reject(new ElectionApiError({ code: "ELECTION_MOCK_404", message: `No mock data for ${path}`, status: 404, retryable: false }));
+}
+
 async function bodyOf(response: Response): Promise<unknown> {
   const text = await response.text().catch(() => "");
   if (!text) return {};
@@ -263,13 +314,18 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
       });
     }
     if (!baseUrl) {
-      throw new ElectionApiError({
-        code: "ELECTION_API_NOT_CONFIGURED",
-        message: "The authoritative election service is not configured.",
-        status: 503,
-        retryable: false,
-      });
-    }
+          // DEV-ONLY demo data: no authoritative service configured (no backend running).
+          // NEVER serves real data; only provides visible content for local demo/preview.
+          if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
+            return devMock(path);
+          }
+          throw new ElectionApiError({
+            code: "ELECTION_API_NOT_CONFIGURED",
+            message: "The authoritative election service is not configured.",
+            status: 503,
+            retryable: false,
+          });
+        }
 
     let response: Response;
     try {

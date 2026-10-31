@@ -197,6 +197,23 @@ function isSessionProfile(value: unknown): value is SessionProfile {
     typeof value.mfa_authenticated === "boolean";
 }
 
+// DEV-ONLY identity mock: returns a super-admin session profile (and a couple of
+// other safe endpoints) so role portals render locally without a backend.
+// Guarded by NODE_ENV !== production; never included in a real build.
+function identityDevMock(path: string, init: RequestInit, validate?: (value: unknown) => boolean): unknown {
+  const profile: SessionProfile = {
+    user_id: "dev-demo-user",
+    email: "dev.demo@himvote.example.in",
+    roles: ["super_admin", "administrator", "election_officer", "teacher", "auditor", "student"],
+    scopes: [{ role: "super_admin", scope_type: "institution", scope_id: "*" }],
+    mfa_authenticated: true,
+  };
+  if (path === "/v1/auth/me") return profile;
+  if (path === "/v1/auth/health" || path === "/health" || path === "/v1/health") return { status: "ok" };
+  // unknown endpoint -> signal "no mock" so caller falls through to the real throw
+  return undefined;
+}
+
 function isRegistrationResponse(value: unknown): value is RegistrationResponse {
   return isRecord(value) && typeof value.status === "string" &&
     (value.activation_delivery === undefined || value.activation_delivery === "pending" || value.activation_delivery === "development" || value.activation_delivery === "configured") &&
@@ -282,8 +299,14 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
       throw new IdentityApiError({ code: "IDENTITY_API_CONFIG_INVALID", message: "The identity service URL is invalid.", status: 503, retryable: false });
     }
     if (!baseUrl) {
-      throw new IdentityApiError({ code: "IDENTITY_API_NOT_CONFIGURED", message: "The identity service is not configured.", status: 503, retryable: false });
-    }
+          // DEV-ONLY mock session: no identity service configured. Lets the AppShell
+          // unlock all role portals for local demo. NEVER reachable in production.
+          if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
+                      const mock = identityDevMock(path, init);
+                      if (mock !== undefined) return mock as T;
+                    }
+          throw new IdentityApiError({ code: "IDENTITY_API_NOT_CONFIGURED", message: "The identity service is not configured.", status: 503, retryable: false });
+        }
     const headers = new Headers(init.headers);
     headers.set("Accept", "application/json");
     if (init.body !== undefined) headers.set("Content-Type", "application/json");

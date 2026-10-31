@@ -73,11 +73,21 @@ export async function middleware(request: NextRequest) {
     const authHeader = request.headers.get("authorization");
 
     // 1. No session token present -> Redirect to login
-    if (!sessionCookie && !authHeader) {
-      const loginUrl = new URL("/auth/login", request.url);
-      loginUrl.searchParams.set("next", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+        if (!sessionCookie && !authHeader) {
+          // DEV ONLY: no backend running — allow render with mock roles so the
+          // 7 role portals are visible for demos. NEVER reachable in production.
+          if (process.env.NODE_ENV !== "production" && !process.env.REQUIRE_AUTH) {
+            requestHeaders.set("x-user-id", "dev-demo-user");
+            requestHeaders.set("x-user-roles", "super_admin,administrator,election_officer,teacher,auditor,student");
+            requestHeaders.set("x-user-scopes", JSON.stringify([{ scope_type: "institution", scope_id: "*" }]));
+            const ok = NextResponse.next({ request: { headers: requestHeaders } });
+            ok.headers.set("Content-Security-Policy", csp);
+            return ok;
+          }
+          const loginUrl = new URL("/auth/login", request.url);
+          loginUrl.searchParams.set("next", pathname);
+          return NextResponse.redirect(loginUrl);
+        }
 
     // 2. Server-side session validation against the authoritative Identity Service
     const identityUrl = process.env.IDENTITY_SERVICE_URL || process.env.NEXT_PUBLIC_IDENTITY_SERVICE_URL || "http://127.0.0.1:8080";
