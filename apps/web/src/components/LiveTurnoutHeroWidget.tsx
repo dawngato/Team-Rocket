@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Vote, Clock, Sparkles, Activity, CheckCircle2, ShieldCheck, ArrowRight, Hourglass, UserCheck } from "lucide-react";
+import { Users, Vote, Clock, Activity, CheckCircle2, ShieldCheck, ArrowRight, Hourglass, UserCheck } from "lucide-react";
 import Link from "next/link";
 import { getStoredElectionConfig, type ElectionConfig } from "../lib/college_voter_store";
 
@@ -215,7 +215,7 @@ export function LiveTurnoutHeroWidget() {
       <div className="relative z-10 bg-slate-50 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/10 rounded-2xl p-3.5 mb-4">
         <div className="flex items-center justify-between text-xs mb-1.5 font-medium">
           <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-[11px] font-semibold">
-            <Sparkles className="size-3 text-indigo-500 dark:text-cyan-400" />
+            <span className="text-xs">📊</span>
             <span>College Turnout</span>
           </span>
           <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-xs">

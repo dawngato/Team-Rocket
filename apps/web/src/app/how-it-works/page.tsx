@@ -11,9 +11,7 @@ import {
   Stamp,
   Users,
   Search,
-  Sparkles,
   Smartphone,
-  Cpu,
   FileText,
   BadgeCheck,
 } from "lucide-react";
@@ -200,7 +198,7 @@ export default function HowItWorksPage() {
             {/* Left: In Plain Student Words */}
             <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-[#1E3352] space-y-2.5">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-cyan-500" />
+                <span className="text-sm">📋</span>
                 <span>Simple Student Explanation</span>
               </h3>
               <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">

@@ -28,9 +28,9 @@ export const DEFAULT_CANDIDATES: RichCandidate[] = [
     roll_number: "2023CSE1001",
     slate: "Tech & Academic Innovation",
     status: "VERIFIED",
-    statement: "Championing 24/7 library & AI GPU access, real-time campus shuttle tracking, and 100% transparent student council ledger.",
+    statement: "Championing 24/7 library & high-performance computing laboratory access, real-time campus shuttle tracking, and 100% transparent student council ledger.",
     manifesto_points: [
-      "24/7 Library & High-Performance AI/GPU compute access for UG/PG students",
+      "24/7 Library & High-Performance computing lab access for UG/PG students",
       "Automated real-time campus shuttle tracking and night-time electric scooter network",
       "100% budget transparency with open student council ledger"
     ],

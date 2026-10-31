@@ -9,7 +9,6 @@ import {
   FileCheck2,
   LockKeyhole,
   ArrowRight,
-  Sparkles,
   Search,
   Calendar,
   GraduationCap,

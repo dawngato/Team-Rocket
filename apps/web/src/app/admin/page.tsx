@@ -313,7 +313,7 @@ export default function AdminOverviewPage() {
                 <p className="text-[10px] text-slate-500">CSE • 4th Year</p>
               </div>
             </div>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"24/7 Library &amp; AI compute access, automated shuttle tracking."</p>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2">"24/7 Library &amp; computing lab access, automated shuttle tracking."</p>
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023CSE1001</div>
           </div>
 
