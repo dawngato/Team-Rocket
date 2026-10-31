@@ -19,7 +19,7 @@ from services.identity_issuer.crypto.hashing import hash_password
 from services.identity_issuer.schemas import CreateTeacherRequest
 
 
-def test_teacher_provision_requires_explicit_initial_password():
+def test_teacher_provision_uses_invitation_instead_of_reusable_password():
     base = {
         "full_name": "Synthetic Teacher",
         "faculty_id": "FAC_SYNTHETIC",
@@ -27,8 +27,8 @@ def test_teacher_provision_requires_explicit_initial_password():
         "department": "computer_science",
     }
 
-    with pytest.raises(ValidationError):
-        CreateTeacherRequest(**base)
+    request_without_password = CreateTeacherRequest(**base)
+    assert request_without_password.initial_password is None
     with pytest.raises(ValidationError):
         CreateTeacherRequest(**base, initial_password="short")
 

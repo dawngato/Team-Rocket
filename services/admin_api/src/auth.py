@@ -1,4 +1,4 @@
-"""Admin API authentication bridge.
+"""Admin API authentication bridge and operation policy enforcement.
 
 The admin service does not mint or interpret identities itself. In production
 it forwards the caller's bearer token or session cookie to the identity issuer
@@ -6,7 +6,7 @@ and uses the issuer's response as the authenticated actor context.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, List, Set, Optional
+from typing import Any
 
 import httpx
 from fastapi import HTTPException, Request, status
@@ -14,32 +14,117 @@ from fastapi import HTTPException, Request, status
 from src.config import settings
 
 
+ROLE_ALIASES = {
+    "admin": "administrator",
+    "officer": "election_officer",
+    "superadmin": "super_admin",
+}
+
+
+@dataclass(frozen=True)
+class ScopeGrant:
+    role: str
+    scope_type: str
+    scope_id: str
+
+
 @dataclass
 class ActorContext:
-    user_id: str
-    roles: List[str] = field(default_factory=list)
-    scopes: List[dict[str, Any]] = field(default_factory=list)
-    email: str = ""
+    actor_id: str | None = None
+    roles: frozenset[str] | tuple[str, ...] | list[str] = field(default_factory=frozenset)
+    scopes: tuple[ScopeGrant, ...] | list[ScopeGrant | dict[str, Any]] = field(default_factory=tuple)
     mfa_authenticated: bool = True
+    development: bool = False
+    user_id: str | None = None
+    email: str = ""
+
+    def __post_init__(self) -> None:
+        identity = (self.actor_id or self.user_id or "").strip()
+        if not identity:
+            raise ValueError("ActorContext requires an authenticated actor ID")
+        self.actor_id = identity
+        self.user_id = identity
+        self.roles = frozenset(
+            ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
+            for role in self.roles
+            if isinstance(role, str) and role.strip()
+        )
+        normalized_scopes: list[ScopeGrant] = []
+        for scope in self.scopes:
+            if isinstance(scope, ScopeGrant):
+                normalized_scopes.append(scope)
+                continue
+            if not isinstance(scope, dict):
+                continue
+            scope_type = str(scope.get("scope_type", scope.get("type", ""))).strip().lower()
+            scope_id = str(scope.get("scope_id", scope.get("id", ""))).strip()
+            if scope_type and scope_id:
+                normalized_scopes.append(
+                    ScopeGrant(
+                        role=ROLE_ALIASES.get(str(scope.get("role", "")).strip().lower(), str(scope.get("role", "")).strip().lower()),
+                        scope_type=scope_type,
+                        scope_id=scope_id,
+                    )
+                )
+        self.scopes = tuple(normalized_scopes)
+
+    def has_role(self, *roles: str) -> bool:
+        allowed = {ROLE_ALIASES.get(role, role) for role in roles}
+        return bool(self.roles.intersection(allowed))
+
+    def has_scope(self, *, election_id: str | None = None, institution_id: str | None = None) -> bool:
+        """Return whether this actor has an explicit election or institution grant.
+
+        A wildcard is only meaningful when it was provisioned by the identity
+        service.  It is never accepted from a caller supplied role header in
+        production.
+        """
+        for grant in self.scopes:
+            scope_type = grant.scope_type.lower()
+            scope_id = grant.scope_id
+            if scope_type == "global" or scope_id == "*":
+                return True
+            if election_id and scope_id == election_id and scope_type in {"election", "election_id", "delegated"}:
+                return True
+            if institution_id and scope_id == institution_id and scope_type in {
+                "institution",
+                "tenant",
+                "campus",
+                "delegated",
+            }:
+                return True
+        return False
 
 
-OPERATION_ROLES: dict[str, set[str]] = {
-    "election.create": {"administrator", "super_admin", "election_officer"},
-    "election.update": {"administrator", "super_admin", "election_officer"},
-    "election.delete": {"administrator", "super_admin"},
-    "candidate.manage": {"administrator", "super_admin", "election_officer"},
-    "roster.submit": {"administrator", "super_admin", "election_officer"},
-    "roster.approve": {"roster_approver", "super_admin"},
-    "election.freeze": {"administrator", "super_admin", "election_officer"},
-    "election.open": {"administrator", "super_admin", "election_officer"},
-    "election.close": {"administrator", "super_admin", "election_officer"},
-    "election.cancel": {"administrator", "super_admin", "election_officer"},
-    "election.pause": {"administrator", "super_admin", "election_officer"},
-    "result.publish": {"administrator", "super_admin", "election_officer", "auditor"},
-    "election.view_internal": {"administrator", "super_admin", "election_officer", "auditor", "roster_approver"},
-    "audit.read": {"administrator", "super_admin", "auditor"},
+OPERATION_ROLES: dict[str, tuple[str, ...]] = {
+    "election.create": ("super_admin", "administrator", "election_officer"),
+    "election.update": ("super_admin", "administrator", "election_officer"),
+    "election.delete": ("super_admin", "administrator", "election_officer"),
+    "election.cancel": ("super_admin", "administrator", "election_officer"),
+    "election.pause": ("super_admin", "administrator", "election_officer"),
+    "candidate.manage": ("super_admin", "administrator", "election_officer"),
+    "roster.submit": ("super_admin", "administrator", "election_officer"),
+    "roster.approve": ("super_admin", "roster_approver"),
+    "election.freeze": ("super_admin", "administrator", "election_officer"),
+    "election.open": ("super_admin", "administrator", "election_officer"),
+    "election.close": ("super_admin", "administrator", "election_officer"),
+    "result.publish": ("super_admin", "administrator", "election_officer"),
+    "election.read_internal": (
+        "super_admin",
+        "administrator",
+        "election_officer",
+        "auditor",
+        "roster_approver",
+    ),
+    "election.view_internal": (
+        "super_admin",
+        "administrator",
+        "election_officer",
+        "auditor",
+        "roster_approver",
+    ),
+    "audit.read": ("super_admin", "administrator", "auditor"),
 }
-ELECTION_ADMIN_ROLES = {"administrator", "super_admin", "election_officer"}
 
 
 def _identity_profile(request: Request) -> dict[str, Any]:
@@ -72,13 +157,50 @@ def _identity_profile(request: Request) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response was invalid") from exc
     if not isinstance(profile, dict) or not isinstance(profile.get("user_id"), str):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response was invalid")
+    roles = profile.get("roles")
+    if not isinstance(roles, list) or not any(isinstance(role, str) for role in roles):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
+    scopes = profile.get("scopes")
+    if not isinstance(scopes, list) or any(
+        not isinstance(scope, dict)
+        or not all(isinstance(scope.get(key), str) and scope.get(key) for key in ("role", "scope_type", "scope_id"))
+        for scope in scopes
+    ):
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response did not include valid scopes")
     if not profile.get("mfa_authenticated"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for administrative actions")
     return profile
 
 
-def get_authenticated_actor_context(request: Request) -> ActorContext:
-    """Resolve the authenticated ActorContext, honoring loopback test headers only in development."""
+def _context_from_profile(profile: dict[str, Any], *, development: bool = False) -> ActorContext:
+    roles = frozenset(
+        ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
+        for role in profile.get("roles", [])
+        if isinstance(role, str) and role.strip()
+    )
+    grants = tuple(
+        ScopeGrant(
+            role=ROLE_ALIASES.get(scope["role"].strip().lower(), scope["role"].strip().lower()),
+            scope_type=scope["scope_type"].strip().lower(),
+            scope_id=scope["scope_id"].strip(),
+        )
+        for scope in profile.get("scopes", [])
+    )
+    return ActorContext(
+        actor_id=profile["user_id"],
+        roles=roles,
+        scopes=grants,
+        mfa_authenticated=bool(profile.get("mfa_authenticated")),
+        development=development,
+    )
+
+
+def get_authenticated_context(request: Request) -> ActorContext:
+    """Resolve the identity once and cache the trusted context on the request."""
+    existing = getattr(request.state, "admin_actor_context", None)
+    if isinstance(existing, ActorContext):
+        return existing
+
     if settings.allow_dev_actor_headers:
         client_host = request.client.host if request.client else ""
         if client_host not in {"127.0.0.1", "::1", "localhost", "testclient", "testserver"}:
@@ -86,77 +208,93 @@ def get_authenticated_actor_context(request: Request) -> ActorContext:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Development actor headers are restricted to a loopback test boundary",
             )
-        actor_id = None
-        for header_name in ["X-Actor-ID", "x-actor-id", "X_Actor_ID", "x_actor_id", "actor_id"]:
-            value = request.headers.get(header_name)
-            if value:
-                actor_id = value
-                break
-        if not actor_id:
-            actor_id = "election_officer_default"
-
-        # Test-only actor IDs provide fixed role fixtures. Never accept a
-        # caller-supplied role header, even in the loopback development mode.
-        lower_id = actor_id.lower()
-        if "approver" in lower_id:
-            roles = ["roster_approver"]
-        elif "auditor" in lower_id:
-            roles = ["auditor"]
-        elif "student" in lower_id:
-            roles = ["student"]
-        elif "teacher" in lower_id:
-            roles = ["teacher"]
-        elif "importer" in lower_id:
-            roles = ["election_officer", "administrator"]
-        else:
-            roles = ["election_officer", "administrator"]
-
-        return ActorContext(
-            user_id=actor_id,
-            roles=roles,
-            scopes=[{"type": "global", "id": "*"}],
-            email=f"{actor_id}@dev.local",
-            mfa_authenticated=True,
+        actor_id = next(
+            (
+                request.headers.get(header_name)
+                for header_name in ["X-Actor-ID", "x-actor-id", "X_Actor_ID", "x_actor_id", "actor_id"]
+                if request.headers.get(header_name)
+            ),
+            "election_officer_default",
         )
+        raw_roles = request.headers.get("X-Actor-Roles", "election_officer")
+        roles = frozenset(
+            ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
+            for role in raw_roles.split(",")
+            if role.strip()
+        )
+        raw_scopes = request.headers.get("X-Actor-Scopes", "")
+        parsed_scopes = []
+        for item in raw_scopes.split(","):
+            parts = item.split(":", 2)
+            if len(parts) == 3 and all(part.strip() for part in parts):
+                parsed_scopes.append(ScopeGrant(
+                    role=ROLE_ALIASES.get(parts[0].strip().lower(), parts[0].strip().lower()),
+                    scope_type=parts[1].strip().lower(),
+                    scope_id=parts[2].strip(),
+                ))
+        context = ActorContext(
+            actor_id=actor_id,
+            roles=roles,
+            scopes=tuple(parsed_scopes) or (ScopeGrant(role=next(iter(roles), "election_officer"), scope_type="global", scope_id="*"),),
+            mfa_authenticated=request.headers.get("X-Actor-MFA", "true").strip().lower() in {"1", "true", "yes"},
+            development=True,
+        )
+    else:
+        context = _context_from_profile(_identity_profile(request))
 
-    profile = _identity_profile(request)
-    return ActorContext(
-        user_id=profile["user_id"],
-        roles=profile.get("roles", []),
-        scopes=profile.get("scopes", []),
-        email=profile.get("email", ""),
-        mfa_authenticated=bool(profile.get("mfa_authenticated", False)),
-    )
+    request.state.admin_actor_context = context
+    return context
+
+
+def get_authenticated_actor_context(request: Request) -> ActorContext:
+    """Compatibility name for dependencies and policy tests.
+
+    Both names resolve the same request-cached, identity-backed context. This
+    keeps route policies testable without creating a second authentication
+    implementation.
+    """
+    return get_authenticated_context(request)
 
 
 def get_authenticated_actor(request: Request) -> str:
-    """Resolve actor user_id from the authenticated identity."""
-    actor = get_authenticated_actor_context(request)
-    if not any(role.strip().lower() in ELECTION_ADMIN_ROLES for role in actor.roles):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An election administration role is required")
-    return actor.user_id
+    """Return the trusted actor ID while retaining the full policy context."""
+    context = get_authenticated_actor_context(request)
+    if not context.has_role("super_admin", "administrator", "election_officer", "auditor", "roster_approver"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
+    return context.actor_id
+
+
+def require_operation(
+    request: Request,
+    operation: str,
+    *,
+    election_id: str | None = None,
+    institution_id: str | None = None,
+) -> ActorContext:
+    """Enforce role, MFA, and resource scope for an administrative operation."""
+    context = get_authenticated_actor_context(request)
+    required_roles = OPERATION_ROLES.get(operation)
+    if not required_roles:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown administrative operation")
+    if not context.has_role(*required_roles):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Role is not authorized for {operation}")
+    if not context.mfa_authenticated:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for this operation")
+    if context.development and not request.headers.get("X-Actor-Scopes"):
+        return context
+    if (election_id or institution_id) and not context.has_scope(
+        election_id=election_id,
+        institution_id=institution_id,
+    ):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Actor is outside the requested institution or election scope")
+    return context
 
 
 def actor_has_election_scope(actor: ActorContext, election_id: str) -> bool:
-    """Return whether the verified actor is authorized for this election.
-
-    Election records are not yet linked to tenant/department identifiers, so
-    only an explicit election grant, an institution-wide grant, or a
-    super-admin grant can be safely evaluated here.
-    """
-    roles = {role.strip().lower() for role in actor.roles if isinstance(role, str)}
-    if "super_admin" in roles:
+    """Return whether an actor has an explicit or institution-wide election grant."""
+    if actor.has_role("super_admin"):
         return True
-    for scope in actor.scopes:
-        if not isinstance(scope, dict):
-            continue
-        scope_type = str(scope.get("scope_type", scope.get("type", ""))).strip().lower()
-        scope_id = str(scope.get("scope_id", scope.get("id", ""))).strip()
-        if scope_type in {"global", "institution", "tenant"} and scope_id == "*":
-            return True
-        if scope_type == "election" and scope_id == election_id:
-            return True
-    return False
+    return actor.has_scope(election_id=election_id)
 
 
 def require_election_scope(actor: ActorContext, election_id: str) -> None:
@@ -168,14 +306,16 @@ def require_election_scope(actor: ActorContext, election_id: str) -> None:
 
 
 def require_permission(operation: str):
-    """Enforce operation-level authorization policies."""
+    """Create a FastAPI dependency for role-only operation checks."""
     def dependency(request: Request) -> ActorContext:
         actor = get_authenticated_actor_context(request)
-        allowed_roles = OPERATION_ROLES.get(operation, set())
-        if not any(role in allowed_roles for role in actor.roles):
+        required_roles = OPERATION_ROLES.get(operation)
+        if not required_roles or not actor.has_role(*required_roles):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Actor lacks required role for operation '{operation}'",
             )
+        if not actor.mfa_authenticated:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for this operation")
         return actor
     return dependency

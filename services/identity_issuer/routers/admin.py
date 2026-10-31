@@ -5,9 +5,10 @@ Enforces separation of duties: creators can never approve their own requests.
 
 import uuid
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..config import APP_ENV, INVITATION_DELIVERY_MODE, INVITATION_EXPIRE_DAYS
@@ -31,6 +32,8 @@ from ..schemas import (
     CreateTeacherRequest,
 )
 from ..crypto.hashing import hash_password
+from ..rate_limiter import rate_limiter
+from ..notification_service import NotificationDeliveryError, notification_service
 from .deps import (
     get_current_user,
     get_user_roles,
@@ -50,14 +53,12 @@ def list_admin_invitations(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return invitation metadata filtered by caller's permitted scope. Invitation secrets are never recoverable."""
-    caller_roles = get_user_roles(current_user, db)
-    query = db.query(Invitation).order_by(Invitation.created_at.desc())
-    if "super_admin" not in caller_roles:
-        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
-        if "*" not in caller_scopes:
-            query = query.filter(Invitation.scope.in_(caller_scopes))
-    rows = query.limit(500).all()
+    """Return invitation metadata only. Invitation secrets are never recoverable."""
+    rows = db.query(Invitation).order_by(Invitation.created_at.desc()).limit(500).all()
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        rows = [row for row in rows if row.scope in allowed_scopes]
     return [
         AdminInvitationRecord(
             id=row.id,
@@ -65,6 +66,7 @@ def list_admin_invitations(
             role=row.role,
             scope=row.scope,
             status=row.status,
+            delivery_status=row.delivery_status,
             expires_at=row.expires_at,
             created_at=row.created_at,
         )
@@ -78,21 +80,16 @@ def list_admin_approvals(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return the durable approval queue filtered by the approver's actual authority."""
-    caller_roles = get_user_roles(current_user, db)
+    """Return the durable approval queue used by the super-admin UI."""
     query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc())
     if status_filter.lower() == "pending":
         query = query.filter(ApprovalRequest.decision.is_(None))
     elif status_filter.lower() in {"approved", "rejected"}:
         query = query.filter(ApprovalRequest.decision == status_filter.lower())
-
-    if "super_admin" not in caller_roles:
-        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
-        # Ordinary administrators cannot approve administrator requests, only super_admin can
-        query = query.filter(ApprovalRequest.requested_role != "administrator")
-        if "*" not in caller_scopes:
-            query = query.filter(ApprovalRequest.requested_scope.in_(caller_scopes))
-
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        query = query.filter(ApprovalRequest.requested_scope.in_(allowed_scopes))
     rows = query.limit(500).all()
     users = {
         user.id: user
@@ -124,19 +121,19 @@ def list_teachers(
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
-    """Return persisted teacher identities and their delegated scopes filtered by caller's permitted scope."""
-    caller_roles = get_user_roles(current_user, db)
-    query = (
+    """Return persisted teacher identities and their delegated scopes."""
+    rows = (
         db.query(User, RoleAssignment, RoleDefinition)
         .join(RoleAssignment, RoleAssignment.user_id == User.id)
         .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
         .filter(RoleDefinition.name == "teacher")
+        .order_by(User.created_at.desc())
+        .all()
     )
-    if "super_admin" not in caller_roles:
-        caller_scopes = get_user_scopes(current_user, db, ["administrator"])
-        if "*" not in caller_scopes:
-            query = query.filter(RoleAssignment.scope_id.in_(caller_scopes))
-    rows = query.order_by(User.created_at.desc()).all()
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        rows = [row for row in rows if row[1].scope_id in allowed_scopes]
     output = []
     for user, assignment, role_definition in rows:
         invitation = db.query(Invitation).filter(
@@ -160,24 +157,19 @@ def list_teachers(
 @router.post("/admin/teachers", response_model=TeacherDirectoryRecord, status_code=status.HTTP_201_CREATED)
 def provision_teacher(
     req: CreateTeacherRequest,
+    request: Request,
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
     """
     Provision a persistent teacher identity and assign the teacher role within the specified department scope.
     """
-    caller_roles = get_user_roles(current_user, db)
-    if "super_admin" not in caller_roles and not user_has_scope(
-        current_user,
-        db,
-        ["administrator"],
-        req.department.strip(),
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Teacher provisioning scope exceeds the caller's delegated scope",
-        )
-
+    rate_limiter.enforce(
+        rate_limiter.key("teacher_provision", str(req.email)),
+        limit=5,
+        window_seconds=3600,
+        detail="Too many teacher provisioning attempts; try again later",
+    )
     existing = db.query(User).filter(User.email == str(req.email).lower()).first()
     if existing:
         raise HTTPException(
@@ -185,17 +177,40 @@ def provision_teacher(
             detail="A user with this email address already exists",
         )
 
-    if not req.initial_password or len(req.initial_password) < 12:
+    if req.initial_password is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="A strong initial password of at least 12 characters must be explicitly supplied for teacher provisioning.",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Teacher passwords must be set through a single use invitation",
         )
-    pwd_hash, _ = hash_password(req.initial_password)
+    if APP_ENV == "production" and INVITATION_DELIVERY_MODE != "configured":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Teacher invitation delivery is not configured",
+        )
+
+    invitation_token = secrets.token_urlsafe(32)
+    invitation_hash = hashlib.sha256(invitation_token.encode("utf-8")).hexdigest()
+    invitation = Invitation(
+        email=str(req.email).lower(),
+        role="teacher",
+        scope=req.department.strip(),
+        token_hash=invitation_hash,
+        invited_by=current_user.id,
+        status="PENDING",
+        delivery_status="PENDING" if INVITATION_DELIVERY_MODE == "configured" else "DEVELOPMENT",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRE_DAYS),
+    )
+    db.add(invitation)
+
+    pwd_hash, pwd_params = hash_password(secrets.token_urlsafe(32))
     teacher_user = User(
         email=str(req.email).lower(),
         password_hash=pwd_hash,
+        password_algorithm=pwd_params["algorithm"],
+        password_params=pwd_params,
         external_id=req.faculty_id.strip(),
-        status="ACTIVE",
+        status="INVITED",
+        mfa_enrolled=False,
     )
     db.add(teacher_user)
     db.flush()
@@ -214,6 +229,22 @@ def provision_teacher(
     )
     db.add(assignment)
 
+    if INVITATION_DELIVERY_MODE == "configured":
+        try:
+            notification_service.dispatch(
+                recipient=teacher_user.email,
+                subject="HimVote teacher invitation",
+                body=f"Your scoped teacher account for {req.department.strip()} is ready for one-time setup.",
+                category="invitation",
+                token=invitation_token,
+                metadata={"invitation_id": invitation.id, "role": "teacher"},
+            )
+            invitation.delivery_status = "DELIVERED"
+        except NotificationDeliveryError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Teacher invitation notification could not be delivered") from exc
+
+    delivery_status = invitation.delivery_status
     record_audit_event(
         db=db,
         action="admin.teacher.provisioned",
@@ -223,6 +254,7 @@ def provision_teacher(
             "faculty_id": req.faculty_id.strip(),
             "email": str(req.email).lower(),
             "department": req.department.strip(),
+            "delivery": delivery_status,
         },
     )
     db.commit()
@@ -234,12 +266,14 @@ def provision_teacher(
         status=teacher_user.status,
         role="teacher",
         scope=req.department.strip(),
+        invitation_id=invitation.id,
     )
 
 
 @router.post("/admin/invitations", status_code=status.HTTP_201_CREATED)
 def create_admin_invitation(
     req: AdminInvitationRequest,
+    request: Request,
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
@@ -247,6 +281,12 @@ def create_admin_invitation(
     Create an administrator invitation.
     Requires Super Administrator or Administrator role.
     """
+    rate_limiter.enforce(
+        rate_limiter.key("admin_invitation", str(req.email)),
+        limit=5,
+        window_seconds=3600,
+        detail="Too many invitation attempts; try again later",
+    )
     roles = get_user_roles(current_user, db)
     requested_role = req.role.strip().lower()
     requested_scope = req.scope.strip()
@@ -275,7 +315,7 @@ def create_admin_invitation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invitation scope exceeds the caller's delegated scope",
         )
-    if APP_ENV == "production":
+    if APP_ENV == "production" and INVITATION_DELIVERY_MODE != "configured":
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Invitation delivery requires an independently configured notification adapter",
@@ -302,16 +342,40 @@ def create_admin_invitation(
         token_hash=token_hash,
         invited_by=current_user.id,
         status="PENDING",
+        delivery_status="PENDING" if INVITATION_DELIVERY_MODE == "configured" else "DEVELOPMENT",
         expires_at=expires_at,
     )
     db.add(invitation)
+    db.flush()
+
+    delivery_status = invitation.delivery_status
+    if INVITATION_DELIVERY_MODE == "configured":
+        try:
+            notification_service.dispatch(
+                recipient=str(req.email).lower(),
+                subject="HimVote administrative staff invitation",
+                body=f"You have been invited as {requested_role} for scope {requested_scope}.",
+                category="invitation",
+                token=token,
+                metadata={"invitation_id": invitation.id, "role": requested_role},
+            )
+            invitation.delivery_status = "DELIVERED"
+            delivery_status = invitation.delivery_status
+        except NotificationDeliveryError as exc:
+            db.rollback()
+            raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Invitation notification could not be delivered") from exc
 
     record_audit_event(
         db=db,
         action="admin.invitation.created",
         result="success",
         actor_id=current_user.id,
-        details={"invited_email": str(req.email).lower(), "role": requested_role, "scope": requested_scope},
+        details={
+            "invited_email": str(req.email).lower(),
+            "role": requested_role,
+            "scope": requested_scope,
+            "delivery": delivery_status,
+        },
     )
     db.commit()
 
@@ -417,10 +481,7 @@ def decide_approval(
 ):
     """
     Decide on an approval request.
-    Strict enforcement:
-    1. The approver MUST be a different person from the requester (prevent self-decision).
-    2. Authority over requested role and scope is enforced for BOTH approval and rejection.
-    3. Every decision is recorded in append-only audit events.
+    Strict enforcement: The approver MUST be a different person from the requester.
     """
     approval = db.query(ApprovalRequest).filter(ApprovalRequest.id == approval_id).first()
     if not approval:
@@ -429,11 +490,11 @@ def decide_approval(
             detail="Approval request not found",
         )
 
-    # Creators can never decide their own request (neither approve nor reject)
+    # Creators can never approve their own request
     if approval.requester_id == current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Self approval forbidden. Creator cannot decide their own request.",
+            detail="Self approval forbidden. Creator cannot approve their own request.",
         )
 
     if approval.decision is not None:
@@ -442,36 +503,34 @@ def decide_approval(
             detail="Approval request has already been decided",
         )
 
-    if (
-        approval.request_type != "role_grant"
-        or not approval.target_user_id
-        or not approval.requested_role
-        or not approval.requested_scope
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Approval request has invalid grant data",
-        )
-
-    # Scope and role authorization checks apply to BOTH approved and rejected decisions
     approver_roles = get_user_roles(current_user, db)
-    if approval.requested_role == "administrator" and "super_admin" not in approver_roles:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only a Super Administrator may decide on an Administrator grant",
-        )
     if "super_admin" not in approver_roles and not user_has_scope(
         current_user,
         db,
         ["administrator"],
-        approval.requested_scope,
+        approval.requested_scope or "",
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Decision scope exceeds the decider's delegated authority",
+            detail="Decision scope exceeds the approver's delegated authority",
         )
 
     if req.decision == "approved":
+        if (
+            approval.request_type != "role_grant"
+            or not approval.target_user_id
+            or not approval.requested_role
+            or not approval.requested_scope
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Approval request has invalid grant data",
+            )
+        if approval.requested_role == "administrator" and "super_admin" not in approver_roles:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only a Super Administrator may approve an Administrator grant",
+            )
         role_definition = db.query(RoleDefinition).filter(RoleDefinition.name == approval.requested_role).first()
         if not role_definition:
             role_definition = RoleDefinition(
@@ -518,7 +577,7 @@ def decide_approval(
         action="admin.approval.decided",
         result=req.decision,
         actor_id=current_user.id,
-        details={"approval_id": approval_id, "decision": req.decision, "reason": req.reason},
+        details={"approval_id": approval_id, "reason": req.reason},
     )
     db.commit()
 

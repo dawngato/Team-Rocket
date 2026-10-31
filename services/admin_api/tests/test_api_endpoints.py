@@ -178,7 +178,10 @@ def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roste
             "approver_public_key": roster_approver_keypair["public_key_hex"],
             "approver_signature": approver_sig
         },
-        headers={"X_Actor_ID": "approver_frank"}  # Distinct actor
+        headers={
+            "X_Actor_ID": "approver_frank",
+            "X-Actor-Roles": "roster_approver",
+        }  # Distinct actor with the explicitly delegated approval role
     )
     assert res.status_code == 200
     assert res.json()["status"] == "APPROVED"
@@ -280,7 +283,10 @@ def test_full_election_lifecycle_via_api(client, test_db, auditor_keypair, roste
         assert "SHA256SUMS" in names
 
     # 13. Query Audit Events
-    res = client.get("/v1/admin/audit-events")
+    res = client.get(
+        "/v1/admin/audit-events",
+        headers={"X-Actor-ID": "auditor_lead", "X-Actor-Roles": "auditor"},
+    )
     assert res.status_code == 200
     events_data = res.json()
     assert events_data["total"] >= 5

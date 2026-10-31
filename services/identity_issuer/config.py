@@ -51,6 +51,20 @@ RECOVERY_DELIVERY_MODE = os.getenv("RECOVERY_DELIVERY_MODE", "development").stri
 # caller. Production requires a separately operated notification adapter.
 INVITATION_DELIVERY_MODE = os.getenv("INVITATION_DELIVERY_MODE", "development").strip().lower()
 INVITATION_EXPIRE_DAYS = int(os.getenv("INVITATION_EXPIRE_DAYS", "7"))
+ACTIVATION_DELIVERY_MODE = os.getenv("ACTIVATION_DELIVERY_MODE", "development").strip().lower()
+ACTIVATION_EXPIRE_HOURS = int(os.getenv("ACTIVATION_EXPIRE_HOURS", "24"))
+# Notification delivery is deliberately explicit. `configured` is accepted
+# only when the selected transport and public action URL are present.
+NOTIFICATION_PROVIDER = os.getenv("NOTIFICATION_PROVIDER", "none").strip().lower()
+NOTIFICATION_FROM_EMAIL = os.getenv("NOTIFICATION_FROM_EMAIL", "").strip()
+NOTIFICATION_PUBLIC_URL = os.getenv("NOTIFICATION_PUBLIC_URL", "").strip().rstrip("/")
+NOTIFICATION_SMTP_HOST = os.getenv("NOTIFICATION_SMTP_HOST", "").strip()
+NOTIFICATION_SMTP_PORT = int(os.getenv("NOTIFICATION_SMTP_PORT", "587"))
+NOTIFICATION_SMTP_USERNAME = os.getenv("NOTIFICATION_SMTP_USERNAME", "").strip()
+NOTIFICATION_SMTP_PASSWORD = os.getenv("NOTIFICATION_SMTP_PASSWORD", "")
+NOTIFICATION_SMTP_STARTTLS = os.getenv("NOTIFICATION_SMTP_STARTTLS", "true").strip().lower() in {"1", "true", "yes"}
+NOTIFICATION_WEBHOOK_URL = os.getenv("NOTIFICATION_WEBHOOK_URL", "").strip()
+NOTIFICATION_WEBHOOK_TOKEN = os.getenv("NOTIFICATION_WEBHOOK_TOKEN", "").strip()
 
 # Cryptography and Key Management
 ISSUER_KEY_ID = os.getenv("ISSUER_KEY_ID", "himvote_rsa_issuer_key_v1")
@@ -58,6 +72,7 @@ ISSUER_PRIVATE_KEY_PEM = os.getenv("ISSUER_PRIVATE_KEY_PEM", "")
 if APP_ENV == "production" and not ISSUER_PRIVATE_KEY_PEM.strip():
     raise RuntimeError("ISSUER_PRIVATE_KEY_PEM must be provided by the production key custody system")
 MFA_ISSUER = os.getenv("MFA_ISSUER", "HimVote")
+REDIS_URL = os.getenv("REDIS_URL", "").strip() or None
 
 # Argon2id parameters
 ARGON2_TIME_COST = int(os.getenv("ARGON2_TIME_COST", "3"))

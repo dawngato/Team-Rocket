@@ -2,7 +2,9 @@
 
 **Date:** 2026-10-31  
 **Target Environment:** Linux x86_64 / Python 3.14.7 / Node.js v20.18.0 / Next.js 15.5.7  
-**Branch:** `repair-master-hardening`
+**Branch:** `main`
+
+> Historical execution log. For current commands, counts, and release blockers, see `FEATURE_STATUS.md`. Do not use the older totals in this file as current-run evidence.
 
 ---
 

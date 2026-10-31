@@ -9,7 +9,6 @@ import {
   AlertTriangle,
   FileText,
   Vote,
-  ShieldCheck,
 } from "lucide-react";
 
 export interface StateBadgeProps {
@@ -48,13 +47,10 @@ export function StateBadge({ state, size = "md", showDescription = false }: Stat
       <span
         className={`inline-flex items-center rounded-md border ${config.bgColor} ${config.textColor} ${config.borderColor} ${sizeClasses} tracking-wide transition-colors`}
         role="status"
-        aria-label={`State: ${config.label}. ${config.description}`}
+        aria-label={`Election state: ${config.label}. ${config.description}`}
       >
         {getIcon()}
         <span>{config.label}</span>
-        {config.isConfirmed && (
-          <span className="sr-only">(Cryptographically confirmed property)</span>
-        )}
       </span>
       {showDescription && (
         <span className="text-[11px] text-slate-500 dark:text-slate-400">

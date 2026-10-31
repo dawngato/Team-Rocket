@@ -58,3 +58,7 @@ def init_db() -> None:
                 connection.execute(
                     text(f"ALTER TABLE approval_requests ADD COLUMN {name} {type_sql}")
                 )
+    roster_columns = {column["name"] for column in inspector.get_columns("roster_corrections")}
+    if "class_id" not in roster_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE roster_corrections ADD COLUMN class_id VARCHAR(255)"))

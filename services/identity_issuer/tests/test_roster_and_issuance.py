@@ -5,7 +5,7 @@ Validates RFC 9474 issuance algorithm, independent roster approval, and slot uni
 
 from datetime import datetime, timedelta, timezone
 import hashlib
-from services.identity_issuer.models import User, Session as UserSession
+from services.identity_issuer.models import User, Session as UserSession, StudentProfile, Department
 from services.identity_issuer.models import RoleAssignment, RoleDefinition
 from services.identity_issuer.crypto.rfc9474 import (
     get_default_issuer,
@@ -14,6 +14,17 @@ from services.identity_issuer.crypto.rfc9474 import (
     client_verify,
 )
 from services.identity_issuer.tests.test_admin_and_approvals import create_authenticated_user
+
+
+def set_authoritative_department(db_session, student_id: str, name: str) -> None:
+    department = db_session.query(Department).filter_by(name=name).first()
+    if not department:
+        department = Department(campus_id="test_campus", name=name, code=name[:8].upper().replace(" ", "_"))
+        db_session.add(department)
+        db_session.flush()
+    profile = db_session.query(StudentProfile).filter_by(student_id=student_id).one()
+    profile.department_id = department.id
+    db_session.commit()
 
 
 def test_student_registration_and_verification(client, db_session):
@@ -29,6 +40,14 @@ def test_student_registration_and_verification(client, db_session):
     )
     assert reg_resp.status_code == 202
     assert reg_resp.json()["status"] == "registration_pending_verification"
+    set_authoritative_department(db_session, "STU2026101", "Computer Science")
+    activation_token = reg_resp.json()["development_activation_token"]
+    activation_resp = client.post(
+        "/v1/auth/activate",
+        json={"activation_token": activation_token, "password": "StudentPassword2026!"},
+    )
+    assert activation_resp.status_code == 200
+    assert activation_resp.json()["login_enabled"] is False
 
     # Step 2: Duplicate registration rejected
     dup_resp = client.post(
@@ -52,6 +71,11 @@ def test_student_registration_and_verification(client, db_session):
     )
     assert verify_resp.status_code == 200
     assert verify_resp.json()["status"] == "student_verified"
+    login_resp = client.post(
+        "/v1/auth/login",
+        json={"email": "student101@institution.edu", "password": "StudentPassword2026!"},
+    )
+    assert login_resp.status_code == 200
 
 
 def test_teacher_cannot_verify_student_outside_delegated_department(client, db_session):
@@ -77,6 +101,7 @@ def test_teacher_cannot_verify_student_outside_delegated_department(client, db_s
         },
     )
     assert register_resp.status_code == 202
+    set_authoritative_department(db_session, "STU_OUT_OF_SCOPE", "Electrical Engineering")
 
     verify_resp = client.post(
         "/v1/students/STU_OUT_OF_SCOPE/verify",
@@ -100,6 +125,7 @@ def test_roster_snapshot_approval_and_freezing(client, db_session):
         "/v1/students/register",
         json={"student_id": "STU2026201", "email": "stu201@institution.edu", "full_name": "Pooja Thakur"},
     )
+    set_authoritative_department(db_session, "STU2026201", "Electronics")
     client.post(
         "/v1/students/STU2026201/verify",
         headers={"Authorization": f"Bearer {admin_token}"},
@@ -170,6 +196,7 @@ def test_blind_credential_issuance_flow(client, db_session):
         json={"student_id": student_id, "email": "student301@institution.edu", "full_name": "Suresh Kumar"},
     )
     assert reg_resp.status_code == 202
+    set_authoritative_department(db_session, student_id, "Civil")
 
     verify_resp = client.post(
         "/v1/students/STU2026301/verify",
@@ -273,7 +300,7 @@ def test_blind_credential_issuance_flow(client, db_session):
 
 def test_teacher_roster_corrections_department_scoped(client, db_session):
     """Verify teachers can only list and submit corrections for their assigned department."""
-    from services.identity_issuer.models import Tenant, Campus, Department, StaffProfile, RosterCorrection
+    from services.identity_issuer.models import Tenant, Campus, Department, StudentProfile, StaffProfile, RosterCorrection
 
     tenant = Tenant(name="Main University", domain="institution.edu")
     db_session.add(tenant)
@@ -300,6 +327,13 @@ def test_teacher_roster_corrections_department_scoped(client, db_session):
         role_id=role_teacher.id,
         scope_type="department",
         scope_id=dept_cs.code,
+    ))
+    db_session.add(StudentProfile(
+        student_id="ST_CS_101",
+        email="st_cs_101@institution.edu",
+        full_name="CS Student",
+        department_id=dept_cs.id,
+        campus_id=campus.id,
     ))
     db_session.commit()
 

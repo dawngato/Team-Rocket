@@ -9,7 +9,6 @@ import {
   Moon,
   Menu,
   X,
-  LogIn,
 } from "lucide-react";
 import { useApp } from "../lib/query_provider";
 
@@ -20,8 +19,8 @@ export function Navbar() {
 
   const navLinks = [
     { href: "/elections", label: "Elections" },
-    { href: "/how-it-works", label: "How Verification Works" },
-    { href: "/results", label: "Published Results" },
+    { href: "/how-it-works", label: "How It Works" },
+    { href: "/results", label: "Results" },
     { href: "/audit", label: "Public Verification" },
     { href: "/security-limits", label: "Security Limits" },
   ];
@@ -39,29 +38,31 @@ export function Navbar() {
               <Image
                 src="/himvote-logo.svg"
                 alt="HimVote Logo"
+                className="w-full h-full object-contain"
                 width={44}
                 height={44}
-                className="w-full h-full object-contain"
                 priority
               />
             </span>
-            <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#10233F] dark:text-white">
-              HimVote
-            </span>
+            <span className="font-extrabold text-xl sm:text-2xl tracking-tight text-[#10233F] dark:text-white">HimVote</span>
           </Link>
 
-          {/* Desktop Navigation Links */}
-          <nav className="apple-nav-links" aria-label="Primary navigation">
+          {/* Desktop Nav */}
+          <nav
+            aria-label="Primary navigation"
+            className="apple-nav-links"
+          >
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const active = pathname === link.href;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={`apple-nav-link focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#0071e3] ${
-                    isActive ? "apple-nav-link-active" : ""
+                    active
+                      ? "apple-nav-link-active"
+                      : ""
                   }`}
-                  aria-current={isActive ? "page" : undefined}
                 >
                   {link.label}
                 </Link>
@@ -88,10 +89,9 @@ export function Navbar() {
             {/* Auth Sign In Link */}
             <Link
               href="/auth/login"
-              className="apple-login hidden lg:flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3] focus-visible:ring-offset-2"
+              className="apple-login hidden lg:flex focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3] focus-visible:ring-offset-2"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Sign In</span>
+              Sign In
             </Link>
 
             {/* Mobile Menu Toggle Button */}
@@ -129,10 +129,9 @@ export function Navbar() {
                 <Link
                   href="/auth/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="apple-login w-full flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
+                  className="apple-login w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0071e3]"
                 >
-                  <LogIn className="w-4 h-4" />
-                  <span>Sign In</span>
+                  Sign In
                 </Link>
               </div>
             </nav>

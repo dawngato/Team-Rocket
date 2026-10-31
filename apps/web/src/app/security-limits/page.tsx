@@ -91,7 +91,7 @@ export default function SecurityLimitsPage() {
       assumption:
         "The external Witness node (e.g., student union or external auditor) operates on independent infrastructure and will not sign conflicting checkpoints.",
       mitigation:
-        "Multi-Party Isolation: The identity database and casting ledger are hosted on isolated origin servers with separate credentials. Furthermore, independent witness signatures and on-chain Merkle root anchors make undetected tampering mathematically impossible.",
+        "Current prototype boundary: the identity database and casting ledger use separate service boundaries, but independent witness custody and externally pinned checkpoints are not established in the local profile. A release must supply those trust anchors before claiming administrator-independent tamper detection.",
     },
     {
       id: "traffic-timing",

@@ -1,117 +1,66 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Vote, Clock, ShieldCheck, AlertCircle, RefreshCw } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
 
-export default function StudentElectionDetailPage() {
+export default function ElectionDetailPage() {
   const params = useParams();
-  const electionId = typeof params?.id === "string" ? params.id : "";
+  const electionId = params?.id as string;
   const [election, setElection] = useState<Election | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchElection = async () => {
-    if (!electionId) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await electionClient.getElection(electionId);
-      setElection(data);
-      setError(null);
-    } catch (err: unknown) {
-      setElection(null);
-      setError(err instanceof Error ? err.message : "The authoritative election manifest could not be retrieved.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    void fetchElection();
+    if (!electionId) return;
+    let cancelled = false;
+    void electionClient.getElection(electionId).then((nextElection) => {
+      if (!cancelled) {
+        setElection(nextElection);
+        setError(null);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setElection(null);
+        setError("The authoritative election manifest could not be reached. Voting is blocked until it is available.");
+      }
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+    return () => { cancelled = true; };
   }, [electionId]);
 
   return (
-    <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
-      <nav className="flex gap-2 overflow-x-auto pb-2">
-        <Link
-          href="/student/elections"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to elections</span>
-        </Link>
-      </nav>
-
-      {loading ? (
-        <div className="p-8 rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] animate-pulse space-y-4">
-          <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
-          <div className="h-10 bg-slate-100 dark:bg-slate-900 rounded" />
-        </div>
-      ) : error || !election ? (
-        <div className="p-8 text-center rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 space-y-4">
-          <div className="flex justify-center">
-            <AlertCircle className="w-10 h-10 text-red-500" />
-          </div>
-          <h2 className="text-base font-bold text-red-800 dark:text-red-300">
-            Authoritative Manifest Unavailable
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
-            {error || "The requested election does not exist or cannot be validated against the server manifest."}
-          </p>
-          <button
-            onClick={fetchElection}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold text-xs hover:bg-red-700 transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Retry Connection</span>
-          </button>
-        </div>
-      ) : (
-        <div className="p-8 rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] space-y-6">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-mono text-slate-400">{election.id}</span>
-            <StateBadge state={election.state} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-extrabold text-[#10233F] dark:text-white">
-              {election.title}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-              {election.contest}
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 dark:bg-[#0E1A2B] rounded-xl border border-slate-100 dark:border-[#1E3352] text-xs space-y-2 font-mono">
-            <div>
-              <span className="text-slate-400">Manifest Digest: </span>
-              <span className="text-slate-800 dark:text-slate-200 break-all">{election.manifest_digest || "Unsealed"}</span>
-            </div>
-            <div>
-              <span className="text-slate-400">Polls Close: </span>
-              <span className="text-slate-800 dark:text-slate-200">{election.closes_at_utc ? new Date(election.closes_at_utc).toLocaleString() : "TBD"}</span>
-            </div>
-          </div>
-
-          {election.state === "OPEN" ? (
-            <Link
-              href={`/student/elections/${election.id}/cast`}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#157E92] hover:bg-[#116676] text-white font-bold text-sm shadow-sm transition"
-            >
-              <Vote className="w-4 h-4" />
-              <span>Enter Private Voting Booth</span>
-            </Link>
-          ) : (
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-              Polling is not currently open for this election.
-            </p>
-          )}
-        </div>
+    <main className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
+      <Link href="/student/elections" className="inline-flex min-h-11 items-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium dark:border-[#1E3352] dark:bg-[#132135]">Back to elections</Link>
+      {loading && <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm dark:border-[#1E3352] dark:bg-[#132135]" role="status">Loading election manifest…</div>}
+      {error && <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-5 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">{error}</div>}
+      {!loading && !error && election && (
+        <>
+          <header className="space-y-3 border-b border-slate-200 pb-6 dark:border-[#1E3352]">
+            <div className="flex flex-wrap items-center gap-3"><StateBadge state={election.state} /><span className="font-mono text-xs text-slate-500">{election.id}</span></div>
+            <h1 className="text-2xl font-bold text-[#17233B] dark:text-white">{election.title}</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">{election.description || "Review the server-authoritative manifest before proceeding."}</p>
+          </header>
+          <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-[#1E3352] dark:bg-[#132135]">
+            <h2 className="mb-4 text-lg font-bold">Election status</h2>
+            <dl className="grid gap-3 text-sm sm:grid-cols-2">
+              <div><dt className="text-slate-500">Opens</dt><dd>{election.opens_at_utc || "Not scheduled"}</dd></div>
+              <div><dt className="text-slate-500">Closes</dt><dd>{election.closes_at_utc || "Not scheduled"}</dd></div>
+              <div><dt className="text-slate-500">Manifest</dt><dd className="break-all font-mono text-xs">{election.manifest_digest || "Not frozen"}</dd></div>
+              <div><dt className="text-slate-500">Eligibility</dt><dd>{election.eligible_count ?? "Not published"}</dd></div>
+            </dl>
+          </section>
+          <section className="rounded-xl border border-slate-200 bg-white p-6 dark:border-[#1E3352] dark:bg-[#132135]">
+            <div className="mb-4 flex items-center justify-between gap-4"><h2 className="text-lg font-bold">Manifest candidates</h2><Link href={`/student/elections/${encodeURIComponent(election.id)}/candidates`} className="text-xs font-bold text-[#157E92] hover:underline dark:text-[#38BDF8]">View profiles</Link></div>
+            {election.candidates?.length ? <div className="grid gap-3 sm:grid-cols-2">{election.candidates.map((candidate) => <article key={candidate.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-[#1E3352] dark:bg-slate-900/30"><h3 className="font-bold">{candidate.name}</h3><p className="mt-2 text-xs text-slate-600 dark:text-slate-400">{candidate.statement || "No statement was supplied by the authoritative manifest."}</p><p className="mt-3 font-mono text-[10px] text-slate-400">{candidate.id}</p></article>)}</div> : <p className="text-sm text-slate-600 dark:text-slate-300">No candidate records were returned by the manifest.</p>}
+          </section>
+          {election.state === "OPEN" && election.candidates?.length ? <Link href={`/student/elections/${encodeURIComponent(election.id)}/cast`} className="block min-h-11 rounded-lg bg-[#157E92] px-4 py-3 text-center text-sm font-semibold text-white hover:bg-[#0E6273]">Open supported voting booth</Link> : <div className="rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">Casting is unavailable until the authoritative election is open and has candidates.</div>}
+        </>
       )}
-    </div>
+    </main>
   );
 }

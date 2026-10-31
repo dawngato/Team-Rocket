@@ -79,6 +79,12 @@ def init_db() -> None:
     if "statement" not in columns:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE candidates ADD COLUMN statement TEXT"))
+    election_columns = {column["name"] for column in inspect(engine).get_columns("elections")}
+    if "institution_id" not in election_columns:
+        with engine.begin() as connection:
+            connection.execute(
+                text("ALTER TABLE elections ADD COLUMN institution_id VARCHAR(255) NOT NULL DEFAULT 'legacy_unscoped'")
+            )
 
 
 def get_db() -> Generator[Session, None, None]:

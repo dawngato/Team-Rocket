@@ -139,6 +139,7 @@ export interface AdminInvitationRecord {
   role: string;
   scope: string;
   status: string;
+  delivery_status: string;
   expires_at: string;
   created_at: string;
 }

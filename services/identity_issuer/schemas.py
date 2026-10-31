@@ -60,6 +60,11 @@ class RecoveryResetRequest(BaseModel):
     password: str = Field(min_length=16)
 
 
+class AccountActivationRequest(BaseModel):
+    activation_token: str = Field(min_length=32)
+    password: str = Field(min_length=16)
+
+
 class BootstrapClaimRequest(BaseModel):
     invitation_token: str
     password: str = Field(min_length=16)
@@ -84,6 +89,7 @@ class AdminInvitationRecord(BaseModel):
     role: str
     scope: str
     status: str
+    delivery_status: str
     expires_at: datetime
     created_at: datetime
 
@@ -103,13 +109,17 @@ class CreateTeacherRequest(BaseModel):
     faculty_id: str = Field(min_length=1)
     email: EmailStr
     department: str = Field(min_length=1)
-    initial_password: str = Field(min_length=12)
+    # Kept only to provide a clear validation error for legacy callers. The
+    # provisioning route rejects every supplied password and uses a one-time
+    # invitation instead.
+    initial_password: Optional[str] = Field(default=None, min_length=12)
 
 
 class RosterCorrectionRequest(BaseModel):
     student_id: str = Field(min_length=1)
     student_name: str = Field(min_length=1)
     department: str = Field(min_length=1)
+    class_id: Optional[str] = Field(default=None, min_length=1)
     correction_type: str = Field(min_length=1)
     reason: str = Field(min_length=1)
 
@@ -119,6 +129,7 @@ class RosterCorrectionRecord(BaseModel):
     student_id: str
     student_name: str
     department: str
+    class_id: Optional[str] = None
     correction_type: str
     reason: str
     status: str

@@ -43,6 +43,22 @@ export interface SessionProfile {
 export interface RegistrationResponse {
   status: string;
   student_id?: string;
+  activation_delivery?: "pending" | "development" | "configured";
+  development_activation_token?: string;
+}
+
+export interface AccountActivationResponse {
+  status: string;
+  login_enabled: boolean;
+}
+
+export interface InvitationRedeemResponse {
+  status: string;
+  user_id: string;
+  role: string;
+  scope: string;
+  totp_secret?: string;
+  totp_uri?: string;
 }
 
 export class IdentityApiError extends Error {
@@ -181,7 +197,17 @@ function isSessionProfile(value: unknown): value is SessionProfile {
 }
 
 function isRegistrationResponse(value: unknown): value is RegistrationResponse {
-  return isRecord(value) && typeof value.status === "string";
+  return isRecord(value) && typeof value.status === "string" &&
+    (value.activation_delivery === undefined || value.activation_delivery === "pending" || value.activation_delivery === "development" || value.activation_delivery === "configured") &&
+    (value.development_activation_token === undefined || isBase64Url(value.development_activation_token));
+}
+
+function isAccountActivationResponse(value: unknown): value is AccountActivationResponse {
+  return isRecord(value) && typeof value.status === "string" && typeof value.login_enabled === "boolean";
+}
+
+function isInvitationRedeemResponse(value: unknown): value is InvitationRedeemResponse {
+  return isRecord(value) && typeof value.status === "string" && typeof value.user_id === "string" && typeof value.role === "string" && typeof value.scope === "string";
 }
 
 function isRecoveryResponse(value: unknown): value is { status: string } {
@@ -333,6 +359,18 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
 
     async registerStudent(input: { student_id: string; email: string; full_name: string }): Promise<RegistrationResponse> {
       return request("/v1/students/register", { method: "POST", body: JSON.stringify(input) }, isRegistrationResponse, "The identity service returned an invalid registration response.");
+    },
+
+    async activateStudent(activationToken: string, password: string): Promise<AccountActivationResponse> {
+      return request("/v1/auth/activate", { method: "POST", body: JSON.stringify({ activation_token: activationToken, password }) }, isAccountActivationResponse, "The identity service returned an invalid activation response.");
+    },
+
+    async redeemInvitation(invitationToken: string, password: string): Promise<InvitationRedeemResponse> {
+      return request("/v1/auth/invitations/redeem", { method: "POST", body: JSON.stringify({ invitation_token: invitationToken, password }) }, isInvitationRedeemResponse, "The identity service returned an invalid invitation response.");
+    },
+
+    async resetPassword(token: string, password: string): Promise<{ status: string }> {
+      return request("/v1/auth/reset", { method: "POST", body: JSON.stringify({ token, password }) }, isRecoveryResponse, "The identity service returned an invalid recovery response.");
     },
 
     async requestRecovery(email: string): Promise<{ status: string }> {

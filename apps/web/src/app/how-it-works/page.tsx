@@ -52,7 +52,7 @@ export default function HowItWorksPage() {
         "University professors, database admins, and Wi-Fi sniffers see only random cipher numbers.",
         "No outside pressure or intimidation can reveal your pick.",
       ],
-      badge: "Confidential Choice",
+      badge: "100% Secret Choice",
     },
     {
       step: 3,
@@ -60,31 +60,31 @@ export default function HowItWorksPage() {
       title: "3. Tearing Off The Name Tag (Blind Credential)",
       icon: Stamp,
       tag: "Step 3: Anonymization Barrier",
-      summary: "Your roll number is completely torn away from your vote slip before it enters the digital box.",
+      summary: "The supported protocol is designed to separate eligibility from the encrypted ballot before casting.",
       plainStory:
         "Jaise physical election me ballot paper ko fold karke dabba me daalte hain taaki kiska vote hai ye pata na chale, waise hi yahan software aapka Roll Number vote se alag kar deta hai. Dabba me sirf anonymous vote girta hai.",
       bulletPoints: [
-        "Cryptographic blinding permanently severs student name from the vote.",
-        "Even if hackers break the database, they cannot link who voted for whom.",
-        "One student = exactly one vote. Duplicate voting attempts are rejected instantly.",
+        "A reviewed blind-credential protocol is required to separate eligibility from the encrypted ballot.",
+        "The local development engine and deployment telemetry do not establish an absolute privacy guarantee.",
+        "The casting service rejects reused credential nullifiers when the authoritative service is available.",
       ],
-      badge: "Untraceable Ballot",
+      badge: "Protocol dependent",
     },
     {
       step: 4,
       shortTitle: "Campus Witnesses",
-      title: "4. Independent Observers Co-Sign Every Batch",
+      title: "4. Witness checkpoints",
       icon: Users,
       tag: "Step 4: Tamper Prevention",
-      summary: "Multiple independent witness nodes monitor the digital box so no authority can drop or insert fake votes.",
+      summary: "Configured witness services can sign checkpoints, but local witness custody is not independent by default.",
       plainStory:
         "College administration akele dabba handle nahi kar sakti. Student council, faculty observers, aur independent nodes har voting batch par digital signature karte hain. Agar ek bhi vote chupke se badla gaya, toh system turant alarm baja deta hai.",
       bulletPoints: [
-        "Multi-stakeholder witness co-signatures prevent backroom tampering.",
-        "Votes are logged in an append-only digital ledger where past entries cannot be deleted.",
-        "Zero trust needed in college authorities—math and witness consensus guard the box.",
+        "Independent custody and pinned roots are required before witness signatures provide an external integrity check.",
+        "The local ledger records append-only evidence, but database administrators remain within the local threat boundary.",
+        "Offline verification can validate released evidence only when the verifier receives trusted keys out of band.",
       ],
-      badge: "Tamper-Evident Ledger",
+      badge: "Evidence checkpoint",
     },
     {
       step: 5,
@@ -132,7 +132,7 @@ export default function HowItWorksPage() {
           <span>Campus Democracy in Action</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
-          How Your Vote Stays Fair, Anonymous & Auditable
+          How Your Vote Stays 100% Fair & Secret
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
           No complicated math lectures. Here is how HimVote protects your voice from teacher pressure, senior politics, and backroom rigging in 6 clean steps.
@@ -256,7 +256,7 @@ export default function HowItWorksPage() {
               <tr>
                 <td className="px-4 py-3.5 font-bold text-amber-500">"Seniors ya campus neta mere par pressure daalenge?"</td>
                 <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Aap kisi ke saamne smile karke bol sakte ho ki unhe vote diya—booth me sirf aapki marzi chalti hai.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Private digital booth</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">100% private digital booth</td>
               </tr>
               <tr>
                 <td className="px-4 py-3.5 font-bold text-amber-500">"Mera vote counting me secretly delete toh nahi kar denge?"</td>
