@@ -76,14 +76,14 @@ export default function HomePage() {
             </div>
 
             <div className="space-y-3">
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white leading-snug animate-linear-reveal-2">
-                Na darr kisi ka, na kisi ka zor — <br />
-                <span className="bg-gradient-to-r from-[#0284C7] via-[#00D2FF] to-emerald-500 bg-clip-text text-transparent">
-                  Vote tumhara, campus ka daur.
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white leading-snug">
+                Campus election system. <br />
+                <span className="text-[#157E92] dark:text-[#38BDF8]">
+                  Transparent votes, guaranteed voter privacy.
                 </span>
               </h1>
-              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl animate-linear-reveal-3">
-                Built for our campus democracy. Vote for your student council without fear of teacher bias, senior intimidation, or leaked preferences — protected by verified cryptographic privacy.
+              <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
+                Built for collegiate democracy. Vote for student representatives with cryptographic anonymity. Independent witness checkpoints ensure tamper-evident tallies.
               </p>
             </div>
 
@@ -217,31 +217,40 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-xs">
-          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
-            <div className="size-8 rounded-lg bg-cyan-500/10 text-[#0284C7] flex items-center justify-center font-black">
-              1
+          <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
+              01
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Voter Registrar (Teacher Desk)</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
+              <span className="text-[#15805D]">✓</span>
+              <span>Voter Registrar</span>
+            </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Verifies student identity and issues blind eligibility credentials. Has zero access to the ballot box.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
-            <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
-              2
+          <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
+              02
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Anonymous Casting Gateway</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
+              <span className="text-[#157E92]">✓</span>
+              <span>Anonymous Casting Gateway</span>
+            </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Accepts blind tokens and encrypted ballots. Strips IP and identity headers to guarantee total voter privacy.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
-            <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
-              3
+          <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-5 space-y-2">
+            <div className="text-[11px] font-mono font-bold text-slate-400 dark:text-slate-500">
+              03
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Independent Witness & Auditor</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-1.5">
+              <span className="text-[#15805D]">✓</span>
+              <span>Witness & Offline Verifier</span>
+            </h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
               Independently cosigns each checkpoint Merkle root. Anyone can re-run the open-source verifier CLI offline.
             </p>

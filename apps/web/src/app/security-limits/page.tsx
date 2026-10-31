@@ -206,52 +206,60 @@ export default function SecurityLimitsPage() {
 
       {/* Key Guarantees vs Non-Guarantees Comparison */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 rounded-xl border border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-3">
-          <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
-            <span>What HimVote Mathematically Guarantees</span>
+        <div className="p-5 rounded-lg border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <span className="font-bold text-sm text-[#0F172A] dark:text-white">
+              Mathematical Guarantees
+            </span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#15805D]/10 text-[#15805D] border border-[#15805D]/20">
+              ENFORCED
+            </span>
           </div>
-          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
-            <li className="flex items-start gap-1.5">
-              <span className="text-emerald-500 font-bold">✓</span>
-              <span><strong>Ballot Privacy:</strong> No database administrator, teacher, or dean can discover who you voted for from servers or logs.</span>
+          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5 leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="text-[#15805D] font-bold shrink-0">•</span>
+              <span><strong>Ballot Privacy:</strong> Cryptographic separation ensures database administrators, teachers, and faculty cannot associate votes with voter identities.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-emerald-500 font-bold">✓</span>
-              <span><strong>One Student, One Vote:</strong> Duplicate votes and double-spending tokens are mathematically rejected by cryptographic nullifiers.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-[#15805D] font-bold shrink-0">•</span>
+              <span><strong>One Student, One Vote:</strong> Duplicate ballot attempts and token replay are rejected mathematically via spent nullifiers.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-emerald-500 font-bold">✓</span>
-              <span><strong>Tamper-Proof Ledger:</strong> Once recorded in the RFC 9162 Merkle log, no past vote can be deleted or replaced without invalidating cryptographic root hashes.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-[#15805D] font-bold shrink-0">•</span>
+              <span><strong>Tamper-Proof Ledger:</strong> Checkpoints committed to the RFC 9162 Merkle log cannot be rewritten without invalidating root cryptographic hashes.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-emerald-500 font-bold">✓</span>
-              <span><strong>Individual Verifiability:</strong> Every voter gets a personal receipt handle to verify their ballot's presence in the public witness tree.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-[#15805D] font-bold shrink-0">•</span>
+              <span><strong>Individual Verifiability:</strong> Every voter receives a receipt handle to verify ballot inclusion in the public tree offline.</span>
             </li>
           </ul>
         </div>
 
-        <div className="p-5 rounded-xl border border-amber-500/20 bg-amber-50/50 dark:bg-amber-950/20 space-y-3">
-          <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400 font-bold text-sm">
-            <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-            <span>What Software Cannot Prevent Alone</span>
+        <div className="p-5 rounded-lg border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] space-y-3">
+          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+            <span className="font-bold text-sm text-[#0F172A] dark:text-white">
+              Operational Assumptions & Physical Limits
+            </span>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              OUT OF SCOPE
+            </span>
           </div>
-          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2 leading-relaxed">
-            <li className="flex items-start gap-1.5">
-              <span className="text-amber-500 font-bold">⚠</span>
-              <span><strong>Physical Intimidation:</strong> If someone stands directly over your shoulder in a hostel room while you tap your screen.</span>
+          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5 leading-relaxed">
+            <li className="flex items-start gap-2">
+              <span className="text-slate-400 font-bold shrink-0">•</span>
+              <span><strong>Physical Intimidation:</strong> Coercion occurring directly in person during device screen interaction cannot be prevented by software protocols.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-amber-500 font-bold">⚠</span>
-              <span><strong>Device Malware:</strong> If a voter's phone has spyware or screen-recording apps installed that capture keystrokes before browser encryption.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-slate-400 font-bold shrink-0">•</span>
+              <span><strong>Device Compromise:</strong> Client endpoint malware or screen recorders that intercept user input before encryption violate client trust.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-amber-500 font-bold">⚠</span>
-              <span><strong>Voluntary Credential Sharing:</strong> If a student deliberately hands their college login and OTP to an unauthorized senior or friend.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-slate-400 font-bold shrink-0">•</span>
+              <span><strong>Voluntary Credential Sharing:</strong> If credentials and MFA codes are voluntarily delegated to third parties, identity authenticity is compromised.</span>
             </li>
-            <li className="flex items-start gap-1.5">
-              <span className="text-amber-500 font-bold">⚠</span>
-              <span><strong>Demographic Elimination:</strong> In a contest with only 5 voters, software cannot hide unanimous consensus from common sense deductions.</span>
+            <li className="flex items-start gap-2">
+              <span className="text-slate-400 font-bold shrink-0">•</span>
+              <span><strong>Small Quorum Elimination:</strong> Contests with extremely small voter pools cannot mathematically conceal unanimous outcomes.</span>
             </li>
           </ul>
         </div>

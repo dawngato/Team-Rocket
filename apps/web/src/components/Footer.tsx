@@ -80,6 +80,16 @@ export function Footer() {
               </Link>
             </li>
             <li>
+                <Link href="/terms" className="apple-footer-link">
+                Terms of Service
+              </Link>
+            </li>
+            <li>
+                <Link href="/privacy" className="apple-footer-link">
+                Privacy Policy
+              </Link>
+            </li>
+            <li>
                 <span className="text-[#6e6e73] dark:text-[#a1a1a6] text-xs block">
                 Languages: English and Hindi
               </span>
