@@ -196,10 +196,12 @@ export function StudentIdCardVerifier() {
           <div className="lg:col-span-7 space-y-5">
             {/* Roll Number Input */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
+              <label htmlFor="student-roll-input" className="block text-xs font-bold uppercase tracking-wider text-slate-300 mb-1.5">
                 College Roll Number / Registration No. <span className="text-cyan-400">*</span>
               </label>
               <input
+                id="student-roll-input"
+                aria-label="College Roll Number or Registration Number"
                 type="text"
                 value={rollNumber}
                 onChange={(e) => setRollNumber(e.target.value)}
@@ -224,6 +226,8 @@ export function StudentIdCardVerifier() {
                 >
                   <input
                     ref={fileInputRef}
+                    id="student-id-file-input"
+                    aria-label="Upload Student ID Card Photo"
                     type="file"
                     accept="image/*"
                     onChange={handleFileChange}
@@ -271,6 +275,7 @@ export function StudentIdCardVerifier() {
                     </button>
                     <input
                       ref={fileInputRef}
+                      aria-label="Change Student ID Card Photo"
                       type="file"
                       accept="image/*"
                       onChange={handleFileChange}
