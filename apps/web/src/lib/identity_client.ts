@@ -394,12 +394,17 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
 
     async getSession(): Promise<SessionProfile> {
       try {
-        if (baseUrl) {
-          return await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-        }
-      } catch (err) {
-        // Fall back to local session
-      }
+              if (baseUrl) {
+                return await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+              }
+              // DEV-ONLY: no backend. Return the mock profile so all role portals
+              // render locally. Never reachable in production.
+              if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
+                return identityDevMock("/v1/auth/me", {}) as SessionProfile;
+              }
+            } catch (err) {
+              // Fall back to local session
+            }
       const currentUser = userAuthStore.getCurrentUser();
       if (currentUser && currentUser.role) {
         return {
