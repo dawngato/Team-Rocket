@@ -29,6 +29,7 @@ BOOTSTRAP_INVITATION_TOKEN = os.getenv(
     "BOOTSTRAP_INVITATION_TOKEN",
     "bootstrap_claim_token_initial_secret" if APP_ENV == "development" else "",
 )
+BOOTSTRAP_ADMIN_EMAIL = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "superadmin@hptu.ac.in").strip().lower()
 
 _configured_origins = os.getenv("IDENTITY_ALLOWED_ORIGINS")
 ALLOWED_ORIGINS = [

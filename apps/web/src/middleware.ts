@@ -69,25 +69,27 @@ export async function middleware(request: NextRequest) {
   const isProtected = PROTECTED_ROUTE_PATTERN.test(pathname);
 
   if (isProtected) {
-    const sessionCookie = request.cookies.get("session_id") || request.cookies.get("session") || request.cookies.get("himvote_session_profile");
+    // Only Identity Issuer session tokens can authenticate a protected route.
+    // The client-readable demo profile cookie is never an authentication token.
+    const sessionCookie = request.cookies.get("session_id") || request.cookies.get("session");
     const authHeader = request.headers.get("authorization");
 
     // 1. No session token present -> Redirect to login
-        if (!sessionCookie && !authHeader) {
-          // DEV ONLY: no backend running — allow render with mock roles so the
-          // 7 role portals are visible for demos. NEVER reachable in production.
-          if (process.env.NODE_ENV !== "production" && !process.env.REQUIRE_AUTH) {
-            requestHeaders.set("x-user-id", "dev-demo-user");
-            requestHeaders.set("x-user-roles", "super_admin,administrator,election_officer,teacher,auditor,student");
-            requestHeaders.set("x-user-scopes", JSON.stringify([{ scope_type: "institution", scope_id: "*" }]));
-            const ok = NextResponse.next({ request: { headers: requestHeaders } });
-            ok.headers.set("Content-Security-Policy", csp);
-            return ok;
-          }
-          const loginUrl = new URL("/auth/login", request.url);
-          loginUrl.searchParams.set("next", pathname);
-          return NextResponse.redirect(loginUrl);
-        }
+    if (!sessionCookie && !authHeader) {
+      // DEV ONLY: no backend running — allow render with mock roles so the
+      // 7 role portals are visible for demos. NEVER reachable in production.
+      if (process.env.NODE_ENV !== "production" && !process.env.REQUIRE_AUTH) {
+        requestHeaders.set("x-user-id", "dev-demo-user");
+        requestHeaders.set("x-user-roles", "super_admin,administrator,election_officer,teacher,auditor,student");
+        requestHeaders.set("x-user-scopes", JSON.stringify([{ scope_type: "institution", scope_id: "*" }]));
+        const ok = NextResponse.next({ request: { headers: requestHeaders } });
+        ok.headers.set("Content-Security-Policy", csp);
+        return ok;
+      }
+      const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
 
     // 2. Server-side session validation against the authoritative Identity Service
     const identityUrl = process.env.IDENTITY_SERVICE_URL || process.env.NEXT_PUBLIC_IDENTITY_SERVICE_URL || "http://127.0.0.1:8080";
@@ -109,6 +111,7 @@ export async function middleware(request: NextRequest) {
         const res = NextResponse.redirect(loginUrl);
         res.cookies.delete("session_id");
         res.cookies.delete("session");
+        res.cookies.delete("himvote_session_profile");
         return res;
       }
 
@@ -137,32 +140,8 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set("x-user-roles", roles.join(","));
       requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
     } catch {
-      // 6. Identity service unavailable -> check verified local session cookie
-      const sessionProfileCookie = request.cookies.get("himvote_session_profile");
-      if (sessionProfileCookie) {
-        try {
-          const profile = JSON.parse(decodeURIComponent(sessionProfileCookie.value));
-          const rawRoles = Array.isArray(profile?.roles)
-            ? profile.roles
-            : (profile?.role ? [profile.role] : []);
-          const roles: string[] = rawRoles;
-          const scopes: SessionScope[] = Array.isArray(profile?.scopes) ? profile.scopes : [];
-          if (!isAuthorizedForPath(pathname, roles, scopes)) {
-            const deniedUrl = new URL("/auth/login", request.url);
-            deniedUrl.searchParams.set("error", "access_denied");
-            return NextResponse.redirect(deniedUrl);
-          }
-          requestHeaders.set("x-user-id", String(profile.user_id || ""));
-          requestHeaders.set("x-user-roles", roles.join(","));
-          requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
-        } catch {
-          if (process.env.NODE_ENV === "production") {
-            const loginUrl = new URL("/auth/login", request.url);
-            loginUrl.searchParams.set("error", "service_unavailable");
-            return NextResponse.redirect(loginUrl);
-          }
-        }
-      } else if (process.env.NODE_ENV === "production") {
+      // Identity availability errors never fall back to browser-controlled role data.
+      if (process.env.NODE_ENV === "production") {
         const loginUrl = new URL("/auth/login", request.url);
         loginUrl.searchParams.set("error", "service_unavailable");
         return NextResponse.redirect(loginUrl);

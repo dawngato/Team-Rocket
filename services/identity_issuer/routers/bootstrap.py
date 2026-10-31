@@ -8,7 +8,7 @@ import hmac
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from ..database import get_db
-from ..config import APP_ENV, BOOTSTRAP_ALLOWED, BOOTSTRAP_INVITATION_TOKEN
+from ..config import APP_ENV, BOOTSTRAP_ALLOWED, BOOTSTRAP_INVITATION_TOKEN, BOOTSTRAP_ADMIN_EMAIL
 from ..models import User, RoleDefinition, RoleAssignment, MfaCredential, SystemSetting
 from ..schemas import BootstrapClaimRequest, BootstrapClaimResponse
 from ..crypto.hashing import hash_password
@@ -87,7 +87,7 @@ def bootstrap_claim(
 
     # Generate TOTP MFA secret for required Super Admin MFA
     totp_secret = generate_totp_secret()
-    admin_email = "superadmin@institution.edu"
+    admin_email = BOOTSTRAP_ADMIN_EMAIL
     totp_uri = get_totp_uri(totp_secret, admin_email)
 
     # Create Super Admin user

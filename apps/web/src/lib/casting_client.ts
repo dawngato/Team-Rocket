@@ -3,6 +3,7 @@ import type {
   CastBallotResponse,
   ReceiptStatusResponse,
 } from "./types";
+import { publicApiBase } from "./public_api_base";
 
 export const ENGINE_HANDOFF_TYPE = "himvote.engine.ballot.v1" as const;
 
@@ -40,11 +41,11 @@ export class CastingApiError extends Error {
 }
 
 function configuredCastingBaseUrl(): string {
-  return (
+  return publicApiBase(
     process.env.NEXT_PUBLIC_CASTING_BASE ||
     process.env.NEXT_PUBLIC_API_BASE ||
-    ""
-  ).replace(/\/$/, "");
+    undefined,
+  );
 }
 
 const MAX_ELECTION_ID_LENGTH = 256;

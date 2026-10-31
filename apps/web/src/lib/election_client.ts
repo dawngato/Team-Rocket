@@ -1,4 +1,5 @@
 import type { Candidate, Election, ElectionState, EvidencePackage, PublishedResults } from "./types";
+import { publicApiBase } from "./public_api_base";
 
 export interface ElectionClientOptions {
   baseUrl?: string;
@@ -46,7 +47,7 @@ const electionStates = new Set<ElectionState>([
 ]);
 
 function configuredBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_ADMIN_API_BASE || process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/$/, "");
+  return publicApiBase(process.env.NEXT_PUBLIC_ADMIN_API_BASE || process.env.NEXT_PUBLIC_API_BASE || undefined);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -316,7 +317,7 @@ export function createElectionClient(options: ElectionClientOptions = {}) {
     if (!baseUrl) {
           // DEV-ONLY demo data: no authoritative service configured (no backend running).
           // NEVER serves real data; only provides visible content for local demo/preview.
-          if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
+          if (process.env.NODE_ENV === "development" && !process.env.VITEST && process.env.DEMO_MODE !== "false") {
             return devMock(path);
           }
           throw new ElectionApiError({

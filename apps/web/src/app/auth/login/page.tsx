@@ -19,7 +19,7 @@ import {
   Fingerprint,
 } from "lucide-react";
 import { identityClient } from "@/lib/identity_client";
-import { userAuthStore } from "@/lib/user_auth_store";
+import { normalizeRole, workspaceHome } from "@/lib/routes/nav_config";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,6 +27,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [mfaToken, setMfaToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pendingNotice, setPendingNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -42,6 +44,17 @@ export default function LoginPage() {
     } catch {
       // Ignore localStorage access failures
     }
+
+    const authError = new URLSearchParams(window.location.search).get("error");
+    if (authError === "session_expired") {
+      setError("Your identity session could not be validated. Sign in again to establish a fresh session.");
+    } else if (authError === "service_unavailable") {
+      setError("The identity service is temporarily unavailable. Please try again shortly.");
+    } else if (authError === "access_denied") {
+      setError("Your account does not have a role authorized for the requested workspace.");
+    } else if (authError === "auth_failed") {
+      setError("The identity service could not complete sign in. Please try again shortly.");
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,7 +65,7 @@ export default function LoginPage() {
 
     try {
       // 1. Authenticate credentials through the identity client
-      await identityClient.login(email, password);
+      const loginResponse = await identityClient.login(email, password, mfaRequired ? mfaToken : undefined);
 
       // Handle remember me preference
       try {
@@ -65,31 +78,39 @@ export default function LoginPage() {
         // Ignore localStorage access failures
       }
 
-      // 2. Query user record in institutional authority store
-      const currentUser = userAuthStore.getUserByEmail(email);
-      if (!currentUser?.role || currentUser.status === "pending_role") {
-        setPendingNotice(
-          "Your institutional account is registered, but an operational role has not yet been assigned. In accordance with university governance policies, only the Super Administrator has the authority to assign roles (Administrator, Election Officer, Faculty Member, or Student Voter). Please await administrator provisioning."
-        );
-        userAuthStore.logoutUser();
+      if (loginResponse.mfa_required) {
+        setMfaRequired(true);
+        setMfaToken("");
+        setError(null);
         return;
       }
 
-      // 3. Route to designated institutional workspace based on the assigned role
-      const role = currentUser.role;
-      if (role === "super_admin") {
-        router.push("/super-admin");
-      } else if (role === "administrator") {
-        router.push("/admin");
-      } else if (role === "election_officer") {
-        router.push("/officer");
-      } else if (role === "teacher") {
-        router.push("/teacher");
-      } else if (role === "student") {
-        router.push("/student");
-      } else {
-        router.push("/student");
+      // Route only after the identity issuer confirms the active session and roles.
+      const session = await identityClient.getSession();
+      const assignedRoles = session.roles.filter((role) => normalizeRole(role));
+      if (assignedRoles.length === 0) {
+        setPendingNotice(
+          "Your institutional account is authenticated, but it has no active workspace role. Please contact your institutional administrator for role assignment."
+        );
+        await identityClient.logout();
+        return;
       }
+
+      setMfaRequired(false);
+      setMfaToken("");
+      const nextTarget = new URLSearchParams(window.location.search).get("next");
+      if (nextTarget) {
+        try {
+          const destination = new URL(nextTarget, window.location.origin);
+          if (destination.origin === window.location.origin && destination.pathname !== "/auth/login") {
+            router.replace(`${destination.pathname}${destination.search}${destination.hash}`);
+            return;
+          }
+        } catch {
+          // Ignore malformed redirect targets and use the role's workspace.
+        }
+      }
+      router.replace(workspaceHome(assignedRoles));
     } catch (cause) {
       setError(
         cause instanceof Error
@@ -301,6 +322,41 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {mfaRequired && (
+              <div className="space-y-2">
+                <label
+                  htmlFor="login-mfa-token"
+                  className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200"
+                >
+                  Authenticator code
+                </label>
+                <input
+                  id="login-mfa-token"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  pattern="[0-9]{6}"
+                  maxLength={6}
+                  required
+                  aria-describedby="login-mfa-help"
+                  className="w-full min-h-[48px] rounded-xl border border-slate-300 dark:border-[#1E3352] bg-[#F8FAFC] dark:bg-[#08121f] text-slate-900 dark:text-white px-4 py-2.5 text-base font-mono tracking-[0.35em] focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 focus-visible:outline-none transition-all placeholder:text-slate-400 shadow-sm"
+                  placeholder="000000"
+                  value={mfaToken}
+                  onChange={(event) => setMfaToken(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                />
+                <p id="login-mfa-help" className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
+                  Enter the current six-digit code from your authenticator app to complete sign in.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setMfaRequired(false); setMfaToken(""); setError(null); }}
+                  className="text-xs font-semibold text-[#157E92] hover:underline dark:text-[#38BDF8]"
+                >
+                  Use a different account
+                </button>
+              </div>
+            )}
+
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label
@@ -372,7 +428,7 @@ export default function LoginPage() {
                 </>
               ) : (
                 <>
-                  <span>Sign In to Workspace</span>
+                  <span>{mfaRequired ? "Verify and Continue" : "Sign In to Workspace"}</span>
                   <ArrowRight className="w-4 h-4" aria-hidden="true" />
                 </>
               )}

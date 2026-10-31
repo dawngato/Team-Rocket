@@ -1,6 +1,7 @@
 import type { Election } from "./types";
 import type { IssuerPublicKey } from "./credential_crypto";
 import { userAuthStore } from "./user_auth_store";
+import { publicApiBase } from "./public_api_base";
 
 export interface IdentityClientOptions {
   baseUrl?: string;
@@ -85,11 +86,12 @@ export class IdentityApiError extends Error {
 }
 
 function configuredBaseUrl(): string {
-  return (
+  return publicApiBase(
     process.env.NEXT_PUBLIC_IDENTITY_API_BASE ||
+    process.env.NEXT_PUBLIC_IDENTITY_BASE ||
     process.env.NEXT_PUBLIC_API_BASE ||
-    ""
-  ).replace(/\/$/, "");
+    undefined,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -301,7 +303,7 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
     if (!baseUrl) {
           // DEV-ONLY mock session: no identity service configured. Lets the AppShell
           // unlock all role portals for local demo. NEVER reachable in production.
-          if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
+          if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
                       const mock = identityDevMock(path, init);
                       if (mock !== undefined) return mock as T;
                     }
@@ -338,46 +340,50 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
     },
 
     async login(email: string, password: string, mfaToken?: string): Promise<LoginResponse> {
-      try {
-        if (baseUrl) {
-          const response = await request("/v1/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
-          }, isLoginResponse, "The identity service returned an invalid login response.");
-          if (response.mfa_required) {
-            inMemorySessionToken = null;
-            notifySessionListeners(null);
-          } else if (response.session_token) {
-            inMemorySessionToken = response.session_token;
-            try {
-              const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-              notifySessionListeners(profile);
-            } catch {}
-          } else {
-            throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
-          }
-          return response;
-        }
-      } catch (cause) {
-        // Fall back to local user store if server is unconfigured or unreachable
+      if (baseUrl === null) {
+        throw new IdentityApiError({ code: "IDENTITY_API_CONFIG_INVALID", message: "The identity service URL is invalid.", status: 503, retryable: false });
       }
 
-      const { user } = userAuthStore.loginUser(email, password);
-      const roleStr = user.role || "pending";
-      const profile: SessionProfile = {
-        user_id: user.id,
-        email: user.email,
-        roles: user.role ? [user.role] : [],
-        scopes: user.role ? [{ role: user.role, scope_type: "global", scope_id: "*" }] : [],
-        mfa_authenticated: true,
-      };
-      notifySessionListeners(user.role ? profile : null);
-      return {
-        session_token: `token_${user.id}`,
-        user_id: user.id,
-        role: roleStr,
-        mfa_required: false,
-      };
+      if (baseUrl) {
+        const response = await request("/v1/auth/login", {
+          method: "POST",
+          body: JSON.stringify({ email, password, ...(mfaToken ? { mfa_token: mfaToken } : {}) }),
+        }, isLoginResponse, "The identity service returned an invalid login response.");
+        if (response.mfa_required) {
+          inMemorySessionToken = null;
+          notifySessionListeners(null);
+          return response;
+        }
+        if (!response.session_token) {
+          throw new IdentityApiError({ code: "IDENTITY_RESPONSE_INVALID", message: "The identity service did not return an authenticated session.", status: 502, retryable: false });
+        }
+
+        inMemorySessionToken = response.session_token;
+        const profile = await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+        notifySessionListeners(profile);
+        return response;
+      }
+
+      if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
+        const { user } = userAuthStore.loginUser(email, password);
+        const roleStr = user.role || "pending";
+        const profile: SessionProfile = {
+          user_id: user.id,
+          email: user.email,
+          roles: user.role ? [user.role] : [],
+          scopes: user.role ? [{ role: user.role, scope_type: "global", scope_id: "*" }] : [],
+          mfa_authenticated: true,
+        };
+        notifySessionListeners(user.role ? profile : null);
+        return {
+          session_token: `token_${user.id}`,
+          user_id: user.id,
+          role: roleStr,
+          mfa_required: false,
+        };
+      }
+
+      throw new IdentityApiError({ code: "IDENTITY_API_NOT_CONFIGURED", message: "The identity service is not configured.", status: 503, retryable: false });
     },
 
     async logout(): Promise<void> {
@@ -393,32 +399,33 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
     },
 
     async getSession(): Promise<SessionProfile> {
-      try {
-              if (baseUrl) {
-                return await request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
-              }
-              // DEV-ONLY: no backend. Return the mock profile so all role portals
-              // render locally. Never reachable in production.
-              if (process.env.NODE_ENV !== "production" && process.env.DEMO_MODE !== "false") {
-                return identityDevMock("/v1/auth/me", {}) as SessionProfile;
-              }
-            } catch (err) {
-              // Fall back to local session
-            }
-      const currentUser = userAuthStore.getCurrentUser();
-      if (currentUser && currentUser.role) {
-        return {
-          user_id: currentUser.id,
-          email: currentUser.email,
-          roles: [currentUser.role],
-          scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
-          mfa_authenticated: true,
-        };
+      if (baseUrl === null) {
+        throw new IdentityApiError({ code: "IDENTITY_API_CONFIG_INVALID", message: "The identity service URL is invalid.", status: 503, retryable: false });
       }
+
+      if (baseUrl) {
+        return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
+      }
+
+      if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
+        const currentUser = userAuthStore.getCurrentUser();
+        if (currentUser && currentUser.role) {
+          return {
+            user_id: currentUser.id,
+            email: currentUser.email,
+            roles: [currentUser.role],
+            scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
+            mfa_authenticated: true,
+          };
+        }
+        const mock = identityDevMock("/v1/auth/me", {});
+        if (mock) return mock as SessionProfile;
+      }
+
       throw new IdentityApiError({
-        code: "AUTH_REQUIRED",
-        message: "Authentication required to access workspace.",
-        status: 401,
+        code: "IDENTITY_API_NOT_CONFIGURED",
+        message: "The identity service is not configured.",
+        status: 503,
         retryable: false,
       });
     },

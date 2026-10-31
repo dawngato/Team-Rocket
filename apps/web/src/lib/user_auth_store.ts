@@ -104,6 +104,17 @@ function loadUsers(): SystemUser[] {
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
+      const existingEmails = new Set(parsed.map((u: SystemUser) => u.email.toLowerCase()));
+      let missingAdded = false;
+      for (const initialUser of INITIAL_USERS) {
+        if (!existingEmails.has(initialUser.email.toLowerCase())) {
+          parsed.push(initialUser);
+          missingAdded = true;
+        }
+      }
+      if (missingAdded) {
+        window.localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(parsed));
+      }
       return parsed;
     }
   } catch {}
@@ -115,29 +126,6 @@ function saveUsers(users: SystemUser[]) {
   if (!isBrowser()) return;
   try {
     window.localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(users));
-  } catch {}
-}
-
-function syncAuthCookies(user: SystemUser | null) {
-  if (!isBrowser()) return;
-  try {
-    if (user && user.role) {
-      const sessionData = {
-        user_id: user.id,
-        email: user.email,
-        roles: [user.role],
-        scopes: [{ role: user.role, scope_type: "global", scope_id: "*" }],
-        mfa_authenticated: true,
-      };
-      const encoded = encodeURIComponent(JSON.stringify(sessionData));
-      document.cookie = `session_id=session_${user.id}; path=/; max-age=86400; SameSite=Lax`;
-      document.cookie = `session=session_${user.id}; path=/; max-age=86400; SameSite=Lax`;
-      document.cookie = `himvote_session_profile=${encoded}; path=/; max-age=86400; SameSite=Lax`;
-    } else {
-      document.cookie = "session_id=; path=/; max-age=0";
-      document.cookie = "session=; path=/; max-age=0";
-      document.cookie = "himvote_session_profile=; path=/; max-age=0";
-    }
   } catch {}
 }
 
@@ -165,14 +153,13 @@ export const userAuthStore = {
         const parsed: SystemUser = JSON.parse(raw);
         // Refresh with latest role from users db
         const latest = this.getUserById(parsed.id);
+        const resolvedUser = latest || parsed;
         if (latest) {
           if (latest.role !== parsed.role || latest.status !== parsed.status) {
             window.localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(latest));
-            syncAuthCookies(latest);
           }
-          return latest;
         }
-        return parsed;
+        return resolvedUser;
       }
     } catch {}
     return inMemoryCurrentUser;
@@ -239,8 +226,6 @@ export const userAuthStore = {
         window.localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(user));
       } catch {}
     }
-    syncAuthCookies(user);
-
     // If user has no role assigned yet:
     if (!user.role) {
       return { user };
@@ -264,7 +249,6 @@ export const userAuthStore = {
         window.localStorage.removeItem(STORAGE_CURRENT_USER_KEY);
       } catch {}
     }
-    syncAuthCookies(null);
   },
 
   // ONLY Super Admin can call and assign roles
@@ -300,7 +284,6 @@ export const userAuthStore = {
           window.localStorage.setItem(STORAGE_CURRENT_USER_KEY, JSON.stringify(updated));
         } catch {}
       }
-      syncAuthCookies(updated);
     }
 
     return updated;

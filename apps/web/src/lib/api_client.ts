@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import { castingClient } from "./casting_client";
 import { electionClient, ElectionApiError } from "./election_client";
+import { publicApiBase } from "./public_api_base";
 export { electionClient };
 
 export class ApiClientError extends Error {
@@ -33,8 +34,8 @@ export class ApiClientError extends Error {
 function configuredBase(name: "admin" | "identity"): string {
   const value = name === "admin"
     ? process.env.NEXT_PUBLIC_ADMIN_API_BASE || process.env.NEXT_PUBLIC_API_BASE
-    : process.env.NEXT_PUBLIC_IDENTITY_API_BASE || process.env.NEXT_PUBLIC_API_BASE;
-  return (value || "").replace(/\/$/, "");
+    : process.env.NEXT_PUBLIC_IDENTITY_API_BASE || process.env.NEXT_PUBLIC_IDENTITY_BASE || process.env.NEXT_PUBLIC_API_BASE;
+  return publicApiBase(value);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

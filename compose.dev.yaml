@@ -11,9 +11,9 @@ services:
     environment:
       - NODE_ENV=development
       - NEXT_PUBLIC_DEV_MODE=true
-      - NEXT_PUBLIC_API_BASE=http://localhost:8080
-      - NEXT_PUBLIC_IDENTITY_BASE=http://localhost:8080
-      - NEXT_PUBLIC_CASTING_BASE=http://localhost:8080
+      - NEXT_PUBLIC_API_BASE=http://localhost
+      - NEXT_PUBLIC_IDENTITY_BASE=http://localhost
+      - NEXT_PUBLIC_CASTING_BASE=http://localhost
     volumes:
       - ./apps/web/src:/app/src:ro
       - ./apps/web/public:/app/public:ro
@@ -23,10 +23,12 @@ services:
       - APP_ENV=development
       - APP_DEBUG=true
       - LOG_LEVEL=debug
+      - ADMIN_DB_URL=sqlite:////data/himvote_admin_development.db
       - IDENTITY_DB_SSL_MODE=disable
       - CASTING_DB_SSL_MODE=disable
     volumes:
       - ./services/admin_api:/app:ro
+      - admin_api_data:/data
 
   identity_issuer:
     environment:
@@ -91,3 +93,6 @@ services:
 
   redis:
     command: ["redis-server"]
+
+volumes:
+  admin_api_data:

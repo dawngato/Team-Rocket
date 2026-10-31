@@ -1,3 +1,5 @@
+import { publicApiBase } from "./public_api_base";
+
 export type ApprovalDecision = "approved" | "rejected";
 
 export interface RoleApproval {
@@ -31,11 +33,12 @@ export class AdminApprovalApiError extends Error {
 }
 
 function configuredBaseUrl(): string {
-  return (
+  return publicApiBase(
     process.env.NEXT_PUBLIC_IDENTITY_API_BASE ||
+    process.env.NEXT_PUBLIC_IDENTITY_BASE ||
     process.env.NEXT_PUBLIC_API_BASE ||
-    ""
-  ).replace(/\/$/, "");
+    undefined,
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

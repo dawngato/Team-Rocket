@@ -1,4 +1,5 @@
 import { IdentityApiError } from "./identity_client";
+import { publicApiBase } from "./public_api_base";
 
 export interface EnginePublicParameters {
   provider: string;
@@ -9,7 +10,7 @@ export interface EnginePublicParameters {
 }
 
 function configuredBaseUrl(): string {
-  return (process.env.NEXT_PUBLIC_ELECTION_ENGINE_BASE || process.env.NEXT_PUBLIC_API_BASE || "").replace(/\/$/, "");
+  return publicApiBase(process.env.NEXT_PUBLIC_ELECTION_ENGINE_BASE || process.env.NEXT_PUBLIC_API_BASE || undefined);
 }
 
 export async function getEnginePublicParameters(): Promise<EnginePublicParameters> {
