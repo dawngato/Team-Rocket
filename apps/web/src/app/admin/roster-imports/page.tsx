@@ -88,11 +88,11 @@ export default function AdminRosterImportsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA] mb-1">
             <FileSpreadsheet className="w-3.5 h-3.5" aria-hidden="true" />
             <span>Student Voter Roll Pipeline</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
             Batch Student Voter Roster Import
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
@@ -137,12 +137,12 @@ export default function AdminRosterImportsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Collision Detection</span>
-            <div className="text-2xl font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-2xl font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               0.00%
             </div>
             <span className="text-[11px] text-slate-500">SHA-256 student ID hashing</span>
           </div>
-          <div className="p-3 rounded-xl bg-[#157E92]/10 text-[#157E92]">
+          <div className="p-3 rounded-xl bg-[#2459A6]/10 text-[#2459A6]">
             <ShieldCheck className="size-5" />
           </div>
         </motion.div>
@@ -155,7 +155,7 @@ export default function AdminRosterImportsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Target Role Scope</span>
-            <div className="text-lg font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-lg font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               Student Voter
             </div>
             <span className="text-[11px] text-slate-500">Campus Administrator authority</span>
@@ -186,7 +186,7 @@ export default function AdminRosterImportsPage() {
 
       <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4">
         <div>
-          <label htmlFor="roster-payload" className="block text-xs font-bold text-[#10233F] dark:text-white mb-1 uppercase tracking-wider">
+          <label htmlFor="roster-payload" className="block text-xs font-bold text-[#1E3A5F] dark:text-white mb-1 uppercase tracking-wider">
             Registrar Dataset Payload (JSON format)
           </label>
           <p className="text-xs text-slate-500 mb-3">
@@ -197,7 +197,7 @@ export default function AdminRosterImportsPage() {
             rows={12}
             value={importText}
             onChange={(e) => setImportText(e.target.value)}
-            className="w-full p-4 rounded-xl font-mono text-xs border border-slate-300 dark:border-[#1E3352] bg-slate-50 dark:bg-slate-900/40 text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+            className="w-full p-4 rounded-xl font-mono text-xs border border-slate-300 dark:border-[#1E3352] bg-slate-50 dark:bg-slate-900/40 text-[#1E3A5F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
           />
         </div>
 
@@ -209,7 +209,7 @@ export default function AdminRosterImportsPage() {
             type="button"
             disabled={isProcessing}
             onClick={handleProcessImport}
-            className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] disabled:opacity-50"
+            className="w-full sm:w-auto min-h-[44px] px-6 py-2.5 font-bold text-white bg-[#2459A6] hover:bg-[#1E3A5F] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2459A6] disabled:opacity-50"
           >
             <Upload className="w-4 h-4" aria-hidden="true" />
             <span>{isProcessing ? "Processing Batch..." : "Process and Validate Roster Batch"}</span>

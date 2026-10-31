@@ -200,7 +200,7 @@ export function WorkspaceHeader({ session, onOpenMenu }: WorkspaceHeaderProps) {
             aria-expanded={accountMenuOpen}
             aria-haspopup="true"
             aria-label="Account context menu"
-            className="sv-header-account flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+            className="sv-header-account flex items-center gap-2 rounded-xl p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#2459A6]"
           >
             <span className="sv-avatar sv-avatar-small font-bold">
               {session.email.slice(0, 1).toUpperCase()}

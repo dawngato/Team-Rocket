@@ -24,7 +24,11 @@ object NetworkModule {
         // Release builds must use the pinned HTTPS production origin. Debug
         // routing is derived from the build variant, never from a hardcoded
         // value that can accidentally ship in a release artifact.
-        return ApiClient(encryptedStorage = encryptedStorage, isDebug = BuildConfig.DEBUG)
+        return ApiClient(
+            encryptedStorage = encryptedStorage,
+            isDebug = BuildConfig.DEBUG,
+            customBaseUrl = BuildConfig.API_BASE_URL.takeIf { it.isNotBlank() },
+        )
     }
 
     @Provides

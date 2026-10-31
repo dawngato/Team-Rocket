@@ -157,11 +157,11 @@ export default function SuperAdminOverviewPage() {
       <header className="border-b border-slate-200 dark:border-[#1E3352] pb-6">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white border border-[#10233F]/20 dark:border-white/20 mb-2">
-              <ShieldAlert className="w-4 h-4 text-[#157E92] dark:text-[#38BDF8]" aria-hidden="true" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#1E3A5F]/10 dark:bg-white/10 text-[#1E3A5F] dark:text-white border border-[#1E3A5F]/20 dark:border-white/20 mb-2">
+              <ShieldAlert className="w-4 h-4 text-[#2459A6] dark:text-[#60A5FA]" aria-hidden="true" />
               <span>Institutional Sovereign Authority • Super Administrator Command Center</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1E3A5F] dark:text-white tracking-tight">
               Institutional Governance & Security Command Center
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2 max-w-4xl leading-relaxed">
@@ -200,17 +200,17 @@ export default function SuperAdminOverviewPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#157E92]/50 transition-all space-y-3"
+            className="hv-dashboard-card p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#2459A6]/50 transition-all space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Institutional Tenant
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA] border border-[#2459A6]/30">
                 HPTU Multi-Tenant
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono tracking-tight">
+            <div className="text-2xl font-extrabold text-[#1E3A5F] dark:text-white font-mono tracking-tight">
               HPTU CENTRAL
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -223,7 +223,7 @@ export default function SuperAdminOverviewPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.05 }}
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#15805D]/50 transition-all space-y-3"
+            className="hv-dashboard-card p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#15805D]/50 transition-all space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -233,7 +233,7 @@ export default function SuperAdminOverviewPage() {
                 Sole Delegator
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tracking-tight">
+            <div className="text-2xl font-extrabold text-[#2459A6] dark:text-[#60A5FA] font-mono tracking-tight">
               SUPER ADMIN ONLY
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -246,7 +246,7 @@ export default function SuperAdminOverviewPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-amber-400/50 transition-all space-y-3"
+            className="hv-dashboard-card p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-amber-400/50 transition-all space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -256,7 +256,7 @@ export default function SuperAdminOverviewPage() {
                 Permanently Revoked
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono">
+            <div className="text-2xl font-extrabold text-[#1E3A5F] dark:text-white font-mono">
               HTTP 403 LOCKED
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -269,17 +269,17 @@ export default function SuperAdminOverviewPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.15 }}
-            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-purple-400/50 transition-all space-y-3"
+            className="hv-dashboard-card p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-blue-400/50 transition-all space-y-3"
           >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Hardware MFA
               </span>
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-300 dark:border-blue-800">
                 WebAuthn Strict
               </span>
             </div>
-            <div className="text-2xl font-extrabold text-[#10233F] dark:text-white font-mono">
+            <div className="text-2xl font-extrabold text-[#1E3A5F] dark:text-white font-mono">
               FIDO2 MANDATORY
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -292,13 +292,13 @@ export default function SuperAdminOverviewPage() {
       {/* Live Election Lifecycle & Health Telemetry (Expansive Card) */}
       <section
         aria-labelledby="super-election-status"
-        className="rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-6"
+        className="hv-dashboard-card rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-6"
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-[#1E3352]">
           <div>
             <div className="flex items-center gap-2">
-              <Activity className="w-5 h-5 text-[#157E92]" />
-              <h2 id="super-election-status" className="text-lg font-bold text-[#10233F] dark:text-white">
+              <Activity className="w-5 h-5 text-[#2459A6]" />
+              <h2 id="super-election-status" className="text-lg font-bold text-[#1E3A5F] dark:text-white">
                 Live Election Lifecycle & System Telemetry
               </h2>
             </div>
@@ -310,7 +310,7 @@ export default function SuperAdminOverviewPage() {
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-4 text-xs font-semibold">
               <span className="text-slate-600 dark:text-slate-300">
-                Total Ballots in Scope: <strong className="font-mono text-[#10233F] dark:text-white font-bold">{elections.length}</strong>
+                Total Ballots in Scope: <strong className="font-mono text-[#1E3A5F] dark:text-white font-bold">{elections.length}</strong>
               </span>
               <span className="px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                 Authoritative Service Stream
@@ -321,7 +321,7 @@ export default function SuperAdminOverviewPage() {
 
         {loadingElections ? (
           <div className="py-8 text-center text-sm text-slate-500 space-y-2" role="status">
-            <div className="w-6 h-6 border-2 border-[#157E92] border-t-transparent rounded-full animate-spin mx-auto" />
+            <div className="w-6 h-6 border-2 border-[#2459A6] border-t-transparent rounded-full animate-spin mx-auto" />
             <p>Loading authoritative election states…</p>
           </div>
         ) : electionsError ? (
@@ -351,11 +351,11 @@ export default function SuperAdminOverviewPage() {
                     aria-label={`${count} elections in ${state}`}
                   >
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-[#157E92] to-[#38BDF8] transition-all duration-500"
+                      className="h-full rounded-full bg-gradient-to-r from-[#2459A6] to-[#60A5FA] transition-all duration-500"
                       style={{ width: `${Math.max(6, (count / electionTotal) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-right font-mono text-sm font-extrabold text-[#10233F] dark:text-white">
+                  <span className="text-right font-mono text-sm font-extrabold text-[#1E3A5F] dark:text-white">
                     {count}
                   </span>
                 </div>
@@ -366,7 +366,7 @@ export default function SuperAdminOverviewPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-[#0B1524]">
                 <div className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Active Balloting</div>
-                <div className="mt-2 text-2xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono">
+                <div className="mt-2 text-2xl font-extrabold text-[#2459A6] dark:text-[#60A5FA] font-mono">
                   {activeCount}
                 </div>
                 <p className="mt-1 text-xs text-slate-500">Live voting open to student voters</p>
@@ -388,7 +388,7 @@ export default function SuperAdminOverviewPage() {
       <section aria-labelledby="governance-operations-title" className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 id="governance-operations-title" className="text-2xl font-bold text-[#10233F] dark:text-white tracking-tight">
+            <h2 id="governance-operations-title" className="text-2xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
               Institutional Governance Command Workspaces
             </h2>
             <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
@@ -410,11 +410,11 @@ export default function SuperAdminOverviewPage() {
               >
                 <Link
                   href={card.href}
-                  className="group w-full p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] hover:shadow-md transition-all duration-150 ease-out flex flex-col justify-between space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+                  className="group w-full p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#2459A6] dark:hover:border-[#60A5FA] hover:shadow-md transition-all duration-150 ease-out flex flex-col justify-between space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2459A6] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
                 >
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 group-hover:bg-[#157E92]/20 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center transition-colors">
+                      <div className="w-12 h-12 rounded-xl bg-[#2459A6]/10 group-hover:bg-[#2459A6]/20 text-[#2459A6] dark:text-[#60A5FA] flex items-center justify-center transition-colors">
                         <Icon className="w-6 h-6" aria-hidden="true" />
                       </div>
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
@@ -426,7 +426,7 @@ export default function SuperAdminOverviewPage() {
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                         {card.kicker}
                       </span>
-                      <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight group-hover:text-[#157E92] dark:group-hover:text-[#38BDF8] transition-colors">
+                      <h3 className="font-bold text-base text-[#1E3A5F] dark:text-white tracking-tight group-hover:text-[#2459A6] dark:group-hover:text-[#60A5FA] transition-colors">
                         {card.title}
                       </h3>
                       <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
@@ -435,7 +435,7 @@ export default function SuperAdminOverviewPage() {
                     </div>
                   </div>
 
-                  <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
+                  <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#2459A6] dark:text-[#60A5FA]">
                     <span>{card.actionText}</span>
                     <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                   </div>
@@ -450,35 +450,35 @@ export default function SuperAdminOverviewPage() {
       <footer className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 sm:p-8 space-y-4 shadow-sm">
         <div className="flex items-center gap-2">
           <ShieldCheck className="w-5 h-5 text-[#15805D]" aria-hidden="true" />
-          <h3 className="text-sm font-bold text-[#10233F] dark:text-white uppercase tracking-wider">
+          <h3 className="text-sm font-bold text-[#1E3A5F] dark:text-white uppercase tracking-wider">
             Institutional Role Separation & Cryptographic Guarantees
           </h3>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">
               Zero Ballot Visibility
             </span>
             Super Administrators set institutional scopes and policies, but have zero access to individual voter ballot choices.
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">
               Exclusive Role Delegation
             </span>
             Only Super Administrators can assign roles. Campus Administrators cannot create Super Administrators or elevate their own scopes.
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">
               Independent Audit Separation
             </span>
             Neither Super Administrators nor Campus Administrators can sign or fabricate an independent audit attestation.
           </div>
 
           <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">
               Genesis Revocation Invariant
             </span>
             The bootstrap cluster endpoint permanently returns HTTP 403 Forbidden following initial genesis activation.

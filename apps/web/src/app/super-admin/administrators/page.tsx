@@ -66,11 +66,11 @@ export default function SuperAdminAdministratorsPage() {
   return (
     <main className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
-        <p className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#10233F]/10 px-2.5 py-0.5 text-xs font-semibold text-[#10233F] dark:bg-white/10 dark:text-white">
-          <Users2 className="size-3.5 text-[#157E92]" aria-hidden="true" />
+        <p className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#1E3A5F]/10 px-2.5 py-0.5 text-xs font-semibold text-[#1E3A5F] dark:bg-white/10 dark:text-white">
+          <Users2 className="size-3.5 text-[#2459A6]" aria-hidden="true" />
           Administrative Accounts
         </p>
-        <h1 className="text-3xl font-bold tracking-tight text-[#10233F] dark:text-white">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1E3A5F] dark:text-white">
           Institutional Campus Administrators
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -91,7 +91,7 @@ export default function SuperAdminAdministratorsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Administrator Invitations
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {loading ? "…" : invitations.filter((i) => i.role === "administrator").length}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -126,10 +126,10 @@ export default function SuperAdminAdministratorsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             MFA Requirement
           </span>
-          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <div className="mt-2 text-base font-bold text-[#2459A6] dark:text-[#60A5FA] flex items-center gap-1.5">
             <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2459A6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2459A6]" />
             </span>
             <span>TOTP + Hardware Key</span>
           </div>
@@ -153,8 +153,8 @@ export default function SuperAdminAdministratorsPage() {
       )}
 
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
-        <h2 className="flex items-center gap-2 font-bold text-[#10233F] dark:text-white text-base">
-          <UserPlus className="size-5 text-[#157E92]" aria-hidden="true" />
+        <h2 className="flex items-center gap-2 font-bold text-[#1E3A5F] dark:text-white text-base">
+          <UserPlus className="size-5 text-[#2459A6]" aria-hidden="true" />
           <span>Invite Campus Administrator</span>
         </h2>
         <form onSubmit={handleInvite} className="grid gap-4 sm:grid-cols-2">
@@ -167,13 +167,13 @@ export default function SuperAdminAdministratorsPage() {
               value={newEmail}
               onChange={(event) => setNewEmail(event.target.value)}
               placeholder="administrator@hptu.ac.in"
-              className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm dark:border-[#1E3352] dark:text-white outline-none focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20"
+              className="mt-1 min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm dark:border-[#1E3352] dark:text-white outline-none focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20"
             />
           </label>
           <button
             type="submit"
             disabled={busy}
-            className="mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] hover:bg-[#0E6273] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+            className="mt-auto inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#2459A6] hover:bg-[#1E3A5F] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
           >
             <Mail className="size-4" aria-hidden="true" />
             <span>{busy ? "Authorizing Invitation…" : "Issue Administrator Invitation"}</span>
@@ -186,7 +186,7 @@ export default function SuperAdminAdministratorsPage() {
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
         <div className="border-b border-slate-100 px-6 py-4 dark:border-[#1E3352]">
-          <h2 className="font-bold text-[#10233F] dark:text-white text-base">
+          <h2 className="font-bold text-[#1E3A5F] dark:text-white text-base">
             Authoritative Invitation Ledger
           </h2>
         </div>
@@ -211,10 +211,10 @@ export default function SuperAdminAdministratorsPage() {
                     key={invitation.id}
                     className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150"
                   >
-                    <td className="px-6 py-4 font-mono text-xs text-[#10233F] dark:text-white">
+                    <td className="px-6 py-4 font-mono text-xs text-[#1E3A5F] dark:text-white">
                       {invitation.email}
                     </td>
-                    <td className="px-6 py-4 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+                    <td className="px-6 py-4 text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA]">
                       {invitation.role === "administrator" ? "Campus Administrator" : invitation.role} · {invitation.scope}
                     </td>
                     <td className="px-6 py-4">

@@ -100,11 +100,11 @@ export default function AdminInvitationsPage() {
       <Breadcrumbs items={breadcrumbs} />
 
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
-        <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+        <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#2459A6]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA]">
           <ShieldCheck className="size-3.5" aria-hidden="true" />
           Access Control &amp; Provisioning
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1E3A5F] dark:text-white">
           Scoped Institutional Invitations
         </h1>
         <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
@@ -123,7 +123,7 @@ export default function AdminInvitationsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Persisted Invitations
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {loading ? "…" : invitations.length}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -158,10 +158,10 @@ export default function AdminInvitationsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Issuer Telemetry
           </span>
-          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <div className="mt-2 text-base font-bold text-[#2459A6] dark:text-[#60A5FA] flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2459A6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2459A6]" />
             </span>
             <span>Identity Service Live</span>
           </div>
@@ -229,7 +229,7 @@ export default function AdminInvitationsPage() {
           className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-5 dark:border-[#1E3352] dark:bg-[#132135]"
         >
           <div>
-            <h2 className="text-base font-bold text-[#10233F] dark:text-white">
+            <h2 className="text-base font-bold text-[#1E3A5F] dark:text-white">
               Issue Privileged Invitation
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -248,7 +248,7 @@ export default function AdminInvitationsPage() {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="official@institution.edu"
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
             />
           </div>
 
@@ -260,7 +260,7 @@ export default function AdminInvitationsPage() {
               id="invite-role"
               value={role}
               onChange={(event) => setRole(event.target.value)}
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white dark:bg-[#132135] px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-white dark:bg-[#132135] px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
             >
               <option value="election_officer">Transparency Officer</option>
               <option value="teacher">Faculty Teacher</option>
@@ -278,14 +278,14 @@ export default function AdminInvitationsPage() {
               value={scope}
               onChange={(event) => setScope(event.target.value)}
               placeholder="e.g. Computer Science or *"
-              className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+              className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
             />
           </div>
 
           <button
             type="submit"
             disabled={busy}
-            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#157E92] hover:bg-[#0E6273] px-4 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+            className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#2459A6] hover:bg-[#1E3A5F] px-4 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
           >
             <Mail className="size-4" aria-hidden="true" />
             <span>{busy ? "Transmitting Invitation…" : "Issue Verified Invitation"}</span>
@@ -295,7 +295,7 @@ export default function AdminInvitationsPage() {
         {/* Persisted Invitations */}
         <section className="space-y-3 lg:col-span-7">
           <div className="flex items-center justify-between pb-1">
-            <h2 className="text-base font-bold text-[#10233F] dark:text-white">
+            <h2 className="text-base font-bold text-[#1E3A5F] dark:text-white">
               Persisted Identity Invitations
             </h2>
             <span className="text-xs text-slate-500 font-mono">
@@ -305,7 +305,7 @@ export default function AdminInvitationsPage() {
 
           {loading ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-xs text-slate-500 dark:border-[#1E3352] dark:bg-[#132135]">
-              <Clock className="mx-auto mb-2 size-5 animate-pulse text-[#157E92]" />
+              <Clock className="mx-auto mb-2 size-5 animate-pulse text-[#2459A6]" />
               Querying authoritative invitation records…
             </div>
           ) : invitations.length === 0 ? (
@@ -323,10 +323,10 @@ export default function AdminInvitationsPage() {
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="font-bold text-sm text-[#10233F] dark:text-white">
+                    <h3 className="font-bold text-sm text-[#1E3A5F] dark:text-white">
                       {inv.email}
                     </h3>
-                    <p className="text-xs font-semibold text-[#157E92] dark:text-[#38BDF8] mt-0.5">
+                    <p className="text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA] mt-0.5">
                       {getRoleDisplayName(inv.role)} · Scope: {inv.scope}
                     </p>
                   </div>

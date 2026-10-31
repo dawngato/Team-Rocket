@@ -9,6 +9,7 @@ plugins {
 android {
     namespace = "com.himvote"
     compileSdk = 34
+    val apiBaseUrl = providers.gradleProperty("himvote.apiBaseUrl").orElse("").get()
 
     defaultConfig {
         applicationId = "com.himvote"
@@ -16,6 +17,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "2.0.0"
+        buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl.replace("\"", "\\\"")}\"")
     }
     val boothBaseUrl = providers.gradleProperty("himvote.boothBaseUrl").orElse("").get()
     val returnUrl = providers.gradleProperty("himvote.returnUrl").orElse("").get()

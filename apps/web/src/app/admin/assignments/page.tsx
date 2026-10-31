@@ -48,11 +48,11 @@ export default function AdminAssignmentsPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white mb-1">
-            <Award className="w-3.5 h-3.5 text-[#157E92]" aria-hidden="true" />
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#1E3A5F]/10 dark:bg-white/10 text-[#1E3A5F] dark:text-white mb-1">
+            <Award className="w-3.5 h-3.5 text-[#2459A6]" aria-hidden="true" />
             <span>Institutional Governance</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
             Election Assignments &amp; Faculty Scopes
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
@@ -78,12 +78,12 @@ export default function AdminAssignmentsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Faculty Teachers</span>
-            <div className="text-2xl font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-2xl font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               {teachers.length}
             </div>
             <span className="text-[11px] text-slate-500">Active verification officers</span>
           </div>
-          <div className="p-3 rounded-xl bg-[#157E92]/10 text-[#157E92]">
+          <div className="p-3 rounded-xl bg-[#2459A6]/10 text-[#2459A6]">
             <Users className="size-5" />
           </div>
         </motion.div>
@@ -96,7 +96,7 @@ export default function AdminAssignmentsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Governed Contests</span>
-            <div className="text-2xl font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-2xl font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               {elections.length}
             </div>
             <span className="text-[11px] text-slate-500">Scheduled &amp; active elections</span>
@@ -151,7 +151,7 @@ export default function AdminAssignmentsPage() {
       <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h2 className="font-bold text-base text-[#10233F] dark:text-white">
+            <h2 className="font-bold text-base text-[#1E3A5F] dark:text-white">
               Active Contest Boundary Delegations ({assignments.length})
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -174,9 +174,9 @@ export default function AdminAssignmentsPage() {
               {assignments.map((asgn) => (
                 <tr
                   key={asgn.id}
-                  className="transition-all duration-150 hover:bg-[#F5F2EB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
+                  className="transition-all duration-150 hover:bg-[#F1F5FB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
                 >
-                  <td className="px-6 py-3 font-semibold text-xs text-[#10233F] dark:text-white max-w-xs">
+                  <td className="px-6 py-3 font-semibold text-xs text-[#1E3A5F] dark:text-white max-w-xs">
                     {asgn.election_title}
                   </td>
                   <td className="px-6 py-3 font-medium text-xs text-slate-900 dark:text-slate-200">
@@ -187,7 +187,7 @@ export default function AdminAssignmentsPage() {
                     {asgn.assigned_department}
                   </td>
                   <td className="px-6 py-3">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA] border border-[#2459A6]/30">
                       {asgn.role.replace(/_/g, " ")}
                     </span>
                   </td>
@@ -204,12 +204,12 @@ export default function AdminAssignmentsPage() {
       {/* Active Faculty Summary Table */}
       <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <h2 className="font-bold text-base text-[#10233F] dark:text-white">
+          <h2 className="font-bold text-base text-[#1E3A5F] dark:text-white">
             Registered Faculty Teachers &amp; Verification Officers ({teachers.length})
           </h2>
           <Link
             href="/admin/teachers"
-            className="text-xs font-semibold text-[#157E92] dark:text-[#38BDF8] hover:underline"
+            className="text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA] hover:underline"
           >
             Manage Faculty Teacher Directory &rarr;
           </Link>
@@ -236,7 +236,7 @@ export default function AdminAssignmentsPage() {
                 teachers.map((t) => (
                   <tr
                     key={t.id || t.faculty_id}
-                    className="transition-all duration-150 hover:bg-[#F5F2EB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
+                    className="transition-all duration-150 hover:bg-[#F1F5FB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
                   >
                     <td className="px-6 py-3 font-mono text-xs text-slate-600 dark:text-slate-400">{t.faculty_id}</td>
                     <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{t.full_name}</td>

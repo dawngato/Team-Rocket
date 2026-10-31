@@ -19,8 +19,8 @@ class ApiClient(
     customBaseUrl: String? = null
 ) {
     companion object {
-        const val PROD_BASE_URL = "http://13.232.47.32:8080/"
-        const val DEBUG_EMULATOR_URL = "http://13.232.47.32:8080/"
+        const val PROD_BASE_URL = "https://api.himvote.example.in/"
+        const val DEBUG_BASE_URL = "http://13.232.47.32/"
 
         // Certificate pins for production endpoints
         const val HOST_API = "13.232.47.32"
@@ -29,7 +29,7 @@ class ApiClient(
         const val BACKUP_PIN = "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
     }
 
-    val baseUrl: String = customBaseUrl ?: if (isDebug) DEBUG_EMULATOR_URL else PROD_BASE_URL
+    val baseUrl: String = customBaseUrl ?: if (isDebug) DEBUG_BASE_URL else PROD_BASE_URL
 
     private val authInterceptor = Interceptor { chain ->
         val original = chain.request()

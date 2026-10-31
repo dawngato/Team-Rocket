@@ -205,7 +205,7 @@ export default function SuperAdminRoleRequestsPage() {
       case "student":
         return {
           pill: "bg-cyan-100 dark:bg-cyan-950/60 text-cyan-800 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800",
-          dot: "bg-cyan-600 dark:bg-cyan-400",
+          dot: "bg-cyan-600 dark:bg-blue-400",
         };
       case "election_officer":
         return {
@@ -257,15 +257,15 @@ export default function SuperAdminRoleRequestsPage() {
       <header className="border-b border-slate-200 dark:border-[#1E3352] pb-6">
         <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/20 mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA] border border-[#2459A6]/20 mb-2">
               <ShieldCheck className="w-4 h-4" aria-hidden="true" />
               <span>Supreme Institutional Authority • Role Delegation Console</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1E3A5F] dark:text-white tracking-tight">
               User Role Delegation Command Center
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2 max-w-4xl leading-relaxed">
-              In accordance with institutional governance, self-registration does not confer permissions. Only the Super Administrator holds sovereign authority to elevate accounts to <strong className="text-[#10233F] dark:text-white">Campus Administrator</strong>, <strong className="text-[#10233F] dark:text-white">Faculty Teacher</strong>, <strong className="text-[#10233F] dark:text-white">Student Voter</strong>, or <strong className="text-[#10233F] dark:text-white">Transparency Officer</strong>.
+              In accordance with institutional governance, self-registration does not confer permissions. Only the Super Administrator holds sovereign authority to elevate accounts to <strong className="text-[#1E3A5F] dark:text-white">Campus Administrator</strong>, <strong className="text-[#1E3A5F] dark:text-white">Faculty Teacher</strong>, <strong className="text-[#1E3A5F] dark:text-white">Student Voter</strong>, or <strong className="text-[#1E3A5F] dark:text-white">Transparency Officer</strong>.
             </p>
           </div>
 
@@ -345,7 +345,7 @@ export default function SuperAdminRoleRequestsPage() {
                 <Users className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-3 text-3xl font-extrabold text-[#10233F] dark:text-white tabular-nums">
+            <div className="mt-3 text-3xl font-extrabold text-[#1E3A5F] dark:text-white tabular-nums">
               {totalCount}
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Enrolled institutional base</p>
@@ -451,15 +451,15 @@ export default function SuperAdminRoleRequestsPage() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.24 }}
-            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-[#10233F]/5 dark:bg-[#10233F]/30 shadow-sm hover:shadow-md transition-shadow"
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-[#1E3A5F]/5 dark:bg-[#1E3A5F]/30 shadow-sm hover:shadow-md transition-shadow"
           >
-            <div className="flex items-center justify-between text-[#157E92] dark:text-[#38BDF8]">
+            <div className="flex items-center justify-between text-[#2459A6] dark:text-[#60A5FA]">
               <span className="text-xs font-bold uppercase tracking-wider">Ledger Integrity</span>
-              <div className="w-8 h-8 rounded-lg bg-[#157E92]/10 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-[#2459A6]/10 flex items-center justify-center">
                 <Shield className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-3 text-3xl font-extrabold text-[#10233F] dark:text-white">
+            <div className="mt-3 text-3xl font-extrabold text-[#1E3A5F] dark:text-white">
               100%
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Sovereign dual-control active</p>
@@ -478,7 +478,7 @@ export default function SuperAdminRoleRequestsPage() {
               placeholder="Search by full name, institutional email, or user identifier..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-10 py-3 text-sm rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0B1524] text-[#10233F] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#157E92] transition-all"
+              className="w-full pl-11 pr-10 py-3 text-sm rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0B1524] text-[#1E3A5F] dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#2459A6] transition-all"
             />
             {searchQuery && (
               <button
@@ -495,7 +495,7 @@ export default function SuperAdminRoleRequestsPage() {
           {/* Result Counter & Live Status */}
           <div className="flex items-center gap-3 text-xs font-medium text-slate-500 dark:text-slate-400">
             <span>
-              Showing <strong className="text-[#10233F] dark:text-white font-bold">{filteredUsers.length}</strong> of {totalCount} total accounts
+              Showing <strong className="text-[#1E3A5F] dark:text-white font-bold">{filteredUsers.length}</strong> of {totalCount} total accounts
             </span>
           </div>
         </div>
@@ -512,7 +512,7 @@ export default function SuperAdminRoleRequestsPage() {
             onClick={() => setFilterRole("all")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               filterRole === "all"
-                ? "bg-[#10233F] text-white dark:bg-[#157E92] shadow-sm"
+                ? "bg-[#1E3A5F] text-white dark:bg-[#2459A6] shadow-sm"
                 : "bg-slate-100 dark:bg-[#1E3352] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-[#253d61]"
             }`}
           >
@@ -603,9 +603,9 @@ export default function SuperAdminRoleRequestsPage() {
       <section className="overflow-hidden rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm">
         <div className="border-b border-slate-200 dark:border-[#1E3352] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/70 dark:bg-[#0B1524]/60">
           <div>
-            <h2 className="text-base font-bold text-[#10233F] dark:text-white flex items-center gap-2">
+            <h2 className="text-base font-bold text-[#1E3A5F] dark:text-white flex items-center gap-2">
               <span>Institutional Identity Ledger</span>
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8]">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA]">
                 {filteredUsers.length} Records
               </span>
             </h2>
@@ -630,7 +630,7 @@ export default function SuperAdminRoleRequestsPage() {
                 setSearchQuery("");
                 setFilterRole("all");
               }}
-              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#157E92] text-white hover:bg-[#106575] transition-colors"
+              className="px-4 py-2 text-xs font-semibold rounded-lg bg-[#2459A6] text-white hover:bg-[#106575] transition-colors"
             >
               Reset All Filters
             </button>
@@ -678,7 +678,7 @@ export default function SuperAdminRoleRequestsPage() {
                             {user.fullName ? user.fullName.substring(0, 2) : "HV"}
                           </div>
                           <div>
-                            <div className="font-bold text-[#10233F] dark:text-white text-sm flex items-center gap-2">
+                            <div className="font-bold text-[#1E3A5F] dark:text-white text-sm flex items-center gap-2">
                               <span>{user.fullName}</span>
                               {isSuper && (
                                 <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
@@ -728,7 +728,7 @@ export default function SuperAdminRoleRequestsPage() {
                       <td className="px-6 py-4.5 text-xs whitespace-nowrap">
                         <div className="text-slate-700 dark:text-slate-300 font-medium">
                           {user.roleAssignedBy ? (
-                            <span className="font-semibold text-[#157E92] dark:text-[#38BDF8]">
+                            <span className="font-semibold text-[#2459A6] dark:text-[#60A5FA]">
                               {user.roleAssignedBy}
                             </span>
                           ) : (
@@ -763,7 +763,7 @@ export default function SuperAdminRoleRequestsPage() {
                                 handleAssignRole(user.id, val ? val : null);
                               }}
                               aria-label={`Select assigned role for ${user.fullName}`}
-                              className="h-9 px-3 text-xs font-bold rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-[#10233F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+                              className="h-9 px-3 text-xs font-bold rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-[#1E3A5F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
                             >
                               <option value="">-- Assign Role --</option>
                               <option value="administrator">Campus Administrator</option>
@@ -923,7 +923,7 @@ export default function SuperAdminRoleRequestsPage() {
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 id="delete-dialog-title" className="text-base font-bold text-[#10233F] dark:text-white">
+                  <h3 id="delete-dialog-title" className="text-base font-bold text-[#1E3A5F] dark:text-white">
                     Confirm User Account Deletion
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Institutional Identity Ledger Action</p>
@@ -931,7 +931,7 @@ export default function SuperAdminRoleRequestsPage() {
               </div>
 
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Are you sure you want to permanently delete the account for <strong className="text-[#10233F] dark:text-white font-semibold">{deleteConfirmUser.fullName}</strong> (<span className="font-mono">{deleteConfirmUser.email}</span>)? This will erase their assigned capabilities and identity credentials.
+                Are you sure you want to permanently delete the account for <strong className="text-[#1E3A5F] dark:text-white font-semibold">{deleteConfirmUser.fullName}</strong> (<span className="font-mono">{deleteConfirmUser.email}</span>)? This will erase their assigned capabilities and identity credentials.
               </p>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-[#1E3352]">
@@ -957,25 +957,25 @@ export default function SuperAdminRoleRequestsPage() {
 
       {/* Governance Invariants Callout */}
       <footer className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 space-y-3 shadow-sm">
-        <h3 className="text-xs font-bold text-[#10233F] dark:text-white uppercase tracking-wider flex items-center gap-2">
+        <h3 className="text-xs font-bold text-[#1E3A5F] dark:text-white uppercase tracking-wider flex items-center gap-2">
           <ShieldCheck className="w-4 h-4 text-[#15805D]" aria-hidden="true" />
           <span>Role Delegation Governance Protocol</span>
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">Exclusive Authority</span>
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">Exclusive Authority</span>
             Only Super Administrators can assign roles. Unassigned users remain in pending quarantine without elevated workspace access.
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">Revocation Rights</span>
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">Revocation Rights</span>
             Any granted role may be instantly revoked back to pending state, immediately invalidating active session tokens.
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">Protected Root Account</span>
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">Protected Root Account</span>
             The root Super Administrator identity cannot be deleted or demoted via this delegation interface.
           </div>
           <div className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135]">
-            <span className="font-bold text-[#10233F] dark:text-white block mb-1">Audit Trail Logging</span>
+            <span className="font-bold text-[#1E3A5F] dark:text-white block mb-1">Audit Trail Logging</span>
             Every role transition records the delegator identifier, previous state, and epoch timestamp in the immutable audit log.
           </div>
         </div>

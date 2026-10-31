@@ -228,7 +228,7 @@ export function CommandSearch({ roles }: { roles: string[] }) {
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={`flex cursor-pointer items-center justify-between rounded-xl px-3 py-2.5 text-xs transition-colors ${
                         isSelected
-                          ? "bg-[#157E92]/10 text-[#157E92] font-semibold dark:bg-[#38BDF8]/10 dark:text-[#38BDF8]"
+                          ? "bg-[#2459A6]/10 text-[#2459A6] font-semibold dark:bg-[#60A5FA]/10 dark:text-[#60A5FA]"
                           : "text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800/60"
                       }`}
                     >

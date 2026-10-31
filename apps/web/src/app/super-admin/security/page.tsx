@@ -14,11 +14,11 @@ export default function SuperAdminSecurityPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white mb-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#1E3A5F]/10 dark:bg-white/10 text-[#1E3A5F] dark:text-white mb-1">
             <ShieldAlert className="w-3.5 h-3.5 text-[#C23C45]" aria-hidden="true" />
             Cryptographic Key Ceremony
           </div>
-          <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+          <h1 className="text-3xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
             Security &amp; Cryptographic Boundaries
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
@@ -113,7 +113,7 @@ export default function SuperAdminSecurityPage() {
       {/* Pinned Authorities Table */}
       <div className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352]">
-          <h2 className="font-bold text-base text-[#10233F] dark:text-white">
+          <h2 className="font-bold text-base text-[#1E3A5F] dark:text-white">
             Pinned Institutional Key Authorities
           </h2>
         </div>
@@ -131,7 +131,7 @@ export default function SuperAdminSecurityPage() {
               {trustedPins.map((pin) => (
                 <tr key={pin.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150">
                   <td className="px-6 py-4">
-                    <div className="font-bold text-[#10233F] dark:text-white">{pin.label}</div>
+                    <div className="font-bold text-[#1E3A5F] dark:text-white">{pin.label}</div>
                     <div className="text-xs text-slate-400 font-mono">{pin.service}</div>
                   </td>
                   <td className="px-6 py-4 text-xs font-semibold text-slate-600 dark:text-slate-300">

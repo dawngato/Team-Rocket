@@ -84,7 +84,7 @@ export default function AdminApprovalsPage() {
           <ShieldCheck className="size-3.5" aria-hidden="true" />
           Separation of Duties Gate
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1E3A5F] dark:text-white">
           Privileged Role Approvals
         </h1>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
@@ -103,7 +103,7 @@ export default function AdminApprovalsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Queue Status
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {approvals ? approvals.length : "…"}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -138,10 +138,10 @@ export default function AdminApprovalsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Audit Ledger
           </span>
-          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <div className="mt-2 text-base font-bold text-[#2459A6] dark:text-[#60A5FA] flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2459A6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2459A6]" />
             </span>
             <span>Append-Only Sync</span>
           </div>
@@ -205,10 +205,10 @@ export default function AdminApprovalsPage() {
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <h2 className="font-bold text-base text-[#10233F] dark:text-white">
+                    <h2 className="font-bold text-base text-[#1E3A5F] dark:text-white">
                       {approval.email || approval.applicant}
                     </h2>
-                    <p className="mt-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+                    <p className="mt-0.5 text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA]">
                       Requesting role: <span className="font-bold">{formatRoleLabel(approval.requestedRole)}</span> · Scope: {approval.scope}
                     </p>
                   </div>
@@ -240,7 +240,7 @@ export default function AdminApprovalsPage() {
                       setReason((current) => ({ ...current, [approval.id]: event.target.value }))
                     }
                     placeholder="Enter justification recorded in the immutable audit log"
-                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+                    className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-xs sm:text-sm text-slate-900 outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
                   />
                 </div>
 

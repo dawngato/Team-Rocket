@@ -56,7 +56,7 @@ export default function AdminAuditLogsPage() {
               <ShieldCheck className="size-4" aria-hidden="true" />
               Administration Event Log
             </p>
-            <h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+            <h1 className="mt-1 text-3xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
               Institutional Operations &amp; Security Logs
             </h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -83,7 +83,7 @@ export default function AdminAuditLogsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Audit Records</span>
-            <div className="text-2xl font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-2xl font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               {logs.length}
             </div>
             <span className="text-[11px] text-slate-500">Events returned by the service</span>
@@ -120,12 +120,12 @@ export default function AdminAuditLogsPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Access Protocol</span>
-            <div className="text-lg font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-lg font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               Not verified here
             </div>
             <span className="text-[11px] text-slate-500">Review deployed authorization configuration</span>
           </div>
-          <div className="p-3 rounded-xl bg-[#157E92]/10 text-[#157E92]">
+          <div className="p-3 rounded-xl bg-[#2459A6]/10 text-[#2459A6]">
             <Database className="size-5" />
           </div>
         </motion.div>
@@ -154,7 +154,7 @@ export default function AdminAuditLogsPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Filter operational logs by action, administrator actor, or event payload..."
-          className="min-h-11 w-full rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] pl-10 pr-4 text-sm text-[#10233F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#15805D]"
+          className="min-h-11 w-full rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] pl-10 pr-4 text-sm text-[#1E3A5F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#15805D]"
         />
       </div>
 
@@ -181,7 +181,7 @@ export default function AdminAuditLogsPage() {
               filtered.map((log) => (
                 <tr
                   key={log.id}
-                  className="transition-all duration-150 hover:bg-[#F5F2EB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
+                  className="transition-all duration-150 hover:bg-[#F1F5FB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
                 >
                   <td className="whitespace-nowrap px-5 py-4 font-mono text-slate-600 dark:text-slate-400">
                     {(() => {
@@ -192,7 +192,7 @@ export default function AdminAuditLogsPage() {
                   <td className="px-5 py-4 font-mono font-bold text-slate-900 dark:text-white">
                     {log.action}
                   </td>
-                  <td className="px-5 py-4 font-mono font-medium text-[#157E92] dark:text-[#38BDF8]">
+                  <td className="px-5 py-4 font-mono font-medium text-[#2459A6] dark:text-[#60A5FA]">
                     {log.actor}
                   </td>
                   <td className="px-5 py-4">

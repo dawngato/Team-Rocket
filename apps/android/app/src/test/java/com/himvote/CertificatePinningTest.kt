@@ -29,20 +29,20 @@ class CertificatePinningTest {
     }
 
     @Test
-    fun testEmulatorAddressForDebugMode() {
+    fun testDeployedGatewayAddressForDebugMode() {
         val mockContext = Mockito.mock(android.content.Context::class.java)
         val encryptedStorage = EncryptedStorage(mockContext, customPrefs = InMemorySharedPreferences())
         val client = ApiClient(encryptedStorage = encryptedStorage, isDebug = true)
 
-        assertEquals("Debug mode must route to 10.0.2.2 emulator alias", ApiClient.DEBUG_EMULATOR_URL, client.baseUrl)
+        assertEquals("Debug mode must route through the deployed gateway on port 80", ApiClient.DEBUG_BASE_URL, client.baseUrl)
     }
 
     @Test
-    fun testNetworkSecurityConfigPermitsCleartextForEmulator() {
-        val configFile = java.io.File("src/main/res/xml/network_security_config.xml")
+    fun testDebugNetworkSecurityConfigPermitsCleartextForGateway() {
+        val configFile = java.io.File("src/debug/res/xml/network_security_config.xml")
         assertTrue("network_security_config.xml must exist", configFile.exists())
         val content = configFile.readText()
-        assertTrue("Must permit cleartext for 10.0.2.2 emulator host", content.contains("<domain includeSubdomains=\"true\">10.0.2.2</domain>"))
+        assertTrue("Must permit cleartext for the deployed gateway", content.contains("<domain includeSubdomains=\"true\">13.232.47.32</domain>"))
         assertTrue("Must have cleartextTrafficPermitted=true", content.contains("cleartextTrafficPermitted=\"true\""))
     }
 }

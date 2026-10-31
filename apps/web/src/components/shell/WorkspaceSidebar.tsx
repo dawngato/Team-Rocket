@@ -129,12 +129,12 @@ export function WorkspaceSidebar({
             onClick={onClose}
             aria-label="HimVote workspace home"
           >
-            <span className="sv-brand-symbol flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#157E92] text-white shadow-xs">
+            <span className="sv-brand-symbol flex size-8 shrink-0 items-center justify-center rounded-xl text-white">
               <ShieldCheck size={17} aria-hidden="true" />
             </span>
             {!collapsed && (
               <span className="truncate">
-                <strong className="block text-sm font-bold text-[#10233F] dark:text-white leading-tight">
+                <strong className="block text-sm font-bold text-[#1E3A5F] dark:text-white leading-tight">
                   HimVote
                 </strong>
                 <small className="block text-[10px] text-slate-500 font-medium">
@@ -168,8 +168,8 @@ export function WorkspaceSidebar({
 
         {/* User Identity Chip */}
         {!collapsed ? (
-          <div className="sv-workspace-chip m-3 flex items-center gap-2.5 rounded-xl bg-slate-50 p-2.5 dark:bg-[#10233F]/30 border border-slate-100 dark:border-slate-800/60">
-            <span className="sv-avatar flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#157E92]/20 text-[#157E92] font-bold text-xs dark:text-[#38BDF8]">
+          <div className="sv-workspace-chip m-3 flex items-center gap-2.5 rounded-xl bg-slate-50 p-2.5 dark:bg-[#1E3A5F]/30 border border-slate-100 dark:border-slate-800/60">
+            <span className="sv-avatar flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#2459A6]/20 text-[#2459A6] font-bold text-xs dark:text-[#60A5FA]">
               {session.email.slice(0, 1).toUpperCase()}
             </span>
             <span className="sv-workspace-copy truncate text-left">
@@ -185,7 +185,7 @@ export function WorkspaceSidebar({
         ) : (
           <div className="flex justify-center py-3">
             <span
-              className="sv-avatar flex size-7 items-center justify-center rounded-lg bg-[#157E92]/20 text-[#157E92] font-bold text-xs dark:text-[#38BDF8]"
+              className="sv-avatar flex size-7 items-center justify-center rounded-lg bg-[#2459A6]/20 text-[#2459A6] font-bold text-xs dark:text-[#60A5FA]"
               title={session.email}
             >
               {session.email.slice(0, 1).toUpperCase()}
@@ -217,7 +217,7 @@ export function WorkspaceSidebar({
                     aria-current={active ? "page" : undefined}
                     className={`sv-nav-link flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-medium transition-colors ${
                       active
-                        ? "is-active bg-[#157E92]/10 text-[#157E92] font-semibold dark:bg-[#38BDF8]/10 dark:text-[#38BDF8]"
+                        ? "is-active bg-[#2459A6]/10 text-[#2459A6] font-semibold dark:bg-[#60A5FA]/10 dark:text-[#60A5FA]"
                         : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white"
                     } ${collapsed ? "justify-center px-0" : ""}`}
                   >

@@ -126,11 +126,11 @@ export default function AdminCandidatesPage() {
 
       <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-end dark:border-[#1E3352]">
         <div>
-          <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#2459A6]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA]">
             <Award className="size-3.5" aria-hidden="true" />
             Election Commission
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1E3A5F] dark:text-white">
             Official Candidate Rosters
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
@@ -200,7 +200,7 @@ export default function AdminCandidatesPage() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                 Selected Contest
               </span>
-              <div className="mt-2 text-lg font-extrabold text-[#10233F] dark:text-white truncate">
+              <div className="mt-2 text-lg font-extrabold text-[#1E3A5F] dark:text-white truncate">
                 {election.title}
               </div>
               <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -217,7 +217,7 @@ export default function AdminCandidatesPage() {
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
                 Official Nominees
               </span>
-              <div className="mt-2 text-2xl font-extrabold font-mono text-[#157E92] dark:text-[#38BDF8]">
+              <div className="mt-2 text-2xl font-extrabold font-mono text-[#2459A6] dark:text-[#60A5FA]">
                 {candidates.length}
               </div>
               <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -283,7 +283,7 @@ export default function AdminCandidatesPage() {
               <button
                 type="submit"
                 disabled={saving || loadingCandidates}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] hover:bg-[#0E6273] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#2459A6] hover:bg-[#1E3A5F] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
               >
                 <Plus className="size-4" aria-hidden="true" />
                 <span>Add Candidate</span>
@@ -311,7 +311,7 @@ export default function AdminCandidatesPage() {
                   className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
                 >
                   <div className="min-w-0">
-                    <h3 className="font-bold text-sm sm:text-base text-[#10233F] dark:text-white">
+                    <h3 className="font-bold text-sm sm:text-base text-[#1E3A5F] dark:text-white">
                       {candidate.name}
                     </h3>
                     <p className="mt-0.5 text-xs text-slate-500">{candidate.contest}</p>

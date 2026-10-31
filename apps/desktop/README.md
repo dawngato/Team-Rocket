@@ -1,98 +1,217 @@
-# HimVote Desktop Clients
+# HimVote .NET Desktop Clients
 
-HimVote contains a shared C#/.NET 8 Core plus two desktop shells:
+This directory contains the shared .NET desktop code and two native desktop shells:
 
-* `HimVote.Linux` is an Avalonia client for Linux.
-* `HimVote.Windows` contains the Windows WinUI path and a non-Windows source/test compatibility path.
+- HimVote.Linux is an Avalonia desktop application for Linux.
+- HimVote.Windows contains a WinUI desktop application path for Windows.
+- HimVote.Core contains shared models, services, and view-model support.
+- HimVote.Windows.Tests contains xUnit tests covering shared and platform project code.
 
-This is a synthetic-data educational prototype. Source presence is not evidence of a native build, a signed MSIX package, an independently operated witness, or suitability for a real election. The local witness and Anvil-style chain flows are demonstrations unless independently operated and externally pinned.
+This is separate from apps/linux, which contains a Python/Tk desktop client and its own command-line audit interface. The two Linux applications have different implementations and build commands.
 
-## Architecture and Structure
+HimVote is a development and demonstration prototype. Building a desktop executable does not prove election security, production suitability, independent witness operation, or release readiness. Read the [repository overview](../../README.md) for current limitations.
 
-The client adopts the Model View ViewModel architecture utilizing CommunityToolkit.Mvvm for reactive state management.
+## Contents
 
-### Views
+- [Project status](#project-status)
+- [Project map](#project-map)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Build and run on Linux](#build-and-run-on-linux)
+- [Build and run on Windows](#build-and-run-on-windows)
+- [Tests](#tests)
+- [Configuration](#configuration)
+- [Security and audit boundaries](#security-and-audit-boundaries)
+- [Packaging and signing](#packaging-and-signing)
+- [Troubleshooting](#troubleshooting)
+- [Release review](#release-review)
+- [Related documentation](#related-documentation)
 
-Located in `HimVote.Windows/Views`:
-* `LoginPage`: Sign in through institutional identity origin with DPAPI session protection.
-* `ElectionsPage`: Overview of available elections with status indicators and booth launch action.
-* `CandidatesPage`: Detailed slate of candidate nominations for contested races.
-* `ReceiptPage`: Tracker for voter receipts with witness log confirmation status.
-* `AdminPage`: Administrative lifecycle controls for roster freeze, election opening, closing, and publication.
-* `EvidenceImportPage`: File import workspace with safe archive extraction and external trust pin loading.
-* `AuditExplorerPage`: Offline audit interface displaying side by side cryptographic root and tally verification.
-* `SettingsPage`: Diagnostic details, version information, and verifier checksum status.
+## Project status
 
-### ViewModels
+The solution file is HimVote.Windows.sln. It includes the Windows shell, the Linux Avalonia shell, the shared Core project, and the xUnit test project.
 
-Located in `HimVote.Windows/ViewModels`:
-* `LoginViewModel`: Authentication, session persistence, and credential lifecycle.
-* `ElectionsViewModel`: Institutional contest retrieval, filtering, and system browser ballot booth handoff.
-* `CandidatesViewModel`: Candidate listing and contest metadata loading.
-* `ReceiptViewModel`: Ballot receipt querying against the witness inclusion ledger.
-* `AdminViewModel`: Draft election creation, roster freeze commands, open and close operations, and publication requests.
-* `EvidenceImportViewModel`: Archive extraction workflow and trust pin importer validations.
-* `AuditExplorerViewModel`: Execution orchestrator for the checked verifier process, side by side comparisons, and reporting.
-* `SettingsViewModel`: Update status queries and configuration settings.
+The Linux shell targets net8.0 and uses Avalonia 11.2.8. The Windows project conditionally targets WinUI and a Windows 10 SDK on Windows. When built on a non-Windows operating system, the Windows project switches to a net8.0 compatibility library and includes source stubs; that is useful for shared code/test compatibility but does not produce a runnable Windows app.
 
-### Services
+The repository does not include an installer or a documented signed desktop release pipeline. A successful compile is a development result only.
 
-Located in `HimVote.Windows/Services`:
-* `ApiClient`: Typed HTTP client communicating with identity, admin, and casting endpoints.
-* `SecureStore`: Windows Data Protection API (DPAPI) and Credential Locker integration for session tokens.
-* `VerifierRunner`: Child process runner executing the Python verifier CLI with SHA256 verification before every run. It is a separate process, not an OS-level network sandbox.
-* `TrustPinStore`: Storage and validator for trust pins chosen from a user selected external file.
-* `EvidenceImporter`: Defensive ZIP extractor with path traversal defenses, symlink rejection, and file count and byte limits.
-* `ReportExporter`: Deterministic JSON and human readable text export engine.
-* `UpdateService`: Version/channel status abstraction; packaging or signed update evidence is not implied by this source.
+## Project map
 
-## Offline Audit Explorer Security Controls
+Paths below are relative to apps/desktop.
 
-The audit explorer can operate on local evidence without the election API. The client does not itself provide OS-level network isolation; the verifier must be independently reviewed for offline behavior and the operator must treat local process execution accordingly.
+| Project/path | Responsibility |
+| --- | --- |
+| HimVote.Windows.sln | Solution containing all .NET desktop projects and tests. |
+| HimVote.Core | Shared election, receipt, audit models; API and secure-store interfaces; evidence import, trust pins, verifier runner, report export, update abstraction, and view models. |
+| HimVote.Linux | Avalonia application, Linux-specific services, XAML pages, converters, and main-window view model. |
+| HimVote.Windows | WinUI application path, Windows views, service implementations, and Windows-specific models/view models. |
+| HimVote.Windows.Tests | xUnit test project with Moq and Microsoft.NET.Test.Sdk. |
+| apps/web | A nested web README and package for the separate web interface; it is not the desktop shell. |
+| services/himvote_api | A nested Python service/package with its own README and pyproject configuration. |
+| verifier | A nested verifier integration README and support code. |
+| contracts | Contract documentation and support files. |
 
-1. Safe ZIP Extraction:
-* Prevents directory traversal attacks by validating destination boundaries for every file entry.
-* Rejects symbolic links and Windows reparse points.
-* Enforces limits on maximum file count, maximum entry size, and total uncompressed bytes to guard against archive bombs.
+The Windows and Linux projects have some platform-specific copies of models and view models. Check both implementations when changing a user-facing workflow or API contract.
 
-2. Isolated Trust Pins:
-* Requires trust pins to be selected by the user from an external file.
-* Strictly rejects reading trust pins located inside the imported evidence directory.
+## Architecture
 
-3. Checked Verifier Invocation:
-* Inspects the SHA256 checksum of the verifier executable or script prior to execution.
-* Aborts immediately if the expected checksum does not match the actual file digest.
-* Clears common proxy environment variables and sets `NO_PROXY=*`; this is a best-effort environment hygiene measure, not a firewall or process sandbox.
+The shell uses Model-View-ViewModel style separation and CommunityToolkit.Mvvm. XAML views bind to view models; services provide HTTP, session storage, external trust pins, archive import, report export, update information, and verifier execution.
 
-4. Evaluated Verification Properties:
-* `RECORD_INTEGRITY`: Verification of Merkle tree history and ballot evidence leaves.
-* `CREDENTIAL_UNIQUENESS`: Evaluation of blind credential signatures and nullifier commitments.
-* `ROSTER_ATTESTATION`: Verification of authorized institutional registrar roster signatures.
-* `TALLY_PROOF`: Verification of native cryptographic ballot tally proofs.
-* `ANCHOR_FINALITY`: Validation of the configured checkpoint/chain evidence. A local development chain does not establish independent consensus finality.
-Each property status is assigned one of: PASS, FAIL, LIMITED, ASSUMED, NOT_SUPPORTED, or UNVERIFIABLE.
-Failure classifications include: BAD_SIGNATURE, TRUNCATED, WRONG_CHAIN, INVALID_TALLY, MISSING_FINAL, and STALE_CHECKPOINT.
+Important service responsibilities include:
 
-5. Side by Side Cryptographic Comparison:
-* Displays published Merkle root against computed Merkle root.
-* Displays published candidate tally against computed candidate tally with discrepancy highlighting.
+- ApiClient sends requests to a configured API base and attaches the current bearer token.
+- SecureStore or LinuxSecureStore persists session information using platform-specific mechanisms.
+- EvidenceImporter handles evidence archive import and validates extraction paths and archive limits.
+- TrustPinStore loads trust information selected by the user.
+- VerifierRunner invokes a verifier process and checks its configured digest before execution.
+- ReportExporter creates Markdown and JSON summaries.
+- UpdateService exposes version/channel information; it does not imply that signed updates are published.
 
-6. Deterministic Reports:
-* Exports canonical JSON reports containing verifier SHA256 hash.
-* Exports formatted text summaries for auditing records.
+Running the verifier as a child process is process separation, not an operating-system sandbox. Environment cleanup such as clearing proxy variables does not prevent the child process from accessing the network. Review verifier behavior and run it in a separately controlled environment when network isolation is required.
 
-## Building and Testing
+## Requirements
 
-Solution file: `HimVote.Windows.sln`
+### Shared development
 
-To build the projects:
-```bash
-dotnet build HimVote.Windows.sln
-```
+- .NET 8 SDK.
+- NuGet package restore access.
+- Git checkout of the complete repository, because some verifier and fixture paths are repository-relative.
 
-To run the xUnit test suite:
-```bash
-dotnet test HimVote.Windows.sln
-```
+### Linux desktop
 
-Build evidence is environment-specific. A Windows WinUI/MSIX build requires the Windows SDK and Windows toolchain; a Linux build exercises the Avalonia project. These commands must be run on the corresponding toolchain and their output retained. In the current development environment, `dotnet` is not on `PATH`, so no native build or test pass is claimed here.
+- A supported Linux desktop session with X11 or Wayland as needed by Avalonia's platform backend.
+- A compatible .NET 8 runtime if publishing framework-dependent output.
+- A display server for interactive UI runs. Headless CI may build and run unit tests without opening a window.
+
+### Windows desktop
+
+- Windows 10 or 11 with a compatible Windows SDK.
+- Visual Studio 2022 or .NET 8 SDK with WinUI/Windows App SDK build support.
+- Windows App SDK packages restored from NuGet.
+- A Windows machine for compiling, launching, signing, and packaging the actual WinUI app.
+
+## Build and run on Linux
+
+Run commands from apps/desktop:
+
+Restore dependencies:
+
+    dotnet restore HimVote.Windows.sln
+
+Build all projects that are compatible with the current operating system:
+
+    dotnet build HimVote.Windows.sln
+
+Run the Avalonia client:
+
+    dotnet run --project HimVote.Linux/HimVote.Linux.csproj
+
+Build a framework-dependent Linux publish directory:
+
+    dotnet publish HimVote.Linux/HimVote.Linux.csproj -c Release -r linux-x64 --self-contained false -o publish/linux-x64
+
+Change linux-x64 to the intended RID only after confirming support in the installed .NET SDK and all dependencies. The publish directory is not automatically converted into a distribution package.
+
+The default API base used by the shared Linux ApiClient is http://localhost:8080. This is suitable only when a compatible local gateway is listening on the same machine. Open the client settings and configure a reachable service origin for another environment. Do not assume container-only hostnames are resolvable from the desktop process.
+
+## Build and run on Windows
+
+Run commands from apps/desktop in Windows PowerShell, a Visual Studio Developer Command Prompt, or another shell configured with the Windows SDK:
+
+    dotnet restore HimVote.Windows.sln
+    dotnet build HimVote.Windows.sln -c Debug -p:Platform=x64
+    dotnet run --project HimVote.Windows/HimVote.Windows.csproj -p:Platform=x64
+
+Visual Studio can open HimVote.Windows.sln. Select the Windows project, target architecture, and a local Windows debugging target. A non-Windows build of HimVote.Windows is only its compatibility path and cannot be used to validate the WinUI UI.
+
+The current default API base is http://localhost:8080. Verify that it is appropriate for the intended local gateway, and set a reviewed HTTPS endpoint for any controlled remote test. The code or UI configuration must be checked to ensure that the selected base is actually used by all services.
+
+## Tests
+
+The solution includes an xUnit test project:
+
+    dotnet test HimVote.Windows.sln
+
+For more diagnostic output:
+
+    dotnet test HimVote.Windows.sln --logger "console;verbosity=normal"
+
+Tests cover view-model behavior and shared services, including login, elections, candidates, receipts, administrative actions, evidence import, trust pins, and verifier/report handling. The solution test run on Linux does not test actual WinUI behavior on Windows. Add platform-specific smoke testing for each supported operating system before distribution.
+
+## Configuration
+
+The desktop clients use a configurable API base, with source defaults pointing at localhost:8080. The exact configuration screen and persistence path differ between the Windows and Avalonia shells. Confirm the configured URL in the active client rather than assuming that an environment variable or appsettings file is consumed.
+
+For local development:
+
+1. Start the gateway or API service on a host reachable by the desktop process.
+2. Open the client settings.
+3. Set the API origin to the gateway address, including scheme and port.
+4. Save settings and use the connectivity/status display to verify the host.
+5. Confirm the service routes and API paths match the current client contract.
+
+Do not use production credentials with a local demo client. Do not store passwords or private keys in tracked configuration files.
+
+## Security and audit boundaries
+
+The desktop audit explorer can import local evidence and display verifier output. It must not claim independent verification unless the actual verifier and trusted inputs were independently reviewed.
+
+Important boundaries:
+
+- The external verifier process is not isolated by network policy simply because it is launched separately.
+- A checksum check protects against unexpected local verifier changes only if the expected digest itself is obtained through a trusted independent channel.
+- A user-selected trust-pin file remains user-provided trust input; the UI cannot prove the selected key belongs to the intended institution.
+- Archive path checks reduce extraction risk but do not replace keeping the application and runtime updated.
+- Local chain or witness demonstrations do not prove independent consensus or independent custody.
+- A report generated on a workstation is not a digital signature unless an actual signing step and verified identity are present.
+- A local receipt cache is not the authoritative casting ledger.
+
+The Windows secure store and Linux secure store are separate implementations. Review their platform-specific behavior, backup and migration rules, memory handling, and error paths before making a credential-protection claim.
+
+## Packaging and signing
+
+The repository does not currently provide a complete signed MSIX installer or a Linux AppImage for this .NET client. The dotnet publish command creates publish output only. It does not sign the application, create an installer, establish an update channel, or prove the output came from a trusted CI run.
+
+Before packaging:
+
+- Choose an application identifier and versioning policy.
+- Add platform-specific package manifests and icons.
+- Configure signing outside source control.
+- Review auto-update behavior and update metadata.
+- Retain checksums, build provenance, and deployment records.
+- Test installation, update, rollback, and removal on clean machines.
+
+## Troubleshooting
+
+| Symptom | Checks |
+| --- | --- |
+| Restore fails | Confirm .NET 8 SDK installation, NuGet network access, and any proxy configuration. |
+| WinUI project fails on Linux | Linux builds use a compatibility library path; use Windows with the Windows SDK to build and run the real WinUI app. |
+| Avalonia window does not open | Confirm a supported display session, Linux desktop dependencies, and that the Linux project rather than the Python client is being launched. |
+| API returns connection refused | Confirm the gateway is listening and that the configured URL is reachable from the desktop process. |
+| Verifier does not start | Confirm the verifier path, execution permissions, Python/runtime requirements, expected digest, and captured stderr. |
+| Evidence import is rejected | Check archive format, file limits, path validity, and whether trust pins are outside the evidence directory as required by the workflow. |
+| Publish output is not installable | dotnet publish is not an installer; use a separately configured packaging and signing pipeline. |
+
+## Release review
+
+Before shipping a desktop client:
+
+1. Build and launch on the target operating system and architecture.
+2. Verify API origins, TLS, session storage, and authentication behavior.
+3. Test package installation and upgrade behavior on a clean machine.
+4. Review safe archive handling and verifier invocation.
+5. Confirm the verifier digest and trust pins through independent sources.
+6. Verify keyboard navigation, screen-reader semantics, high contrast, scaling, and display resizing.
+7. Ensure logs and crash reports exclude tokens, credential secrets, and raw ballots.
+8. Sign artifacts with protected CI credentials and retain provenance.
+9. Close the system-level established-engine and independent-witness release gates.
+
+## Related documentation
+
+- [Repository overview](../../README.md)
+- [Linux Avalonia project](HimVote.Linux/HimVote.Linux.csproj)
+- [Windows WinUI project](HimVote.Windows/HimVote.Windows.csproj)
+- [Shared Core project](HimVote.Core/HimVote.Core.csproj)
+- [Test project](HimVote.Windows.Tests/HimVote.Windows.Tests.csproj)
+- [Separate Python Linux client](../linux/README.md)

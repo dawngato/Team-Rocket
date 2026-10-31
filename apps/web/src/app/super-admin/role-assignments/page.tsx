@@ -237,11 +237,11 @@ export default function SuperAdminRoleAssignmentsPage() {
   return (
     <main className="mx-auto max-w-7xl space-y-8 px-4 py-10 sm:px-6 lg:px-8">
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
-        <p className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#10233F]/10 px-2.5 py-0.5 text-xs font-semibold text-[#10233F] dark:bg-white/10 dark:text-white">
-          <Shield className="size-3.5 text-[#157E92]" aria-hidden="true" />
+        <p className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#1E3A5F]/10 px-2.5 py-0.5 text-xs font-semibold text-[#1E3A5F] dark:bg-white/10 dark:text-white">
+          <Shield className="size-3.5 text-[#2459A6]" aria-hidden="true" />
           Super Administrator Exclusive
         </p>
-        <h1 className="text-3xl font-bold tracking-tight text-[#10233F] dark:text-white">
+        <h1 className="text-3xl font-bold tracking-tight text-[#1E3A5F] dark:text-white">
           User Role Assignments
         </h1>
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -262,7 +262,7 @@ export default function SuperAdminRoleAssignmentsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Registered Accounts
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {loadingUsers ? "…" : users.length}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -297,10 +297,10 @@ export default function SuperAdminRoleAssignmentsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Identity Issuer Stream
           </span>
-          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <div className="mt-2 text-base font-bold text-[#2459A6] dark:text-[#60A5FA] flex items-center gap-1.5">
             <span className="relative flex h-2 w-2" aria-hidden="true">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2459A6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2459A6]" />
             </span>
             <span>Cluster &amp; Store Synchronized</span>
           </div>
@@ -327,8 +327,8 @@ export default function SuperAdminRoleAssignmentsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Role Assignment Form */}
         <section className="lg:col-span-1 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-sm space-y-4">
-          <h2 className="text-base font-bold text-[#10233F] dark:text-white flex items-center gap-2">
-            <UserCog className="size-5 text-[#157E92]" />
+          <h2 className="text-base font-bold text-[#1E3A5F] dark:text-white flex items-center gap-2">
+            <UserCog className="size-5 text-[#2459A6]" />
             <span>Assign Role to Registered User</span>
           </h2>
 
@@ -344,7 +344,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                 value={selectedUser}
                 onChange={(e) => setSelectedUser(e.target.value)}
                 placeholder="e.g. arungaming1973@gmail.com"
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
               />
               <span className="text-[11px] text-slate-500 mt-1 block">
                 Select from the registered users table or type an institutional email directly.
@@ -359,7 +359,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                 id="assign-role-select"
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value)}
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-sm text-[#1E3A5F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
               >
                 {AVAILABLE_ROLES.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -379,7 +379,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                 value={scope}
                 onChange={(e) => setScope(e.target.value)}
                 placeholder="global, or Department Name"
-                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+                className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
               />
               <span className="text-[11px] text-slate-500 mt-1 block">
                 Use <code>global</code> for campus-wide privileges, or department/election name.
@@ -389,7 +389,7 @@ export default function SuperAdminRoleAssignmentsPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm disabled:opacity-50"
+              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#2459A6] hover:bg-[#1E3A5F] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm disabled:opacity-50"
             >
               <ShieldCheck className="size-4" />
               <span>{loading ? "Assigning Role..." : "Assign Role Immediately"}</span>
@@ -401,13 +401,13 @@ export default function SuperAdminRoleAssignmentsPage() {
         <section className="lg:col-span-2 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden flex flex-col">
           <div className="p-4 border-b border-slate-200 dark:border-[#1E3352] flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-900/30">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-sm text-[#10233F] dark:text-white">
+              <h2 className="font-bold text-sm text-[#1E3A5F] dark:text-white">
                 Registered Platform Users ({users.length})
               </h2>
               <button
                 type="button"
                 onClick={() => void fetchUsers()}
-                className="p-1.5 text-slate-500 hover:text-[#157E92] transition-colors"
+                className="p-1.5 text-slate-500 hover:text-[#2459A6] transition-colors"
                 title="Refresh user list"
               >
                 <RefreshCw className="size-4" />
@@ -420,7 +420,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search registered users..."
-                className="w-full min-h-[38px] pl-9 pr-3 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-xs focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+                className="w-full min-h-[38px] pl-9 pr-3 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#0B1524] text-xs focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
               />
             </div>
           </div>
@@ -450,7 +450,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                         key={u.id}
                         className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150"
                       >
-                        <td className="px-4 py-3.5 font-medium text-[#10233F] dark:text-white">
+                        <td className="px-4 py-3.5 font-medium text-[#1E3A5F] dark:text-white">
                           <div className="font-bold flex items-center gap-1.5">
                             <span>{u.fullName || u.email.split("@")[0]}</span>
                             {isPending && (
@@ -555,7 +555,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                                   setSelectedUser(u.email);
                                   if (u.roles[0]) setSelectedRole(u.roles[0]);
                                 }}
-                                className="px-2 py-1 text-[11px] font-semibold rounded-md border border-[#157E92] text-[#157E92] hover:bg-[#157E92] hover:text-white transition-colors"
+                                className="px-2 py-1 text-[11px] font-semibold rounded-md border border-[#2459A6] text-[#2459A6] hover:bg-[#2459A6] hover:text-white transition-colors"
                               >
                                 Select
                               </button>

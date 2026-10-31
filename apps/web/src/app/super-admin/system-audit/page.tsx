@@ -46,11 +46,11 @@ export default function SuperAdminSystemAuditPage() {
       <header className="border-b border-slate-200 pb-6 dark:border-[#1E3352]">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#157E92]">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#2459A6]">
               <FileText className="size-4" aria-hidden="true" />
               Administration Event Log
             </p>
-            <h1 className="mt-1 text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
+            <h1 className="mt-1 text-3xl font-bold text-[#1E3A5F] dark:text-white tracking-tight">
               System Audit &amp; Event Log
             </h1>
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
@@ -79,12 +79,12 @@ export default function SuperAdminSystemAuditPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Recorded Invariant Events</span>
-            <div className="text-2xl font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-2xl font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               {events.length}
             </div>
             <span className="text-[11px] text-slate-500">Events returned by the service</span>
           </div>
-          <div className="p-3 rounded-xl bg-[#157E92]/10 text-[#157E92]">
+          <div className="p-3 rounded-xl bg-[#2459A6]/10 text-[#2459A6]">
             <Activity className="size-5" />
           </div>
         </motion.div>
@@ -116,7 +116,7 @@ export default function SuperAdminSystemAuditPage() {
         >
           <div>
             <span className="text-xs font-medium text-slate-500 uppercase tracking-wider">Actor Signature Schema</span>
-            <div className="text-lg font-bold font-mono text-[#10233F] dark:text-white mt-1">
+            <div className="text-lg font-bold font-mono text-[#1E3A5F] dark:text-white mt-1">
               Not reported
             </div>
             <span className="text-[11px] text-slate-500">Signature algorithm and key ownership are not verified here</span>
@@ -140,7 +140,7 @@ export default function SuperAdminSystemAuditPage() {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           placeholder="Filter by action identifier, actor principal, status, or details..."
-          className="min-h-11 w-full rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] pl-10 pr-4 text-sm text-[#10233F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+          className="min-h-11 w-full rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] pl-10 pr-4 text-sm text-[#1E3A5F] dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
         />
       </div>
 
@@ -167,7 +167,7 @@ export default function SuperAdminSystemAuditPage() {
               filteredEvents.map((event) => (
                 <tr
                   key={event.id}
-                  className="transition-all duration-150 hover:bg-[#F5F2EB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
+                  className="transition-all duration-150 hover:bg-[#F1F5FB]/80 dark:hover:bg-stone-900/80 hover:shadow-sm"
                 >
                   <td className="whitespace-nowrap px-5 py-4 font-mono text-slate-600 dark:text-slate-400">
                     {new Date(event.timestamp_utc).toLocaleString()}
@@ -175,7 +175,7 @@ export default function SuperAdminSystemAuditPage() {
                   <td className="px-5 py-4 font-mono font-medium text-slate-900 dark:text-white">
                     {event.actor}
                   </td>
-                  <td className="px-5 py-4 font-mono font-bold text-[#157E92] dark:text-[#38BDF8]">
+                  <td className="px-5 py-4 font-mono font-bold text-[#2459A6] dark:text-[#60A5FA]">
                     {event.action}
                   </td>
                   <td className="px-5 py-4">

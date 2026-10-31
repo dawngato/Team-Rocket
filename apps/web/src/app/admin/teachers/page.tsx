@@ -96,11 +96,11 @@ export default function AdminTeachersPage() {
 
       <header className="flex flex-col justify-between gap-4 border-b border-slate-200 pb-6 sm:flex-row sm:items-center dark:border-[#1E3352]">
         <div>
-          <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
+          <div className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-[#2459A6]/10 px-2.5 py-0.5 text-xs font-semibold text-[#2459A6] dark:text-[#60A5FA]">
             <Users className="size-3.5" aria-hidden="true" />
             Faculty Governance
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#1E3A5F] dark:text-white">
             Faculty Teachers &amp; Verification Officers
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
@@ -110,7 +110,7 @@ export default function AdminTeachersPage() {
         <button
           type="button"
           onClick={() => setShowForm((current) => !current)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] hover:bg-[#0E6273] px-4 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors"
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#2459A6] hover:bg-[#1E3A5F] px-4 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors"
         >
           <Plus className="size-4" aria-hidden="true" />
           <span>{showForm ? "Cancel" : "Invite Faculty Teacher"}</span>
@@ -128,7 +128,7 @@ export default function AdminTeachersPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Faculty Teachers
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {loading ? "…" : teachers.length}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -163,10 +163,10 @@ export default function AdminTeachersPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Roster Status
           </span>
-          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+          <div className="mt-2 text-base font-bold text-[#2459A6] dark:text-[#60A5FA] flex items-center gap-1.5">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#2459A6] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#2459A6]" />
             </span>
             <span>Identity Service Sync</span>
           </div>
@@ -214,7 +214,7 @@ export default function AdminTeachersPage() {
             onSubmit={invite}
             className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-4"
           >
-            <h2 className="text-sm font-bold text-[#10233F] dark:text-white">
+            <h2 className="text-sm font-bold text-[#1E3A5F] dark:text-white">
               Issue Delegated Faculty Teacher Invitation
             </h2>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -232,7 +232,7 @@ export default function AdminTeachersPage() {
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="faculty@hptu.ac.in"
-                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
                 />
               </div>
               <div>
@@ -248,7 +248,7 @@ export default function AdminTeachersPage() {
                   value={scope}
                   onChange={(event) => setScope(event.target.value)}
                   placeholder="e.g. Computer Science or CSE-2026"
-                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#2459A6] focus:ring-2 focus:ring-[#2459A6]/20 dark:border-[#1E3352] dark:text-white"
                 />
               </div>
             </div>
@@ -264,8 +264,8 @@ export default function AdminTeachersPage() {
       </AnimatePresence>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
-        <div className="flex items-center gap-2 border-b border-slate-100 p-5 font-bold text-[#10233F] dark:border-[#1E3352] dark:text-white text-sm">
-          <UserCheck className="size-5 text-[#157E92]" aria-hidden="true" />
+        <div className="flex items-center gap-2 border-b border-slate-100 p-5 font-bold text-[#1E3A5F] dark:border-[#1E3352] dark:text-white text-sm">
+          <UserCheck className="size-5 text-[#2459A6]" aria-hidden="true" />
           Authoritative Teacher Directory
         </div>
 

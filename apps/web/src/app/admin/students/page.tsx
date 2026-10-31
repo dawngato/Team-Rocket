@@ -61,11 +61,11 @@ export default function AdminStudentsPage() {
 
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mb-1">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#2459A6]/10 text-[#2459A6] dark:text-[#60A5FA] mb-1">
             <GraduationCap className="size-3.5" aria-hidden="true" />
             Voter Roster Registry
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1E3A5F] dark:text-white tracking-tight">
             Enrolled Student Voter Directory
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
@@ -94,7 +94,7 @@ export default function AdminStudentsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Total Student Voters
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#1E3A5F] dark:text-white">
             {loading ? "…" : students.length}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
@@ -128,7 +128,7 @@ export default function AdminStudentsPage() {
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
             Verification Rate
           </span>
-          <div className="mt-2 text-2xl font-extrabold font-mono text-[#157E92] dark:text-[#38BDF8]">
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#2459A6] dark:text-[#60A5FA]">
             {loading || students.length === 0
               ? "…"
               : `${Math.round((students.filter((s) => s.verified).length / students.length) * 100)}%`}
@@ -168,7 +168,7 @@ export default function AdminStudentsPage() {
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search by student name, roll number, or email…"
             aria-label="Search student directory"
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#1E3352] bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+            className="w-full pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 dark:border-[#1E3352] bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
           />
         </div>
 
@@ -181,7 +181,7 @@ export default function AdminStudentsPage() {
             value={deptFilter}
             onChange={(e) => setDeptFilter(e.target.value)}
             aria-label="Filter by department"
-            className="min-h-11 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#157E92]"
+            className="min-h-11 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-[#2459A6]"
           >
             <option value="ALL">All Departments</option>
             <option value="Computer Science and Engineering">Computer Science</option>
@@ -223,7 +223,7 @@ export default function AdminStudentsPage() {
                 filtered.map((s) => (
                   <tr key={s.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150">
                     <td className="px-6 py-4">
-                      <div className="font-bold text-sm text-[#10233F] dark:text-white">
+                      <div className="font-bold text-sm text-[#1E3A5F] dark:text-white">
                         {s.full_name}
                       </div>
                       <div className="font-mono text-slate-500 text-[11px]">{s.student_id}</div>
