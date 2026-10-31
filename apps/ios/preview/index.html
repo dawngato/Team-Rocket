@@ -500,19 +500,107 @@
 
       <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/70 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700">
         <div id="account-modal-avatar" class="w-12 h-12 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-lg">U</div>
-        <div>
-          <div id="account-modal-email" class="font-bold text-xs text-slate-900 dark:text-white">user@campus.edu</div>
-          <span id="account-modal-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950/60">Role</span>
+        <div class="flex-1 min-w-0">
+          <div id="account-modal-display-name" class="font-bold text-xs text-slate-900 dark:text-white truncate">User</div>
+          <div id="account-modal-email" class="text-[11px] text-slate-500 truncate">user@campus.edu</div>
+          <div class="flex items-center gap-1.5 mt-1">
+            <span id="account-modal-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950/60">Role</span>
+            <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60">Registrar Verified</span>
+          </div>
+        </div>
+        <button onclick="openEditProfileModal()" class="p-2 rounded-full bg-brand-50 dark:bg-brand-950/40 text-brand-600 hover:bg-brand-100 transition" title="Edit Profile">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+        </button>
+      </div>
+
+      <!-- Self-Service Contact Details -->
+      <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 text-xs space-y-2">
+        <div class="flex justify-between items-center font-bold text-slate-700 dark:text-slate-300">
+          <span>Contact Details</span>
+          <span class="text-[10px] text-brand-600 font-semibold">Self-Service</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-500">
+          <span>Display Name:</span>
+          <span id="account-modal-contact-name" class="font-medium text-slate-800 dark:text-slate-200">Not set</span>
+        </div>
+        <div class="flex justify-between items-center text-slate-500">
+          <span>Phone (E.164):</span>
+          <span id="account-modal-contact-phone" class="font-medium text-slate-800 dark:text-slate-200">Not set</span>
         </div>
       </div>
 
+      <!-- Institutional Roster Details -->
       <div id="account-modal-privacy-info" class="p-3 rounded-2xl bg-slate-100 dark:bg-slate-800 text-xs space-y-1.5 text-slate-500">
         <!-- Injected via JS -->
       </div>
 
-      <button onclick="handleLogoutAction()" class="w-full py-2.5 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 font-semibold text-xs hover:bg-red-100 transition">
-        Sign Out of Session
-      </button>
+      <div class="flex gap-2">
+        <button onclick="openEditProfileModal()" class="flex-1 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition flex items-center justify-center gap-1.5 shadow-sm">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+          Edit Profile
+        </button>
+        <button onclick="handleLogoutAction()" class="py-2.5 px-4 rounded-xl bg-red-50 dark:bg-red-950/40 text-red-500 font-semibold text-xs hover:bg-red-100 transition">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 2B: NATIVE EDIT PROFILE MODAL ================= -->
+  <div id="edit-profile-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="w-full max-w-sm bg-white dark:bg-slate-900 rounded-3xl p-6 space-y-4 shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center">
+        <h2 class="text-base font-bold text-slate-900 dark:text-white">Edit Profile</h2>
+        <button onclick="closeEditProfileModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+
+      <div id="edit-profile-feedback" class="hidden p-2.5 rounded-xl text-xs"></div>
+
+      <!-- Editable Attributes -->
+      <div class="space-y-3">
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Display Name</label>
+            <span id="edit-name-counter" class="text-[10px] text-slate-400 font-mono">0/80</span>
+          </div>
+          <input type="text" id="edit-display-name" oninput="validateEditProfileInputs()" maxlength="80" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="e.g. Ada Lovelace" />
+          <div id="edit-name-error" class="text-[10px] text-red-500 mt-1 hidden"></div>
+          <div class="text-[10px] text-slate-400 mt-0.5">Clearing this field sets display name to null on identity service.</div>
+        </div>
+
+        <div>
+          <div class="flex justify-between items-center mb-1">
+            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Phone Number (E.164)</label>
+            <span class="text-[10px] text-slate-400">Optional</span>
+          </div>
+          <input type="text" id="edit-phone-number" oninput="validateEditProfileInputs()" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="+14155552671" />
+          <div id="edit-phone-error" class="text-[10px] text-red-500 mt-1 hidden"></div>
+          <div class="text-[10px] text-slate-400 mt-0.5">Must start with '+' followed by 8–15 digits (e.g. +14155552671).</div>
+        </div>
+      </div>
+
+      <!-- Protected Fields Info -->
+      <div class="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/60 text-xs space-y-2">
+        <div class="flex items-center gap-1.5 font-bold text-slate-600 dark:text-slate-400">
+          <svg class="w-3.5 h-3.5 text-slate-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+          <span>Institution-Controlled (Protected)</span>
+        </div>
+        <div class="text-[10px] text-slate-400">These attributes are locked to the registrar roster and cannot be changed here:</div>
+        <div class="space-y-1 text-[11px] text-slate-500">
+          <div class="flex justify-between"><span>Email:</span> <span id="edit-protected-email" class="font-medium text-slate-700 dark:text-slate-300">user@campus.edu</span></div>
+          <div class="flex justify-between"><span>Role:</span> <span id="edit-protected-role" class="font-medium text-slate-700 dark:text-slate-300">Student</span></div>
+          <div class="flex justify-between"><span>Scope:</span> <span id="edit-protected-scope" class="font-medium text-slate-700 dark:text-slate-300">Active Voter</span></div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-1">
+        <button onclick="closeEditProfileModal()" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-semibold text-xs hover:bg-slate-50 dark:hover:bg-slate-800 transition">
+          Cancel
+        </button>
+        <button id="save-profile-btn" onclick="handleProfileUpdateSave()" class="flex-1 py-2.5 rounded-xl bg-brand-600 text-white font-semibold text-xs hover:bg-brand-700 transition flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
+          Save Changes
+        </button>
+      </div>
     </div>
   </div>
 
@@ -908,6 +996,18 @@
     function openAccountProfileModal() {
       if (!currentSession) return;
       document.getElementById('account-modal-email').innerText = currentSession.email;
+      const displayName = currentSession.displayName || currentSession.name || currentSession.email.split('@')[0];
+      const phoneNumber = currentSession.phoneNumber || 'Not configured';
+      
+      const displayNameEl = document.getElementById('account-modal-display-name');
+      if (displayNameEl) displayNameEl.innerText = displayName;
+      
+      const contactNameEl = document.getElementById('account-modal-contact-name');
+      if (contactNameEl) contactNameEl.innerText = currentSession.displayName || 'Not set (uses system default)';
+      
+      const contactPhoneEl = document.getElementById('account-modal-contact-phone');
+      if (contactPhoneEl) contactPhoneEl.innerText = currentSession.phoneNumber || 'Not set';
+
       const badge = document.getElementById('account-modal-badge');
       const avatar = document.getElementById('account-modal-avatar');
       const info = document.getElementById('account-modal-privacy-info');
@@ -915,7 +1015,7 @@
       if (currentSession.role === 'SuperUser') {
         badge.innerText = 'Super User';
         badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-50 text-purple-600 dark:bg-purple-950/60';
-        avatar.innerText = 'SU';
+        avatar.innerText = getInitials(displayName) || 'SU';
         avatar.className = 'w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-lg';
         info.innerHTML = `
           <div class="font-bold text-slate-800 dark:text-slate-200">Super User Authority:</div>
@@ -926,7 +1026,7 @@
       } else if (currentSession.role === 'Admin') {
         badge.innerText = 'Administrator';
         badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-50 text-brand-600 dark:bg-brand-950/60';
-        avatar.innerText = 'AD';
+        avatar.innerText = getInitials(displayName) || 'AD';
         avatar.className = 'w-12 h-12 rounded-full bg-brand-600 text-white flex items-center justify-center font-bold text-lg';
         info.innerHTML = `
           <div class="font-bold text-slate-800 dark:text-slate-200">Administrator Scope (${currentSession.dept || 'Campus'}):</div>
@@ -937,11 +1037,11 @@
       } else {
         badge.innerText = 'Student';
         badge.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60';
-        avatar.innerText = (currentSession.name || 'S').charAt(0).toUpperCase();
+        avatar.innerText = getInitials(displayName) || 'S';
         avatar.className = 'w-12 h-12 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-lg';
         info.innerHTML = `
-          <div class="font-bold text-slate-800 dark:text-slate-200">${currentSession.name} (${currentSession.studentId}):</div>
-          <div>• Department: ${currentSession.dept}</div>
+          <div class="font-bold text-slate-800 dark:text-slate-200">${currentSession.name || displayName} (${currentSession.studentId || 'STU-001'}):</div>
+          <div>• Department: ${currentSession.dept || 'Campus Academic Directory'}</div>
           <div>• Your ballot choice is not shown in your account profile.</div>
           <div>• Your receipt can confirm inclusion without revealing your selection.</div>
         `;
@@ -949,8 +1049,125 @@
 
       document.getElementById('account-modal').classList.remove('hidden');
     }
+
+    function getInitials(str) {
+      if (!str) return 'U';
+      const parts = str.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return str.slice(0, 2).toUpperCase();
+    }
+
     function closeAccountProfileModal() {
       document.getElementById('account-modal').classList.add('hidden');
+    }
+
+    // ================= EDIT PROFILE MODAL =================
+    let editProfileInitial = { displayName: '', phoneNumber: '' };
+
+    function openEditProfileModal() {
+      if (!currentSession) return;
+      editProfileInitial = {
+        displayName: currentSession.displayName || '',
+        phoneNumber: currentSession.phoneNumber || ''
+      };
+      
+      document.getElementById('edit-display-name').value = editProfileInitial.displayName;
+      document.getElementById('edit-phone-number').value = editProfileInitial.phoneNumber;
+      document.getElementById('edit-protected-email').innerText = currentSession.email;
+      document.getElementById('edit-protected-role').innerText = currentSession.role;
+      document.getElementById('edit-protected-scope').innerText = currentSession.dept || 'Active Voter';
+
+      const feedback = document.getElementById('edit-profile-feedback');
+      feedback.className = 'hidden';
+      feedback.innerText = '';
+
+      validateEditProfileInputs();
+      document.getElementById('edit-profile-modal').classList.remove('hidden');
+    }
+
+    function closeEditProfileModal() {
+      const curName = document.getElementById('edit-display-name').value.trim();
+      const curPhone = document.getElementById('edit-phone-number').value.trim();
+      const isDirty = curName !== editProfileInitial.displayName || curPhone !== editProfileInitial.phoneNumber;
+      
+      if (isDirty) {
+        if (!confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+          return;
+        }
+      }
+      document.getElementById('edit-profile-modal').classList.add('hidden');
+    }
+
+    function validateEditProfileInputs() {
+      const nameInput = document.getElementById('edit-display-name').value;
+      const phoneInput = document.getElementById('edit-phone-number').value.trim();
+      const nameCounter = document.getElementById('edit-name-counter');
+      const nameError = document.getElementById('edit-name-error');
+      const phoneError = document.getElementById('edit-phone-error');
+      const saveBtn = document.getElementById('save-profile-btn');
+
+      let isValid = true;
+      const normalizedName = nameInput.trim().replace(/\s+/g, ' ');
+      nameCounter.innerText = `${normalizedName.length}/80`;
+
+      if (nameInput.length > 0 && normalizedName.length === 0) {
+        nameError.innerText = 'Display name cannot consist of whitespace only.';
+        nameError.classList.remove('hidden');
+        isValid = false;
+      } else if (normalizedName.length > 80) {
+        nameError.innerText = 'Display name cannot exceed 80 characters.';
+        nameError.classList.remove('hidden');
+        isValid = false;
+      } else {
+        nameError.classList.add('hidden');
+      }
+
+      if (phoneInput.length > 0) {
+        const e164Regex = /^\+[1-9]\d{7,14}$/;
+        if (!e164Regex.test(phoneInput)) {
+          phoneError.innerText = "Phone number must use E.164 format, e.g. +14155552671 (8-15 digits, non-zero start).";
+          phoneError.classList.remove('hidden');
+          isValid = false;
+        } else {
+          phoneError.classList.add('hidden');
+        }
+      } else {
+        phoneError.classList.add('hidden');
+      }
+
+      const isDirty = normalizedName !== editProfileInitial.displayName || phoneInput !== editProfileInitial.phoneNumber;
+      saveBtn.disabled = !isValid || !isDirty;
+    }
+
+    function handleProfileUpdateSave() {
+      if (!currentSession) return;
+      const nameInput = document.getElementById('edit-display-name').value.trim().replace(/\s+/g, ' ');
+      const phoneInput = document.getElementById('edit-phone-number').value.trim();
+      const feedback = document.getElementById('edit-profile-feedback');
+      const saveBtn = document.getElementById('save-profile-btn');
+
+      saveBtn.disabled = true;
+      saveBtn.innerText = 'Saving...';
+
+      setTimeout(() => {
+        currentSession.displayName = nameInput || null;
+        currentSession.phoneNumber = phoneInput || null;
+
+        feedback.className = 'p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 text-xs flex items-center gap-1.5';
+        feedback.innerHTML = `
+          <svg class="w-4 h-4 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Profile updated successfully.
+        `;
+
+        saveBtn.innerText = 'Save Changes';
+        setTimeout(() => {
+          document.getElementById('edit-profile-modal').classList.add('hidden');
+          openAccountProfileModal();
+          renderAppView();
+        }, 600);
+      }, 400);
     }
     function handleLogoutAction() {
       currentSession = null;
