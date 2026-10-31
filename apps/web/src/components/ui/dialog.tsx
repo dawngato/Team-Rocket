@@ -87,7 +87,7 @@ export function DialogContent({
         role="dialog"
         aria-modal="true"
         className={cn(
-          "relative z-50 w-full max-w-lg rounded-xl border border-slate-200 dark:border-[#1E2E42] bg-white dark:bg-[#121C2B] p-6 shadow-md animate-dialog-spring",
+          "relative z-50 w-full max-w-lg rounded-xl border border-stone-200 dark:border-stone-800 bg-[#FAF8F5] dark:bg-[#1C1917] p-6 shadow-md animate-dialog-spring",
           className
         )}
         {...props}
@@ -116,7 +116,7 @@ export function DialogTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-bold tracking-tight text-[#0F172A] dark:text-white", className)}
+      className={cn("text-lg font-bold tracking-tight text-[#1C1917] dark:text-[#F5F5F4]", className)}
       {...props}
     />
   );
@@ -128,7 +128,7 @@ export function DialogDescription({
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
     <p
-      className={cn("text-sm text-slate-600 dark:text-slate-400 leading-relaxed", className)}
+      className={cn("text-sm text-stone-600 dark:text-stone-400 leading-relaxed", className)}
       {...props}
     />
   );
@@ -140,7 +140,7 @@ export function DialogFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4 border-t border-slate-100 dark:border-[#1E2E42]", className)}
+      className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 pt-4 border-t border-stone-200 dark:border-stone-800", className)}
       {...props}
     />
   );

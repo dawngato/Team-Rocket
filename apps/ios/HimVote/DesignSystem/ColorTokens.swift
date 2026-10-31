@@ -1,36 +1,49 @@
 import SwiftUI
 
 public enum ColorTokens {
-    // TailAdmin Design System Tokens
-    public static let tailAdminBrand = Color(red: 0.275, green: 0.373, blue: 1.0) // #465FFF
-    public static let tailAdminBrandDark = Color(red: 0.212, green: 0.255, blue: 0.961) // #3641F5
-    public static let tailAdminBrandLight = Color(red: 0.388, green: 0.439, blue: 0.973) // #6370F8
-    public static let tailAdminBrandBg = Color(red: 0.933, green: 0.945, blue: 1.0) // #EEF2FF
+    // shadcn/ui Design System Tokens: Black / Charcoal / Warm Grey / Stone / Cream / Burnt Orange
+    public static let burntOrange = Color(red: 0.761, green: 0.255, blue: 0.047) // #C2410C
+    public static let burntOrangeDark = Color(red: 0.604, green: 0.204, blue: 0.071) // #9A3412
+    public static let burntOrangeLight = Color(red: 0.918, green: 0.345, blue: 0.047) // #EA580C
+    public static let burntOrangeBg = Color(red: 1.0, green: 0.969, blue: 0.929) // #FFF7ED
     
-    public static let tailAdminDarkBg = Color(red: 0.059, green: 0.090, blue: 0.165) // #0F172A
-    public static let tailAdminDarkCard = Color(red: 0.118, green: 0.161, blue: 0.231) // #1E293B
-    public static let tailAdminDarkBorder = Color(red: 0.200, green: 0.255, blue: 0.333) // #334155
-    public static let tailAdminDarkTextMuted = Color(red: 0.580, green: 0.639, blue: 0.722) // #94A3B8
+    public static let charcoalBlack = Color(red: 0.047, green: 0.039, blue: 0.035) // #0C0A09
+    public static let charcoalCard = Color(red: 0.110, green: 0.098, blue: 0.090) // #1C1917
+    public static let charcoalBorder = Color(red: 0.161, green: 0.145, blue: 0.141) // #292524
+    public static let warmGreyStone = Color(red: 0.471, green: 0.443, blue: 0.424) // #78716C
+    public static let warmGreyBorder = Color(red: 0.906, green: 0.898, blue: 0.894) // #E7E5E4
+    public static let creamBackground = Color(red: 0.980, green: 0.973, blue: 0.961) // #FAF8F5
     
-    public static let tailAdminLightBg = Color(red: 0.973, green: 0.980, blue: 0.988) // #F8FAFC
-    public static let tailAdminLightCard = Color(red: 1.0, green: 1.0, blue: 1.0)
-    public static let tailAdminLightBorder = Color(red: 0.898, green: 0.918, blue: 0.937) // #E2E8F0
-    public static let tailAdminLightTextMuted = Color(red: 0.392, green: 0.455, blue: 0.545) // #64748B
+    // TailAdmin / shadcn Brand Integration
+    public static let tailAdminBrand = burntOrange
+    public static let tailAdminBrandDark = burntOrangeDark
+    public static let tailAdminBrandLight = burntOrangeLight
+    public static let tailAdminBrandBg = burntOrangeBg
     
-    public static let tailAdminSuccess = Color(red: 0.063, green: 0.725, blue: 0.506) // #10B981
+    public static let tailAdminDarkBg = charcoalBlack
+    public static let tailAdminDarkCard = charcoalCard
+    public static let tailAdminDarkBorder = charcoalBorder
+    public static let tailAdminDarkTextMuted = warmGreyStone
+    
+    public static let tailAdminLightBg = creamBackground
+    public static let tailAdminLightCard = Color.white
+    public static let tailAdminLightBorder = warmGreyBorder
+    public static let tailAdminLightTextMuted = warmGreyStone
+    
+    public static let tailAdminSuccess = Color(red: 0.082, green: 0.502, blue: 0.365) // #15805D
     public static let tailAdminSuccessBg = Color(red: 0.922, green: 0.992, blue: 0.961) // #EBFDF5
-    public static let tailAdminWarning = Color(red: 0.961, green: 0.620, blue: 0.043) // #F59E0B
+    public static let tailAdminWarning = Color(red: 0.667, green: 0.424, blue: 0.043) // #AA6C0B
     public static let tailAdminWarningBg = Color(red: 1.0, green: 0.976, blue: 0.922) // #FFFBEB
-    public static let tailAdminDanger = Color(red: 0.937, green: 0.267, blue: 0.267) // #EF4444
+    public static let tailAdminDanger = Color(red: 0.761, green: 0.235, blue: 0.271) // #C23C45
     public static let tailAdminDangerBg = Color(red: 0.996, green: 0.945, blue: 0.945) // #FEF2F2
-    public static let tailAdminInfo = Color(red: 0.055, green: 0.647, blue: 0.914) // #0EA5E9
-    public static let tailAdminInfoBg = Color(red: 0.941, green: 0.984, blue: 1.0) // #F0F9FF
-    public static let tailAdminPurple = Color(red: 0.545, green: 0.361, blue: 0.965) // #8B5CF6
+    public static let tailAdminInfo = burntOrangeLight
+    public static let tailAdminInfoBg = burntOrangeBg
+    public static let tailAdminPurple = Color(red: 0.45, green: 0.30, blue: 0.80)
     
-    // Core Brand Tokens (Preserved for backward compatibility)
-    public static let brandPrimary = tailAdminBrandDark
-    public static let brandPrimaryLight = tailAdminBrandLight
-    public static let brandAccent = tailAdminBrand
+    // Core Brand Tokens
+    public static let brandPrimary = burntOrangeDark
+    public static let brandPrimaryLight = burntOrangeLight
+    public static let brandAccent = burntOrange
     
     public static let institutionalNavy = Color(red: 0.05, green: 0.12, blue: 0.25)
     public static let institutionalGold = Color(red: 0.85, green: 0.65, blue: 0.15)

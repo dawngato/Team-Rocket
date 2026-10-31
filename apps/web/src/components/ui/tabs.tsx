@@ -51,7 +51,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "inline-flex h-11 items-center justify-start rounded-lg border border-slate-200 dark:border-[#1E2E42] bg-slate-100/80 dark:bg-[#0E1724] p-1 text-slate-600 dark:text-slate-400",
+        "inline-flex h-11 items-center justify-start rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-100/90 dark:bg-[#121110] p-1 text-stone-600 dark:text-stone-400",
         className
       )}
       {...props}
@@ -80,10 +80,10 @@ export function TabsTrigger({
       aria-selected={isSelected}
       onClick={() => onValueChange(value)}
       className={cn(
-        "inline-flex min-h-[36px] items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] disabled:pointer-events-none disabled:opacity-50 select-none",
+        "inline-flex min-h-[36px] items-center justify-center whitespace-nowrap rounded-md px-3.5 py-1.5 text-xs font-semibold ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C2410C] disabled:pointer-events-none disabled:opacity-50 select-none",
         isSelected
-          ? "bg-white dark:bg-[#121C2B] text-[#0F172A] dark:text-white shadow-sm"
-          : "hover:text-[#0F172A] dark:hover:text-white",
+          ? "bg-[#FAF8F5] dark:bg-[#1C1917] text-[#C2410C] dark:text-[#EA580C] shadow-sm font-bold border border-stone-200/60 dark:border-stone-700/60"
+          : "hover:text-[#1C1917] dark:hover:text-[#F5F5F4]",
         className
       )}
       {...props}
