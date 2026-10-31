@@ -141,7 +141,7 @@ export function StudentIdCardVerifier() {
         // Success: Verified as authentic college ID card
         setIsAnalyzing(false);
         const randomHex = Math.random().toString(16).substring(2, 8).toUpperCase();
-        
+
         // Trigger live counter +1 increment in the Live Electorate widget
         recordAuthenticVote(`BAL-${cleanRoll}`);
 
@@ -249,7 +249,7 @@ export function StudentIdCardVerifier() {
               ) : (
                 <div className="relative rounded-2xl overflow-hidden border border-cyan-500/40 bg-slate-900 p-2">
                   <div className="relative max-h-56 overflow-hidden rounded-xl bg-black/40 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
+
                     <img
                       src={imagePreview}
                       alt="Uploaded ID Card Preview"

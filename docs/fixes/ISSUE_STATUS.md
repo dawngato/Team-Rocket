@@ -9,7 +9,7 @@ This document records the verification and implementation status of all twelve r
 | BUG-01 | P0 | EC2 Docker compose crash on missing `.env` | PASS | `scripts/preflight_check.sh`, `scripts/validate_env.py`, `compose.yaml` defaults |
 | BUG-02 | P0 | Android voter credential exposed in URL | PASS | `VotingRepository.kt`, `VotingRepositoryPrivacyTest.kt` |
 | BUG-03 | P0 | In-memory authentication rate limiter bypass across workers | PASS | `services/identity_issuer/rate_limiter.py`, `test_rate_limiter.py` |
-| BUG-04 | P0 | Custom VEEM election engine verification and tally unblock | PASS | Gate E1 verification adapter wired into `publication_service.py`; verified via `gate_e1.py` |
+| BUG-04 | P0 | Custom VEEM election engine verification and tally unblock | BLOCKED | Local Gate E1 is regression evidence only; no established engine is integrated. Production startup and publication fail closed. |
 | BUG-05 | P0 | Witness and database on single operator host | SIMULATED_WITNESS_DOCUMENTED | Labeled `SIMULATED_WITNESS`; multi-operator topology documented |
 | BUG-06 | P1 | Android hardcoded `.example.in` booth domain | PASS | `build.gradle.kts`, `gradle.properties`, `BoothReturnValidatorTest.kt` |
 | BUG-07 | P1 | iOS booth back-channel handoff throws unconfigured | NOT_TESTED (SOURCE_UPDATED_NOT_BUILT) | `BoothSessionHandler.swift` patched; requires macOS/Xcode for full compilation |

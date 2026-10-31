@@ -27,7 +27,7 @@ All modifications strictly adhered to the non-negotiable architectural mandates:
 - **Action Taken:**
   - Verified `services/election_engine/gate_e1.py` and `tests/security/reports/gate_e1_veem.json`.
   - Reaffirmed the strict boundary in `services/election_engine/adapter.py` where verification is cryptographically bounded to the configured parameters $(P, Q, G)$, requiring full zero-knowledge proof checks (`verify_disjunctive`, `verify_sum`, `verify_dleq`) before accepting ballots or tally results.
-  - Confirmed `Gate E1` passes all 5 verification blocks:
+  - Confirmed the local `Gate E1` regression suite passes all 5 checks. This is not an established-engine integration and the release gate remains blocked:
     1. `1_create_and_cast_ballot`: PASS
     2. `2_export_proof_artifacts`: PASS
     3. `3_run_independent_verifier`: PASS

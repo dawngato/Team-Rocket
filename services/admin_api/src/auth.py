@@ -13,6 +13,9 @@ from fastapi import HTTPException, Request, status
 from src.config import settings
 
 
+ELECTION_ADMIN_ROLES = {"administrator", "super_admin", "election_officer"}
+
+
 def _identity_profile(request: Request) -> dict[str, Any]:
     authorization = request.headers.get("authorization")
     cookie = request.headers.get("cookie")
@@ -44,8 +47,11 @@ def _identity_profile(request: Request) -> dict[str, Any]:
     if not isinstance(profile, dict) or not isinstance(profile.get("user_id"), str):
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Identity response was invalid")
     roles = profile.get("roles")
-    if not isinstance(roles, list) or not any(isinstance(role, str) for role in roles):
+    if not isinstance(roles, list):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
+    normalized_roles = {role.strip().lower() for role in roles if isinstance(role, str)}
+    if not normalized_roles.intersection(ELECTION_ADMIN_ROLES):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="An election administration role is required")
     if not profile.get("mfa_authenticated"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for administrative actions")
     return profile

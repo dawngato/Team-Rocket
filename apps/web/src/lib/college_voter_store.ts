@@ -15,7 +15,7 @@ export function getDefaultEndTime(): string {
   const now = new Date();
   // In JavaScript: Sunday is 0, Monday is 1 ... Saturday is 6
   const currentDay = now.getDay();
-  let daysUntilSunday = (7 - currentDay) % 7;
+  const daysUntilSunday = (7 - currentDay) % 7;
   
   const targetSunday = new Date(now);
   targetSunday.setDate(now.getDate() + daysUntilSunday);

@@ -11,7 +11,7 @@
 The HimVote system has completed all phases of the master repair plan. All architectural components across backend microservices, cryptography libraries, verifiers, and frontend Next.js applications are synchronized, structurally sound, and thoroughly tested.
 
 - **System Health:** 100% Passing
-- **Cryptographic Gate E1:** Passed (5 / 5 checks verified)
+- **Local Gate E1 regression suite:** 5 / 5 checks pass; the required established-engine integration gate remains BLOCKED.
 - **Mandatory Q7 Attack Demonstrations:** Passed (5 / 5 attacks fail closed)
 - **Multi-Service Backend Test Baseline:** 300 / 300 tests passed (0 failures, 0 skips)
 - **Web Client Test Baseline:** 76 / 76 Vitest tests passed across 12 suites

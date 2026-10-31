@@ -350,7 +350,7 @@ export default function PublishedResultsPage() {
                 <div className="flex items-start sm:items-center gap-4">
                   {CANDIDATE_PHOTOS[winner[0]] ? (
                     <div className="relative size-16 shrink-0 rounded-2xl overflow-hidden border-2 border-amber-400 shadow-lg">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
+
                       <img
                         src={CANDIDATE_PHOTOS[winner[0]]}
                         alt={winner[0]}
@@ -433,7 +433,7 @@ export default function PublishedResultsPage() {
                         <div className="flex items-center gap-3">
                           {photo ? (
                             <div className="size-8 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 shrink-0">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
+
                               <img src={photo} alt={candidate} className="size-full object-cover" />
                             </div>
                           ) : (

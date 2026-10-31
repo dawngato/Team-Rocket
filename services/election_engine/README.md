@@ -17,7 +17,7 @@ The engine exposes the six required adapter functions:
 * `verify_inclusion`: Verifies cryptographic inclusion of cast ballots in the RFC 9162 Merkle log.
 * `get_protocol_version`: Returns the development protocol identifier `himvote_veem_v1`.
 
-The adapter is intentionally reported as `custom_development_unverified`. It
+The adapter is custom development code and is reported as `custom_development_unverified`. It
 must not be used for a security-complete release until a separately selected
 established engine, its native booth and its independent verifier have passed
 the release gate. Mathematical correctness tests in this repository do not
@@ -72,7 +72,7 @@ Cast ballots are recorded in an append only Merkle log:
 
 ## Local adapter verification block
 
-The engine includes a local adapter verification suite in `gate_e1.py`. It validates development behavior against five checks. These checks are useful regression evidence, but they are not the external engine gate:
+The engine includes a local adapter regression suite in `gate_e1.py`. It validates development behavior against five checks. These checks are useful regression evidence only; they are not an established engine integration or external protocol gate:
 
 1. Real Encrypted Ballot Creation and Casting: Generates authentic exponential ElGamal ballots with zero knowledge proofs and successfully casts them.
 2. Native Proof Artifact Export: Exports canonical JSON proof artifacts and Merkle tree roots.

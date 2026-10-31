@@ -152,7 +152,7 @@ In the event of database restoration from a backup snapshot:
 
 ## 8. Operational Security Checklist Prior to Election Opening
 
-* Confirm Gate E1 voting engine validation passed and signed off.
+* Run the local Gate E1 regression suite for development only. Production readiness remains blocked until an established engine and its independent verifier are integrated and reviewed.
 * Verify independent witness endpoints are running outside institutional infrastructure.
 * Ensure BOOTSTRAP_ALLOWED environment variable is set to false across all instances.
 * Validate SSL certificate validity and TLS 1.3 protocol enforcement.

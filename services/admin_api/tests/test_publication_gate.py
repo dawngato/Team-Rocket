@@ -59,6 +59,28 @@ def setup_witnessed_election(db, election_id="elec_pub_gate"):
     return elec
 
 
+def test_publication_fails_closed_when_established_tally_is_not_verified(
+    test_db, monkeypatch
+):
+    """Local VEEM regression checks must never satisfy the production tally gate."""
+    elec = setup_witnessed_election(test_db, "elec_unverified_engine")
+    monkeypatch.setattr(settings, "require_established_engine_tally", True)
+    monkeypatch.setattr(settings, "established_engine_tally_verified", False)
+    req = PublicationRequest(
+        auditor_public_key="00",
+        auditor_signature="00",
+        attestation_data={},
+    )
+
+    with pytest.raises(StatePreconditionError, match="no established voting-engine tally verifier"):
+        PublicationService.process_publication_request(
+            db=test_db,
+            election_id=elec.id,
+            actor_id="auditor_lead",
+            req=req,
+        )
+
+
 def test_publication_requires_final_witness(test_db, auditor_keypair):
     """Publication must fail if no final witness checkpoint exists."""
     elec = setup_witnessed_election(test_db, "elec_no_witness")
