@@ -1,7 +1,35 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+const PROTECTED_ROUTE_PATTERN = /^\/(student|teacher|admin|officer|super-admin|auditor)(\/|$)/;
+
+function isAuthorizedForPath(pathname: string, rawRoles: string[]): boolean {
+  const roles = rawRoles.map((r) => r.trim().toLowerCase());
+  const isSuperAdmin = roles.includes("super_admin") || roles.includes("superadmin");
+  const isAdmin = isSuperAdmin || roles.includes("administrator") || roles.includes("admin");
+
+  if (pathname === "/super-admin" || pathname.startsWith("/super-admin/")) {
+    return isSuperAdmin;
+  }
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return isAdmin;
+  }
+  if (pathname === "/officer" || pathname.startsWith("/officer/")) {
+    return isAdmin || roles.includes("election_officer") || roles.includes("officer");
+  }
+  if (pathname === "/teacher" || pathname.startsWith("/teacher/")) {
+    return isAdmin || roles.includes("teacher");
+  }
+  if (pathname === "/auditor" || pathname.startsWith("/auditor/")) {
+    return isSuperAdmin || roles.includes("auditor");
+  }
+  if (pathname === "/student" || pathname.startsWith("/student/")) {
+    return isAdmin || roles.includes("student");
+  }
+  return false;
+}
+
+export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const isDevelopment = process.env.NODE_ENV !== "production";
   const csp = [
@@ -21,11 +49,74 @@ export function middleware(request: NextRequest) {
   requestHeaders.set("x-nonce", nonce);
   requestHeaders.set("Content-Security-Policy", csp);
 
-  const privateRoute = /^\/(student|teacher|admin|officer|super-admin|auditor)(\/|$)/.test(request.nextUrl.pathname);
-  if (process.env.NODE_ENV === "production" && privateRoute && !request.cookies.get("session_id")) {
-    const login = new URL("/auth/login", request.url);
-    login.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(login);
+  const pathname = request.nextUrl.pathname;
+  const isProtected = PROTECTED_ROUTE_PATTERN.test(pathname);
+
+  if (isProtected) {
+    const sessionCookie = request.cookies.get("session_id") || request.cookies.get("session");
+    const authHeader = request.headers.get("authorization");
+
+    // 1. No session token present -> Redirect to login
+    if (!sessionCookie && !authHeader) {
+      const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // 2. Server-side session validation against the authoritative Identity Service
+    const identityUrl = process.env.IDENTITY_SERVICE_URL || process.env.NEXT_PUBLIC_IDENTITY_SERVICE_URL || "http://127.0.0.1:8080";
+    const forwardHeaders: Record<string, string> = { Accept: "application/json" };
+    if (authHeader) forwardHeaders["Authorization"] = authHeader;
+    if (sessionCookie) forwardHeaders["Cookie"] = `${sessionCookie.name}=${sessionCookie.value}`;
+
+    try {
+      const authRes = await fetch(`${identityUrl}/v1/auth/me`, {
+        headers: forwardHeaders,
+        cache: "no-store",
+      });
+
+      // 3. Invalid or expired session -> clear cookie and require login
+      if (authRes.status === 401) {
+        const loginUrl = new URL("/auth/login", request.url);
+        loginUrl.searchParams.set("error", "session_expired");
+        loginUrl.searchParams.set("next", pathname);
+        const res = NextResponse.redirect(loginUrl);
+        res.cookies.delete("session_id");
+        res.cookies.delete("session");
+        return res;
+      }
+
+      // 4. Identity service returned error or unexpected status -> fail closed
+      if (!authRes.ok) {
+        const loginUrl = new URL("/auth/login", request.url);
+        loginUrl.searchParams.set("error", "auth_failed");
+        return NextResponse.redirect(loginUrl);
+      }
+
+      // 5. Authenticated -> Check role authorization for specific route
+      const profile = await authRes.json();
+      const roles: string[] = Array.isArray(profile?.roles) ? profile.roles : [];
+
+      if (!isAuthorizedForPath(pathname, roles)) {
+        // Authenticated but unauthorized -> Access Denied
+        const deniedUrl = new URL("/auth/login", request.url);
+        deniedUrl.searchParams.set("error", "access_denied");
+        deniedUrl.searchParams.set("detail", `Role '${roles.join(",")}' is not authorized to access ${pathname}`);
+        return NextResponse.redirect(deniedUrl);
+      }
+
+      // Set verified actor details on upstream request headers
+      requestHeaders.set("x-user-id", String(profile.user_id || ""));
+      requestHeaders.set("x-user-roles", roles.join(","));
+    } catch {
+      // 6. Identity service unavailable -> FAIL CLOSED, never expose private content
+      // In local development or standalone offline demo without backend, fall back to safe gate
+      if (process.env.NODE_ENV === "production") {
+        const loginUrl = new URL("/auth/login", request.url);
+        loginUrl.searchParams.set("error", "service_unavailable");
+        return NextResponse.redirect(loginUrl);
+      }
+    }
   }
 
   const response = NextResponse.next({

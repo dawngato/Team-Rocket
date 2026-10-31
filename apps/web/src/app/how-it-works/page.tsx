@@ -52,7 +52,7 @@ export default function HowItWorksPage() {
         "University professors, database admins, and Wi-Fi sniffers see only random cipher numbers.",
         "No outside pressure or intimidation can reveal your pick.",
       ],
-      badge: "100% Secret Choice",
+      badge: "Confidential Choice",
     },
     {
       step: 3,
@@ -84,7 +84,7 @@ export default function HowItWorksPage() {
         "Votes are logged in an append-only digital ledger where past entries cannot be deleted.",
         "Zero trust needed in college authorities—math and witness consensus guard the box.",
       ],
-      badge: "Tamper-Proof Box",
+      badge: "Tamper-Evident Ledger",
     },
     {
       step: 5,
@@ -132,7 +132,7 @@ export default function HowItWorksPage() {
           <span>Campus Democracy in Action</span>
         </div>
         <h1 className="text-3xl sm:text-5xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
-          How Your Vote Stays 100% Fair & Secret
+          How Your Vote Stays Fair, Anonymous & Auditable
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
           No complicated math lectures. Here is how HimVote protects your voice from teacher pressure, senior politics, and backroom rigging in 6 clean steps.
@@ -256,7 +256,7 @@ export default function HowItWorksPage() {
               <tr>
                 <td className="px-4 py-3.5 font-bold text-amber-500">"Seniors ya campus neta mere par pressure daalenge?"</td>
                 <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Aap kisi ke saamne smile karke bol sakte ho ki unhe vote diya—booth me sirf aapki marzi chalti hai.</td>
-                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">100% private digital booth</td>
+                <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">Private digital booth</td>
               </tr>
               <tr>
                 <td className="px-4 py-3.5 font-bold text-amber-500">"Mera vote counting me secretly delete toh nahi kar denge?"</td>

@@ -47,7 +47,33 @@ from src.services.publication_service import PublicationService
 from src.services.evidence_service import EvidenceService
 from src.services.audit_service import AuditService
 from src.crypto.canonical import canonical_json_str
-from src.auth import get_authenticated_actor
+from src.auth import get_authenticated_actor, require_permission, ActorContext
+
+PUBLIC_STATES = {
+    "OPEN",
+    "CLOSING",
+    "CLOSED_PENDING_WITNESS",
+    "FINAL_WITNESSED",
+    "ANCHOR_FINALIZED",
+    "AUDIT_PASSED",
+    "AUDITOR_ATTESTED",
+    "PUBLISHED",
+    "PAUSED",
+    "CANCELLED",
+}
+
+INTERNAL_STATES = {
+    "DRAFT",
+    "REVIEW",
+    "APPROVED",
+    "FROZEN",
+    "SCHEDULED",
+    "ISSUING",
+    "ISSUANCE_CLOSED",
+    "DISPUTED",
+    "AUDIT_FAILED",
+    "UNVERIFIABLE",
+}
 
 router = APIRouter(prefix="/v1/elections", tags=["elections"])
 
@@ -70,22 +96,24 @@ def list_elections(
     db: Session = Depends(get_db)
 ):
     """Lists public elections, or scoped internal elections for operators."""
-    query = db.query(ElectionModel).join(ElectionStateModel)
-    
-    # P0-04 Fix: Public callers must never receive internal lifecycle states (DRAFT, REVIEW, APPROVED, DISPUTED, AUDIT_FAILED)
-    PUBLIC_PERMITTED_STATES = ["OPEN", "CLOSED", "PUBLISHED", "FROZEN", "TALLIED"]
-    
     if include_internal:
-        # P0-04 Fix: Internal lifecycle views strictly require an authenticated administrative actor
-        get_current_actor_id(request)
+        if request is not None:
+            require_permission("election.view_internal")(request)
+        query = db.query(ElectionModel).join(ElectionStateModel)
         if state:
             query = query.filter(ElectionStateModel.state == state)
     else:
-        # Public visitor query: regardless of user-supplied state filter, bound strictly to public states
-        if state and state in PUBLIC_PERMITTED_STATES:
-            query = query.filter(ElectionStateModel.state == state)
+        if state:
+            if state in INTERNAL_STATES:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Permission 'election.view_internal' is required to view elections in state {state}",
+                )
+            query = db.query(ElectionModel).join(ElectionStateModel).filter(ElectionStateModel.state == state)
         else:
-            query = query.filter(ElectionStateModel.state.in_(PUBLIC_PERMITTED_STATES))
+            query = db.query(ElectionModel).join(ElectionStateModel).filter(
+                ElectionStateModel.state.in_(PUBLIC_STATES)
+            )
 
     elections = query.all()
     summaries = [
@@ -104,9 +132,10 @@ def list_elections(
 @router.post("", response_model=Election, status_code=201)
 def create_election(
     req: CreateElectionRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.create")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Creates a new election in DRAFT state."""
     ManifestService.validate_utc_timestamps(
         req.opens_at_utc,
@@ -176,10 +205,11 @@ def get_election(
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
     state = election.state_record.state if election.state_record else "UNKNOWN"
-    if state in {"DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"}:
+    if state in INTERNAL_STATES:
         if not include_internal:
             raise HTTPException(status_code=404, detail="Election not found")
-        get_current_actor_id(request)
+        if request is not None:
+            require_permission("election.view_internal")(request)
 
     candidates = [
         Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
@@ -213,9 +243,10 @@ def get_election(
 def update_election(
     id: str,
     req: UpdateElectionRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.update")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Updates election metadata while in DRAFT state."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
@@ -259,15 +290,16 @@ def update_election(
 
     db.commit()
     db.refresh(election)
-    return get_election(id, db)
+    return get_election(id=id, include_internal=True, request=None, db=db)
 
 
 @router.delete("/{id}", status_code=204)
 def delete_election(
     id: str,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.delete")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Deletes election while in DRAFT state only."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
@@ -310,9 +342,10 @@ def list_candidates(
 def add_candidates(
     id: str,
     candidates: List[Candidate],
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("candidate.manage")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Replace the authoritative candidate set while the election is mutable."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
@@ -355,9 +388,10 @@ def add_candidates(
 def submit_roster(
     id: str,
     req: RosterSubmitRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("roster.submit")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Submits roster snapshot for approval."""
     try:
         res = RosterService.submit_roster(
@@ -383,9 +417,10 @@ def submit_roster(
 def approve_roster(
     id: str,
     req: RosterApproveRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("roster.approve")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Independent Roster Approver signs the roster."""
     try:
         res = RosterService.approve_roster(
@@ -412,9 +447,10 @@ def approve_roster(
 def freeze_election(
     id: str,
     freeze_params: FreezeElectionRequest = FreezeElectionRequest(),
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.freeze")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Freezes manifest deterministically and enforces immutability."""
     try:
         res = ManifestService.freeze_election(
@@ -438,9 +474,10 @@ def freeze_election(
 @router.post("/{id}/open", status_code=200)
 def open_election(
     id: str,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.open")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Opens election for casting after issuance cutoff."""
     state_record = (
         db.query(ElectionStateModel)
@@ -475,9 +512,10 @@ def open_election(
 @router.post("/{id}/close", status_code=200)
 def close_election(
     id: str,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.close")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Closes election and locks final tree size."""
     try:
         state_record = ElectionLifecycleManager.transition(
@@ -507,9 +545,10 @@ def close_election(
 def publication_request(
     id: str,
     req: PublicationRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("result.publish")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Auditor signature verification gate for publication."""
     try:
         res = PublicationService.process_publication_request(
@@ -599,9 +638,10 @@ def get_evidence(
 def cancel_election(
     id: str,
     req: CancelElectionRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.cancel")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Cancels an election with signed reason while keeping all evidence."""
     try:
         ElectionLifecycleManager.transition(
@@ -628,9 +668,10 @@ def cancel_election(
 def pause_election(
     id: str,
     req: PauseElectionRequest,
-    actor_id: str = Depends(get_current_actor_id),
+    actor: ActorContext = Depends(require_permission("election.pause")),
     db: Session = Depends(get_db)
 ):
+    actor_id = actor.user_id
     """Pauses election activity."""
     try:
         ElectionLifecycleManager.transition(

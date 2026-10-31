@@ -23,6 +23,7 @@ from ..models import (
     RoleAssignment,
     RoleDefinition,
     RosterCorrection,
+    StaffProfile,
 )
 from ..schemas import (
     StudentRegisterRequest,
@@ -41,24 +42,54 @@ from .deps import get_current_user, get_user_roles, require_roles, record_audit_
 router = APIRouter(prefix="/v1", tags=["roster"])
 
 
+def _get_user_department_scopes(user: User, db: Session) -> set[str]:
+    """Retrieve all department identifiers (id, code, name) accessible to the user."""
+    scopes = set()
+    staff_records = db.query(StaffProfile).filter(
+        (StaffProfile.email == user.email) | (StaffProfile.employee_id == user.external_id)
+    ).all()
+    for s in staff_records:
+        if s.department_id:
+            scopes.add(s.department_id)
+            dept = db.query(Department).filter(Department.id == s.department_id).first()
+            if dept:
+                scopes.add(dept.id)
+                scopes.add(dept.code)
+                scopes.add(dept.name)
+
+    assignments = db.query(RoleAssignment).filter(RoleAssignment.user_id == user.id).all()
+    for a in assignments:
+        if a.scope_type in {"global"} or a.scope_id == "*":
+            scopes.add("*")
+        elif a.scope_type in {"department", "dept", "delegated"}:
+            scopes.add(a.scope_id)
+            dept = db.query(Department).filter(
+                (Department.id == a.scope_id) | (Department.code == a.scope_id) | (Department.name == a.scope_id)
+            ).first()
+            if dept:
+                scopes.add(dept.id)
+                scopes.add(dept.code)
+                scopes.add(dept.name)
+    return scopes
+
+
 @router.get("/roster/corrections", response_model=list[RosterCorrectionRecord], status_code=status.HTTP_200_OK)
 def list_roster_corrections(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin", "roster_approver"])),
     db: Session = Depends(get_db),
 ):
+    user_roles = set(get_user_roles(current_user, db))
+    is_privileged = bool(user_roles & {"administrator", "super_admin", "roster_approver"})
     query = db.query(RosterCorrection)
-    
-    # P0-05 Fix: Teachers must strictly be scoped to their assigned department
-    user_roles = [assignment.role.name for assignment in current_user.role_assignments if assignment.role]
-    is_privileged = any(r in {"administrator", "super_admin", "roster_approver"} for r in user_roles)
-    
+
     if not is_privileged:
-        staff_profile = db.query(StaffProfile).filter(StaffProfile.email == current_user.email).first()
-        if staff_profile and staff_profile.department:
-            dept_name = staff_profile.department.name
-            query = query.filter(RosterCorrection.department == dept_name)
-        else:
-            return []
+        allowed_depts = _get_user_department_scopes(current_user, db)
+        if "*" not in allowed_depts:
+            allowed_list = list(allowed_depts)
+            query = query.filter(
+                (RosterCorrection.department.in_(allowed_list))
+                | (RosterCorrection.submitted_by == current_user.id)
+            )
 
     rows = query.order_by(RosterCorrection.created_at.desc()).limit(500).all()
     return [
@@ -85,27 +116,24 @@ def submit_roster_correction(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin"])),
     db: Session = Depends(get_db),
 ):
-    user_roles = [assignment.role.name for assignment in current_user.role_assignments if assignment.role]
-    is_privileged = any(r in {"administrator", "super_admin"} for r in user_roles)
-    
-    # P0-05 Fix: Enforce department scope on submission
+    user_roles = set(get_user_roles(current_user, db))
+    is_privileged = bool(user_roles & {"administrator", "super_admin"})
+    dept_req = req.department.strip()
+
     if not is_privileged:
-        staff_profile = db.query(StaffProfile).filter(StaffProfile.email == current_user.email).first()
-        if not staff_profile or not staff_profile.department:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Teacher has no assigned department profile",
-            )
-        if staff_profile.department.name.lower() != req.department.strip().lower():
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Teachers may only submit roster corrections for their own assigned department",
-            )
+        allowed_depts = _get_user_department_scopes(current_user, db)
+        if "*" not in allowed_depts:
+            allowed_lower = {d.lower() for d in allowed_depts}
+            if dept_req.lower() not in allowed_lower:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Teachers may only submit corrections for their assigned department",
+                )
 
     correction = RosterCorrection(
         student_id=req.student_id.strip(),
         student_name=req.student_name.strip(),
-        department=req.department.strip(),
+        department=dept_req,
         correction_type=req.correction_type.strip(),
         reason=req.reason.strip(),
         status="PENDING",
