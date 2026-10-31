@@ -5,7 +5,6 @@ Production grade settings using pydantic or environment variables.
 
 import os
 from pathlib import Path
-from sqlalchemy.engine import URL
 
 # Base directories
 BASE_DIR = Path(__file__).resolve().parent
@@ -15,37 +14,11 @@ BASE_DIR = Path(__file__).resolve().parent
 # invitation token is missing.
 APP_ENV = os.getenv("APP_ENV", "development").strip().lower()
 
-# Database configuration. Compose supplies the individual IDENTITY_DB_* values;
-# build the URL with SQLAlchemy so passwords containing URL punctuation remain
-# valid. DATABASE_URL remains available for explicit deployments and tests.
+# Database configuration
 _configured_database_url = os.getenv("DATABASE_URL", "").strip()
-_identity_db_host = os.getenv("IDENTITY_DB_HOST", "").strip()
-_identity_db_name = os.getenv("IDENTITY_DB_NAME", "").strip()
-_identity_db_user = os.getenv("IDENTITY_DB_USER", "").strip()
-_identity_database_url = ""
-
-if _identity_db_host and _identity_db_name and _identity_db_user:
-    _identity_database_url = URL.create(
-        "postgresql+psycopg2",
-        username=_identity_db_user,
-        password=os.getenv("IDENTITY_DB_PASSWORD", ""),
-        host=_identity_db_host,
-        port=int(os.getenv("IDENTITY_DB_PORT", "5432")),
-        database=_identity_db_name,
-        query={"sslmode": os.getenv("IDENTITY_DB_SSL_MODE", "prefer")},
-    ).render_as_string(hide_password=False)
-
-if APP_ENV == "production" and not (_configured_database_url or _identity_database_url):
-    raise RuntimeError(
-        "DATABASE_URL or IDENTITY_DB_HOST, IDENTITY_DB_NAME, and IDENTITY_DB_USER "
-        "must be explicitly configured in production"
-    )
-
-DATABASE_URL = (
-    _configured_database_url
-    or _identity_database_url
-    or f"sqlite:///{BASE_DIR}/identity.db"
-)
+if APP_ENV == "production" and not _configured_database_url:
+    raise RuntimeError("DATABASE_URL must be explicitly configured in production; refusing a local SQLite identity database")
+DATABASE_URL = _configured_database_url or f"sqlite:///{BASE_DIR}/identity.db"
 
 # Bootstrap configuration
 BOOTSTRAP_ALLOWED = os.getenv(

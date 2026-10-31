@@ -35,6 +35,7 @@ services:
       - APP_ENV=development
       - APP_DEBUG=true
       - LOG_LEVEL=debug
+      - DATABASE_URL=sqlite:////data/himvote_identity_development.db
       - IDENTITY_DB_SSL_MODE=disable
       - BOOTSTRAP_ALLOWED=false
       - BOOTSTRAP_INVITATION_TOKEN=
@@ -42,6 +43,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./services/identity_issuer:/app:ro
+      - identity_issuer_data:/data
 
   casting:
     environment:
@@ -97,3 +99,4 @@ services:
 
 volumes:
   admin_api_data:
+  identity_issuer_data:
