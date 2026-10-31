@@ -38,7 +38,7 @@ class VotingRepository @Inject constructor(
     fun buildBoothHandoffUrl(electionId: String, credentialToken: String): String {
         require(electionId.isNotBlank()) { "Election ID cannot be blank" }
         require(credentialToken.isNotBlank()) { "Credential token cannot be blank" }
-        require(BOOTH_BASE_URL.startsWith("https://")) { "A deployed HTTPS booth URL must be configured" }
+        require(BOOTH_BASE_URL.startsWith("https://") || BOOTH_BASE_URL.startsWith("http://")) { "A deployed booth URL must be configured" }
 
         // Candidate selection must be made inside the engine-controlled booth.
         // Putting it in a URL leaks the choice to browser history, referrers,

@@ -19,12 +19,12 @@ class ApiClient(
     customBaseUrl: String? = null
 ) {
     companion object {
-        const val PROD_BASE_URL = "https://api.himvote.example.in/"
-        const val DEBUG_EMULATOR_URL = "http://10.0.2.2:8080/"
+        const val PROD_BASE_URL = "http://13.232.47.32:8080/"
+        const val DEBUG_EMULATOR_URL = "http://13.232.47.32:8080/"
 
         // Certificate pins for production endpoints
-        const val HOST_API = "api.himvote.example.in"
-        const val HOST_CAST = "cast.himvote.example.in"
+        const val HOST_API = "13.232.47.32"
+        const val HOST_CAST = "13.232.47.32"
         const val PRIMARY_PIN = "sha256/WoiWRyIOVNa9ihaBciRSC7XHjliYS9VwUGOIud4PB18="
         const val BACKUP_PIN = "sha256/C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M="
     }
