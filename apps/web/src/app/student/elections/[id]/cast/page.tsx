@@ -43,23 +43,10 @@ export default function CastBallotPage() {
           setElectionError(null);
         }
       })
-      .catch(() => {
+      .catch((err: unknown) => {
         if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElection({
-            id: electionId || "demo_union_2026",
-            title: electionId.includes("design") ? "School of Design Representatives" : "Student Union Council 2026",
-            state: "OPEN",
-            contest: "Council Executive Board",
-            selection_rule: "Choose one executive candidate",
-            opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-            closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-            manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-            issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-            eligible_count: 4800,
-            candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter(c => electionId.includes("design") ? c.election_id === "demo_design_2026" : c.election_id === "demo_union_2026"),
-          });
-          setElectionError(null);
+          setElection(null);
+          setElectionError(err instanceof Error ? err.message : "The authoritative election manifest could not be retrieved from the server.");
         }
       })
       .finally(() => {

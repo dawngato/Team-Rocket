@@ -174,13 +174,13 @@ export function StudentIdCardVerifier() {
           <div>
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-2">
               <IdCard className="w-3.5 h-3.5" />
-              <span>COLLEGE ENROLLMENT VERIFICATION</span>
+              <span>COLLEGE ENROLLMENT CHECK-IN</span>
             </div>
             <h2 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-              Instant Student ID Card Check-In
+              Student ID Card Check-In (Demo Prototype)
             </h2>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-xl">
-              Enter your Roll Number and upload your College Identity Card. Non-ID images (random photos, selfies, memes) are automatically rejected by institutional verification.
+              Enter your Roll Number and upload your College Identity Card. Client-side geometry validation inspects card dimensions for prototype check-in. Official credential issuance requires verified identity records.
             </p>
           </div>
 

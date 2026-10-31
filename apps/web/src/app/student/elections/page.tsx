@@ -1,142 +1,114 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { Vote, ArrowRight, Clock, Users, AlertCircle, RefreshCw } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
-import { ArrowRight, Users, Vote } from "lucide-react";
 
 export default function StudentElectionsPage() {
   const [elections, setElections] = useState<Election[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    void electionClient.getElections()
-      .then((nextElections) => {
-        if (!cancelled) {
-          setElections(nextElections);
-          setError(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElections([
-            {
-              id: "demo_union_2026",
-              title: "Student Union Council 2026",
-              state: "OPEN",
-              contest: "Council Executive Board",
-              selection_rule: "Choose one president & executive slate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-              eligible_count: 4800,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_union_2026"),
-            },
-            {
-              id: "demo_design_2026",
-              title: "School of Design Representatives",
-              state: "OPEN",
-              contest: "School of Design Cohort",
-              selection_rule: "Select one departmental delegate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 12).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 72).toISOString(),
-              manifest_digest: "sha256:7b4e91c2a8f0d365e1029384756cba9182736450f1e2d3c4b5a6978102f9e8d7",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              eligible_count: 1250,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_design_2026"),
-            },
-          ]);
-          setError(null);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+  const fetchElections = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await electionClient.getElections();
+      setElections(data || []);
+      setError(null);
+    } catch (err: unknown) {
+      setElections([]);
+      setError(err instanceof Error ? err.message : "Unable to retrieve student elections from the authoritative server.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    void fetchElections();
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">My Elections</h1>
-          <p className="text-slate-600 dark:text-slate-400">View active ballots, verify contestant manifestos, and cast your cryptographic vote.</p>
-        </div>
+    <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-6">
+      <div className="border-b border-slate-200 dark:border-[#1E3352] pb-6">
+        <h1 className="text-2xl font-extrabold text-[#10233F] dark:text-white">
+          Eligible Student Elections
+        </h1>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+          Select an active contest to verify your blind credential and cast your ballot.
+        </p>
       </div>
 
-      {loading && (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-300" role="status">
-          Loading eligible elections…
+      {loading ? (
+        <div className="p-8 rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] animate-pulse space-y-4">
+          <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
+          <div className="h-16 bg-slate-100 dark:bg-slate-900 rounded" />
         </div>
-      )}
-
-      {error && (
-        <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="alert">
-          {error}
+      ) : error ? (
+        <div className="p-8 text-center rounded-2xl bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 space-y-4">
+          <div className="flex justify-center">
+            <AlertCircle className="w-10 h-10 text-red-500" />
+          </div>
+          <h2 className="text-base font-bold text-red-800 dark:text-red-300">
+            Authoritative Election Service Error
+          </h2>
+          <p className="text-xs text-slate-600 dark:text-slate-400 max-w-md mx-auto">
+            {error}
+          </p>
+          <button
+            onClick={fetchElections}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-red-600 text-white font-semibold text-xs hover:bg-red-700 transition"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry Connection</span>
+          </button>
         </div>
-      )}
-
-      {!loading && !error && elections.length === 0 && (
-        <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-300" role="status">
-          No eligible elections are available.
+      ) : elections.length === 0 ? (
+        <div className="p-12 text-center rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] space-y-3">
+          <Vote className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto" />
+          <h2 className="text-base font-bold text-slate-800 dark:text-white">
+            No elections are currently available.
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            There are currently no active or scheduled election contests assigned to your student cohort.
+          </p>
         </div>
-      )}
-
-      <div className="flex flex-col gap-5">
-        {elections.map((e) => (
-          <article key={e.id} className="bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="font-mono text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium">
-                    {e.id}
-                  </span>
-                  <StateBadge state={e.state} showDescription />
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {elections.map((elec) => (
+            <div
+              key={elec.id}
+              className="p-6 rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] shadow-sm flex flex-col justify-between space-y-4"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-mono text-slate-400">{elec.id}</span>
+                  <StateBadge state={elec.state} />
                 </div>
-                <h2 className="text-xl font-bold text-[#17233B] dark:text-white mb-1">{e.title}</h2>
-                <p className="text-slate-600 dark:text-slate-300 text-sm mb-3">
-                  {e.selection_rule}
+                <h2 className="text-base font-bold text-[#10233F] dark:text-white">
+                  {elec.title}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {elec.contest}
                 </p>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                  <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
-                    <Users className="w-3.5 h-3.5" />
-                    {e.candidates?.length ? `${e.candidates.length} Registered Contestants` : "Contestants ready"}
-                  </span>
-                  <span>•</span>
-                  <span>Closes: {new Date(e.closes_at_utc).toLocaleDateString()}</span>
-                </div>
               </div>
-              <div className="flex flex-wrap items-center gap-3">
+
+              <div className="pt-4 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
                 <Link
-                  href={`/student/elections/${e.id}/candidates`}
-                  className="px-4 py-2.5 text-sm font-semibold text-[#157E92] bg-[#157E92]/10 hover:bg-[#157E92]/20 rounded-xl transition-colors inline-flex items-center gap-1.5"
+                  href={elec.state === "OPEN" ? `/student/elections/${elec.id}/cast` : `/student/elections/${elec.id}`}
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
                 >
-                  <Users className="w-4 h-4" />
-                  View Candidates
-                </Link>
-                <Link
-                  href={`/student/elections/${e.id}`}
-                  className="px-5 py-2.5 text-sm font-semibold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-xl shadow-sm transition-colors inline-flex items-center gap-1.5"
-                >
-                  <Vote className="w-4 h-4" />
-                  {e.state === "OPEN" ? "Vote Now" : "Election Details"}
-                  <ArrowRight className="w-4 h-4" />
+                  <span>{elec.state === "OPEN" ? "Enter Voting Booth" : "Inspect Details"}</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
-          </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

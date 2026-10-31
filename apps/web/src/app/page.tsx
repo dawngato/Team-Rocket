@@ -110,16 +110,16 @@ export default function HomePage() {
             {/* Real Campus Community Metrics Bar */}
             <div className="pt-4 border-t border-slate-200/60 dark:border-[#1E3352]/60 grid grid-cols-3 gap-4 animate-linear-reveal-5">
               <div>
-                <p className="text-xs text-slate-500 font-medium">Eligible Voters</p>
-                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">4,800</p>
+                <p className="text-xs text-slate-500 font-medium">Enrolled Cohort</p>
+                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">Institutional</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Campus Unity</p>
-                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">1 College</p>
+                <p className="text-xs text-slate-500 font-medium">Governance</p>
+                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">Consortium</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 font-medium">Voter Privacy</p>
-                <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">Guaranteed</p>
+                <p className="text-xs text-slate-500 font-medium">Ballot Secrecy</p>
+                <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">RFC 9474</p>
               </div>
             </div>
           </div>
