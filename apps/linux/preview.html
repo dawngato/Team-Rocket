@@ -1107,7 +1107,7 @@
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 10px;">
               <button class="btn btn-action" id="btn-cast-candidate-vote" onclick="castVoteForCurrentCandidate()">
-                <span>🗳️</span> Cast Ballot for this Candidate
+                Cast Ballot for this Candidate
               </button>
               <button class="btn btn-secondary" onclick="closeModal('modal-candidate')">Close</button>
             </div>
@@ -1248,7 +1248,7 @@
       const container = document.getElementById('toast-container');
       const toast = document.createElement('div');
       toast.className = `toast toast-${variant}`;
-      const icon = variant === 'success' ? '✓' : (variant === 'warning' ? '⚠' : (variant === 'danger' ? '✕' : 'ℹ'));
+      const icon = variant === 'success' ? '●' : (variant === 'warning' ? '▲' : (variant === 'danger' ? '■' : 'ℹ'));
       toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
       container.appendChild(toast);
       setTimeout(() => {
@@ -1634,7 +1634,7 @@
         list.appendChild(li);
       });
 
-      document.getElementById('btn-cast-candidate-vote').innerHTML = `<span>🗳️</span> Cast Ballot for ${cand.name}`;
+      document.getElementById('btn-cast-candidate-vote').innerHTML = `Cast Ballot for ${cand.name}`;
     }
 
     function castVoteForCurrentCandidate() {
@@ -1833,7 +1833,7 @@ function addCandidateRow(name = "", dept = "Computer Science", slate = "Independ
   row.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
       <span style="font-weight: 700; color: var(--navy); font-size: 10px;">Candidate #${count}</span>
-      ${count > 2 ? '<button type="button" onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:10px;">✕ Remove</button>' : ''}
+      ${count > 2 ? '<button type="button" onclick="this.parentElement.parentElement.remove()" style="background:none; border:none; color:var(--red); cursor:pointer; font-size:10px;">Remove</button>' : ''}
     </div>
     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 4px;">
       <input type="text" class="cand-name" placeholder="Full Name" value="${name}" style="padding: 6px; border: 1px solid var(--line); border-radius: 4px; font-size: 10px;">
@@ -1935,7 +1935,7 @@ function submitStudentRegistration() {
 
   students.push({ student_id: sid, name, email, department: dept });
   saveStoredStudents(students);
-  document.getElementById('reg-stu-status').innerHTML = `<div class="status-chip chip-green">✓ Successfully registered ${name} (${sid}) with eligible voting credentials.</div>`;
+  document.getElementById('reg-stu-status').innerHTML = `<div class="status-chip chip-green">Successfully registered ${name} (${sid}) with eligible voting credentials.</div>`;
   showToast(`Registered ${name} (${sid})`, "success");
 }
 
@@ -1990,14 +1990,14 @@ function checkVoterEligibilityStatus() {
 
   const voted = (camp.voted_student_ids || []).map(s => s.toUpperCase());
   if (voted.includes(sid)) {
-    msgEl.innerHTML = `<span style="color: var(--red); font-weight: 700;">✕ ONE STUDENT, ONE VOTE: Student ${sid} has ALREADY cast a ballot in this election! Duplicate votes are strictly blocked.</span>`;
+    msgEl.innerHTML = `<span style="color: var(--red); font-weight: 700;">ONE STUDENT, ONE VOTE: Student ${sid} has ALREADY cast a ballot in this election. Duplicate votes are strictly blocked.</span>`;
   } else {
     const students = getStoredStudents();
     const st = students.find(s => s.student_id.toUpperCase() === sid);
     if (st) {
-      msgEl.innerHTML = `<span style="color: var(--green); font-weight: 700;">✓ Verified: ${st.name} (${st.department}) is eligible and has NOT yet voted.</span>`;
+      msgEl.innerHTML = `<span style="color: var(--green); font-weight: 700;">Verified: ${st.name} (${st.department}) is eligible and has NOT yet voted.</span>`;
     } else {
-      msgEl.innerHTML = `<span style="color: var(--amber);">ℹ Unregistered ID. Enter to vote and register automatically.</span>`;
+      msgEl.innerHTML = `<span style="color: var(--amber);">Unregistered ID. Enter to vote and register automatically.</span>`;
     }
   }
 }
@@ -2061,7 +2061,7 @@ function submitCastBallot() {
 
   closeModal('modal-voting-booth');
   showToast(`Ballot Cast! Verifiable Receipt: ${rcpt}`, "success");
-  alert(`✓ Ballots Cast Successfully!
+  alert(`Ballots Cast Successfully!
 
 Election: ${camp.title}
 Candidate: ${candName}

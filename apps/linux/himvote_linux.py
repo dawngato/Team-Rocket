@@ -1138,7 +1138,7 @@ class StatusChip(tk.Frame):
     GLYPHS = {
         "success": "●",
         "warning": "▲",
-        "danger": "✕",
+        "danger": "●",
         "info": "●",
         "neutral": "○",
     }
@@ -1231,9 +1231,9 @@ class ToastNotification(tk.Frame):
     """Modern floating SaaS toast notification with smooth auto-dismiss and pill styling."""
 
     ICONS = {
-        "success": "✓",
-        "warning": "⚠",
-        "danger": "✕",
+        "success": "●",
+        "warning": "▲",
+        "danger": "■",
         "info": "ℹ",
         "neutral": "●",
     }
@@ -3584,7 +3584,7 @@ class StudentRegistrationModal(tk.Toplevel):
 
         ok, msg = self.election_store.register_student(sid, name, email, dept)
         if ok:
-            self.lbl_msg.configure(text="✓ Student successfully registered and verified for voting!", fg=GREEN)
+            self.lbl_msg.configure(text="Student successfully registered and verified for voting.", fg=GREEN)
             if self.on_registered:
                 self.on_registered()
             self.after(1400, self.destroy)
@@ -3653,7 +3653,7 @@ class VotingBoothModal(tk.Toplevel):
             if self.election_store.has_student_voted(self.election.election_id, sid):
                 self.lbl_voted_status.configure(text="ALREADY VOTED (BALLOT BLOCKED)", fg=RED)
             else:
-                self.lbl_voted_status.configure(text="✓ ELIGIBLE TO VOTE", fg=GREEN)
+                self.lbl_voted_status.configure(text="ELIGIBLE TO VOTE", fg=GREEN)
 
         self.entry_sid.bind("<KeyRelease>", check_status)
         check_status()
@@ -4567,7 +4567,7 @@ class HimVoteLinuxApp(tk.Tk):
             ("Server Non-Equivocation", "Because tree checkpoints are co-signed by an independent witness and anchored on-chain, the server cannot show different tree states to different users."),
         ]
         for title, desc in guarantees:
-            ttk.Label(card_guar, text=f"✓  {title}", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(6, 2))
+            ttk.Label(card_guar, text=f"[ENFORCED] {title}", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(6, 2))
             ttk.Label(card_guar, text=desc, font=("DejaVu Sans", 9), foreground=TEXT, background=WHITE, wraplength=400).pack(anchor="w", padx=(18, 0))
 
         card_bound = ttk.Frame(col2, style="Card.TFrame", padding=18)
@@ -4707,7 +4707,7 @@ class HimVoteLinuxApp(tk.Tk):
             def make_handler(user_obj: UserSession):
                 return lambda: self._apply_session(user_obj)
 
-            btn_text = f"✓ Currently Signed In" if is_active else f"Switch to {demo_u.role}"
+            btn_text = f"Active Account" if is_active else f"Switch to {demo_u.role}"
             btn_style = "Secondary.TButton" if is_active else "Action.TButton"
             ttk.Button(box, text=btn_text, command=make_handler(demo_u), style=btn_style).pack(anchor="w")
 
