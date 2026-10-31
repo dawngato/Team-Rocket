@@ -69,7 +69,7 @@ verification remain blocked.
 | TR-045 | `FIXED_UNTESTED` | Landing copy now identifies the educational prototype and removes misleading live metrics. User comprehension testing is not run. |
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
-| TR-048 | `FIXED_UNTESTED` | The earlier root run recorded 52 passed and 1 skipped (`tests --ignore=tests/load`); the required 100-voter concurrency case has not been reproduced in this current checkout. Do not claim a complete zero-skip root run. |
+| TR-048 | `TESTED_PASS` | The dedicated `tests/security/Q7-01_duplicate_cast_test.py` passes, including 100 concurrent submissions for one credential. The root suite (`tests --ignore=tests/load`) passes 58 tests. Load tests are excluded. |
 | TR-049 | `TESTED_PASS` | All per-service test suites clean and verified on this host: admin_api (26/26), casting (35/35), identity_issuer (28/28), election_engine (22/22), and web (91/91). |
 | TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 91 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
