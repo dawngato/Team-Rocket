@@ -1,5 +1,5 @@
-"""Vetted voting engine adapter implementation for HimVote.
-Fulfills Section 6.4 and Gate E1 specification for Profile VEEM.
+"""Custom development engine adapter for the HimVote educational prototype.
+Its regression checks do not establish compatibility with a vetted voting protocol.
 """
 
 import base64

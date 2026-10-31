@@ -37,6 +37,7 @@ from ..notification_service import NotificationDeliveryError, notification_servi
 from .deps import (
     get_current_user,
     get_user_roles,
+    get_user_scopes,
     require_roles,
     record_audit_event,
     GRANTABLE_ROLES,
@@ -54,6 +55,10 @@ def list_admin_invitations(
 ):
     """Return invitation metadata only. Invitation secrets are never recoverable."""
     rows = db.query(Invitation).order_by(Invitation.created_at.desc()).limit(500).all()
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        rows = [row for row in rows if row.scope in allowed_scopes]
     return [
         AdminInvitationRecord(
             id=row.id,
@@ -76,12 +81,16 @@ def list_admin_approvals(
     db: Session = Depends(get_db),
 ):
     """Return the durable approval queue used by the super-admin UI."""
-    query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc()).limit(500)
+    query = db.query(ApprovalRequest).order_by(ApprovalRequest.created_at.desc())
     if status_filter.lower() == "pending":
         query = query.filter(ApprovalRequest.decision.is_(None))
     elif status_filter.lower() in {"approved", "rejected"}:
         query = query.filter(ApprovalRequest.decision == status_filter.lower())
-    rows = query.all()
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        query = query.filter(ApprovalRequest.requested_scope.in_(allowed_scopes))
+    rows = query.limit(500).all()
     users = {
         user.id: user
         for user in db.query(User).filter(
@@ -121,6 +130,10 @@ def list_teachers(
         .order_by(User.created_at.desc())
         .all()
     )
+    roles = get_user_roles(current_user, db)
+    allowed_scopes = get_user_scopes(current_user, db, ["administrator"])
+    if "super_admin" not in roles and "*" not in allowed_scopes:
+        rows = [row for row in rows if row[1].scope_id in allowed_scopes]
     output = []
     for user, assignment, role_definition in rows:
         invitation = db.query(Invitation).filter(
@@ -490,6 +503,18 @@ def decide_approval(
             detail="Approval request has already been decided",
         )
 
+    approver_roles = get_user_roles(current_user, db)
+    if "super_admin" not in approver_roles and not user_has_scope(
+        current_user,
+        db,
+        ["administrator"],
+        approval.requested_scope or "",
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Decision scope exceeds the approver's delegated authority",
+        )
+
     if req.decision == "approved":
         if (
             approval.request_type != "role_grant"
@@ -501,21 +526,10 @@ def decide_approval(
                 status_code=status.HTTP_409_CONFLICT,
                 detail="Approval request has invalid grant data",
             )
-        approver_roles = get_user_roles(current_user, db)
         if approval.requested_role == "administrator" and "super_admin" not in approver_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only a Super Administrator may approve an Administrator grant",
-            )
-        if "super_admin" not in approver_roles and not user_has_scope(
-            current_user,
-            db,
-            ["administrator"],
-            approval.requested_scope,
-        ):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Approval scope exceeds the approver's delegated authority",
             )
         role_definition = db.query(RoleDefinition).filter(RoleDefinition.name == approval.requested_role).first()
         if not role_definition:

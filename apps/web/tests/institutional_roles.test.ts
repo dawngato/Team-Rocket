@@ -12,6 +12,7 @@ import {
   INITIAL_TRUSTED_PINS,
 } from "../src/lib/mock_data";
 import { Role } from "../src/lib/types";
+import { workspaceHome, canAccessWorkspaceRoute, canSeeItem } from "../src/lib/routes/nav_config";
 
 describe("Institutional Roles and Operational Invariants", () => {
   it("supports all required institutional role types", () => {
@@ -71,5 +72,40 @@ describe("Institutional Roles and Operational Invariants", () => {
     expect(services).toContain("WITNESS");
     expect(services).toContain("CHAIN");
     expect(services).toContain("IDENTITY");
+  });
+
+  it("P1-26: resolves correct workspace home per role instead of hardcoded student route", () => {
+    expect(workspaceHome(["super_admin"])).toBe("/super-admin");
+    expect(workspaceHome(["administrator"])).toBe("/admin");
+    expect(workspaceHome(["election_officer"])).toBe("/officer");
+    expect(workspaceHome(["teacher"])).toBe("/teacher");
+    expect(workspaceHome(["auditor"])).toBe("/auditor");
+    expect(workspaceHome(["student"])).toBe("/student");
+    expect(workspaceHome([])).toBe("/student");
+  });
+
+  it("P1-27: enforces fine-grained scopes and capabilities for sensitive navigation", () => {
+    // Officer assigned to election_A cannot access election_B
+    const officerRoles = ["election_officer"];
+    const officerScopes = [{ role: "election_officer", scope_type: "election", scope_id: "election_A" }];
+
+    expect(canAccessWorkspaceRoute("/officer", officerRoles, officerScopes, "election_A")).toBe(true);
+    expect(canAccessWorkspaceRoute("/officer", officerRoles, officerScopes, "election_B")).toBe(false);
+
+    // Super admin can access any scope
+    expect(canAccessWorkspaceRoute("/officer", ["super_admin"], [], "election_B")).toBe(true);
+
+    // Unassigned role cannot access route
+    expect(canAccessWorkspaceRoute("/admin", ["student"], [])).toBe(false);
+  });
+
+  it("P1-28: revoking a role immediately invalidates route authorization", () => {
+    // Initially active teacher
+    const activeRoles = ["teacher"];
+    expect(canAccessWorkspaceRoute("/teacher/classes", activeRoles)).toBe(true);
+
+    // Role revoked in active session
+    const revokedRoles = ["student"];
+    expect(canAccessWorkspaceRoute("/teacher/classes", revokedRoles)).toBe(false);
   });
 });

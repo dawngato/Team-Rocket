@@ -296,3 +296,109 @@ def test_blind_credential_issuance_flow(client, db_session):
     assert status_resp.status_code == 200
     assert status_resp.json()["status"] == "DELIVERED"
     assert status_resp.json()["delivered"] is True
+
+
+def test_teacher_roster_corrections_department_scoped(client, db_session):
+    """Verify teachers can only list and submit corrections for their assigned department."""
+    from services.identity_issuer.models import Tenant, Campus, Department, StudentProfile, StaffProfile, RosterCorrection
+
+    tenant = Tenant(name="Main University", domain="institution.edu")
+    db_session.add(tenant)
+    db_session.flush()
+
+    campus = Campus(tenant_id=tenant.id, name="Main Campus")
+    db_session.add(campus)
+    db_session.flush()
+
+    dept_cs = Department(campus_id=campus.id, name="Computer Science", code="CS")
+    dept_ee = Department(campus_id=campus.id, name="Electrical Engineering", code="EE")
+    db_session.add_all([dept_cs, dept_ee])
+    db_session.flush()
+
+    # Teacher assigned to CS
+    teacher_cs, token_cs = create_authenticated_user(
+        db_session, "teacher_cs@institution.edu", "teacher", "TCH_CS_01"
+    )
+    # Remove global assignment from create_authenticated_user and add department scoped assignment
+    db_session.query(RoleAssignment).filter(RoleAssignment.user_id == teacher_cs.id).delete()
+    role_teacher = db_session.query(RoleDefinition).filter_by(name="teacher").first()
+    db_session.add(RoleAssignment(
+        user_id=teacher_cs.id,
+        role_id=role_teacher.id,
+        scope_type="department",
+        scope_id=dept_cs.code,
+    ))
+    db_session.add(StudentProfile(
+        student_id="ST_CS_101",
+        email="st_cs_101@institution.edu",
+        full_name="CS Student",
+        department_id=dept_cs.id,
+        campus_id=campus.id,
+    ))
+    db_session.commit()
+
+    # 1. Teacher CS attempts to submit correction for EE (must fail 403)
+    resp_ee = client.post(
+        "/v1/roster/corrections",
+        headers={"Authorization": f"Bearer {token_cs}"},
+        json={
+            "student_id": "ST_EE_101",
+            "student_name": "EE Student",
+            "department": "EE",
+            "correction_type": "ADD_STUDENT",
+            "reason": "Missing from roster",
+        },
+    )
+    assert resp_ee.status_code == 403
+    assert "assigned department" in resp_ee.json()["detail"]
+
+    # 2. Teacher CS submits correction for CS (must succeed 201)
+    resp_cs = client.post(
+        "/v1/roster/corrections",
+        headers={"Authorization": f"Bearer {token_cs}"},
+        json={
+            "student_id": "ST_CS_101",
+            "student_name": "CS Student",
+            "department": "CS",
+            "correction_type": "ADD_STUDENT",
+            "reason": "Missing from roster",
+        },
+    )
+    assert resp_cs.status_code == 201
+    cs_record = resp_cs.json()
+
+    # 3. Add an EE correction directly to DB (submitted by someone else)
+    ee_correction = RosterCorrection(
+        student_id="ST_EE_999",
+        student_name="Other Student",
+        department="EE",
+        correction_type="REMOVE_STUDENT",
+        reason="Transferred",
+        status="PENDING",
+        submitted_by="other_actor",
+    )
+    db_session.add(ee_correction)
+    db_session.commit()
+
+    # 4. Teacher CS lists corrections: sees CS correction, but NOT EE correction
+    list_cs = client.get(
+        "/v1/roster/corrections",
+        headers={"Authorization": f"Bearer {token_cs}"},
+    )
+    assert list_cs.status_code == 200
+    returned_ids = [c["student_id"] for c in list_cs.json()]
+    assert "ST_CS_101" in returned_ids
+    assert "ST_EE_999" not in returned_ids
+
+    # 5. Super Admin lists corrections: sees both
+    admin, token_admin = create_authenticated_user(
+        db_session, "super_admin@institution.edu", "super_admin", "ADM_CORR"
+    )
+    list_admin = client.get(
+        "/v1/roster/corrections",
+        headers={"Authorization": f"Bearer {token_admin}"},
+    )
+    assert list_admin.status_code == 200
+    admin_returned_ids = [c["student_id"] for c in list_admin.json()]
+    assert "ST_CS_101" in admin_returned_ids
+    assert "ST_EE_999" in admin_returned_ids

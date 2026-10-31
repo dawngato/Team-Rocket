@@ -139,6 +139,20 @@ def submit_roster_correction(
     is_admin = any(r in {"administrator", "super_admin"} for r in user_roles)
     target_dept = req.department.strip()
 
+    requested_department = db.query(Department).filter(
+        (Department.id == target_dept)
+        | (func.lower(Department.name) == target_dept.lower())
+        | (func.lower(Department.code) == target_dept.lower())
+    ).first()
+    if not is_admin and (
+        not requested_department
+        or not _teacher_has_department_scope(current_user, db, requested_department, req.class_id)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Teacher is not authorized for the assigned department or class",
+        )
+
     student_id_clean = req.student_id.strip()
     profile = db.query(StudentProfile).filter(StudentProfile.student_id == student_id_clean).first()
     if not profile or not profile.department:

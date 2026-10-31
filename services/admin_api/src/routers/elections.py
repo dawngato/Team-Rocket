@@ -132,7 +132,7 @@ def list_elections(
         # lifecycle state in the query string.
         query = query.filter(ElectionStateModel.state.in_(PUBLIC_ELECTION_STATES))
         if state and state not in PUBLIC_ELECTION_STATES:
-            query = query.filter(ElectionModel.id == "__no_public_election__")
+            raise HTTPException(status_code=403, detail="Requested election state is not publicly released")
         elif state:
             query = query.filter(ElectionStateModel.state == state)
 

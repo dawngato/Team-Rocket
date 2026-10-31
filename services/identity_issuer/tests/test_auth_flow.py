@@ -201,3 +201,35 @@ def test_identity_cors_rejects_untrusted_origin(client):
     )
     assert response.status_code == 400
     assert "access-control-allow-origin" not in response.headers
+
+
+def test_rate_limiter_blocks_repeated_failed_logins(client, db_session):
+    """Verify rate limiter blocks repeated failed logins with 429."""
+    email = "ratelimit_victim@institution.edu"
+    pwd_hash, pwd_params = hash_password("ValidPassword123!")
+    user = User(
+        external_id="RL_USER_1",
+        email=email,
+        password_hash=pwd_hash,
+        password_algorithm=pwd_params["algorithm"],
+        password_params=pwd_params,
+        status="ACTIVE",
+    )
+    db_session.add(user)
+    db_session.commit()
+
+    # 5 failed attempts
+    for _ in range(5):
+        resp = client.post(
+            "/v1/auth/login",
+            json={"email": email, "password": "WrongPassword!"},
+        )
+        assert resp.status_code == 401
+
+    # 6th attempt is throttled with 429 Too Many Requests
+    blocked_resp = client.post(
+        "/v1/auth/login",
+        json={"email": email, "password": "ValidPassword123!"},
+    )
+    assert blocked_resp.status_code == 429
+    assert "Too many" in blocked_resp.json()["detail"]

@@ -44,3 +44,6 @@ obj/
 prompt1.md
 prompt2.md
 eCommerce Dashboard _ TailAdmin - Tailwind CSS Admin Dashboard Template.html
+
+.venv/
+venv/

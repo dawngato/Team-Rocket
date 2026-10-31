@@ -8,7 +8,7 @@
 
 ## 1. Cryptographic Boundary & Proof Evaluation
 
-### Profile VEEM (Vetted Educational ElGamal Model)
+### Profile VEEM (Custom Development Engine; Not Vetted)
 - **Mathematical Basis:**
   - Discrete log ElGamal encryption over prime subgroup $(\mathbb{Z}_p^*, q, g)$ where $p = 2q + 1$ (2048-bit safe prime).
   - Ballots carry Chaum-Pedersen zero-knowledge equality proofs (DLEQ) and Cramer-Damgård-Schoenmakers disjunctive 1-out-of-2 zero-knowledge proofs ensuring selection validity $(v \in \{0, 1\})$ without opening plaintexts.

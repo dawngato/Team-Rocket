@@ -40,11 +40,13 @@ logger = logging.getLogger("election_engine")
 ENGINE_PROVIDER = os.getenv("VOTING_ENGINE_PROVIDER", PROTOCOL_VERSION)
 ENGINE_VERSION = os.getenv("VOTING_ENGINE_VERSION", "1.0.0")
 ENGINE_JOINT_PUBLIC_KEY = os.getenv("ENGINE_JOINT_PUBLIC_KEY", hex(G))
-ENGINE_ESTABLISHED = os.getenv("ENGINE_ESTABLISHED", "false").lower() in {"true", "1", "yes"}
-if ENGINE_PROVIDER in {PROTOCOL_VERSION, "custom_development_unverified", "local_vetted"}:
-    ENGINE_ESTABLISHED = False
-if os.getenv("APP_ENV", "development").lower() == "production" and not os.getenv("ENGINE_JOINT_PUBLIC_KEY"):
-    raise RuntimeError("ENGINE_JOINT_PUBLIC_KEY must be configured in production")
+# This service currently implements only the custom development protocol.
+# Environment labels cannot promote it to an established engine.
+if ENGINE_PROVIDER not in {PROTOCOL_VERSION, "custom_development_unverified", "local_vetted"}:
+    raise RuntimeError(f"Unsupported voting engine provider: {ENGINE_PROVIDER}")
+ENGINE_ESTABLISHED = False
+if os.getenv("APP_ENV", "development").lower() == "production":
+    raise RuntimeError("The custom development engine is not approved for production elections")
 
 adapter_instance = VotingEngineAdapter()
 

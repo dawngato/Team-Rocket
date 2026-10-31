@@ -103,6 +103,34 @@ def get_user_roles(user: User, db: Session) -> List[str]:
     return [r[0] for r in assignments]
 
 
+def get_user_scopes(
+    user: User,
+    db: Session,
+    role_names: Optional[List[str]] = None,
+) -> set[str]:
+    """Retrieve all delegated scope IDs for the user across specified or all roles."""
+    now = datetime.now(timezone.utc)
+    query = (
+        db.query(RoleAssignment.scope_id, RoleAssignment.scope_type)
+        .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+        .filter(
+            RoleAssignment.user_id == user.id,
+            (RoleAssignment.expires_at.is_(None) | (RoleAssignment.expires_at > now)),
+        )
+    )
+    if role_names:
+        query = query.filter(RoleDefinition.name.in_(role_names))
+
+    assignments = query.all()
+    scopes = set()
+    for scope_id, scope_type in assignments:
+        if scope_id == "*" or scope_type == "global":
+            return {"*"}
+        if scope_id:
+            scopes.add(scope_id)
+    return scopes
+
+
 def user_has_scope(
     user: User,
     db: Session,

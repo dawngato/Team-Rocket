@@ -57,16 +57,8 @@ class PublicationService:
             raise StateMachineError("Election is already published", "ALREADY_PUBLISHED")
 
         if settings.require_established_engine_tally and not settings.established_engine_tally_verified:
-            try:
-                from services.election_engine.adapter import VotingEngineAdapter
-                # Gate E1 verification adapter verifies profile VEEM tally
-                settings.established_engine_tally_verified = True
-            except Exception:
-                pass
-
-        if settings.require_established_engine_tally and not settings.established_engine_tally_verified:
             raise StatePreconditionError(
-                "Publication is blocked until an established engine independently verifies the native tally"
+                "Publication is blocked: no established voting-engine tally verifier has been integrated and independently verified"
             )
 
         valid_prerequisite_states = {

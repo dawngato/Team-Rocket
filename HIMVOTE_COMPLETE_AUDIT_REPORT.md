@@ -322,7 +322,7 @@ TOTAL                            PASS          300        0        0   36.37s
 ============================================================================
 ```
 
-- **Voting Engine Gate E1 (`services/election_engine/gate_e1.py`):** **PASS** (All 5 checks passed).
+- **Local Gate E1 regression suite (`services/election_engine/gate_e1.py`):** All 5 development checks pass. The required established-engine integration gate remains **BLOCKED**; these checks do not verify an upstream election protocol.
 - **Five Mandatory Q7 Attacks (`demo_five_attacks.py`):** **ALL 5 PASSED FAIL-CLOSED**:
   - `[PASS]` Attack 1: Duplicate Submission Rejected (`409 Conflict`)
   - `[PASS]` Attack 2: Unauthorized Insertion Detected

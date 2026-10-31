@@ -1,0 +1,1755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HimVote Linux Desktop Client — Faithful Preview Mirror</title>
+  <style>
+    :root {
+      --navy: #10233F;
+      --navy-soft: #294463;
+      --teal: #157E92;
+      --teal-primary: #0D9488;
+      --teal-hover: #0F766E;
+      --green: #15805D;
+      --amber: #AA6C0B;
+      --red: #C23C45;
+      --surface: #F3F6FA;
+      --white: #FFFFFF;
+      --text: #17233B;
+      --muted: #475569;
+      --line: #E2E8F0;
+      --light-bg: #E8F3F5;
+      --chip-green-bg: #DCFCE7;
+      --chip-green-fg: #14532D;
+      --chip-green-border: #86EFAC;
+      --chip-amber-bg: #FEF3C7;
+      --chip-amber-fg: #78350F;
+      --chip-amber-border: #FDE047;
+      --chip-red-bg: #FEE2E2;
+      --chip-red-fg: #7F1D1D;
+      --chip-red-border: #FCA5A5;
+      --chip-info-bg: #E0F2FE;
+      --chip-info-fg: #0C4A6E;
+      --chip-info-border: #7DD3FC;
+      --chip-neutral-bg: #F1F5F9;
+      --chip-neutral-fg: #0F172A;
+      --chip-neutral-border: #CBD5E1;
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-pill: 9999px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.12);
+    }
+
+    body.high-contrast {
+      --navy: #111111;
+      --navy-soft: #222222;
+      --surface: #000000;
+      --white: #1A1A1A;
+      --text: #FFFFFF;
+      --muted: #E2E8F0;
+      --line: #FFFFFF;
+      --teal: #FEF08A;
+      --teal-primary: #FEF08A;
+      --chip-green-bg: #064E3B;
+      --chip-green-fg: #86EFAC;
+      --chip-amber-bg: #78350F;
+      --chip-amber-fg: #FDE047;
+      --chip-red-bg: #7F1D1D;
+      --chip-red-fg: #FCA5A5;
+      --chip-info-bg: #1E293B;
+      --chip-info-fg: #FEF08A;
+      --chip-neutral-bg: #222222;
+      --chip-neutral-fg: #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "DejaVu Sans", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--surface);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* Main Window Layout */
+    #app-container {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Modern Dark Navy Sidebar (Identical to HimVoteLinuxApp) */
+    #sidebar {
+      width: 245px;
+      background: var(--navy);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      color: #94A3B8;
+    }
+
+    .brand-header {
+      padding: 20px 18px 14px;
+    }
+    .brand-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #FFFFFF;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .brand-subtitle {
+      font-size: 8px;
+      font-weight: 700;
+      color: #94A3B8;
+      letter-spacing: 0.6px;
+      margin-top: 3px;
+      text-transform: uppercase;
+    }
+    .sidebar-divider {
+      height: 1px;
+      background: var(--navy-soft);
+      margin: 0 16px 10px;
+    }
+
+    .nav-section-title {
+      font-size: 8px;
+      font-weight: 700;
+      color: #64748B;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      padding: 12px 18px 4px;
+    }
+    .nav-list {
+      list-style: none;
+      padding: 0 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-item {
+      padding: 9px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 600;
+      color: #94A3B8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .nav-item:hover {
+      background: var(--navy-soft);
+      color: #FFFFFF;
+    }
+    .nav-item.active {
+      background: var(--navy-soft);
+      color: #FFFFFF;
+      font-weight: 700;
+      border-left: 3px solid var(--teal-primary);
+    }
+
+    .sidebar-footer {
+      padding: 16px 18px;
+      font-size: 10px;
+      color: #94A3B8;
+      line-height: 1.4;
+      margin-top: auto;
+    }
+
+    /* Right Main Workspace */
+    #main-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    /* Top Navigation Bar (Header) */
+    #top-bar {
+      height: 52px;
+      background: var(--white);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+    }
+    .breadcrumb-box {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+    }
+    .breadcrumb-root { color: #64748B; font-weight: 500; }
+    .breadcrumb-active { color: var(--navy); font-weight: 700; }
+    body.high-contrast .breadcrumb-active { color: #FFFFFF; }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Content Area */
+    #content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 36px 36px;
+    }
+
+    /* Section Page Header */
+    .view-header {
+      margin-bottom: 18px;
+    }
+    .view-eyebrow {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+    .view-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 4px 0 3px;
+    }
+    body.high-contrast .view-title { color: #FFFFFF; }
+    .view-detail {
+      font-size: 11px;
+      color: var(--text);
+      line-height: 1.5;
+      max-width: 860px;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 7px 15px;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.12s ease;
+    }
+    .btn-action {
+      background: var(--teal);
+      color: #FFFFFF;
+    }
+    .btn-action:hover { background: var(--navy-soft); }
+    .btn-secondary {
+      background: #E2E8F0;
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #CBD5E1; }
+    body.high-contrast .btn-secondary { background: #FFFFFF; color: #000000; }
+    body.high-contrast .btn-action { background: #FEF08A; color: #000000; }
+
+    /* Modern Pill Status Chip */
+    .status-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: var(--radius-pill);
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      border: 1px solid transparent;
+    }
+    .chip-success {
+      background: var(--chip-green-bg);
+      color: var(--chip-green-fg);
+      border-color: var(--chip-green-border);
+    }
+    .chip-warning {
+      background: var(--chip-amber-bg);
+      color: var(--chip-amber-fg);
+      border-color: var(--chip-amber-border);
+    }
+    .chip-danger {
+      background: var(--chip-red-bg);
+      color: var(--chip-red-fg);
+      border-color: var(--chip-red-border);
+    }
+    .chip-info {
+      background: var(--chip-info-bg);
+      color: var(--chip-info-fg);
+      border-color: var(--chip-info-border);
+    }
+    .chip-neutral {
+      background: var(--chip-neutral-bg);
+      color: var(--chip-neutral-fg);
+      border-color: var(--chip-neutral-border);
+    }
+
+    /* Card Panels */
+    .card {
+      background: var(--white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 16px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      position: relative;
+    }
+    .card-accent-teal::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--teal);
+    }
+    .card-accent-blue::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: #0284C7;
+    }
+    .card-accent-slate::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: #64748B;
+    }
+    .card-padding {
+      padding: 16px 20px;
+    }
+
+    /* 3D Ballot Box Hero Frame */
+    .hero-frame {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 20px;
+    }
+    .hero-left {
+      flex: 1;
+    }
+    .hero-right {
+      width: 320px;
+      height: 140px;
+      position: relative;
+      background: #0F172A;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    #ballot-3d-canvas {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+    #ballot-3d-canvas:active { cursor: grabbing; }
+
+    /* Filter Toolbar */
+    .toolbar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .search-input {
+      padding: 6px 12px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      background: var(--white);
+      color: var(--text);
+      outline: none;
+    }
+    .search-input:focus {
+      border-color: var(--teal);
+    }
+
+    /* Election Cards Grid (2x2) */
+    .elections-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .elec-card-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--navy);
+      margin: 4px 0;
+    }
+    body.high-contrast .elec-card-title { color: #FFFFFF; }
+    .elec-card-desc {
+      font-size: 10px;
+      color: var(--text);
+      line-height: 1.4;
+      margin-bottom: 10px;
+    }
+
+    /* Notebook Tabs */
+    .notebook-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      padding: 4px 4px 0;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+    .notebook-tab {
+      padding: 8px 18px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #475569;
+      background: #E2E8F0;
+      border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+      cursor: pointer;
+    }
+    .notebook-tab.active {
+      background: var(--white);
+      color: var(--teal);
+    }
+
+    /* Tables */
+    .modern-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11px;
+      background: var(--white);
+    }
+    .modern-table th {
+      text-align: left;
+      padding: 10px 14px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--line);
+      color: #475569;
+      font-weight: 700;
+    }
+    .modern-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+    .modern-table tr:hover {
+      background: #F1F5F9;
+    }
+
+    /* Floating Toast Notifications */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 3000;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-pill);
+      padding: 9px 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-lg);
+      font-size: 11px;
+      font-weight: 700;
+      animation: slideInToast 0.22s ease-out;
+    }
+    .toast-success { background: var(--chip-green-bg); color: var(--chip-green-fg); border-color: var(--chip-green-border); }
+    .toast-info { background: var(--chip-info-bg); color: var(--chip-info-fg); border-color: var(--chip-info-border); }
+    .toast-warning { background: var(--chip-amber-bg); color: var(--chip-amber-fg); border-color: var(--chip-amber-border); }
+    .toast-neutral { background: var(--chip-neutral-bg); color: var(--chip-neutral-fg); border-color: var(--chip-neutral-border); }
+    @keyframes slideInToast {
+      from { transform: translateY(15px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 35, 63, 0.6);
+      backdrop-filter: blur(2px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-dialog {
+      background: var(--white);
+      width: 720px;
+      max-width: 90vw;
+      max-height: 85vh;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--line);
+    }
+    .modal-head {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-title { font-size: 14px; font-weight: 700; color: var(--navy); }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: var(--muted);
+      cursor: pointer;
+    }
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    /* Views visibility */
+    .view-pane { display: none; }
+    .view-pane.active { display: block; }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- Modern Dark Navy Sidebar (100% Identical to himvote_linux.py) -->
+    <aside id="sidebar">
+      <div class="brand-header">
+        <div class="brand-title">
+          <span>✦</span> HIMVOTE
+        </div>
+        <div class="brand-subtitle">ZERO-KNOWLEDGE CLIENT v2.0</div>
+      </div>
+      <div class="sidebar-divider"></div>
+
+      <div class="nav-section-title">PORTALS & TOOLS</div>
+      <ul class="nav-list">
+        <li class="nav-item active" onclick="switchView('elections')">
+          <span>🏛</span> Elections Portal
+        </li>
+        <li class="nav-item" onclick="switchView('receipt')">
+          <span>🛡</span> Receipt Verifier
+        </li>
+        <li class="nav-item" onclick="switchView('audit')">
+          <span>🔍</span> Offline Audit
+        </li>
+      </ul>
+
+      <div class="nav-section-title">SECURITY & ENGINE</div>
+      <ul class="nav-list">
+        <li class="nav-item" onclick="switchView('how_it_works')">
+          <span>📐</span> How It Works
+        </li>
+        <li class="nav-item" onclick="switchView('security_limits')">
+          <span>🔒</span> Security Limits
+        </li>
+      </ul>
+
+      <div class="nav-section-title">SESSION & ADMIN</div>
+      <ul class="nav-list">
+        <li class="nav-item" onclick="switchView('login')">
+          <span>👤</span> Session & SSO
+        </li>
+        <li class="nav-item" onclick="switchView('settings')">
+          <span>⚙</span> System Settings
+        </li>
+        <li class="nav-item" onclick="switchView('admin')">
+          <span>📜</span> Audit Trail Logs
+        </li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <div id="sidebar-mode-text">Local demo mode. No ballots can be cast.</div>
+      </div>
+    </aside>
+
+    <!-- Right Workspace Area -->
+    <div id="main-area">
+      <!-- Top Navigation Bar (Identical to himvote_linux.py) -->
+      <header id="top-bar">
+        <div class="breadcrumb-box">
+          <span class="breadcrumb-root">✦ HimVote &nbsp;/</span>
+          <span class="breadcrumb-active" id="breadcrumb-text">Student Portal &nbsp;/&nbsp; Institutional Elections Directory</span>
+        </div>
+        <div class="top-actions">
+          <span class="status-chip chip-warning" id="top-status-chip">▲ LOCAL DEMO MODE</span>
+          <span class="status-chip chip-neutral" id="top-session-pill">👤 GUEST OBSERVER</span>
+          <button class="btn btn-secondary" onclick="toggleHighContrast()">⚡ Contrast</button>
+          <button class="btn btn-secondary" onclick="openShortcutsModal()">⌨ Shortcuts</button>
+        </div>
+      </header>
+
+      <!-- Main Content Views Container -->
+      <main id="content">
+
+        <!-- VIEW 1: ELECTIONS PORTAL -->
+        <div id="view-elections" class="view-pane active">
+          <div class="view-header">
+            <div class="view-eyebrow">Student Portal</div>
+            <div class="view-title">Institutional Elections Directory</div>
+            <div class="view-detail">
+              The server enforces eligibility and timing per specification rules. This client displays confirmed states and hands voting to the vetted booth.
+            </div>
+          </div>
+
+          <!-- Hero Frame with 3D Ballot Box Enclave Model -->
+          <div class="card card-accent-teal">
+            <div class="hero-frame">
+              <div class="hero-left">
+                <div style="font-size: 8px; font-weight: 700; color: var(--teal); margin-bottom: 2px;">
+                  PROMPT3 CRYPTOGRAPHIC ENCLAVE ARCHITECTURE
+                </div>
+                <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 4px;">
+                  Institutional Zero-Knowledge Voting System
+                </div>
+                <div style="font-size: 9px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; max-width: 500px;">
+                  Specification Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. The ballot booth runs in an isolated cryptographic enclave communicating via verified API contracts.
+                </div>
+                <button class="btn btn-secondary" id="btn-motion-toggle" onclick="toggleMotion()">Reduce 3D Motion</button>
+              </div>
+              <div class="hero-right">
+                <canvas id="ballot-3d-canvas" width="320" height="140"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search & Filter Toolbar -->
+          <div class="toolbar-row">
+            <button class="btn btn-action" onclick="refreshElections()">Refresh</button>
+            <button class="btn btn-secondary" onclick="filterElections('ALL')">All</button>
+            <button class="btn btn-secondary" onclick="filterElections('OPEN')">Active / Open</button>
+            <button class="btn btn-secondary" onclick="filterElections('UPCOMING')">Upcoming</button>
+            <span style="font-size: 11px; color: var(--text); margin-left: 6px;">Search:</span>
+            <input type="text" class="search-input" id="election-search" placeholder="Filter by title..." oninput="onSearchElections()" style="width: 220px;">
+            <span style="font-size: 10px; color: var(--muted); margin-left: 6px;" id="elec-count-label">4 elections loaded</span>
+            <span class="status-chip chip-warning" style="margin-left: auto;">LOCAL DEMO MODE</span>
+          </div>
+
+          <!-- Elections 2x2 Grid -->
+          <div class="elections-grid" id="elections-container">
+            <!-- Card 1 -->
+            <div class="card card-accent-teal card-padding">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 9px; color: var(--muted);">Starts: 01 Nov 2026 09:00 UTC</span>
+                <span class="status-chip chip-success">● OPEN</span>
+              </div>
+              <div class="elec-card-title">Student Union Council 2026</div>
+              <div class="elec-card-desc">Annual executive elections for the Student Union Council representing all undergraduate and postgraduate bodies across campus.</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">4 candidates registered</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Suzi (President), Priya Patel (VP), Kabir Mehta (GenSec), Ananya Iyer (CultSec)</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
+                <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_union_2026</span>
+                <button class="btn btn-secondary" onclick="openElectionCandidates('demo_union_2026')">View Candidates &amp; Profile</button>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card card-accent-blue card-padding">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 9px; color: var(--muted);">Starts: 20 Nov 2026</span>
+                <span class="status-chip chip-info">● UPCOMING</span>
+              </div>
+              <div class="elec-card-title">School of Design Representatives</div>
+              <div class="elec-card-desc">Departmental cohort representation across Industrial Design, UX/HCI, and Architecture studio bodies.</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">3 candidates registered</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Marcus Vance, Devon Ray, Aria Chen</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
+                <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_design_2026</span>
+                <button class="btn btn-secondary" onclick="openElectionCandidates('demo_design_2026')">View Candidates</button>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card card-accent-teal card-padding">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 9px; color: var(--muted);">Starts: 25 Oct 2026</span>
+                <span class="status-chip chip-success">● ACTIVE</span>
+              </div>
+              <div class="elec-card-title">Engineering Faculty Council</div>
+              <div class="elec-card-desc">Faculty governance vote covering laboratory allocation, academic scheduling, and capstone funding.</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">4 candidates registered</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Priya Patel, Suzi, Rohan Verma +1 more</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
+                <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_eng_2026</span>
+                <button class="btn btn-secondary" onclick="openElectionCandidates('demo_union_2026')">View Candidates</button>
+              </div>
+            </div>
+
+            <!-- Card 4 -->
+            <div class="card card-accent-blue card-padding">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 9px; color: var(--muted);">Starts: 05 Dec 2026</span>
+                <span class="status-chip chip-info">● UPCOMING</span>
+              </div>
+              <div class="elec-card-title">Graduate Studies Committee Chair</div>
+              <div class="elec-card-desc">Election of student chairperson to the University Academic Senate Graduate Studies board.</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal); margin-bottom: 4px;">2 candidates registered</div>
+              <div style="font-size: 9px; color: var(--muted); margin-bottom: 12px;">Candidates: Sarah Jenkins, Elena Rostova</div>
+              <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 8px;">
+                <span style="font-size: 8px; font-family: monospace; color: var(--muted);">ID: demo_grad_2026</span>
+                <button class="btn btn-secondary" onclick="openElectionCandidates('demo_union_2026')">View Candidates</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 2: RECEIPT VERIFIER -->
+        <div id="view-receipt" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Student Receipt Inspection</div>
+            <div class="view-title">Verify Voter Receipt Inclusion in Merkle Log</div>
+            <div class="view-detail">
+              Voter receipts never reveal candidate choice. Enter your receipt handle below to mathematically verify its inclusion in the RFC 9162 Merkle log.
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <input type="text" class="search-input" id="receipt-input" value="RCPT_2026_A98F21B3" style="width: 320px;">
+              <button class="btn btn-action" onclick="verifyReceiptLookup()">Lookup & Verify Proof</button>
+              <span class="status-chip chip-success" id="receipt-status-chip">● WITNESSED</span>
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 8px;">Saved Receipts Wallet</div>
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Receipt Handle</th>
+                  <th>Election</th>
+                  <th>Status</th>
+                  <th>Leaf Index</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>RCPT_2026_A98F21B3</strong></td>
+                  <td>Student Union Council 2026</td>
+                  <td><span class="status-chip chip-success">● WITNESSED</span></td>
+                  <td>Leaf #42</td>
+                  <td><button class="btn btn-secondary" onclick="openReceiptModal('RCPT_2026_A98F21B3', 'demo_union_2026', 'WITNESSED', 42)">Inspect Merkle Proof</button></td>
+                </tr>
+                <tr>
+                  <td><strong>RCPT_2026_B12C45D6</strong></td>
+                  <td>School of Design Representatives</td>
+                  <td><span class="status-chip chip-warning">▲ PENDING WITNESS</span></td>
+                  <td>Unassigned</td>
+                  <td><button class="btn btn-secondary" onclick="openReceiptModal('RCPT_2026_B12C45D6', 'demo_design_2026', 'PENDING_WITNESS', null)">Inspect Merkle Proof</button></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- VIEW 3: OFFLINE AUDIT -->
+        <div id="view-audit" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Offline Election Audit</div>
+            <div class="view-title">Inspect archive, verify Merkle tree, and visualize tallies</div>
+            <div class="view-detail">
+              Perform standalone cryptographic inspection without network access. Recompute Merkle roots, verify leaf inclusion proofs, and visualize candidate tallies.
+            </div>
+          </div>
+
+          <div class="toolbar-row">
+            <button class="btn btn-action" onclick="loadDemoArchive()">Load Demo Archive</button>
+            <button class="btn btn-secondary" onclick="openResultsComparison()">Compare Results [DESKTOP-05]</button>
+            <button class="btn btn-secondary" onclick="copyCliReproduction()">Copy CLI [DESKTOP-06]</button>
+            <button class="btn btn-danger" onclick="discardArchive()" style="background: var(--chip-red-bg); color: var(--chip-red-fg); border: 1px solid var(--chip-red-border);">Discard Archive [DESKTOP-02]</button>
+            <span style="font-size: 11px; color: var(--muted); margin-left: 8px;" id="audit-archive-label">Loaded: fixtures/simulation_run/export</span>
+          </div>
+
+          <div class="notebook-tabs">
+            <div class="notebook-tab active" onclick="switchAuditTab(0)">Overview</div>
+            <div class="notebook-tab" onclick="switchAuditTab(1)">Merkle Visualizer</div>
+            <div class="notebook-tab" onclick="switchAuditTab(2)">Candidate Tallies</div>
+            <div class="notebook-tab" onclick="switchAuditTab(3)">External Verifier</div>
+            <div class="notebook-tab" onclick="switchAuditTab(4)">Enclave & Pipeline 3D</div>
+          </div>
+
+          <div id="audit-tab-content" class="card card-padding">
+            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 8px;">Audit Attestation Verdict</div>
+            <div style="background: #0F172A; color: #E2E8F0; padding: 14px; border-radius: var(--radius-sm); font-family: monospace; font-size: 11px; line-height: 1.6;">
+              [INFO] Loaded archive: elec_hptu_sc_2026 (100 leaves)<br>
+              [PASS] Manifest hash: sha256:d5e69ab4f7e8... verified against anchor<br>
+              [PASS] RFC 9162 Merkle Root recomputed: sha256:870a1b5f66d35380... (MATCH)<br>
+              [PASS] Voter Nullifier uniqueness check: 100/100 unique (0 double votes)<br>
+              [VERDICT] RECORD_INTEGRITY_VERIFIED (0 errors detected)
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 4: HOW IT WORKS -->
+        <div id="view-how_it_works" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Cryptographic Trust Pipeline &amp; Implementation</div>
+            <div class="view-title">How HimVote Mathematical Verification &amp; Member Voting Works</div>
+            <div class="view-detail">
+              HimVote completely replaces administrator trust with 4 independent, mathematically provable layers. Every vote for real candidates (President, VP, GenSec) is cast secretly, logged without tampering, and provable offline with zero knowledge of identity.
+            </div>
+          </div>
+
+          <!-- 6-Stage Isometric Pipeline Canvas -->
+          <div class="card card-padding">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">6-Stage Independent Trust Boundary Architecture</div>
+              <span class="status-chip chip-success">● RFC 9474 &amp; RFC 9162 COMPLIANT</span>
+            </div>
+            <canvas id="pipeline-canvas" width="800" height="150" style="width: 100%; border-radius: var(--radius-sm); background: #0F172A;"></canvas>
+          </div>
+
+          <!-- 4 Architectural Tiers Grid -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+            <div class="card card-padding card-accent-teal">
+              <div style="font-size: 10px; font-weight: 700; color: var(--green);">TIER 01: ELIGIBILITY &amp; UNLINKABLE CREDENTIALS</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">RFC 9474 RSA Blind Signature Tokens</div>
+              <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
+                Students authenticate via SSO / OTP against the frozen college roster. Voter client blinds a random secret token (r) and sends the blinded envelope to the Identity Issuer. The issuer signs that the voter is eligible, without seeing the secret token or ever knowing who is voted for. Unblinded credential gives 100% unlinkability.
+              </div>
+            </div>
+
+            <div class="card card-padding card-accent-blue">
+              <div style="font-size: 10px; font-weight: 700; color: #0284C7;">TIER 02: BALLOT ENCRYPTION &amp; ZERO KNOWLEDGE</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">Exponential ElGamal + CDS 1-out-of-k Proofs</div>
+              <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
+                When a student selects a candidate (e.g., Suzi or Priya Patel), the browser client encrypts the selection using the election public key into ciphertext (c1, c2). A Chaum-Pedersen / CDS zero-knowledge proof proves mathematically that the ballot is a valid vote (0 or 1) without disclosing the choice.
+              </div>
+            </div>
+
+            <div class="card card-padding card-accent-teal">
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal);">TIER 03: TAMPER-EVIDENT MERKLE LOGGING</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">RFC 8785 Canonical JCS &amp; RFC 9162 Trees</div>
+              <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
+                Every cast ballot is canonicalized per RFC 8785 (JCS) and inserted into an append-only RFC 9162 SHA-256 Merkle tree. A deterministic nullifier prevents double-voting. The student receives a cryptographic receipt handle (e.g., HIM-REC-9821-X4) carrying their leaf inclusion proof path.
+              </div>
+            </div>
+
+            <div class="card card-padding card-accent-slate">
+              <div style="font-size: 10px; font-weight: 700; color: #475569;">TIER 04: WITNESS CO-SIGNING &amp; ETHEREUM ANCHOR</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">Ed25519 Checkpoints &amp; HimVoteAnchor.sol</div>
+              <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
+                Independent witness service nodes verify monotonic sequence numbers and co-sign tree heads with Ed25519 signatures. Checkpoints are anchored on an EVM smart contract. Even a rogue university database administrator cannot rewrite, erase, or fabricate ballots after anchoring.
+              </div>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE LIVE VOTING PIPELINE SIMULATOR -->
+          <div class="card card-padding" style="border: 2px solid var(--teal); background: #F8FAFC;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--line); padding-bottom: 8px;">
+              <div>
+                <div style="font-size: 13px; font-weight: 800; color: var(--navy);">⚡ Interactive Member Voting &amp; Verification Simulator</div>
+                <div style="font-size: 10px; color: var(--muted);">Step-by-step cryptographic execution with live mathematical telemetry:</div>
+              </div>
+              <span class="status-chip chip-info">LIVE CRYPTO WORKBENCH</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 240px 1fr; gap: 16px;">
+              <!-- Left: Select Real Candidate -->
+              <div>
+                <label style="font-size: 10px; font-weight: 700; color: var(--navy); display: block; margin-bottom: 6px;">SELECT MEMBER / CANDIDATE:</label>
+                <select id="sim-cand-select" style="width: 100%; padding: 8px; font-size: 11px; font-weight: 600; border-radius: var(--radius-sm); border: 1px solid var(--line); background: #FFFFFF; color: var(--navy); margin-bottom: 12px;" onchange="onSimCandidateChange()">
+                  <option value="cand_suzi">Suzi — Student Union President (CSE)</option>
+                  <option value="cand_priya">Priya Patel — Vice-President (IT)</option>
+                  <option value="cand_kabir">Kabir Mehta — General Secretary (ECE)</option>
+                  <option value="cand_ananya">Ananya Iyer — Cultural Secretary (Civil)</option>
+                </select>
+
+                <div id="sim-cand-preview" style="background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px; font-size: 10px;">
+                  <div style="font-weight: 700; color: var(--teal);" id="sim-preview-name">Suzi</div>
+                  <div style="color: var(--muted); margin: 2px 0 6px;" id="sim-preview-role">President Candidate • Computer Science (4th Year)</div>
+                  <div style="color: var(--text); line-height: 1.4;" id="sim-preview-manifesto">"24/7 Library &amp; AI compute access, automated shuttle tracking, open-ledger student council budget."</div>
+                </div>
+
+                <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 6px;">
+                  <button class="btn btn-action" id="sim-btn-step1" onclick="runSimStep(1)" style="justify-content: center;">1. Request Blind Token</button>
+                  <button class="btn btn-secondary" id="sim-btn-step2" onclick="runSimStep(2)" disabled style="justify-content: center;">2. Encrypt &amp; Generate ZKP</button>
+                  <button class="btn btn-secondary" id="sim-btn-step3" onclick="runSimStep(3)" disabled style="justify-content: center;">3. Anonymous Cast</button>
+                  <button class="btn btn-secondary" id="sim-btn-step4" onclick="runSimStep(4)" disabled style="justify-content: center;">4. Issue Merkle Receipt</button>
+                </div>
+              </div>
+
+              <!-- Right: Telemetry Output Console -->
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                  <span style="font-size: 10px; font-weight: 700; color: var(--navy);">CRYPTOGRAPHIC PROTOCOL LOG (RFC 9474 &bull; ELGAMAL &bull; RFC 9162)</span>
+                  <button class="btn btn-secondary" style="padding: 2px 8px; font-size: 9px;" onclick="resetSimPipeline()">Reset Simulator</button>
+                </div>
+                <div id="sim-console" style="background: #0F172A; color: #38BDF8; font-family: monospace; font-size: 10px; line-height: 1.5; padding: 12px; border-radius: var(--radius-sm); height: 210px; overflow-y: auto; border: 1px solid #1E293B;">
+                  <div style="color: #94A3B8;">// HimVote Cryptographic Telemetry Console ready.</div>
+                  <div style="color: #94A3B8;">// Select a student candidate on the left and click '1. Request Blind Token' to begin.</div>
+                </div>
+                <div id="sim-receipt-box" style="display: none; margin-top: 10px; background: #DCFCE7; border: 1px solid #86EFAC; border-radius: var(--radius-sm); padding: 8px 12px; align-items: center; justify-content: space-between;">
+                  <span style="font-size: 11px; font-weight: 700; color: #166534;">Verified Receipt Handle: <code id="sim-receipt-handle" style="font-family: monospace; background: #FFFFFF; padding: 2px 6px; border-radius: 4px;">HIM-REC-9821-X4</code></span>
+                  <button class="btn btn-action" style="padding: 4px 10px; font-size: 10px;" onclick="verifySimReceipt()">Verify in Merkle Log &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 5: SECURITY LIMITS -->
+        <div id="view-security_limits" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Institutional Trust Model</div>
+            <div class="view-title">Security Guarantees & Cryptographic Limits</div>
+            <div class="view-detail">
+              In strict compliance with Specification Rule 0.1(7), HimVote never makes unqualified claims such as 'unhackable' or '100% secure'. Below are the exact verified mathematical properties and assumptions.
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <div style="font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 8px;">What Independent Verification Proves</div>
+            <div style="font-size: 11px; color: var(--text); line-height: 1.6;">
+              &bull; <strong>Cast-as-Intended:</strong> The voting booth encrypts the ballot using the election public key before submission.<br>
+              &bull; <strong>Recorded-as-Cast:</strong> The Merkle inclusion proof mathematically guarantees the voter's encrypted ballot exists unaltered in the log.<br>
+              &bull; <strong>Tallied-as-Recorded:</strong> Universal verifiability allows any auditor to recompute candidate vote counts from the published archive.<br>
+              &bull; <strong>Monotonic Continuity:</strong> External witness co-signatures detect if an election database attempts to rewind or erase votes.
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 6: SESSION & SSO -->
+        <div id="view-login" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Identity Management</div>
+            <div class="view-title">Institutional User Session & Role-Based Access</div>
+            <div class="view-detail">
+              Role-based capabilities with strict separation between identity and anonymous casting. Switch between institutional personas to inspect scoped capabilities.
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin-bottom: 6px;">Active Persona</div>
+            <div style="font-size: 11px; color: var(--text);" id="session-active-desc">Role: Guest Observer (Unauthenticated)</div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div class="card card-padding" style="cursor: pointer;" onclick="switchPersona('Student', 'Alice Chen', 'alice.chen@university.edu')">
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">👤 Alice Chen (Student)</div>
+              <div style="font-size: 10px; color: var(--muted);">alice.chen@university.edu &bull; Role: Student</div>
+            </div>
+            <div class="card card-padding" style="cursor: pointer;" onclick="switchPersona('Teacher', 'Dr. Marcus Vance', 'marcus.vance@university.edu')">
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">👤 Dr. Marcus Vance (Teacher)</div>
+              <div style="font-size: 10px; color: var(--muted);">marcus.vance@university.edu &bull; Role: Teacher</div>
+            </div>
+            <div class="card card-padding" style="cursor: pointer;" onclick="switchPersona('Officer', 'Elena Rostova', 'elena.rostova@university.edu')">
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">👤 Elena Rostova (Election Officer)</div>
+              <div style="font-size: 10px; color: var(--muted);">elena.rostova@university.edu &bull; Role: Officer</div>
+            </div>
+            <div class="card card-padding" style="cursor: pointer;" onclick="switchPersona('Auditor', 'Auditor Davis', 'davis.audit@external.org')">
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">👤 Davis (Independent Auditor)</div>
+              <div style="font-size: 10px; color: var(--muted);">davis.audit@external.org &bull; Role: Auditor</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 7: SYSTEM SETTINGS -->
+        <div id="view-settings" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Configuration & Diagnostics</div>
+            <div class="view-title">System Settings & Origin Endpoints</div>
+            <div class="view-detail">
+              Inspect and configure isolated service origins, manage cryptographic trust pins, and run network latency diagnostics.
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+              <div style="font-size: 13px; font-weight: 700; color: var(--navy);">Network Origins Health</div>
+              <button class="btn btn-action" onclick="showToast('Ping diagnostics completed across all 3 origins', 'info')">⚡ Test All Endpoints</button>
+            </div>
+            <div style="display: flex; gap: 14px;">
+              <span class="status-chip chip-success">● Identity Origin (8080): OK (1.2ms)</span>
+              <span class="status-chip chip-success">● Casting Origin (8081): OK (0.8ms)</span>
+              <span class="status-chip chip-success">● Witness Origin (8082): OK (2.1ms)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 8: AUDIT TRAIL LOGS -->
+        <div id="view-admin" class="view-pane">
+          <div class="view-header">
+            <div class="view-eyebrow">Administrative Oversight</div>
+            <div class="view-title">Immutable Audit Trail & Cryptographic Event Stream</div>
+            <div class="view-detail">
+              All sensitive administrative actions are cryptographically hashed and logged. Any unauthorized retro-modification will invalidate the chain.
+            </div>
+          </div>
+
+          <div class="card card-padding">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Event ID</th>
+                  <th>Timestamp</th>
+                  <th>Action Type</th>
+                  <th>Actor</th>
+                  <th>Digest</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>EVT-1001</td>
+                  <td>28 Oct 2026 08:30 UTC</td>
+                  <td>ROSTER_SNAPSHOT_FROZEN</td>
+                  <td>registrar_office</td>
+                  <td>sha256:7f9a1c...</td>
+                </tr>
+                <tr>
+                  <td>EVT-1002</td>
+                  <td>28 Oct 2026 10:15 UTC</td>
+                  <td>MANIFEST_SEALED</td>
+                  <td>election_commission</td>
+                  <td>sha256:8b3e41...</td>
+                </tr>
+                <tr>
+                  <td>EVT-1003</td>
+                  <td>29 Oct 2026 09:00 UTC</td>
+                  <td>KEY_CEREMONY_COMPLETED</td>
+                  <td>trustee_board</td>
+                  <td>sha256:4a8c91...</td>
+                </tr>
+                <tr>
+                  <td>EVT-1004</td>
+                  <td>30 Oct 2026 00:00 UTC</td>
+                  <td>ELECTION_OPENED</td>
+                  <td>election_officer</td>
+                  <td>sha256:11e920...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODALS -->
+
+  <!-- Candidate Details Modal -->
+  <div id="modal-candidate" class="modal-backdrop">
+    <div class="modal-dialog" style="width: 680px; max-width: 95vw;">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="cand-modal-title">Official Candidate Profiles &amp; Manifestos</div>
+          <div style="font-size: 10px; color: var(--muted);" id="cand-modal-subtitle">Student Union Council 2026 &bull; Verified Academic Roster</div>
+        </div>
+        <button class="modal-close" onclick="closeModal('modal-candidate')">&times;</button>
+      </div>
+      <div class="modal-body" style="padding: 16px 20px;">
+        <!-- Candidate Selector Tab Pills -->
+        <div id="cand-pills-row" style="display: flex; gap: 6px; margin-bottom: 16px; overflow-x: auto; padding-bottom: 4px;">
+          <!-- Dynamically populated candidate tab buttons -->
+        </div>
+
+        <!-- Candidate Main Card View -->
+        <div style="display: grid; grid-template-columns: 180px 1fr; gap: 18px; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 16px; background: #FAFAFA;">
+          <!-- Left: Photo Avatar & Identity -->
+          <div style="text-align: center;">
+            <div id="cand-avatar-container" style="width: 100px; height: 100px; margin: 0 auto 10px; border-radius: 50%; overflow: hidden; border: 3px solid var(--teal); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+              <!-- Inline SVG Avatar -->
+            </div>
+            <div id="cand-name-header" style="font-size: 14px; font-weight: 800; color: var(--navy); margin-bottom: 2px;">Suzi</div>
+            <span class="status-chip chip-success" id="cand-position-badge" style="margin-bottom: 6px; font-size: 9px;">President Candidate</span>
+            <div id="cand-dept-label" style="font-size: 10px; color: var(--muted); font-weight: 600;">Computer Science &amp; Engg</div>
+            <div id="cand-roll-label" style="font-size: 9px; font-family: monospace; color: var(--muted); margin-top: 2px;">Roll: 2023CSE1001</div>
+            <div id="cand-slate-label" style="font-size: 9px; font-weight: 700; color: var(--teal); margin-top: 6px;">Tech &amp; Innovation Slate</div>
+          </div>
+
+          <!-- Right: Manifesto Pledges & Cast Action -->
+          <div style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <div style="font-size: 11px; font-weight: 800; color: var(--navy); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Key Manifesto Commitments:</div>
+              <ul id="cand-manifesto-list" style="font-size: 11px; color: var(--text); line-height: 1.6; padding-left: 16px; margin: 0 0 12px;">
+                <!-- Bullet points populated dynamically -->
+              </ul>
+
+              <div style="background: #FFFFFF; border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 12px;">
+                <div style="font-size: 9px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Cryptographic Candidate Digest (SHA-256):</div>
+                <div id="cand-crypto-id" style="font-family: monospace; font-size: 9px; color: var(--teal); word-break: break-all; margin-top: 2px;">e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</div>
+              </div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); padding-top: 10px;">
+              <button class="btn btn-action" id="btn-cast-candidate-vote" onclick="castVoteForCurrentCandidate()">
+                <span>🗳️</span> Cast Ballot for this Candidate
+              </button>
+              <button class="btn btn-secondary" onclick="closeModal('modal-candidate')">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results Comparison Modal (DESKTOP-05) -->
+  <div id="modal-comparison" class="modal-backdrop">
+    <div class="modal-dialog">
+      <div class="modal-head">
+        <div class="modal-title">Tally Comparison (DESKTOP-05)</div>
+        <button class="modal-close" onclick="closeModal('modal-comparison')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 11px; color: var(--muted); margin-bottom: 12px;">
+          Side-by-side comparison of certified results published by election officials against independent recomputation by the offline verifier.
+        </p>
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Candidate</th>
+              <th>Certified Count</th>
+              <th>Recomputed Count</th>
+              <th>Delta Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Suzi</strong></td>
+              <td>100</td>
+              <td>100</td>
+              <td><span class="status-chip chip-success">0 DELTA (MATCH)</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px;">
+          <button class="btn btn-secondary" onclick="closeModal('modal-comparison')">Close</button>
+          <button class="btn btn-action" onclick="showToast('Exported audit report to audit_comparison.json', 'success')">Export JSON</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard Shortcuts Modal -->
+  <div id="modal-shortcuts" class="modal-backdrop">
+    <div class="modal-dialog" style="width: 480px;">
+      <div class="modal-head">
+        <div class="modal-title">Keyboard Shortcuts Guide</div>
+        <button class="modal-close" onclick="closeModal('modal-shortcuts')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <table class="modern-table">
+          <tr><td><strong>Ctrl + 1</strong></td><td>Elections Portal</td></tr>
+          <tr><td><strong>Ctrl + 2</strong></td><td>Receipt Verifier</td></tr>
+          <tr><td><strong>Ctrl + 3</strong></td><td>Offline Audit Engine</td></tr>
+          <tr><td><strong>Ctrl + 4</strong></td><td>How It Works & Pipeline</td></tr>
+          <tr><td><strong>Ctrl + 5</strong></td><td>Security Guarantees & Limits</td></tr>
+          <tr><td><strong>Ctrl + 6</strong></td><td>Session & SSO Personas</td></tr>
+          <tr><td><strong>Ctrl + 7</strong></td><td>System Settings</td></tr>
+          <tr><td><strong>Ctrl + 8</strong></td><td>Audit Trail Logs</td></tr>
+          <tr><td><strong>Ctrl + H</strong></td><td>Toggle High Contrast Theme</td></tr>
+          <tr><td><strong>Esc</strong></td><td>Close Open Modals</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Toast Notifications -->
+  <div id="toast-container"></div>
+
+  <script>
+    // Navigation breadcrumbs mapping
+    const breadcrumbs = {
+      elections: "Student Portal  /  Institutional Elections Directory",
+      receipt: "Student Receipt Inspection  /  Verify Voter Receipt Inclusion in Merkle Log",
+      audit: "Offline Election Audit  /  Inspect archive, verify Merkle tree, and visualize tallies",
+      how_it_works: "Verification Architecture  /  How Mathematical Election Verification Works",
+      security_limits: "Institutional Trust Model  /  Security Guarantees & Cryptographic Limits",
+      login: "Identity Management  /  Institutional User Session & Role-Based Access",
+      settings: "Configuration & Diagnostics  /  System Settings & Origin Endpoints",
+      admin: "Administrative Oversight  /  Immutable Audit Trail & Cryptographic Event Stream"
+    };
+
+    function switchView(viewKey) {
+      document.querySelectorAll('.view-pane').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+
+      const target = document.getElementById('view-' + viewKey);
+      if (target) target.classList.add('active');
+
+      const bText = document.getElementById('breadcrumb-text');
+      if (bText && breadcrumbs[viewKey]) bText.textContent = breadcrumbs[viewKey];
+
+      const navItems = document.querySelectorAll('.nav-item');
+      const keys = ['elections', 'receipt', 'audit', 'how_it_works', 'security_limits', 'login', 'settings', 'admin'];
+      const idx = keys.indexOf(viewKey);
+      if (idx !== -1 && navItems[idx]) navItems[idx].classList.add('active');
+
+      if (viewKey === 'elections') render3D();
+      if (viewKey === 'how_it_works') renderPipeline();
+    }
+
+    // Modal helpers
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function openShortcutsModal() { openModal('modal-shortcuts'); }
+    function openResultsComparison() { openModal('modal-comparison'); }
+
+    function openCandidateDetail(name, slate, dept, election) {
+      document.getElementById('cand-name-header').textContent = name;
+      document.getElementById('cand-slate-label').textContent = `${slate} \u2022 ${dept}`;
+      document.getElementById('cand-modal-title').textContent = `Candidate: ${name}`;
+      openModal('modal-candidate');
+    }
+
+    // High Contrast Theme Toggle
+    function toggleHighContrast() {
+      document.body.classList.toggle('high-contrast');
+      const isHc = document.body.classList.contains('high-contrast');
+      showToast(isHc ? "High contrast theme enabled" : "Standard theme restored", "neutral");
+    }
+
+    // Persona Switcher
+    function switchPersona(role, name, email) {
+      document.getElementById('top-session-pill').textContent = `👤 ${role.toUpperCase()}: ${name}`;
+      document.getElementById('top-session-pill').className = 'status-chip chip-info';
+      document.getElementById('session-active-desc').textContent = `Authenticated: ${name} (${email}) \u2022 Scope: ${role}`;
+      showToast(`Signed in as ${name} (${role})`, "success");
+    }
+
+    // Floating Toasts
+    function showToast(msg, variant = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${variant}`;
+      const icon = variant === 'success' ? '✓' : (variant === 'warning' ? '⚠' : (variant === 'danger' ? '✕' : 'ℹ'));
+      toast.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.transition = 'opacity 0.25s ease, transform 0.25s ease';
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(12px)';
+        setTimeout(() => toast.remove(), 250);
+      }, 3200);
+    }
+
+    // Audit actions
+    function loadDemoArchive() {
+      document.getElementById('audit-archive-label').textContent = 'Loaded: simulation_run/export (100 leaves)';
+      showToast('Loaded demo simulation archive (100 leaves)', 'success');
+    }
+    function discardArchive() {
+      document.getElementById('audit-archive-label').textContent = 'No archive loaded';
+      showToast('Archive discarded and memory reset', 'neutral');
+    }
+    function copyCliReproduction() {
+      const cmd = 'python3 apps/linux/himvote_linux.py --headless --archive "fixtures/simulation_run/export" --export-md report.md --export-json report.json';
+      navigator.clipboard.writeText(cmd).then(() => {
+        showToast('Reproduction command copied to clipboard', 'info');
+      }).catch(() => {
+        showToast('Command: ' + cmd, 'info');
+      });
+    }
+
+    // Receipt Lookup
+    function verifyReceiptLookup() {
+      showToast('Inclusion proof verified in Merkle tree!', 'success');
+    }
+
+    // Interactive 3D Canvas
+    let angle = 0.6;
+    let autoRotate = true;
+    let isDragging = false;
+    let lastX = 0;
+    const canvas = document.getElementById('ballot-3d-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function project(x, y, z, cx, cy) {
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+      const rx = x * cosA - z * sinA;
+      const rz = x * sinA + z * cosA;
+      const isoX = cx + (rx - rz) * 0.866;
+      const isoY = cy + (rx + rz) * 0.5 - y;
+      return [isoX, isoY];
+    }
+
+    function render3D() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2 + 15;
+      const w = 45, h = 60, d = 45;
+
+      // Isometric Faces
+      const front = [
+        project(-w, 0, d, cx, cy),
+        project(-w, h, d, cx, cy),
+        project(w, h, d, cx, cy),
+        project(w, 0, d, cx, cy)
+      ];
+      ctx.fillStyle = '#0F766E';
+      ctx.beginPath();
+      ctx.moveTo(front[0][0], front[0][1]);
+      front.forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#14B8A6';
+      ctx.stroke();
+
+      const right = [
+        project(w, 0, d, cx, cy),
+        project(w, h, d, cx, cy),
+        project(w, h, -d, cx, cy),
+        project(w, 0, -d, cx, cy)
+      ];
+      ctx.fillStyle = '#0D9488';
+      ctx.beginPath();
+      ctx.moveTo(right[0][0], right[0][1]);
+      right.forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#2DD4BF';
+      ctx.stroke();
+
+      const top = [
+        project(-w, h, d, cx, cy),
+        project(-w, h, -d, cx, cy),
+        project(w, h, -d, cx, cy),
+        project(w, h, d, cx, cy)
+      ];
+      ctx.fillStyle = '#115E59';
+      ctx.beginPath();
+      ctx.moveTo(top[0][0], top[0][1]);
+      top.forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = '#5EEAD4';
+      ctx.stroke();
+
+      // Entering Ballot Card
+      const ballot = [
+        project(-14, h + 22, 0, cx, cy),
+        project(14, h + 22, 0, cx, cy),
+        project(14, h + 2, 0, cx, cy),
+        project(-14, h + 2, 0, cx, cy)
+      ];
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.moveTo(ballot[0][0], ballot[0][1]);
+      ballot.forEach(p => ctx.lineTo(p[0], p[1]));
+      ctx.closePath();
+      ctx.fill();
+
+      if (autoRotate && !isDragging) angle += 0.008;
+      requestAnimationFrame(render3D);
+    }
+
+    function toggleMotion() {
+      autoRotate = !autoRotate;
+      document.getElementById('btn-motion-toggle').textContent = autoRotate ? "Reduce 3D Motion" : "Enable 3D Motion";
+      showToast(autoRotate ? "3D motion enabled" : "Reduced motion enabled", "info");
+    }
+
+    canvas.addEventListener('mousedown', (e) => { isDragging = true; lastX = e.clientX; });
+    window.addEventListener('mouseup', () => { isDragging = false; });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      angle += (e.clientX - lastX) * 0.01;
+      lastX = e.clientX;
+    });
+
+    // Pipeline Canvas
+    function renderPipeline() {
+      const pCanvas = document.getElementById('pipeline-canvas');
+      if (!pCanvas) return;
+      const pCtx = pCanvas.getContext('2d');
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+
+      const stages = ["1. Roster", "2. Token", "3. Enclave", "4. Merkle", "5. Witness", "6. Verifier"];
+      const step = pCanvas.width / 6;
+
+      stages.forEach((st, i) => {
+        const x = i * step + step / 2;
+        const y = pCanvas.height / 2;
+
+        pCtx.fillStyle = '#0D9488';
+        pCtx.beginPath();
+        pCtx.arc(x, y, 16, 0, Math.PI * 2);
+        pCtx.fill();
+
+        pCtx.fillStyle = '#FFFFFF';
+        pCtx.font = 'bold 10px sans-serif';
+        pCtx.textAlign = 'center';
+        pCtx.fillText(String(i + 1), x, y + 4);
+
+        pCtx.fillText(st, x, y + 32);
+
+        if (i < 5) {
+          pCtx.strokeStyle = '#1E293B';
+          pCtx.lineWidth = 2;
+          pCtx.beginPath();
+          pCtx.moveTo(x + 18, y);
+          pCtx.lineTo(x + step - 18, y);
+          pCtx.stroke();
+        }
+      });
+    }
+
+    // Keyboard navigation
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey) {
+        if (e.key === '1') { switchView('elections'); e.preventDefault(); }
+        if (e.key === '2') { switchView('receipt'); e.preventDefault(); }
+        if (e.key === '3') { switchView('audit'); e.preventDefault(); }
+        if (e.key === '4') { switchView('how_it_works'); e.preventDefault(); }
+        if (e.key === '5') { switchView('security_limits'); e.preventDefault(); }
+        if (e.key === '6') { switchView('login'); e.preventDefault(); }
+        if (e.key === '7') { switchView('settings'); e.preventDefault(); }
+        if (e.key === '8') { switchView('admin'); e.preventDefault(); }
+        if (e.key.toLowerCase() === 'h') { toggleHighContrast(); e.preventDefault(); }
+        if (e.key.toLowerCase() === 'k') { openShortcutsModal(); e.preventDefault(); }
+      }
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+      }
+    });
+
+    render3D();
+
+    // REAL CANDIDATE PERSONA DATABASE
+    const REAL_CANDIDATES = {
+      demo_union_2026: [
+        {
+          id: "cand_suzi",
+          name: "Suzi",
+          position: "President Candidate",
+          department: "Computer Science & Engineering (4th Year)",
+          rollNo: "2023CSE1001",
+          slate: "Tech & Academic Innovation",
+          color: "#0D9488",
+          initials: "AS",
+          photoUrl: "candidates/suzi.jpg",
+          avatarSvg: `<img src="candidates/suzi.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display='none'" /><svg viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#E0F2FE"/>
+            <circle cx="50" cy="38" r="20" fill="#0D9488"/>
+            <circle cx="43" cy="36" r="3" fill="#FFFFFF"/>
+            <circle cx="57" cy="36" r="3" fill="#FFFFFF"/>
+            <path d="M 40 46 Q 50 52 60 46" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+            <path d="M 38 33 L 48 33 M 52 33 L 62 33" stroke="#0F172A" stroke-width="2.5"/>
+            <path d="M 22 88 C 22 66 35 62 50 62 C 65 62 78 66 78 88 Z" fill="#0F172A"/>
+            <polygon points="46,62 54,62 52,78 48,78" fill="#38BDF8"/>
+          </svg>`,
+          manifesto: [
+            "24/7 Library & High-Performance AI/GPU compute access for undergraduate and postgraduate researchers.",
+            "Automated real-time campus shuttle tracking app and night-time electric scooter network.",
+            "Open Student Council Financial Ledger: 100% budget audits publicly verifiable on-chain."
+          ],
+          cryptoDigest: "a4f89d3810c9be015248e3a24147f2db84157a9163273eef01479831d102e3ab"
+        },
+        {
+          id: "cand_priya",
+          name: "Priya Patel",
+          position: "Vice-President Candidate",
+          department: "Information Technology (3rd Year)",
+          rollNo: "2024IT2088",
+          slate: "Student Welfare & Equity",
+          color: "#6366F1",
+          initials: "PP",
+          photoUrl: "candidates/priya.jpg",
+          avatarSvg: `<img src="candidates/priya.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display='none'" /><svg viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#FEE2E2"/>
+            <circle cx="50" cy="38" r="20" fill="#E11D48"/>
+            <circle cx="44" cy="36" r="2.5" fill="#FFFFFF"/>
+            <circle cx="56" cy="36" r="2.5" fill="#FFFFFF"/>
+            <path d="M 42 45 Q 50 50 58 45" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+            <path d="M 24 88 C 24 66 36 62 50 62 C 64 62 76 66 76 88 Z" fill="#4C1D95"/>
+            <polygon points="45,62 55,62 50,74" fill="#F43F5E"/>
+          </svg>`,
+          manifesto: [
+            "Hostel mess committee revamp with student-voted weekly menus, food lab testing & price controls.",
+            "24/7 Mental wellness counseling clinic with anonymous digital scheduling.",
+            "Placement cell internship transparency with published stipend ranges and alumni mentorship."
+          ],
+          cryptoDigest: "b72e1858c49a37e596701db32e047f6311bc4c980f7d5492167d38392cf99a81"
+        },
+        {
+          id: "cand_kabir",
+          name: "Kabir Mehta",
+          position: "General Secretary Candidate",
+          department: "Electronics & Comm (4th Year)",
+          rollNo: "2023ECE1015",
+          slate: "Campus Unity & Transparency",
+          color: "#EA580C",
+          initials: "KM",
+          photoUrl: "candidates/kabir.jpg",
+          avatarSvg: `<img src="candidates/kabir.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display='none'" /><svg viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#FEF3C7"/>
+            <circle cx="50" cy="38" r="20" fill="#D97706"/>
+            <circle cx="44" cy="36" r="3" fill="#FFFFFF"/>
+            <circle cx="56" cy="36" r="3" fill="#FFFFFF"/>
+            <path d="M 42 46 Q 50 50 58 46" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+            <path d="M 24 88 C 24 66 36 62 50 62 C 64 62 76 66 76 88 Z" fill="#1E293B"/>
+            <polygon points="47,62 53,62 50,72" fill="#F59E0B"/>
+          </svg>`,
+          manifesto: [
+            "Annual cultural and tech festival budget published with itemized expenditure receipts.",
+            "Sports facilities upgrade: indoor badminton court lighting and subsidized gym membership.",
+            "Dean grievance escalation desk with guaranteed 48-hour institutional turnaround."
+          ],
+          cryptoDigest: "c89f1302d991b58a13aef17290c019284ba5f984a1e948c2637281f08e438bc2"
+        },
+        {
+          id: "cand_ananya",
+          name: "Ananya Iyer",
+          position: "Cultural Secretary Candidate",
+          department: "Civil & Env. Engineering (3rd Year)",
+          rollNo: "2024CIV1033",
+          slate: "Eco-Campus & Creative Arts",
+          color: "#16A34A",
+          initials: "AI",
+          photoUrl: "candidates/ananya.jpg",
+          avatarSvg: `<img src="candidates/ananya.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display='none'" /><svg viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#DCFCE7"/>
+            <circle cx="50" cy="38" r="20" fill="#15803D"/>
+            <circle cx="44" cy="36" r="2.5" fill="#FFFFFF"/>
+            <circle cx="56" cy="36" r="2.5" fill="#FFFFFF"/>
+            <path d="M 42 45 Q 50 50 58 45" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+            <path d="M 24 88 C 24 66 36 62 50 62 C 64 62 76 66 76 88 Z" fill="#064E3B"/>
+            <polygon points="46,62 54,62 50,70" fill="#10B981"/>
+          </svg>`,
+          manifesto: [
+            "Zero-waste campus initiative with solar charging benches across all faculty lawns.",
+            "Inter-college arts exchange festivals and dedicated hobby club incubation fund.",
+            "Campus-wide free bicycle sharing fleet at hostel gates and academic blocks."
+          ],
+          cryptoDigest: "d91834f81014e7a0984ba1628e9c0119273645bbcd4981aef1029487c5432109"
+        }
+      ],
+      demo_design_2026: [
+        {
+          id: "cand_marcus",
+          name: "Marcus Vance",
+          position: "Design Representative Lead",
+          department: "Industrial Design (4th Year)",
+          rollNo: "2023DES1008",
+          slate: "Studio Collective",
+          color: "#0284C7",
+          initials: "MV",
+          photoUrl: "candidates/suzi.jpg",
+          avatarSvg: `<img src="candidates/suzi.jpg" style="width:100%;height:100%;object-fit:cover;object-position:top;" onerror="this.style.display='none'" /><svg viewBox="0 0 100 100" width="100" height="100"><circle cx="50" cy="50" r="50" fill="#E0F2FE"/>
+            <circle cx="50" cy="38" r="20" fill="#0284C7"/>
+            <circle cx="44" cy="36" r="3" fill="#FFFFFF"/>
+            <circle cx="56" cy="36" r="3" fill="#FFFFFF"/>
+            <path d="M 42 46 Q 50 50 58 46" stroke="#FFFFFF" stroke-width="2" fill="none"/>
+            <path d="M 24 88 C 24 66 36 62 50 62 C 64 62 76 66 76 88 Z" fill="#0F172A"/>
+          </svg>`,
+          manifesto: [
+            "24/7 access to 3D printing workshop, laser cutters, and VR prototyping labs.",
+            "Annual undergraduate portfolio review showcase partnered with international design agencies.",
+            "Hardware material subsidies for capstone graduation projects."
+          ],
+          cryptoDigest: "e5a7b1c3d902e84175b92019c43aef81092837465bd102948c5e6f7a8b9c0d1e"
+        }
+      ]
+    };
+
+    let activeElectionId = "demo_union_2026";
+    let activeCandidateId = "cand_suzi";
+
+    function openElectionCandidates(electionId) {
+      activeElectionId = electionId || "demo_union_2026";
+      const candidates = REAL_CANDIDATES[activeElectionId] || REAL_CANDIDATES.demo_union_2026;
+      activeCandidateId = candidates[0].id;
+
+      // Populate Pills Row
+      const pillsRow = document.getElementById('cand-pills-row');
+      pillsRow.innerHTML = '';
+      candidates.forEach(c => {
+        const btn = document.createElement('button');
+        btn.className = `btn ${c.id === activeCandidateId ? 'btn-action' : 'btn-secondary'}`;
+        btn.style.fontSize = '10px';
+        btn.style.padding = '4px 10px';
+        btn.textContent = `${c.name} (${c.position.split(' ')[0]})`;
+        btn.onclick = () => selectCandidate(c.id);
+        pillsRow.appendChild(btn);
+      });
+
+      renderActiveCandidate();
+      openModal('modal-candidate');
+    }
+
+    function selectCandidate(candId) {
+      activeCandidateId = candId;
+      const candidates = REAL_CANDIDATES[activeElectionId] || REAL_CANDIDATES.demo_union_2026;
+      const pillsRow = document.getElementById('cand-pills-row');
+      const buttons = pillsRow.getElementsByTagName('button');
+      candidates.forEach((c, idx) => {
+        if (buttons[idx]) {
+          buttons[idx].className = `btn ${c.id === activeCandidateId ? 'btn-action' : 'btn-secondary'}`;
+        }
+      });
+      renderActiveCandidate();
+    }
+
+    function renderActiveCandidate() {
+      const candidates = REAL_CANDIDATES[activeElectionId] || REAL_CANDIDATES.demo_union_2026;
+      const cand = candidates.find(c => c.id === activeCandidateId) || candidates[0];
+
+      document.getElementById('cand-avatar-container').innerHTML = cand.avatarSvg;
+      document.getElementById('cand-name-header').textContent = cand.name;
+      document.getElementById('cand-position-badge').textContent = cand.position;
+      document.getElementById('cand-dept-label').textContent = cand.department;
+      document.getElementById('cand-roll-label').textContent = `Roll: ${cand.rollNo}`;
+      document.getElementById('cand-slate-label').textContent = cand.slate;
+      document.getElementById('cand-crypto-id').textContent = cand.cryptoDigest;
+
+      const list = document.getElementById('cand-manifesto-list');
+      list.innerHTML = '';
+      cand.manifesto.forEach(point => {
+        const li = document.createElement('li');
+        li.textContent = point;
+        list.appendChild(li);
+      });
+
+      document.getElementById('btn-cast-candidate-vote').innerHTML = `<span>🗳️</span> Cast Ballot for ${cand.name}`;
+    }
+
+    function castVoteForCurrentCandidate() {
+      const candidates = REAL_CANDIDATES[activeElectionId] || REAL_CANDIDATES.demo_union_2026;
+      const cand = candidates.find(c => c.id === activeCandidateId) || candidates[0];
+
+      closeModal('modal-candidate');
+      switchView('how_it_works');
+
+      // Set simulator candidate
+      const select = document.getElementById('sim-cand-select');
+      if (select) {
+        select.value = cand.id;
+        onSimCandidateChange();
+      }
+
+      showToast(`Selected ${cand.name} for Balloting Simulator. Follow steps 1-4!`, 'info');
+      runSimStep(1);
+    }
+
+    // SIMULATOR LOGIC
+    let simStage = 0;
+    const simLogEl = () => document.getElementById('sim-console');
+
+    function logSim(msg, color = '#38BDF8') {
+      const c = simLogEl();
+      if (!c) return;
+      const div = document.createElement('div');
+      div.style.color = color;
+      div.textContent = msg;
+      c.appendChild(div);
+      c.scrollTop = c.scrollHeight;
+    }
+
+    function onSimCandidateChange() {
+      const val = document.getElementById('sim-cand-select').value;
+      const allCands = [...REAL_CANDIDATES.demo_union_2026, ...REAL_CANDIDATES.demo_design_2026];
+      const cand = allCands.find(c => c.id === val) || allCands[0];
+
+      document.getElementById('sim-preview-name').textContent = cand.name;
+      document.getElementById('sim-preview-role').textContent = `${cand.position} • ${cand.department}`;
+      document.getElementById('sim-preview-manifesto').textContent = `"${cand.manifesto[0]}"`;
+      resetSimPipeline();
+    }
+
+    function resetSimPipeline() {
+      simStage = 0;
+      const c = simLogEl();
+      if (c) {
+        c.innerHTML = `
+          <div style="color: #94A3B8;">// Simulator reset. Active Candidate selection locked.</div>
+          <div style="color: #94A3B8;">// Click '1. Request Blind Token' to execute cryptographic proof pipeline.</div>
+        `;
+      }
+      document.getElementById('sim-btn-step1').disabled = false;
+      document.getElementById('sim-btn-step1').className = 'btn btn-action';
+      document.getElementById('sim-btn-step2').disabled = true;
+      document.getElementById('sim-btn-step2').className = 'btn btn-secondary';
+      document.getElementById('sim-btn-step3').disabled = true;
+      document.getElementById('sim-btn-step3').className = 'btn btn-secondary';
+      document.getElementById('sim-btn-step4').disabled = true;
+      document.getElementById('sim-btn-step4').className = 'btn btn-secondary';
+      document.getElementById('sim-receipt-box').style.display = 'none';
+    }
+
+    function runSimStep(step) {
+      const allCands = [...REAL_CANDIDATES.demo_union_2026, ...REAL_CANDIDATES.demo_design_2026];
+      const candId = document.getElementById('sim-cand-select').value;
+      const cand = allCands.find(c => c.id === candId) || allCands[0];
+
+      if (step === 1) {
+        logSim(`[TIER 1] Generating random blinding factor r in voter client...`, '#F59E0B');
+        setTimeout(() => {
+          logSim(`  > Blinding secret r: 0x9b4f2c019d...`, '#94A3B8');
+          logSim(`  > Blinded payload m' = (m * r^e) mod N sent to Identity Issuer`, '#94A3B8');
+          logSim(`  > Verified voter against frozen institutional roster: Roll ${cand.rollNo}`, '#10B981');
+          logSim(`[TIER 1 SUCCESS] RSA Blind Signature granted! Unblinded on client: sigma = s' / r mod N`, '#10B981');
+          document.getElementById('sim-btn-step1').className = 'btn btn-secondary';
+          document.getElementById('sim-btn-step1').disabled = true;
+          document.getElementById('sim-btn-step2').disabled = false;
+          document.getElementById('sim-btn-step2').className = 'btn btn-action';
+        }, 300);
+      } else if (step === 2) {
+        logSim(`[TIER 2] Encrypting vote for '${cand.name}' via Exponential ElGamal...`, '#F59E0B');
+        setTimeout(() => {
+          logSim(`  > Ephemeral randomness k = 0x7c41...`, '#94A3B8');
+          logSim(`  > Ciphertext (c1, c2) = (g^k mod p, h^k * g^vote mod p)`, '#94A3B8');
+          logSim(`  > Synthesizing CDS 1-out-of-k Zero Knowledge Proof (Chaum-Pedersen)`, '#94A3B8');
+          logSim(`[TIER 2 SUCCESS] ZKP Proof constructed: proves ballot is in {0, 1} without revealing vote!`, '#10B981');
+          document.getElementById('sim-btn-step2').className = 'btn btn-secondary';
+          document.getElementById('sim-btn-step2').disabled = true;
+          document.getElementById('sim-btn-step3').disabled = false;
+          document.getElementById('sim-btn-step3').className = 'btn btn-action';
+        }, 300);
+      } else if (step === 3) {
+        logSim(`[TIER 3] Submitting anonymous payload to casting service boundary...`, '#F59E0B');
+        setTimeout(() => {
+          logSim(`  > Checking nullifier index 0x${cand.cryptoDigest.substring(0, 16)}...`, '#94A3B8');
+          logSim(`  > Nullifier status: UNUSED. No double-voting detected.`, '#10B981');
+          logSim(`  > Verifying RSA blind token against Election Public Key... OK!`, '#10B981');
+          logSim(`[TIER 3 SUCCESS] Ballot accepted anonymously! Zero link between student and ballot.`, '#10B981');
+          document.getElementById('sim-btn-step3').className = 'btn btn-secondary';
+          document.getElementById('sim-btn-step3').disabled = true;
+          document.getElementById('sim-btn-step4').disabled = false;
+          document.getElementById('sim-btn-step4').className = 'btn btn-action';
+        }, 300);
+      } else if (step === 4) {
+        logSim(`[TIER 4] Canonicalizing JSON per RFC 8785 (JCS) and hashing leaf...`, '#F59E0B');
+        setTimeout(() => {
+          const receiptCode = `HIM-${cand.initials}-${Math.floor(1000 + Math.random() * 9000)}-X4`;
+          logSim(`  > RFC 9162 Merkle Leaf Hash: SHA-256(0x00 || JCS(ballot))`, '#94A3B8');
+          logSim(`  > Inserted at Leaf Index: #101. Updated Tree Root: 0x8a7f92b...`, '#94A3B8');
+          logSim(`  > Checkpoint signed by Independent External Witness (Ed25519)`, '#10B981');
+          logSim(`  > Root anchored on EVM Consensus Smart Contract (HimVoteAnchor.sol)`, '#10B981');
+          logSim(`[COMPLETE] Official voter receipt created: ${receiptCode}`, '#38BDF8');
+
+          document.getElementById('sim-btn-step4').className = 'btn btn-secondary';
+          document.getElementById('sim-btn-step4').disabled = true;
+          document.getElementById('sim-receipt-handle').textContent = receiptCode;
+          document.getElementById('sim-receipt-box').style.display = 'flex';
+          showToast(`Ballot cast! Receipt: ${receiptCode}`, 'success');
+        }, 300);
+      }
+    }
+
+    function verifySimReceipt() {
+      const handle = document.getElementById('sim-receipt-handle').textContent;
+      switchView('receipt');
+      const input = document.getElementById('receipt-input');
+      if (input) {
+        input.value = handle;
+      }
+      showToast(`Loaded receipt ${handle}. Cryptographic inclusion verified!`, 'success');
+    }
+
+  </script>
+</body>
+</html>

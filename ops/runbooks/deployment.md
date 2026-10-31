@@ -21,7 +21,7 @@ Pre Deployment Verification Items:
 
 1. Staging Validation
    * Confirm target image digest has passed full staging test battery.
-   * Verify Gate E1 cryptographic engine test passed.
+   * Run Gate E1 only as a local development regression check. The current custom engine is not a production voting protocol; production startup and publication remain blocked until an established engine integration passes independent verification.
    * Confirm verifier SHA256 checksum matches release manifest.
 
 2. Database Migration Compatibility

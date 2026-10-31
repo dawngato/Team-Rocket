@@ -175,17 +175,27 @@ def get_authenticated_context(request: Request) -> ActorContext:
             ),
             "election_officer_default",
         )
+        raw_roles = request.headers.get("X-Actor-Roles", "election_officer")
+        roles = frozenset(
+            ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
+            for role in raw_roles.split(",")
+            if role.strip()
+        )
+        raw_scopes = request.headers.get("X-Actor-Scopes", "")
+        parsed_scopes = []
+        for item in raw_scopes.split(","):
+            parts = item.split(":", 2)
+            if len(parts) == 3 and all(part.strip() for part in parts):
+                parsed_scopes.append(ScopeGrant(
+                    role=ROLE_ALIASES.get(parts[0].strip().lower(), parts[0].strip().lower()),
+                    scope_type=parts[1].strip().lower(),
+                    scope_id=parts[2].strip(),
+                ))
         context = ActorContext(
             actor_id=actor_id,
-            roles=frozenset({
-                "super_admin",
-                "administrator",
-                "election_officer",
-                "roster_approver",
-                "auditor",
-            }),
-            scopes=(ScopeGrant(role="super_admin", scope_type="global", scope_id="*"),),
-            mfa_authenticated=True,
+            roles=roles,
+            scopes=tuple(parsed_scopes) or (ScopeGrant(role=next(iter(roles), "election_officer"), scope_type="global", scope_id="*"),),
+            mfa_authenticated=request.headers.get("X-Actor-MFA", "true").strip().lower() in {"1", "true", "yes"},
             development=True,
         )
     else:
@@ -197,7 +207,10 @@ def get_authenticated_context(request: Request) -> ActorContext:
 
 def get_authenticated_actor(request: Request) -> str:
     """Return the trusted actor ID while retaining the full policy context."""
-    return get_authenticated_context(request).actor_id
+    context = get_authenticated_context(request)
+    if not context.has_role("super_admin", "administrator", "election_officer", "auditor", "roster_approver"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
+    return context.actor_id
 
 
 def require_operation(
