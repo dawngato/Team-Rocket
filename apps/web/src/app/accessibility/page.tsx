@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CheckCircle2, Shield, Eye, Keyboard, Sparkles } from "lucide-react";
+import { CheckCircle2, Shield, Eye, Keyboard } from "lucide-react";
 
 export default function AccessibilityStatementPage() {
   const commitments = [

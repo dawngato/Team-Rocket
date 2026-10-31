@@ -8,7 +8,6 @@ import {
   AlertCircle,
   FileCheck,
   ShieldCheck,
-  Sparkles,
   ArrowRight,
   RefreshCw,
   X,
@@ -396,7 +395,7 @@ export function StudentIdCardVerifier() {
               /* Idle / Instructions Card */
               <div className="rounded-3xl bg-white/[0.03] border border-white/10 p-6 space-y-4">
                 <div className="flex items-center gap-2.5 text-cyan-300 font-bold text-sm">
-                  <Sparkles className="w-4 h-4 text-cyan-400" />
+                  <span className="text-base">🪪</span>
                   <span>How We Verify Student Identity</span>
                 </div>
                 <div className="space-y-3 text-xs text-slate-300 leading-relaxed">
