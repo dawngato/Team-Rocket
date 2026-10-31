@@ -12,7 +12,7 @@ The current checkout contains the implemented access-control, fail-closed UI, on
 
 - **System Health:** Local regression checks passing; production readiness is not established
 - **Local Gate E1 regression suite:** 5 / 5 checks pass; the required established-engine integration gate remains BLOCKED.
-- **Current Python Evidence:** 68 targeted admin and identity tests, 58 root tests, and 1 load test passed; one duplicate-ZIP-entry warning remains
+- **Current Python Evidence:** 71 targeted admin and identity tests, 58 root tests, and 1 load test passed; one duplicate-ZIP-entry warning remains
 - **Web Client Test Baseline:** 98 / 98 Vitest tests passed across 17 suites
 - **Web Compilation & Typecheck:** Typecheck, lint, production build, and browser smoke passed
 - **UI & Experience:** Public role selector removed; full viewport and axe matrix remains pending

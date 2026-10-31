@@ -168,7 +168,7 @@ independently secure.
 python -m compileall -q services/admin_api/src services/identity_issuer
   PASS
 python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  PASS 68 tests
+  PASS 71 tests
 cd apps/web && npm test -- --run
   PASS 98 tests under the installed system Node binary
 cd apps/web && npm run typecheck && npm run build

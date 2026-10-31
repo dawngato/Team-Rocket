@@ -2,39 +2,23 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Award, UserCheck, Plus, CheckCircle2, ArrowLeft, Shield } from "lucide-react";
+import { Award, UserCheck, Plus, CheckCircle2, ArrowLeft, Shield, AlertTriangle } from "lucide-react";
 import { ElectionAssignment, TeacherRecord, Election } from "@/lib/types";
 import { apiClient, electionClient } from "@/lib/api_client";
 
 export default function AdminAssignmentsPage() {
-  const [assignments] = useState<ElectionAssignment[]>([]);
   const [teachers, setTeachers] = useState<TeacherRecord[]>([]);
   const [elections, setElections] = useState<Election[]>([]);
-  const [selectedFaculty, setSelectedFaculty] = useState("");
-  const [selectedElection, setSelectedElection] = useState("");
-  const [selectedRole, setSelectedRole] = useState<"VERIFICATION_OFFICER" | "ROSTER_REVIEWER" | "SUPERVISOR">("VERIFICATION_OFFICER");
-  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
       apiClient.getTeachers().catch(() => []),
       electionClient.getElections({ includeInternal: true }).catch(() => []),
     ]).then(([liveTeachers, liveElections]) => {
-      if (liveTeachers && liveTeachers.length > 0) {
-        setTeachers(liveTeachers);
-        setSelectedFaculty(liveTeachers[0].faculty_id);
-      }
-      if (liveElections && liveElections.length > 0) {
-        setElections(liveElections);
-        setSelectedElection(liveElections[0].id);
-      }
+      if (liveTeachers && liveTeachers.length > 0) setTeachers(liveTeachers);
+      if (liveElections && liveElections.length > 0) setElections(liveElections);
     });
   }, []);
-
-  const handleAssign = (e: React.FormEvent) => {
-    e.preventDefault();
-    setFeedback("Assignment API is not configured. No local assignment was created.");
-  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -49,137 +33,74 @@ export default function AdminAssignmentsPage() {
           </Link>
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#10233F]/10 dark:bg-white/10 text-[#10233F] dark:text-white mb-1">
             <Award className="w-3.5 h-3.5 text-[#157E92]" aria-hidden="true" />
-            Staff Delegations
+            <span>Staff Delegations</span>
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
             Election Assignments
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Assign faculty verification officers and reviewers to specific election contests and departments.
+            Role assignments and departmental supervisory scopes for institutional staff.
           </p>
         </div>
       </div>
 
-      {feedback && (
-        <div className="p-4 rounded-xl bg-[#15805D]/10 border border-[#15805D]/30 text-[#15805D] text-sm font-semibold flex items-center gap-2">
-          <CheckCircle2 className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-          <span>{feedback}</span>
+      {/* UX-27 Fix: Honest Architectural Notice instead of disabled form button */}
+      <div className="p-6 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
+        <div className="flex items-center gap-2 font-bold text-sm">
+          <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+          <span>Institutional Delegation Status</span>
         </div>
-      )}
-
-      {/* Assignment Form */}
-      <div className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-4">
-        <h2 className="text-lg font-bold text-[#10233F] dark:text-white flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-[#157E92]" aria-hidden="true" />
-          <span>Create New Staff Assignment</span>
-        </h2>
-        <form onSubmit={handleAssign} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div>
-            <label htmlFor="sel-faculty" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Select Faculty Member
-            </label>
-            <select
-              id="sel-faculty"
-              value={selectedFaculty}
-              onChange={(e) => setSelectedFaculty(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            >
-              {teachers.map((t) => (
-                <option key={t.faculty_id} value={t.faculty_id}>
-                  {t.full_name} ({t.department})
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="sel-elec" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Target Election Contest
-            </label>
-            <select
-              id="sel-elec"
-              value={selectedElection}
-              onChange={(e) => setSelectedElection(e.target.value)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            >
-              {elections.map((el) => (
-                <option key={el.id} value={el.id}>
-                  {el.title}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="sel-role" className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Assigned Operational Role
-            </label>
-            <select
-              id="sel-role"
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value as any)}
-              className="w-full min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-[#1E3352] bg-white dark:bg-[#132135] text-sm text-[#10233F] dark:text-white focus:outline-none focus:ring-2 focus:ring-[#157E92]"
-            >
-              <option value="VERIFICATION_OFFICER">Verification Officer</option>
-              <option value="ROSTER_REVIEWER">Roster Reviewer</option>
-              <option value="SUPERVISOR">Department Supervisor</option>
-            </select>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              disabled
-              className="w-full min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center justify-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-            >
-              <Plus className="w-4 h-4" aria-hidden="true" />
-              <span>Assignment API unavailable</span>
-            </button>
-          </div>
-        </form>
+        <p className="text-xs leading-relaxed text-slate-700 dark:text-slate-300">
+          Direct election assignment provisioning is currently managed through authoritative department roster imports (`/admin/roster-imports`) and institutional identity governance (`/super-admin/role-requests`). Dynamic inline staff delegation creation will be enabled following Phase 4 backend policy integration.
+        </p>
       </div>
 
-      {/* Assignments Table */}
+      {/* Active Faculty Summary */}
       <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352]">
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-[#1E3352] flex items-center justify-between">
           <h2 className="font-bold text-base text-[#10233F] dark:text-white">
-            Current Active Assignments
+            Registered Faculty &amp; Verification Officers ({teachers.length})
           </h2>
+          <Link
+            href="/admin/teachers"
+            className="text-xs font-semibold text-[#157E92] dark:text-[#38BDF8] hover:underline"
+          >
+            Manage Teacher Directory &rarr;
+          </Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-200 dark:border-[#1E3352]">
               <tr>
-                <th scope="col" className="px-6 py-3">Faculty Member</th>
-                <th scope="col" className="px-6 py-3">Contest</th>
+                <th scope="col" className="px-6 py-3">Faculty ID</th>
+                <th scope="col" className="px-6 py-3">Name</th>
+                <th scope="col" className="px-6 py-3">Institutional Email</th>
                 <th scope="col" className="px-6 py-3">Department Scope</th>
-                <th scope="col" className="px-6 py-3">Assigned Role</th>
-                <th scope="col" className="px-6 py-3">Assigned Date</th>
+                <th scope="col" className="px-6 py-3">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
-              {assignments.map((asgn) => (
-                <tr key={asgn.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
-                  <td className="px-6 py-4">
-                    <div className="font-bold text-[#10233F] dark:text-white">{asgn.faculty_name}</div>
-                    <div className="text-xs text-slate-400 font-mono">{asgn.faculty_id}</div>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
-                    {asgn.election_title}
-                  </td>
-                  <td className="px-6 py-4 text-xs text-slate-600 dark:text-slate-300">
-                    {asgn.assigned_department}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="px-2.5 py-0.5 rounded text-xs font-bold bg-[#15805D]/10 text-[#15805D]">
-                      {asgn.role.replace(/_/g, " ")}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-xs font-mono text-slate-500">
-                    {new Date(asgn.assigned_at_utc).toLocaleDateString()}
+              {teachers.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-xs text-slate-500">
+                    No faculty directory records currently loaded.
                   </td>
                 </tr>
-              ))}
+              ) : (
+                teachers.map((t) => (
+                  <tr key={t.id || t.faculty_id}>
+                    <td className="px-6 py-3 font-mono text-xs">{t.faculty_id}</td>
+                    <td className="px-6 py-3 font-medium text-slate-900 dark:text-white">{t.full_name}</td>
+                    <td className="px-6 py-3 text-xs text-slate-600 dark:text-slate-400">{t.email}</td>
+                    <td className="px-6 py-3 text-xs">{t.department}</td>
+                    <td className="px-6 py-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        {t.status || "ACTIVE"}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

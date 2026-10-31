@@ -109,7 +109,10 @@ class CreateTeacherRequest(BaseModel):
     faculty_id: str = Field(min_length=1)
     email: EmailStr
     department: str = Field(min_length=1)
-    initial_password: Optional[str] = None
+    # Kept only to provide a clear validation error for legacy callers. The
+    # provisioning route rejects every supplied password and uses a one-time
+    # invitation instead.
+    initial_password: Optional[str] = Field(default=None, min_length=12)
 
 
 class RosterCorrectionRequest(BaseModel):

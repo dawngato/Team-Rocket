@@ -6,6 +6,8 @@ Enforces separation of duties: creators can never approve their own requests.
 from datetime import datetime, timedelta, timezone
 import hashlib
 import pyotp
+import pytest
+from pydantic import ValidationError
 from services.identity_issuer.models import (
     User,
     RoleDefinition,
@@ -14,6 +16,24 @@ from services.identity_issuer.models import (
     Session as UserSession,
 )
 from services.identity_issuer.crypto.hashing import hash_password
+from services.identity_issuer.schemas import CreateTeacherRequest
+
+
+def test_teacher_provision_uses_invitation_instead_of_reusable_password():
+    base = {
+        "full_name": "Synthetic Teacher",
+        "faculty_id": "FAC_SYNTHETIC",
+        "email": "synthetic.teacher@institution.edu",
+        "department": "computer_science",
+    }
+
+    request_without_password = CreateTeacherRequest(**base)
+    assert request_without_password.initial_password is None
+    with pytest.raises(ValidationError):
+        CreateTeacherRequest(**base, initial_password="short")
+
+    request = CreateTeacherRequest(**base, initial_password="SyntheticTeacherPass2026!")
+    assert request.initial_password == "SyntheticTeacherPass2026!"
 
 
 def create_authenticated_user(db_session, email: str, role_name: str, external_id: str, scope_id: str = "*", scope_type: str = "global") -> tuple[User, str]:

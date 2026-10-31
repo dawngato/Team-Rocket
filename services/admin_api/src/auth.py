@@ -5,7 +5,7 @@ it forwards the caller's bearer token or session cookie to the identity issuer
 and uses the issuer's response as the authenticated actor context.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import httpx
@@ -28,13 +28,45 @@ class ScopeGrant:
     scope_id: str
 
 
-@dataclass(frozen=True)
+@dataclass
 class ActorContext:
-    actor_id: str
-    roles: frozenset[str]
-    scopes: tuple[ScopeGrant, ...]
-    mfa_authenticated: bool
+    actor_id: str | None = None
+    roles: frozenset[str] | tuple[str, ...] | list[str] = field(default_factory=frozenset)
+    scopes: tuple[ScopeGrant, ...] | list[ScopeGrant | dict[str, Any]] = field(default_factory=tuple)
+    mfa_authenticated: bool = True
     development: bool = False
+    user_id: str | None = None
+    email: str = ""
+
+    def __post_init__(self) -> None:
+        identity = (self.actor_id or self.user_id or "").strip()
+        if not identity:
+            raise ValueError("ActorContext requires an authenticated actor ID")
+        self.actor_id = identity
+        self.user_id = identity
+        self.roles = frozenset(
+            ROLE_ALIASES.get(role.strip().lower(), role.strip().lower())
+            for role in self.roles
+            if isinstance(role, str) and role.strip()
+        )
+        normalized_scopes: list[ScopeGrant] = []
+        for scope in self.scopes:
+            if isinstance(scope, ScopeGrant):
+                normalized_scopes.append(scope)
+                continue
+            if not isinstance(scope, dict):
+                continue
+            scope_type = str(scope.get("scope_type", scope.get("type", ""))).strip().lower()
+            scope_id = str(scope.get("scope_id", scope.get("id", ""))).strip()
+            if scope_type and scope_id:
+                normalized_scopes.append(
+                    ScopeGrant(
+                        role=ROLE_ALIASES.get(str(scope.get("role", "")).strip().lower(), str(scope.get("role", "")).strip().lower()),
+                        scope_type=scope_type,
+                        scope_id=scope_id,
+                    )
+                )
+        self.scopes = tuple(normalized_scopes)
 
     def has_role(self, *roles: str) -> bool:
         allowed = {ROLE_ALIASES.get(role, role) for role in roles}
@@ -68,6 +100,8 @@ OPERATION_ROLES: dict[str, tuple[str, ...]] = {
     "election.create": ("super_admin", "administrator", "election_officer"),
     "election.update": ("super_admin", "administrator", "election_officer"),
     "election.delete": ("super_admin", "administrator", "election_officer"),
+    "election.cancel": ("super_admin", "administrator", "election_officer"),
+    "election.pause": ("super_admin", "administrator", "election_officer"),
     "candidate.manage": ("super_admin", "administrator", "election_officer"),
     "roster.submit": ("super_admin", "administrator", "election_officer"),
     "roster.approve": ("super_admin", "roster_approver"),
@@ -76,6 +110,13 @@ OPERATION_ROLES: dict[str, tuple[str, ...]] = {
     "election.close": ("super_admin", "administrator", "election_officer"),
     "result.publish": ("super_admin", "administrator", "election_officer"),
     "election.read_internal": (
+        "super_admin",
+        "administrator",
+        "election_officer",
+        "auditor",
+        "roster_approver",
+    ),
+    "election.view_internal": (
         "super_admin",
         "administrator",
         "election_officer",
@@ -205,9 +246,19 @@ def get_authenticated_context(request: Request) -> ActorContext:
     return context
 
 
+def get_authenticated_actor_context(request: Request) -> ActorContext:
+    """Compatibility name for dependencies and policy tests.
+
+    Both names resolve the same request-cached, identity-backed context. This
+    keeps route policies testable without creating a second authentication
+    implementation.
+    """
+    return get_authenticated_context(request)
+
+
 def get_authenticated_actor(request: Request) -> str:
     """Return the trusted actor ID while retaining the full policy context."""
-    context = get_authenticated_context(request)
+    context = get_authenticated_actor_context(request)
     if not context.has_role("super_admin", "administrator", "election_officer", "auditor", "roster_approver"):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No administrative role is assigned")
     return context.actor_id
@@ -221,7 +272,7 @@ def require_operation(
     institution_id: str | None = None,
 ) -> ActorContext:
     """Enforce role, MFA, and resource scope for an administrative operation."""
-    context = get_authenticated_context(request)
+    context = get_authenticated_actor_context(request)
     required_roles = OPERATION_ROLES.get(operation)
     if not required_roles:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Unknown administrative operation")
@@ -229,7 +280,7 @@ def require_operation(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Role is not authorized for {operation}")
     if not context.mfa_authenticated:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for this operation")
-    if context.development:
+    if context.development and not request.headers.get("X-Actor-Scopes"):
         return context
     if (election_id or institution_id) and not context.has_scope(
         election_id=election_id,
@@ -237,3 +288,34 @@ def require_operation(
     ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Actor is outside the requested institution or election scope")
     return context
+
+
+def actor_has_election_scope(actor: ActorContext, election_id: str) -> bool:
+    """Return whether an actor has an explicit or institution-wide election grant."""
+    if actor.has_role("super_admin"):
+        return True
+    return actor.has_scope(election_id=election_id)
+
+
+def require_election_scope(actor: ActorContext, election_id: str) -> None:
+    if not actor_has_election_scope(actor, election_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="The authenticated actor is not assigned to this election",
+        )
+
+
+def require_permission(operation: str):
+    """Create a FastAPI dependency for role-only operation checks."""
+    def dependency(request: Request) -> ActorContext:
+        actor = get_authenticated_actor_context(request)
+        required_roles = OPERATION_ROLES.get(operation)
+        if not required_roles or not actor.has_role(*required_roles):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Actor lacks required role for operation '{operation}'",
+            )
+        if not actor.mfa_authenticated:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="MFA is required for this operation")
+        return actor
+    return dependency
