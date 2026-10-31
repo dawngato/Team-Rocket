@@ -1,4 +1,4 @@
-# HIMVOTE — Master Engineering Repair Report
+# HIMVOTE : Master Engineering Repair Report
 
 **Date:** 2026-10-31  
 **Project:** HimVote Verifiable College Voting System  

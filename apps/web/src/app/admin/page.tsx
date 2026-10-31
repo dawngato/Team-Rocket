@@ -190,7 +190,7 @@ export default function AdminOverviewPage() {
               Verified Student Voters
             </span>
             <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#15805D]/10 text-[#15805D] dark:text-[#34D399] border border-[#15805D]/30">
-              {totalStudents ? `${Math.round((verifiedStudents / totalStudents) * 100)}%` : "—"}
+              {totalStudents ? `${Math.round((verifiedStudents / totalStudents) * 100)}%` : "N/A"}
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono tabular-nums">
@@ -211,7 +211,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#10233F] dark:text-white font-mono tabular-nums">
-            {teachers.length || "—"}
+            {teachers.length || "N/A"}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             Reported by the identity service
@@ -228,7 +228,7 @@ export default function AdminOverviewPage() {
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#15805D] dark:text-[#34D399] font-mono">
-            —
+            N/A
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             Requires the independent verifier and released evidence package

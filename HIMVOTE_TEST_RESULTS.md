@@ -1,4 +1,4 @@
-# HIMVOTE — Test Results & Evidence Log
+# HIMVOTE : Test Results & Evidence Log
 
 **Date:** 2026-10-31  
 **Target Environment:** Linux x86_64 / Python 3.14.7 / Node.js v20.18.0 / Next.js 15.5.7  

@@ -1,4 +1,4 @@
-# HIMVOTE — Final Engineering & Verification Status
+# HIMVOTE : Final Engineering & Verification Status
 
 **Date:** 2026-10-31  
 **Release Readiness:** Prototype hardening complete; real-election release remains blocked

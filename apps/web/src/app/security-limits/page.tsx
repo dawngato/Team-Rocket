@@ -39,7 +39,7 @@ export default function SecurityLimitsPage() {
       assumption:
         "Voters access the platform in a private, unmonitored physical setting without third-party physical surveillance.",
       mitigation:
-        "Zero Candidate Exposure: The receipt handle contains strictly a deterministic nullifier and Merkle tree inclusion hash — never candidate IDs. Even if forced to show their receipt handle, no one can prove which candidate was chosen.",
+        "Zero Candidate Exposure: The receipt handle contains strictly a deterministic nullifier and Merkle tree inclusion hash : never candidate IDs. Even if forced to show their receipt handle, no one can prove which candidate was chosen.",
     },
     {
       id: "device-malware",

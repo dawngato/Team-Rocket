@@ -1,4 +1,4 @@
-# HIMVOTE — Security & Cryptographic Posture Status
+# HIMVOTE : Security & Cryptographic Posture Status
 
 **Date:** 2026-10-31  
 **Auditor / Security Architect Review:** HimVote Engineering & Hardening Team  

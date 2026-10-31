@@ -184,7 +184,7 @@ export default function SuperAdminOverviewPage() {
             </span>
           </div>
           <div className="text-2xl font-extrabold text-slate-600 dark:text-slate-300 font-mono tabular-nums">
-            —
+            N/A
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             No live MFA enrollment summary is connected to this page

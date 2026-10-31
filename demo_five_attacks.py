@@ -356,7 +356,7 @@ def run_standalone_attacks() -> Dict[str, bool]:
         pins_path = make_trust_pins(witness_pub_hex, manifest_digest, ELECTION_ID, outdir)
 
         # ── BASELINE: Valid archive should PASS ───────────────────────────────
-        header("Baseline: Valid archive — verifier must PASS")
+        header("Baseline: Valid archive : verifier must PASS")
         baseline_archive = make_election_archive(
             ELECTION_ID, manifest, ballots, leaf_digests, root,
             witness_pub, witness_sig, tally, outdir,
@@ -448,12 +448,12 @@ def run_standalone_attacks() -> Dict[str, bool]:
         )
         forged_leaf_digests = leaf_digests + [forged_leaf]
         forged_root = build_merkle_root(forged_leaf_digests)
-        # Attacker does NOT have witness key — so they keep original root/sig
+        # Attacker does NOT have witness key : so they keep original root/sig
         # This means root in archive (signed) != root computed from all ballots
         forged_archive = outdir / "attack2_forged.zip"
         with zipfile.ZipFile(forged_archive, "w") as zf:
             zf.writestr("manifest.json", manifest_bytes)
-            # Original checkpoint (signed with original root — 5 ballots)
+            # Original checkpoint (signed with original root : 5 ballots)
             orig_checkpoint = {
                 "election_id": ELECTION_ID,
                 "manifest_digest": manifest_digest,
@@ -623,7 +623,7 @@ def run_standalone_attacks() -> Dict[str, bool]:
         result_line(
             "Attack 5: Tally tampering detected / flagged",
             tally_detected,
-            f"Verifier exit code: {rc5}  (TALLY_PROOF=LIMITED in Profile VEEM — homomorphic proof not separately published)"
+            f"Verifier exit code: {rc5}  (TALLY_PROOF=LIMITED in Profile VEEM : homomorphic proof not separately published)"
         )
         results["attack_5_tally_tamper"] = tally_detected
         print()
@@ -632,7 +632,7 @@ def run_standalone_attacks() -> Dict[str, bool]:
 
 
 def main() -> int:
-    print(f"\n{BOLD}HimVote — Five Mandatory Q7 Attack Demonstration{RESET}")
+    print(f"\n{BOLD}HimVote : Five Mandatory Q7 Attack Demonstration{RESET}")
     print(f"Timestamp : {datetime.now(timezone.utc).isoformat()}")
     print(f"Root      : {ROOT}")
     print()
@@ -679,7 +679,7 @@ def main() -> int:
         print(f"  {BOLD}[{PASS}] All five attacks correctly rejected / detected{RESET}")
         return 0
     else:
-        print(f"  {BOLD}[{FAIL}] One or more attacks were NOT rejected — review output above{RESET}")
+        print(f"  {BOLD}[{FAIL}] One or more attacks were NOT rejected : review output above{RESET}")
         return 1
 
 

@@ -1,4 +1,4 @@
-# HimVote Native iOS Application — TailAdmin & iOS Glassmorphic Edition
+# HimVote Native iOS Application : TailAdmin & iOS Glassmorphic Edition
 
 HimVote iOS is an institutional campus election mobile application built with Swift 6 and SwiftUI. The application provides cryptographic voting capabilities for university students, faculty members, and authorized election administrators, styled with the **TailAdmin** dashboard theme and modern **iOS translucent glassmorphism** aesthetic.
 

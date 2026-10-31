@@ -62,7 +62,7 @@ def log_phase(step_num: int, title: str) -> None:
 def main() -> int:
     start_time = time.time()
     print("=" * 70)
-    print(f"{BOLD}HimVote — End-to-End Synthetic Election Demonstration{RESET}")
+    print(f"{BOLD}HimVote : End-to-End Synthetic Election Demonstration{RESET}")
     print(f"Timestamp : {datetime.now(timezone.utc).isoformat()}")
     print(f"Standard  : CodeForge 2.0 Question 07 Compliance Suite")
     print("=" * 70)

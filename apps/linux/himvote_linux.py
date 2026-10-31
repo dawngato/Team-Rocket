@@ -4929,7 +4929,7 @@ def main(argv: list[str] | None = None) -> int:
                 pass
 
         print("============================================================")
-        print("HimVote Linux Desktop Client — Interactive Web Preview Server")
+        print("HimVote Linux Desktop Client : Interactive Web Preview Server")
         print(f"Live URL: http://localhost:{port}")
         print("============================================================")
         webbrowser.open(f"http://localhost:{port}")

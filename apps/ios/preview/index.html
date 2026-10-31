@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>HimVote iOS — Campus Elections & Cryptographic Verification</title>
+  <title>HimVote iOS : Campus Elections & Cryptographic Verification</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -78,7 +78,7 @@
   <div class="w-full max-w-md mb-3 flex items-center justify-between px-2 text-xs text-slate-400">
     <div class="flex items-center gap-2">
       <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-      <span class="font-semibold text-slate-200">HimVote iOS — Zero-Knowledge Campus Voting</span>
+      <span class="font-semibold text-slate-200">HimVote iOS : Zero-Knowledge Campus Voting</span>
     </div>
     <div class="flex items-center gap-1.5">
       <a href="HimVote.ipa" download="HimVote.ipa" class="px-2.5 py-1 rounded-lg bg-brand-500 hover:bg-brand-600 text-white font-medium border border-brand-400 transition flex items-center gap-1 shadow-sm">
@@ -531,11 +531,11 @@
       <div id="booth-candidate-choices" class="space-y-2 text-xs">
         <label class="block p-3 rounded-xl border-2 border-brand-500 bg-brand-50/40 dark:bg-brand-950/20 cursor-pointer">
           <input type="radio" name="candidate" checked class="text-brand-500 mr-2">
-          <strong>Alice Sharma</strong> — <span class="text-slate-500">Student First Alliance</span>
+          <strong>Alice Sharma</strong> : <span class="text-slate-500">Student First Alliance</span>
         </label>
         <label class="block p-3 rounded-xl border border-slate-200 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50">
           <input type="radio" name="candidate" class="text-brand-500 mr-2">
-          <strong>Brian Patel</strong> — <span class="text-slate-500">Campus Tech Forward</span>
+          <strong>Brian Patel</strong> : <span class="text-slate-500">Campus Tech Forward</span>
         </label>
       </div>
 
@@ -630,7 +630,7 @@
       modal.classList.remove('flex');
     }
     function openVerifier() {
-      openInfoModal('Public verifier', 'This preview uses sample data and does not connect to a witness or blockchain. To verify a real evidence package, use the standalone verifier described in the project documentation. Sample checkpoint: 0x4f82… — demo data only.');
+      openInfoModal('Public verifier', 'This preview uses sample data and does not connect to a witness or blockchain. To verify a real evidence package, use the standalone verifier described in the project documentation. Sample checkpoint: 0x4f82… : demo data only.');
     }
     function openAuditLog() {
       const count = 48;
@@ -1176,7 +1176,7 @@
         const choices = document.getElementById('booth-candidate-choices');
         const label = document.createElement('label');
         label.className = 'block p-3 rounded-xl border border-purple-500/50 bg-purple-50/20 cursor-pointer';
-        label.innerHTML = `<input type="radio" name="candidate" class="text-purple-500 mr-2"> <strong>${student.name}</strong> — <span class="text-purple-500 font-medium">Nominated Candidate (${contest})</span>`;
+        label.innerHTML = `<input type="radio" name="candidate" class="text-purple-500 mr-2"> <strong>${student.name}</strong> : <span class="text-purple-500 font-medium">Nominated Candidate (${contest})</span>`;
         choices.appendChild(label);
 
         document.getElementById('visitor-candidate-count').innerText = `${candidateNominees.length} Official`;

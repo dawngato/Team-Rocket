@@ -1,10 +1,10 @@
-# Release Readiness — Prompt 2
+# Release Readiness : Prompt 2
 # HimVote / SecureVote
 
 > Generated: 2026-10-31
 > Repository: `/home/Kali/Desktop/HPTU/Team-Rocket`
 > Protocol version: **HimVote v2.0.0** (OpenAPI spec `packages/openapi/himvote.openapi.yaml`)
-> Assessment type: **Educational prototype evaluation — not production certification**
+> Assessment type: **Educational prototype evaluation : not production certification**
 
 ---
 
@@ -26,7 +26,7 @@
 | G-02 | Web UI tests pass (Vitest) | 84 pass across 14 files and typecheck exit 0 | **PASS** |
 | G-03 | Desktop .NET tests pass | 101 pass | **PASS** |
 | G-04 | Android native tests pass (clean run) | UP-TO-DATE cached; prior clean run FAILED | **BLOCK** |
-| G-05 | iOS native tests pass | Blocked — no macOS | **BLOCK** |
+| G-05 | iOS native tests pass | Blocked : no macOS | **BLOCK** |
 | G-06 | All 5 mandatory Q7 attack tests pass | 5/5 pass (54-test suite) | **PASS** |
 | G-07 | Standalone verifier verifies local evidence properties | 12 verifier tests pass in the isolated unified run; native tally is not checked | **PASS WITH LIMITS** |
 | G-08 | Crypto engine is Helios, Belenios, or ElectionGuard | Homegrown VEEM (Profile VEEM, ElGamal) | **BLOCK** |
@@ -82,17 +82,17 @@ python /home/Kali/.codex/skills/webapp-testing/scripts/with_server.py --server "
 cd apps/desktop && dotnet test
 # Exit code: 0  |  101 passed
 
-# Android (incremental — NOT a clean run)
+# Android (incremental : NOT a clean run)
 cd apps/android && ./gradlew test
 # Exit code: 137  |  terminated during KAPT/resource-constrained compilation; Android is not a pass
 
-# iOS — BLOCKED
+# iOS : BLOCKED
 xcodebuild test -scheme HimVote ...
-# Exit code: N/A — xcodebuild not found (Linux environment)
+# Exit code: N/A : xcodebuild not found (Linux environment)
 
-# Solidity — BLOCKED
+# Solidity : BLOCKED
 forge test --match-path chain/tests/
-# Exit code: N/A — forge not found
+# Exit code: N/A : forge not found
 ```
 
 ---
@@ -137,24 +137,24 @@ forge test --match-path chain/tests/
 
 ## 5. Protocol Version
 
-- **OpenAPI spec:** `packages/openapi/himvote.openapi.yaml` — version `2.0.0`
+- **OpenAPI spec:** `packages/openapi/himvote.openapi.yaml` : version `2.0.0`
 - **Crypto primitives:**
-  - Blind credential: RFC 9474 RSA-BSSA (from Python `cryptography` library — Apache 2.0)
-  - Merkle log: RFC 9162 binary tree (custom implementation — homegrown)
-  - JCS canonicalisation: RFC 8785 (custom implementation — homegrown)
-  - Election tally: Profile VEEM — **homegrown ElGamal, not externally audited**
+  - Blind credential: RFC 9474 RSA-BSSA (from Python `cryptography` library : Apache 2.0)
+  - Merkle log: RFC 9162 binary tree (custom implementation : homegrown)
+  - JCS canonicalisation: RFC 8785 (custom implementation : homegrown)
+  - Election tally: Profile VEEM : **homegrown ElGamal, not externally audited**
 - **Evidence format:** ZIP archive with JCS-signed JSON objects
 
 ---
 
 ## 6. Trust Assumptions
 
-1. **Operator integrity** — The operator is assumed to follow the documented election lifecycle. No technical control prevents an operator with database access from modifying records directly.
-2. **Witness co-location** — The witness signing key is separate, but the witness process runs in the same infrastructure. Structural independence requires a separate deployment.
-3. **Single-operator key holding** — There is no threshold trustee ceremony. The operator holds the election private key alone. Compromise of the operator yields compromise of all ballot secrecy.
-4. **Blockchain as audit anchor** — The Solidity contract anchors Merkle roots on-chain. This provides immutability *after* publication but does not verify the correctness of what was published. Forge is unavailable so the contract is uncompiled and undeployed.
-5. **VEEM tally correctness** — The homegrown VEEM engine has not been formally verified. All verifier checks confirm *internal consistency* of the VEEM outputs, not the *mathematical correctness* of the encryption scheme.
-6. **PostgreSQL ACID** — Nullifier uniqueness depends on PostgreSQL serialisable isolation. Any migration to an eventually-consistent or non-ACID store would silently break double-cast prevention.
+1. **Operator integrity** : The operator is assumed to follow the documented election lifecycle. No technical control prevents an operator with database access from modifying records directly.
+2. **Witness co-location** : The witness signing key is separate, but the witness process runs in the same infrastructure. Structural independence requires a separate deployment.
+3. **Single-operator key holding** : There is no threshold trustee ceremony. The operator holds the election private key alone. Compromise of the operator yields compromise of all ballot secrecy.
+4. **Blockchain as audit anchor** : The Solidity contract anchors Merkle roots on-chain. This provides immutability *after* publication but does not verify the correctness of what was published. Forge is unavailable so the contract is uncompiled and undeployed.
+5. **VEEM tally correctness** : The homegrown VEEM engine has not been formally verified. All verifier checks confirm *internal consistency* of the VEEM outputs, not the *mathematical correctness* of the encryption scheme.
+6. **PostgreSQL ACID** : Nullifier uniqueness depends on PostgreSQL serialisable isolation. Any migration to an eventually-consistent or non-ACID store would silently break double-cast prevention.
 
 ---
 
@@ -173,35 +173,35 @@ forge test --match-path chain/tests/
 
 ## 8. Unresolved Risks (Priority Order)
 
-### CRITICAL — P2-12: Homegrown Crypto Engine (VEEM)
+### CRITICAL : P2-12: Homegrown Crypto Engine (VEEM)
 
 - **Risk:** The election tally engine uses a custom ElGamal-based scheme (Profile VEEM) not based on Helios, Belenios, or ElectionGuard.
 - **Impact:** Incorrect ciphertext handling, malleability, or subtle group parameter choices could silently allow the operator to manipulate tallies.
-- **Status:** PARTIAL — engine passes internal consistency tests; no external audit.
+- **Status:** PARTIAL : engine passes internal consistency tests; no external audit.
 - **Resolution:** Replace `services/election_engine/adapter.py` with a `HeliosAdapter` or `ElectionGuardAdapter` backed by a publicly reviewed reference implementation.
 
-### HIGH — P2-13: No Trustee Key Ceremony
+### HIGH : P2-13: No Trustee Key Ceremony
 
 - **Risk:** A single compromised operator credential exposes all ballot secrets.
 - **Impact:** Complete loss of ballot confidentiality.
 - **Resolution:** Implement `services/trustee/` with threshold key generation (e.g., Shamir secret sharing or ElectionGuard's key ceremony protocol).
 
-### HIGH — P2-16: Simulated Witness Independence
+### HIGH : P2-16: Simulated Witness Independence
 
 - **Risk:** Operator controls witness container; can halt or replace witness without external detection.
 - **Resolution:** Deploy witness to a separate cloud account or third-party infrastructure with its own signing key.
 
-### MEDIUM — P2-17: Blockchain Anchor Unverified
+### MEDIUM : P2-17: Blockchain Anchor Unverified
 
 - **Risk:** `HimVoteAnchor.sol` cannot be compiled or tested without Foundry.
 - **Resolution:** Install Foundry in CI (`curl -L https://foundry.paradigm.xyz | bash`); add `forge test` step.
 
-### MEDIUM — P2-29: Android Prior Test Failure
+### MEDIUM : P2-29: Android Prior Test Failure
 
 - **Risk:** Cached Gradle result masks a prior FAILED clean run.
 - **Resolution:** Run `./gradlew clean test` on a fresh checkout; fix failing tests before claiming Android PASS.
 
-### MEDIUM — P2-32: Cross-Language Crypto Gap
+### MEDIUM : P2-32: Cross-Language Crypto Gap
 
 - **Risk:** Kotlin, Swift, C# clients may produce different encodings for blind signatures or Merkle leaves.
 - **Resolution:** Add vector runners in each native client language to `packages/test_vectors/`.
@@ -226,9 +226,9 @@ forge test --match-path chain/tests/
 
 | Platform | Gate | Result |
 |----------|------|--------|
-| Android | Source + test available | **BLOCKED** — clean build evidence unavailable |
-| iOS | Source + test available | **BLOCKED** — no macOS build agent |
-| Desktop | Source + test available | **PASS** — 101 .NET tests pass |
+| Android | Source + test available | **BLOCKED** : clean build evidence unavailable |
+| iOS | Source + test available | **BLOCKED** : no macOS build agent |
+| Desktop | Source + test available | **PASS** : 101 .NET tests pass |
 
 ---
 

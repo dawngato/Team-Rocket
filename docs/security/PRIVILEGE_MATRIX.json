@@ -3,12 +3,12 @@
   "generated_at": "2026-10-31",
   "description": "Machine-readable privilege matrix for HimVote platform. Covers 11 principals, resources, operations, approval prerequisites, logging policy, and prohibited escalations.",
   "trust_boundaries": {
-    "identity_origin": "services/identity_issuer — manages accounts, roles, credentials, rosters",
-    "casting_origin": "services/casting — anonymous ballot acceptance; NEVER receives identity tokens",
-    "admin_boundary": "services/admin_api — election lifecycle, manifest signing, result publication",
-    "witness_boundary": "witness/ — independently keyed checkpoint cosigning",
-    "blockchain_boundary": "chain/ — immutable EVM anchor; relayer has RELAYER_ROLE only",
-    "verifier_boundary": "verifier/ — fully offline; trusts only supplied external pins"
+    "identity_origin": "services/identity_issuer : manages accounts, roles, credentials, rosters",
+    "casting_origin": "services/casting : anonymous ballot acceptance; NEVER receives identity tokens",
+    "admin_boundary": "services/admin_api : election lifecycle, manifest signing, result publication",
+    "witness_boundary": "witness/ : independently keyed checkpoint cosigning",
+    "blockchain_boundary": "chain/ : immutable EVM anchor; relayer has RELAYER_ROLE only",
+    "verifier_boundary": "verifier/ : fully offline; trusts only supplied external pins"
   },
   "principals": [
     {
@@ -74,7 +74,7 @@
       "created_by": "Separately keyed service; signing key never shared with identity/casting/admin",
       "mfa_required": false,
       "code_ref": "witness/",
-      "limitation": "In local Compose deployment, witness and election server share same operator — independence is SIMULATED"
+      "limitation": "In local Compose deployment, witness and election server share same operator : independence is SIMULATED"
     },
     {
       "id": "BLOCKCHAIN_RELAYER",
@@ -186,7 +186,7 @@
     {
       "resource": "ballot_cast",
       "operation": "POST /v1/cast/{election_id}/ballots",
-      "allowed": ["BALLOT_SERVICE (anonymous — no identity token)"],
+      "allowed": ["BALLOT_SERVICE (anonymous : no identity token)"],
       "prerequisite": "Anonymous credential proof valid; election OPEN; nullifier not spent; no Authorization/Cookie headers",
       "logging": "Leaf index and nullifier commitment only (no choice logged)",
       "prohibited_escalation": "Identity headers strictly rejected by CastingOriginSecurityMiddleware",
@@ -235,11 +235,11 @@
     "STUDENT cannot import rosters, create elections, or issue credentials",
     "TEACHER scope is department-limited; cannot approve their own roster submissions",
     "CREDENTIAL_ISSUER key is not accessible to ADMINISTRATOR or ELECTION_OFFICER",
-    "BLOCKCHAIN_RELAYER holds only RELAYER_ROLE — cannot modify contract admin",
-    "INDEPENDENT_AUDITOR verifies from separate, externally supplied trust pins — cannot modify results"
+    "BLOCKCHAIN_RELAYER holds only RELAYER_ROLE : cannot modify contract admin",
+    "INDEPENDENT_AUDITOR verifies from separate, externally supplied trust pins : cannot modify results"
   ],
   "independence_limitations": [
-    "In local docker-compose deployment, WITNESS and BLOCKCHAIN_RELAYER share the same host operator — independence is SIMULATED",
+    "In local docker-compose deployment, WITNESS and BLOCKCHAIN_RELAYER share the same host operator : independence is SIMULATED",
     "For real independence, WITNESS must be operated by a separate institution with air-gapped key management",
     "Profile VEEM trustee key ceremony is simulated; full threshold decryption with M-of-N trustees requires production deployment",
     "INDEPENDENT_AUDITOR role is exercised offline via verifier/verify.py with externally pinned keys"

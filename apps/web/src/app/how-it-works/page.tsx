@@ -34,7 +34,7 @@ export default function HowItWorksPage() {
       bulletPoints: [
         "Roll number cross-referenced with official college enrollment roster.",
         "Non-ID photos (selfies, memes) are automatically rejected.",
-        "Your student identity stops here—it is never sent to the voting box.",
+        "Your student identity stops here : it is never sent to the voting box.",
       ],
       badge: "Zero Identity Leak",
     },
@@ -114,7 +114,7 @@ export default function HowItWorksPage() {
       bulletPoints: [
         "Mathematical tally computation with public proof verification.",
         "Clear margin of victory, percentage turnout, and audit trail available to all.",
-        "Complete democracy in broad daylight—no closed-door counting.",
+        "Complete democracy in broad daylight : no closed-door counting.",
       ],
       badge: "Public & Final",
     },
@@ -255,7 +255,7 @@ export default function HowItWorksPage() {
               </tr>
               <tr>
                 <td className="px-4 py-3.5 font-bold text-amber-500">"Seniors ya campus neta mere par pressure daalenge?"</td>
-                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Aap kisi ke saamne smile karke bol sakte ho ki unhe vote diya—booth me sirf aapki marzi chalti hai.</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-slate-300">Aap kisi ke saamne smile karke bol sakte ho ki unhe vote diya : booth me sirf aapki marzi chalti hai.</td>
                 <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-semibold">100% private digital booth</td>
               </tr>
               <tr>

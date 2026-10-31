@@ -1,4 +1,4 @@
-# UI/UX AUDIT REPORT — HimVote Linux Client & Companion Preview
+# UI/UX AUDIT REPORT : HimVote Linux Client & Companion Preview
 
 **Date:** 2026-10-31  
 **Auditor:** Senior UI/UX Auditor, Product Designer & Frontend Lead  

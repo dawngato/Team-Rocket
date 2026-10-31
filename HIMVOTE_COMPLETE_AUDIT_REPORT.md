@@ -1,4 +1,4 @@
-# HIMVOTE — COMPLETE PROJECT AUDIT & TECHNICAL ERROR REPORT
+# HIMVOTE : COMPLETE PROJECT AUDIT & TECHNICAL ERROR REPORT
 
 > Historical audit snapshot. Test totals and environment claims in this report
 > are not current-run evidence; consult `FEATURE_STATUS.md` for the current
@@ -132,7 +132,7 @@ The codebase is sound for collegiate pilot elections, academic security evaluati
 - **Root Cause:** Designed as an educational presentation utility for CodeForge 2.0 evaluators to easily tour different personas.
 - **Expected Behaviour:** Role switching requires a server-side session token with verified cryptographic claims.
 - **Actual Behaviour:** Switching roles updates the client-side UI navigation layout, though backend API routes still enforce real bearer tokens.
-- **Recommended Solution:** Add a prominent visual indicator stating *"Role Workspace Preview Only — Does not grant server privileges"* (as already mandated by Section 1 of the spec).
+- **Recommended Solution:** Add a prominent visual indicator stating *"Role Workspace Preview Only : Does not grant server privileges"* (as already mandated by Section 1 of the spec).
 
 ---
 

@@ -97,7 +97,7 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="text-sm font-semibold tracking-wide text-cyan-700 dark:text-cyan-400">
-                Na darr kisi ka, na kisi ka zor — Vote tumhara, campus ka daur.
+                Na darr kisi ka, na kisi ka zor : Vote tumhara, campus ka daur.
               </p>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl">
                 Vote for your student council using a prototype built around private credentials and verifiable records.

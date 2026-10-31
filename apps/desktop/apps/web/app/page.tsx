@@ -386,7 +386,7 @@ export default function HomePage() {
             </div>
             <div className="audit-grid">
               <article className="panel audit-summary">
-                <div className="audit-score"><span className="audit-score-value">{state.audit.status === "INTEGRITY_ONLY" ? "IO" : "—"}</span><span><strong>{state.audit.status === "INTEGRITY_ONLY" ? "Integrity-only review" : "No review recorded"}</strong><small>{state.audit.reviewedAt ? formatTime(state.audit.reviewedAt) : "Run after the demo cast"}</small></span></div>
+                <div className="audit-score"><span className="audit-score-value">{state.audit.status === "INTEGRITY_ONLY" ? "IO" : "N/A"}</span><span><strong>{state.audit.status === "INTEGRITY_ONLY" ? "Integrity-only review" : "No review recorded"}</strong><small>{state.audit.reviewedAt ? formatTime(state.audit.reviewedAt) : "Run after the demo cast"}</small></span></div>
                 <p>“Integrity-only” means the UI can inspect its local state transition. It is not a synonym for verified, private, witnessed, or tallied.</p>
                 {state.audit.checks.length ? <ul className="audit-checks">{state.audit.checks.map((check) => <AuditCheckRow check={check} key={check.label} />)}</ul> : <div className="empty-state empty-state-small"><p>No local review yet. The first useful audit input is a completed demo run.</p></div>}
               </article>
@@ -427,7 +427,7 @@ export default function HomePage() {
               <article className="panel public-copy-panel">
                 <div className="panel-kicker"><span className="section-number">02</span><span>Read before relying on it</span></div>
                 <p>Hashes, receipts, or a local chain can support an evidence story, but none of those alone establish eligibility, ballot secrecy, a correct tally, or independent trust.</p>
-                <p>This surface is intentionally suitable for a judge or developer to inspect—not for operating a real election.</p>
+                <p>This surface is intentionally suitable for a judge or developer to inspect : not for operating a real election.</p>
                 <button className="inline-link" onClick={() => setView("auditor")}>Open the detailed boundary map <span aria-hidden="true">↗</span></button>
               </article>
             </div>
