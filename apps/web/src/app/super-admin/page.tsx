@@ -8,6 +8,7 @@ import {
   GraduationCap,
   Users2,
   UserCheck2,
+  UserCog,
   Sliders,
   ShieldCheck,
   FileText,
@@ -66,6 +67,14 @@ export default function SuperAdminOverviewPage() {
       count: "Not loaded",
       icon: Users2,
       desc: "Scoped permissions and mandatory hardware MFA enrollment.",
+    },
+    {
+      kicker: "Super Admin Power",
+      title: "User Role Assignments",
+      href: "/super-admin/role-assignments",
+      count: "Direct Grant",
+      icon: UserCog,
+      desc: "Directly assign and upgrade roles for all registered campus accounts.",
     },
     {
       kicker: "Dual Control",

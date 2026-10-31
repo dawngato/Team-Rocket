@@ -30,6 +30,9 @@ from ..schemas import (
     AdminInvitationRecord,
     TeacherDirectoryRecord,
     CreateTeacherRequest,
+    DirectRoleAssignRequest,
+    DirectRoleAssignResponse,
+    RegisteredUserItem,
 )
 from ..crypto.hashing import hash_password
 from ..rate_limiter import rate_limiter
@@ -618,3 +621,119 @@ def get_admin_audit_events(
     ]
 
     return AuditEventList(events=items, total=total)
+
+
+@router.get("/admin/users", response_model=list[RegisteredUserItem], status_code=status.HTTP_200_OK)
+def list_registered_users(
+    current_user: User = Depends(require_roles(["super_admin"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Super Administrator endpoint to list registered users and their assigned roles.
+    Only super_admin is authorized to query this directory.
+    """
+    users = db.query(User).order_by(User.created_at.desc()).limit(200).all()
+    results = []
+    for u in users:
+        roles = get_user_roles(u, db)
+        results.append(
+            RegisteredUserItem(
+                id=u.id,
+                email=u.email,
+                external_id=u.external_id,
+                status=u.status,
+                roles=roles,
+                created_at=u.created_at,
+            )
+        )
+    return results
+
+
+@router.post("/admin/roles/assign", response_model=DirectRoleAssignResponse, status_code=status.HTTP_200_OK)
+def assign_role_directly(
+    req: DirectRoleAssignRequest,
+    current_user: User = Depends(require_roles(["super_admin"])),
+    db: Session = Depends(get_db),
+):
+    """
+    Super Administrator endpoint to assign roles directly to registered users on the platform.
+    Only super_admin is authorized to perform direct role assignment.
+    """
+    query_param = req.user_email_or_id.strip()
+    target_user = (
+        db.query(User)
+        .filter((User.id == query_param) | (User.email == query_param.lower()) | (User.external_id == query_param))
+        .first()
+    )
+    if not target_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"User '{req.user_email_or_id}' was not found in registered accounts",
+        )
+
+    clean_role = req.role.strip().lower()
+    allowed_assignable_roles = {
+        "super_admin",
+        "administrator",
+        "election_officer",
+        "teacher",
+        "auditor",
+        "student",
+        "roster_approver",
+    }
+    if clean_role not in allowed_assignable_roles:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Role '{req.role}' is not a recognized assignable role",
+        )
+
+    # Fetch or provision the role definition
+    role_def = db.query(RoleDefinition).filter(RoleDefinition.name == clean_role).first()
+    if not role_def:
+        role_def = RoleDefinition(name=clean_role, description=f"{clean_role} platform role")
+        db.add(role_def)
+        db.flush()
+
+    scope = req.scope.strip() or "global"
+    existing_assignment = db.query(RoleAssignment).filter(
+        RoleAssignment.user_id == target_user.id,
+        RoleAssignment.role_id == role_def.id,
+        RoleAssignment.scope_id == scope,
+    ).first()
+
+    if not existing_assignment:
+        assignment = RoleAssignment(
+            user_id=target_user.id,
+            role_id=role_def.id,
+            scope_type="delegated" if scope != "global" else "global",
+            scope_id=scope,
+            granted_by=current_user.id,
+        )
+        db.add(assignment)
+
+    # Ensure target user status is ACTIVE once assigned an institutional role
+    if target_user.status in {"INVITED", "PENDING_VERIFICATION"}:
+        target_user.status = "ACTIVE"
+
+    record_audit_event(
+        db=db,
+        action="admin.role.assigned_directly",
+        result="success",
+        actor_id=current_user.id,
+        details={
+            "target_user_id": target_user.id,
+            "target_email": target_user.email,
+            "role": clean_role,
+            "scope": scope,
+        },
+    )
+    db.commit()
+
+    return DirectRoleAssignResponse(
+        status="role_assigned",
+        user_id=target_user.id,
+        email=target_user.email,
+        role=clean_role,
+        scope=scope,
+    )
+

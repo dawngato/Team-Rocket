@@ -207,6 +207,29 @@ class AuditEventList(BaseModel):
     total: int
 
 
+class DirectRoleAssignRequest(BaseModel):
+    user_email_or_id: str = Field(min_length=1)
+    role: str = Field(min_length=1)
+    scope: str = Field(default="global")
+
+
+class DirectRoleAssignResponse(BaseModel):
+    status: str
+    user_id: str
+    email: str
+    role: str
+    scope: str
+
+
+class RegisteredUserItem(BaseModel):
+    id: str
+    email: str
+    external_id: str
+    status: str
+    roles: List[str]
+    created_at: datetime
+
+
 class StudentRegisterRequest(BaseModel):
     student_id: str
     email: EmailStr
