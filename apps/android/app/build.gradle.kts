@@ -10,6 +10,7 @@ android {
     namespace = "com.himvote"
     compileSdk = 34
     val apiBaseUrl = providers.gradleProperty("himvote.apiBaseUrl").orElse("").get()
+    val releaseApiBaseUrl = providers.gradleProperty("himvote.releaseApiBaseUrl").orElse("").get()
 
     defaultConfig {
         applicationId = "com.himvote"
@@ -17,7 +18,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "2.0.0"
-        buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl.replace("\"", "\\\"")}\"")
     }
     val boothBaseUrl = providers.gradleProperty("himvote.boothBaseUrl").orElse("").get()
     val returnUrl = providers.gradleProperty("himvote.returnUrl").orElse("").get()
@@ -27,12 +27,14 @@ android {
     }
     buildTypes {
         release {
+            buildConfigField("String", "API_BASE_URL", "\"${releaseApiBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro")
         }
         debug {
+            buildConfigField("String", "API_BASE_URL", "\"${apiBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "BOOTH_BASE_URL", "\"${boothBaseUrl.replace("\"", "\\\"")}\"")
             buildConfigField("String", "APP_LINK_RETURN_URL", "\"${returnUrl.replace("\"", "\\\"")}\"")
             applicationIdSuffix = ".debug"

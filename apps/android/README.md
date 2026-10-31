@@ -141,7 +141,7 @@ The debug default is the deployed API gateway at `http://13.232.47.32/`, reachab
 
 ### API origin
 
-The ApiClient has a debug fallback of `http://13.232.47.32/` and a release fallback of `https://api.himvote.example.in/`. The release hostname is an example value. The Gradle property `himvote.apiBaseUrl` supplies an explicit build-time API base through `BuildConfig.API_BASE_URL`. If the property is empty, the variant fallback is used.
+The ApiClient has a debug fallback of `http://13.232.47.32/` and a release fallback of `https://api.himvote.example.in/`. The release hostname is an example value. The Gradle property `himvote.apiBaseUrl` configures the debug API origin only; the checked-in value points to the deployed gateway. Release builds use `himvote.releaseApiBaseUrl`, which must be an HTTPS origin, or fall back to the example hostname when unset. Both values are compiled through `BuildConfig.API_BASE_URL` for their respective build variant.
 
 The deployed gateway at `13.232.47.32` currently responds on plain HTTP port 80, while port 8080 is not externally reachable. The debug default points to `http://13.232.47.32/`, and Retrofit appends the service's `/v1/...` routes. For a local emulator backend, override the default with `-Phimvote.apiBaseUrl=http://10.0.2.2:8080/`; a physical Android device cannot use that emulator-only alias. Do not put service passwords, credentials, private keys, or ballot choices in Gradle properties or URLs.
 
