@@ -1,6 +1,6 @@
-# SecureVote web demo
+# HimVote web demo
 
-This is an isolated Next.js/TypeScript portal for the SecureVote educational prototype. It uses synthetic local browser state only and is intentionally labeled **integrity-only**.
+This is an isolated Next.js/TypeScript portal for the HimVote educational prototype. It uses synthetic local browser state only and is intentionally labeled **integrity-only**.
 
 ## Run
 

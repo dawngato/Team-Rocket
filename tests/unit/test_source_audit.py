@@ -4,7 +4,7 @@ import zipfile
 from tools.source_audit import build_report, inspect_archive
 
 
-def test_source_audit_marks_missing_securevote_inputs(tmp_path: Path) -> None:
+def test_source_audit_marks_missing_himvote_inputs(tmp_path: Path) -> None:
     report = build_report(tmp_path)
     assert report["input_status"] == "INCOMPLETE"
     assert report["documents"]["architecture.md"]["present"] is False

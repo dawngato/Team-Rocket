@@ -3,9 +3,9 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "securevote-api"
+name = "himvote-api"
 version = "0.1.0"
-description = "Integrity and evidence prototype slice for SecureVote"
+description = "Integrity and evidence prototype slice for HimVote"
 requires-python = ">=3.11"
 dependencies = [
   "fastapi>=0.115,<1",

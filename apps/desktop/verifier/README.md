@@ -1,7 +1,7 @@
-# SecureVote offline verifier
+# HimVote offline verifier
 
 This directory contains a standalone, standard-library-only verifier for a
-small synthetic SecureVote evidence wrapper. It is intentionally separate from
+small synthetic HimVote evidence wrapper. It is intentionally separate from
 the Avalonia desktop application.
 
 The verifier checks:
@@ -30,11 +30,11 @@ not independent organizational custody.
 From the desktop workspace:
 
 ```bash
-python3 -m verifier generate-demo --output /tmp/securevote-verifier-demo
+python3 -m verifier generate-demo --output /tmp/himvote-verifier-demo
 python3 -m verifier verify \
-  --archive /tmp/securevote-verifier-demo/valid.zip \
-  --trust /tmp/securevote-verifier-demo/valid-trust.json \
-  --report /tmp/securevote-verifier-demo/report.json
+  --archive /tmp/himvote-verifier-demo/valid.zip \
+  --trust /tmp/himvote-verifier-demo/valid-trust.json \
+  --report /tmp/himvote-verifier-demo/report.json
 pytest -q verifier/tests
 ```
 

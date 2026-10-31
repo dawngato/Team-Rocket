@@ -4,7 +4,7 @@
 
 The HimVote Voting Engine service is a development adapter and protocol test harness. It implements Profile VEEM for synthetic fixtures so that service boundaries, canonical evidence, duplicate enforcement, and failure handling can be exercised.
 
-Profile VEEM is not an official Belenios, ElectionGuard, or Helios implementation. It is not a vetted production voting engine. The SecureVote Gate E1 remains blocked until an established engine with its own independently usable verifier passes the required integration proof of concept. This service must not be used to make a production ballot secrecy claim.
+Profile VEEM is not an official Belenios, ElectionGuard, or Helios implementation. It is not a vetted production voting engine. The HimVote Gate E1 remains blocked until an established engine with its own independently usable verifier passes the required integration proof of concept. This service must not be used to make a production ballot secrecy claim.
 
 ## Core Adapter Interface
 

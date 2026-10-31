@@ -69,7 +69,7 @@ def test_duplicate_json_keys_are_rejected(tmp_path: Path) -> None:
         for info in source.infolist():
             data = source.read(info)
             if info.filename == "tally.json":
-                data = b'{"payload":{"schema":"securevote.announced-tally.v1","schema":"duplicate"}}'
+                data = b'{"payload":{"schema":"himvote.announced-tally.v1","schema":"duplicate"}}'
             target.writestr(info.filename, data)
 
     report = verify_archive(mutated, trust)

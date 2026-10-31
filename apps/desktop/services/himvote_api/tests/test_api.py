@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from securevote_api.app import create_app
+from himvote_api.app import create_app
 
 
 def headers(role: str, actor_id: str = "actor-1") -> dict[str, str]:

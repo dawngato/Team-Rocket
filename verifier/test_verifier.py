@@ -61,7 +61,7 @@ def test_verifier_safe_json_loads():
 
 
 def test_verify_command_fails_closed_without_independent_inputs(tmp_path, capsys):
-    """The SecureVote command shape must not pass with archive and pins alone."""
+    """The HimVote command shape must not pass with archive and pins alone."""
     result = main(
         [
             "verify",

@@ -163,7 +163,7 @@ public struct TranslucentSideMenu: View {
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("SecureVote")
+                    Text("HimVote")
                         .font(Typography.sectionHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
                     

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SecureVote | integrity demo",
+  title: "HimVote",
   description:
     "A synthetic campus election interface for exploring accepted-ballot integrity and verification boundaries.",
 };

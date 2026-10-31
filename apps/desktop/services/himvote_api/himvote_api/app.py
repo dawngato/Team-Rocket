@@ -21,14 +21,14 @@ from .models import (
     Role,
     RosterUpdate,
 )
-from .service import Actor, DomainError, SecureVoteService
+from .service import Actor, DomainError, HimVoteService
 
 
 def create_app(db_path: str | Path | None = None) -> FastAPI:
-    configured_path = db_path or os.environ.get("SECUREVOTE_DB_PATH", "securevote.sqlite3")
-    service = SecureVoteService(Database(configured_path))
+    configured_path = db_path or os.environ.get("HIMVOTE_DB_PATH", "himvote.sqlite3")
+    service = HimVoteService(Database(configured_path))
     app = FastAPI(
-        title="SecureVote Integrity Prototype API",
+        title="HimVote Integrity Prototype API",
         version="0.1.0",
         description=(
             "Educational integrity/evidence slice. It does not implement a vetted encrypted "

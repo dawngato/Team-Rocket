@@ -54,7 +54,7 @@ ADMIN_ROLES = {Role.ADMIN, Role.ELECTION_OFFICER}
 ROSTER_APPROVER_ROLES = {Role.ADMIN, Role.TEACHER}
 
 
-class SecureVoteService:
+class HimVoteService:
     def __init__(self, database: Database):
         self.database = database
 
@@ -235,7 +235,7 @@ class SecureVoteService:
             ).fetchall()
             roster_digest = sha256_text("\n".join(row["student_id"] for row in roster))
             manifest = {
-                "schema": "securevote.integrity-manifest.v1",
+                "schema": "himvote.integrity-manifest.v1",
                 "election_id": election_id,
                 "title": election["title"],
                 "candidate_ids": [row["candidate_id"] for row in candidates],
@@ -345,7 +345,7 @@ class SecureVoteService:
             ballot_id = str(uuid.uuid4())
             leaf_index = int(election["next_leaf_index"])
             evidence = {
-                "schema": "securevote.ballot-evidence.v1",
+                "schema": "himvote.ballot-evidence.v1",
                 "election_id": election_id,
                 "manifest_digest": election["manifest_digest"],
                 "ballot_id": ballot_id,
@@ -452,7 +452,7 @@ class SecureVoteService:
             connection.execute("SELECT 1").fetchone()
             return {
                 "status": "ok",
-                "service": "securevote-api",
+                "service": "himvote-api",
                 "storage": "sqlite",
                 "pending_outbox_events": pending,
             }

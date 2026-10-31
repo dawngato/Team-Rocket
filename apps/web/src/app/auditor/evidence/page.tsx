@@ -155,7 +155,7 @@ export default function AuditorEvidencePage() {
           <span className="text-[11px] text-slate-500 block mt-1">{fileName || "No archive selected"}</span>
           <input id="archive-upload" type="file" accept=".zip,.tar,.gz,.tar.gz" onChange={handleFileSelection} className="sr-only" />
         </label>
-        <p className="text-xs text-slate-500">Use <code>python -m securevote_verifier verify --archive ./election.zip --trust ./trusted_witnesses.json --report ./audit-report.json</code> and inspect property-level results.</p>
+        <p className="text-xs text-slate-500">Use <code>python -m verifier verify --archive ./election.zip --trust ./trusted_witnesses.json --report ./audit-report.json --final ./witness_final.json --roster ./roster_approval.json --issuance ./issuance_closure.json --chain ./chain_anchor.json</code> and inspect property-level results.</p>
         <Link href="/auditor/verify" className="text-sm font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline">Open verifier instructions</Link>
       </section>
     </div>

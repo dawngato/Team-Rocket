@@ -16,7 +16,7 @@ import {
   type ReceiptStatus,
 } from "../lib/demo";
 
-const STORAGE_KEY = "securevote-local-demo-v1";
+const STORAGE_KEY = "himvote-local-demo-v1";
 
 const views: Array<{ id: DemoView; label: string; short: string }> = [
   { id: "overview", label: "Overview", short: "Start here" },
@@ -169,10 +169,10 @@ export default function HomePage() {
       <a className="skip-link" href="#main-content">Skip to content</a>
       <header className="topbar">
         <div className="topbar-inner">
-          <button className="wordmark" onClick={() => setView("overview")} aria-label="SecureVote overview">
+          <button className="wordmark" onClick={() => setView("overview")} aria-label="HimVote overview">
             <span className="wordmark-seal" aria-hidden="true">SV</span>
             <span>
-              <strong>SecureVote</strong>
+              <strong>HimVote</strong>
               <small>campus election lab</small>
             </span>
           </button>
@@ -184,7 +184,7 @@ export default function HomePage() {
       </header>
 
       <section className="nav-wrap" aria-label="Portal views">
-        <nav className="view-nav" role="tablist" aria-label="SecureVote portal views">
+        <nav className="view-nav" role="tablist" aria-label="HimVote portal views">
           {views.map((item) => (
             <button
               className={`view-tab ${view === item.id ? "view-tab-active" : ""}`}
@@ -223,7 +223,7 @@ export default function HomePage() {
                 <p className="eyebrow">A small, inspectable voting surface</p>
                 <h1>Make the record legible before making the claim.</h1>
                 <p className="hero-lede">
-                  SecureVote is a campus election prototype for testing the seams between eligibility, casting, evidence, and independent review. The browser demo below is deliberately modest: it shows what the application knows, and where it stops.
+                  HimVote is a campus election prototype for testing the seams between eligibility, casting, evidence, and independent review. The browser demo below is deliberately modest: it shows what the application knows, and where it stops.
                 </p>
                 <div className="hero-actions">
                   <button className="button button-primary" onClick={() => setView("student")}>Open student view <span aria-hidden="true">→</span></button>
@@ -437,7 +437,7 @@ export default function HomePage() {
       </div>
 
       <footer className="site-footer">
-        <div><strong>SecureVote</strong><span>synthetic campus election lab</span></div>
+        <div><strong>HimVote</strong><span>synthetic campus election lab</span></div>
         <p>Educational prototype. Do not use for real elections without independent security, privacy, and operational audits.</p>
       </footer>
     </main>

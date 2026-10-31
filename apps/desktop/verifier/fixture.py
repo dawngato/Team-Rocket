@@ -53,7 +53,7 @@ def _ballots(manifest_digest: str, count: int = 3) -> list[dict[str, Any]]:
     for index in range(count):
         result.append(
             {
-                "schema": "securevote.ballot-evidence.v1",
+                "schema": "himvote.ballot-evidence.v1",
                 "election_id": "synthetic-election-001",
                 "manifest_digest": manifest_digest,
                 "leaf_index": index,
@@ -84,7 +84,7 @@ def build_fixture(output_dir: str | Path, scenario: str = "valid") -> tuple[Path
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     manifest_payload = {
-        "schema": "securevote.manifest.v1",
+        "schema": "himvote.manifest.v1",
         "election_id": "synthetic-election-001",
         "manifest_version": 1,
         "protocol_version": "synthetic-evidence-wrapper-1",
@@ -97,7 +97,7 @@ def build_fixture(output_dir: str | Path, scenario: str = "valid") -> tuple[Path
     manifest_digest = canonical_digest(manifest_payload)
     ballots = _ballots(manifest_digest)
     tally_payload = {
-        "schema": "securevote.announced-tally.v1",
+        "schema": "himvote.announced-tally.v1",
         "election_id": "synthetic-election-001",
         "manifest_digest": manifest_digest,
         "accepted_ballots": 3,
@@ -131,7 +131,7 @@ def build_fixture(output_dir: str | Path, scenario: str = "valid") -> tuple[Path
     leaf_root = merkle_root([leaf_hash(ballot) for ballot in witnessed_ballots]).hex()
     tally_digest = canonical_digest(witnessed_tally_payload)
     checkpoint_payload = {
-        "schema": "securevote.checkpoint.v1",
+        "schema": "himvote.checkpoint.v1",
         "election_id": "synthetic-election-001",
         "manifest_digest": manifest_digest,
         "tree_size": len(witnessed_ballots),
@@ -153,7 +153,7 @@ def build_fixture(output_dir: str | Path, scenario: str = "valid") -> tuple[Path
     witness_wrapper = {"payload": checkpoint_payload, "signature": _sig(checkpoint_payload, "witness")}
     checkpoint_digest = canonical_digest(checkpoint_payload)
     trust = {
-        "schema": "securevote.trust-pins.v1",
+        "schema": "himvote.trust-pins.v1",
         "election_id": "synthetic-election-001",
         "manifest_digest": manifest_digest,
         "manifest_key": {

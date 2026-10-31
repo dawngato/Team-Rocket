@@ -1,4 +1,4 @@
-"""Offline verification of the SecureVote evidence wrapper."""
+"""Offline verification of the HimVote evidence wrapper."""
 
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ class VerificationReport:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "schema": "securevote.audit-report.v1",
+            "schema": "himvote.audit-report.v1",
             "overall": self.overall_status,
             "exit_code": self.exit_code,
             "archive_source": self.archive_source,
@@ -255,7 +255,7 @@ def _load_trust(path: str | os.PathLike[str]) -> dict[str, Any]:
         value = parse_json_bytes(raw, source="trust pins")
     except CanonicalJSONError as exc:
         raise EvidenceError(f"cannot load trust pins: {exc}") from exc
-    if not isinstance(value, dict) or value.get("schema") != "securevote.trust-pins.v1":
+    if not isinstance(value, dict) or value.get("schema") != "himvote.trust-pins.v1":
         raise EvidenceError("trust pins have an unsupported schema")
     required = {
         "election_id",
@@ -298,7 +298,7 @@ def _verify_signed_wrapper(value: Any, key: RSAPublicKey, name: str) -> dict[str
 
 
 def _validate_manifest(payload: dict[str, Any], trust: dict[str, Any], report: VerificationReport) -> str:
-    if payload.get("schema") != "securevote.manifest.v1":
+    if payload.get("schema") != "himvote.manifest.v1":
         raise EvidenceError("manifest schema is unsupported")
     election_id = payload.get("election_id")
     candidates = payload.get("candidates")
@@ -365,7 +365,7 @@ def _validate_ballots(
         missing = required - value.keys()
         if missing:
             raise EvidenceError(f"ballot line {expected_index} missing fields: {', '.join(sorted(missing))}")
-        if value["schema"] != "securevote.ballot-evidence.v1":
+        if value["schema"] != "himvote.ballot-evidence.v1":
             raise EvidenceError(f"ballot line {expected_index} has unsupported schema")
         if value["election_id"] != election_id or value["manifest_digest"] != manifest_digest:
             raise EvidenceError(f"ballot line {expected_index} is bound to the wrong election or manifest")
@@ -443,7 +443,7 @@ def verify_archive(archive: str | os.PathLike[str], trust_path: str | os.PathLik
         witness_wrapper = _load_json(files, "witness-final.json")
         witness_payload = _verify_signed_wrapper(witness_wrapper, trust["witness_key_parsed"], "witness-final.json")
         report.set("WITNESS_SIGNATURE", STATUS_PASS, "final checkpoint signature verified against the pinned witness key")
-        if witness_payload.get("schema") != "securevote.checkpoint.v1":
+        if witness_payload.get("schema") != "himvote.checkpoint.v1":
             raise EvidenceError("witness final checkpoint schema is unsupported")
         if witness_payload.get("election_id") != trust["election_id"]:
             raise EvidenceError("witness final checkpoint election_id mismatch")
@@ -470,7 +470,7 @@ def verify_archive(archive: str | os.PathLike[str], trust_path: str | os.PathLik
         if not isinstance(tally_wrapper, dict) or not isinstance(tally_wrapper.get("payload"), dict):
             raise EvidenceError("tally.json must contain a payload object")
         tally_payload = tally_wrapper["payload"]
-        if tally_payload.get("schema") != "securevote.announced-tally.v1":
+        if tally_payload.get("schema") != "himvote.announced-tally.v1":
             raise EvidenceError("announced tally schema is unsupported")
         if tally_payload.get("election_id") != trust["election_id"] or tally_payload.get("manifest_digest") != manifest_digest:
             raise EvidenceError("announced tally is bound to the wrong election or manifest")

@@ -1,6 +1,6 @@
 # Checkpoint anchor
 
-`CheckpointAnchor.sol` is a small EVM commitment anchor for the SecureVote
+`CheckpointAnchor.sol` is a small EVM commitment anchor for the HimVote
 educational prototype. It accepts only an authorized relayer and stores a
 manifest-bound, ordered checkpoint digest, Merkle root, tree size, previous
 digest, and final flag.

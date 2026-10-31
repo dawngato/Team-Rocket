@@ -8,7 +8,7 @@ import {
   runIntegrityReview,
 } from "./demo";
 
-describe("local SecureVote demo adapter", () => {
+describe("local HimVote demo adapter", () => {
   it("walks through draft, open, one local acceptance, and close", () => {
     const draft = createDraft(INITIAL_DEMO_STATE);
     const open = openElection(draft);

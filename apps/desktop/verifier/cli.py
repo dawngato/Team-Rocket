@@ -1,4 +1,4 @@
-"""Command-line interface for offline SecureVote evidence verification."""
+"""Command-line interface for offline HimVote evidence verification."""
 
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ def _write_report(report: object, output: str | None) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="securevote-verifier",
-        description="Offline verifier for synthetic SecureVote evidence bundles.",
+        prog="himvote-verifier",
+        description="Offline verifier for synthetic HimVote evidence bundles.",
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

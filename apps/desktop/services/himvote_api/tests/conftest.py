@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pytest
 
-from securevote_api.db import Database
-from securevote_api.models import BallotSubmission, Role
-from securevote_api.service import Actor, SecureVoteService
+from himvote_api.db import Database
+from himvote_api.models import BallotSubmission, Role
+from himvote_api.service import Actor, HimVoteService
 
 
 @pytest.fixture
@@ -19,11 +19,11 @@ def actors() -> dict[str, Actor]:
 
 
 @pytest.fixture
-def service(tmp_path) -> SecureVoteService:
-    return SecureVoteService(Database(tmp_path / "securevote.sqlite3"))
+def service(tmp_path) -> HimVoteService:
+    return HimVoteService(Database(tmp_path / "himvote.sqlite3"))
 
 
-def prepare_open_election(service: SecureVoteService, actors: dict[str, Actor]) -> tuple[str, str]:
+def prepare_open_election(service: HimVoteService, actors: dict[str, Actor]) -> tuple[str, str]:
     election = service.create_election(actors["officer"], "Student Council 2026")
     service.add_candidate(actors["officer"], election.election_id, "alice", "Alice")
     service.add_candidate(actors["officer"], election.election_id, "bob", "Bob")

@@ -7,7 +7,7 @@ import { Vote, Shield, Lock, ExternalLink } from "lucide-react";
 export function Footer() {
   return (
     <footer className="apple-footer w-full py-14 px-5 sm:px-8 text-sm">
-      <div className="w-full max-w-[1280px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
+      <div className="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-4 gap-10">
         <div className="space-y-4">
           <div className="apple-brand">
             <span className="apple-brand-mark">
@@ -108,7 +108,7 @@ export function Footer() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1280px] mx-auto mt-12 pt-6 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
+      <div className="w-full max-w-[1440px] mx-auto mt-12 pt-6 border-t border-black/10 dark:border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-[#6e6e73] dark:text-[#a1a1a6]">
         <div>HimVote Institutional Election System. Open Standards Verification.</div>
         <div className="mt-2 sm:mt-0">Offline verification applies only to released evidence with trusted pins.</div>
       </div>

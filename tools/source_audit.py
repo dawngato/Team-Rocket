@@ -1,4 +1,4 @@
-"""Inventory SecureVote source inputs without executing untrusted archives."""
+"""Inventory HimVote source inputs without executing untrusted archives."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ EXPECTED_DOCUMENTS = [
     "design.md",
     "feature.md",
     "work.md",
-    "SecureVote_Three_Repository_Security_Audit.md",
+    "HimVote_Three_Repository_Security_Audit.md",
 ]
 
 EXPECTED_ARCHIVES = [
@@ -78,7 +78,7 @@ def build_report(root: Path) -> dict[str, Any]:
     }
     code_areas = {area: (root / area).is_dir() for area in EXPECTED_CODE_AREAS}
     return {
-        "tool": "securevote-source-audit",
+        "tool": "himvote-source-audit",
         "root": str(root),
         "documents": documents,
         "archives": archives,
@@ -93,7 +93,7 @@ def build_report(root: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Inventory SecureVote inputs without executing archives")
+    parser = argparse.ArgumentParser(description="Inventory HimVote inputs without executing archives")
     parser.add_argument("--root", default=".", help="Repository root")
     parser.add_argument("--output", help="Optional JSON report path")
     args = parser.parse_args()

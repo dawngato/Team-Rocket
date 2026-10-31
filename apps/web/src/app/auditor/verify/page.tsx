@@ -95,7 +95,7 @@ export default function AuditorVerifySuitePage() {
             <p className="text-sm text-[#6B4707] dark:text-[#FBBF24] mt-1">Download the released archive and obtain witness, manifest, and chain trust pins out of band. The native engine tally gate remains blocked until a supported engine is integrated and independently verified.</p>
           </div>
         </div>
-        <code className="block rounded-lg bg-slate-950 text-slate-100 p-4 text-xs overflow-x-auto">python -m securevote_verifier verify --archive ./election.zip --trust ./trusted_witnesses.json --report ./audit-report.json</code>
+        <code className="block rounded-lg bg-slate-950 text-slate-100 p-4 text-xs overflow-x-auto">python -m verifier verify --archive ./election.zip --trust ./trusted_witnesses.json --report ./audit-report.json --final ./witness_final.json --roster ./roster_approval.json --issuance ./issuance_closure.json --chain ./chain_anchor.json</code>
         <div className="flex flex-wrap gap-4 text-sm">
           <Link href="/auditor/evidence" className="font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline">Download evidence</Link>
           <Link href="/security-limits" className="font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline">Review security limits</Link>

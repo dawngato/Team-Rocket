@@ -7,7 +7,7 @@ It verifies evidence archives independently of election servers and never trusts
 
 ## Commands
 
-### 0. SecureVote compatible module command
+### 0. HimVote compatible module command
 
 The standalone module entry point is:
 

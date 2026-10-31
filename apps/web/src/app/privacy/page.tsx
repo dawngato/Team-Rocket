@@ -30,7 +30,7 @@ export default function PrivacyPage() {
         <section className="space-y-2">
           <h2 className="text-lg font-bold text-[#0F172A] dark:text-white">1. Zero Third-Party Trackers</h2>
           <p className="leading-relaxed">
-            SecureVote does not embed advertising pixels, external analytics trackers, or third-party cookies. All state caching is session-bound or strictly local to the campus gateway.
+            HimVote does not embed advertising pixels, external analytics trackers, or third-party cookies. All state caching is session-bound or strictly local to the campus gateway.
           </p>
         </section>
 

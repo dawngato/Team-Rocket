@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
-/// @title SecureVote checkpoint anchor
+/// @title HimVote checkpoint anchor
 /// @notice Stores authenticated checkpoint commitments only. It never stores
 ///         identities, credentials, ballot payloads, or candidate choices.
 ///

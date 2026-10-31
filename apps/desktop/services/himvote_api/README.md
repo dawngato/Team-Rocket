@@ -1,6 +1,6 @@
-# SecureVote API integrity prototype
+# HimVote API integrity prototype
 
-This directory is an isolated FastAPI prototype slice for SecureVote. It is
+This directory is an isolated FastAPI prototype slice for HimVote. It is
 intentionally limited to server-side lifecycle and evidence mechanics:
 
 - server-authoritative `DRAFT -> ROSTER_APPROVED -> FROZEN -> OPEN -> CLOSED`
@@ -36,11 +36,11 @@ From this directory:
 python -m venv .venv
 . .venv/bin/activate
 python -m pip install -e '.[test]'
-uvicorn securevote_api.app:app --reload
+uvicorn himvote_api.app:app --reload
 ```
 
-The default database is `securevote.sqlite3` in the current working directory.
-Set `SECUREVOTE_DB_PATH` to choose another SQLite file. For a local health
+The default database is `himvote.sqlite3` in the current working directory.
+Set `HIMVOTE_DB_PATH` to choose another SQLite file. For a local health
 check, open `http://127.0.0.1:8000/healthz`.
 
 All API mutations require `X-Actor-Role` and `X-Actor-ID` headers. These headers

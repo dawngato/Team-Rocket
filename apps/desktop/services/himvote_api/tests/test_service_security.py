@@ -4,8 +4,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
-from securevote_api.models import ElectionState
-from securevote_api.service import DomainError
+from himvote_api.models import ElectionState
+from himvote_api.service import DomainError
 
 from .conftest import ballot, prepare_open_election
 

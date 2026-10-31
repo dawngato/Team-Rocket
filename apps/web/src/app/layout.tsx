@@ -6,7 +6,7 @@ import { AppFrame } from "../components/shell/AppFrame";
 import { ClientErrorBoundary } from "../components/ErrorBoundary";
 
 export const metadata: Metadata = {
-  title: "HimVote | Institutional Verifiable Election Platform",
+  title: "HimVote",
   description:
     "Institutional campus election platform with inspectable cryptographic evidence and verifiable security boundaries.",
 };

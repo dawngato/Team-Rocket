@@ -120,7 +120,7 @@ public struct TailAdminDashboardView: View {
         HStack(alignment: .center, spacing: 14) {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
-                    Text("SecureVote")
+                    Text("HimVote")
                         .font(Typography.appTitle)
                         .foregroundStyle(ColorTokens.textPrimary)
                     
