@@ -183,6 +183,30 @@ export default function LoginPage() {
               </button>
             </form>
 
+            {/* Institutional Workspace Portals Directory */}
+            <div className="mt-8 pt-6 border-t border-slate-200 dark:border-[#1E3352]">
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
+                Authorized Role Workspaces
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3 leading-relaxed">
+                Direct access to institutional portals. Protected administrative actions require verified session credentials.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {Object.entries(ROLE_OPTIONS).map(([key, opt]) => (
+                  <Link
+                    key={key}
+                    href={opt.path}
+                    className="p-2.5 rounded-lg border border-slate-200 dark:border-[#1E3352] hover:border-[#157E92] dark:hover:border-[#157E92] hover:bg-slate-50 dark:hover:bg-[#0E1A2B] transition-colors text-left group"
+                  >
+                    <div className="font-medium text-xs text-[#17233B] dark:text-white group-hover:text-[#157E92] flex items-center justify-between">
+                      <span>{opt.label}</span>
+                      <span className="text-[10px] text-slate-400 font-mono">→</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+
             <p className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">
               First time? <Link href="/auth/register" className="text-[#157E92] hover:underline font-medium">Create account</Link>
             </p>
