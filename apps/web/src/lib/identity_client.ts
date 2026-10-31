@@ -407,17 +407,18 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
         return request("/v1/auth/me", {}, isSessionProfile, "The identity service returned an invalid session profile.");
       }
 
+      const currentUser = userAuthStore.getCurrentUser();
+      if (currentUser && currentUser.role) {
+        return {
+          user_id: currentUser.id,
+          email: currentUser.email,
+          roles: [currentUser.role],
+          scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
+          mfa_authenticated: true,
+        };
+      }
+
       if (process.env.NODE_ENV === "development" && process.env.DEMO_MODE !== "false") {
-        const currentUser = userAuthStore.getCurrentUser();
-        if (currentUser && currentUser.role) {
-          return {
-            user_id: currentUser.id,
-            email: currentUser.email,
-            roles: [currentUser.role],
-            scopes: [{ role: currentUser.role, scope_type: "global", scope_id: "*" }],
-            mfa_authenticated: true,
-          };
-        }
         const mock = identityDevMock("/v1/auth/me", {});
         if (mock) return mock as SessionProfile;
       }
