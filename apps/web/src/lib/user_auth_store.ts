@@ -17,8 +17,8 @@ export interface SystemUser {
   roleAssignedBy?: string;
 }
 
-const STORAGE_USERS_KEY = "himvote_institutional_users_v2";
-const STORAGE_CURRENT_USER_KEY = "himvote_current_authenticated_user_v2";
+const STORAGE_USERS_KEY = "himvote_institutional_users_v3";
+const STORAGE_CURRENT_USER_KEY = "himvote_current_authenticated_user_v3";
 
 const INITIAL_USERS: SystemUser[] = [
   {
@@ -75,6 +75,15 @@ const INITIAL_USERS: SystemUser[] = [
     createdAt: "2026-02-15T00:00:00.000Z",
     roleAssignedAt: "2026-02-15T00:00:00.000Z",
     roleAssignedBy: "usr_superadmin",
+  },
+  {
+    id: "usr_pending_rohan",
+    fullName: "Rohan Verma",
+    email: "rohan@hptu.ac.in",
+    passwordHash: "UserPassword123!",
+    role: null,
+    status: "pending_role",
+    createdAt: "2026-03-01T10:30:00.000Z",
   },
 ];
 
