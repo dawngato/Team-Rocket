@@ -50,7 +50,7 @@ verification remain blocked.
 | TR-026 | `FIXED_UNTESTED` | Lifecycle loads live election state and handles errors around open/close mutations. Production scope and step-up behavior need execution against the service. |
 | TR-027 | `FIXED_UNTESTED` | Roster correction submission and reload use durable identity-service endpoints. Registrar review and cross-user scope need a live workflow run. |
 | TR-028 | `FIXED_UNTESTED` | Invitation UI calls backend issuance and reloads durable records. Production delivery intentionally fails closed without an independent notification adapter. |
-| TR-029 | `FIXED_UNTESTED` | Teacher provisioning and directory reads use identity-service endpoints. Department scope and duplicate-account behavior need live identity tests. |
+| TR-029 | `FIXED_UNTESTED` | Teacher provisioning and directory reads use identity-service endpoints; provisioning now requires an explicitly supplied password and has no default credential. Department scope and duplicate-account behavior need live identity tests. |
 | TR-030 | `FIXED_UNTESTED` | Super-admin requests call approval APIs rather than claiming local audit success. Distinct approvers, MFA and immutable audit verification need a live run. |
 | TR-031 | `PARTIAL` | Auditor witness and chain screens consume live evidence clients and show limited status without a pin. Independent witness and chain receipt verification remain unavailable. |
 | TR-032 | `FIXED_UNTESTED` | Auditor signing imports an externally signed attestation and verifies it before submission. A real offline signer and key custody are not present. |
@@ -70,7 +70,7 @@ verification remain blocked.
 | TR-046 | `FIXED_UNTESTED` | Login labels, IDs, autocomplete and OTP input semantics are connected. Axe and screen-reader execution are not complete. |
 | TR-047 | `FIXED_UNTESTED` | Placeholder controls were disabled or connected to clients in the reviewed admin areas. A complete click matrix is not run. |
 | TR-048 | `TESTED_PASS` | The dedicated `tests/security/Q7-01_duplicate_cast_test.py` passes, including 100 concurrent submissions for one credential. The root suite (`tests --ignore=tests/load`) passes 58 tests. Load tests are excluded. |
-| TR-049 | `TESTED_PASS` | Current admin_api suite passes (33/33) and identity_issuer passes (27/27); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
+| TR-049 | `TESTED_PASS` | Current admin_api suite passes (33/33) and identity_issuer passes (28/28); casting (35/35) and election_engine (22/22) passed in the preceding verification pass. |
 | TR-050 | `FIXED_UNTESTED` | Web typecheck, ESLint, production build and 94 Vitest tests pass. Full viewport screenshot and axe matrix is still not archived. |
 | TR-051 | `NOT_CHECKED` | Android, iOS, Windows and Linux native toolchains were not executed on their supported hosts. |
 | TR-052 | `PARTIAL` | The 3D orbit is explicitly decorative and reduced-motion aware. It is not evidence verification and does not show live authenticated proof values. |
@@ -101,13 +101,13 @@ python -m pytest -q services/admin_api/tests/test_manifest_freeze.py services/ad
   21 passed
 
 env TESTING=true python -m pytest -q services/admin_api/tests services/identity_issuer/tests
-  60 passed
+  61 passed
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/admin_api/tests
   33 passed, 1 dependency deprecation warning
 
 env TESTING=true PYTHONDONTWRITEBYTECODE=1 python -m pytest -q services/identity_issuer/tests
-  27 passed, 1 dependency deprecation warning
+  28 passed, 1 dependency deprecation warning
 
 python -m pytest -q tests --ignore=tests/load
   58 passed, 1 warning

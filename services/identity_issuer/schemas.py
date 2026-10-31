@@ -103,7 +103,7 @@ class CreateTeacherRequest(BaseModel):
     faculty_id: str = Field(min_length=1)
     email: EmailStr
     department: str = Field(min_length=1)
-    initial_password: Optional[str] = "TeacherSecurePass123!"
+    initial_password: str = Field(min_length=12)
 
 
 class RosterCorrectionRequest(BaseModel):
