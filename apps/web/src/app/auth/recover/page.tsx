@@ -93,7 +93,7 @@ export default function AccountRecoveryPage() {
             Recovery request accepted
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            If an active institutional profile is bound to <strong>{email}</strong>, the configured notification service will deliver a single-use reset link. This page never claims delivery when the service has not accepted the message.
+            If an active institutional profile is bound to <strong>{email}</strong>, a configured notification service will deliver a single-use reset link. This page never claims delivery when the service has not accepted the message.
           </p>
           <div className="pt-2">
             <Link

@@ -82,7 +82,7 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-xl animate-linear-reveal-3">
-                Built for our campus democracy. Vote for your student council without fear of teacher bias, senior intimidation, or leaked preferences — protected by verified cryptographic privacy.
+                Built for campus democracy. Review released elections and follow the evidence trail while keeping the platform's protocol, deployment, and privacy limitations visible.
               </p>
             </div>
 
@@ -93,15 +93,15 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#157E92] hover:bg-[#0E6273] px-6 py-3.5 text-sm font-bold text-white shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
               >
                 <Vote className="size-4" />
-                <span>Cast Your Vote</span>
+                <span>Explore elections</span>
                 <ArrowRight className="size-4" />
               </Link>
               <Link
-                href="/student/help"
+                href="/security-limits"
                 className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white/80 dark:bg-[#132135]/80 hover:bg-slate-100 dark:hover:bg-slate-800 px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 shadow-xs transition-all active:scale-[0.98]"
               >
                 <HelpCircle className="size-4 text-[#157E92]" />
-                <span>Student Voter Guide</span>
+                <span>Security limits</span>
               </Link>
             </div>
 
@@ -148,7 +148,7 @@ export default function HomePage() {
               Current Student Elections
             </h2>
             <p className="text-xs text-slate-500 mt-0.5">
-              Authoritative elections hosted with verifiable voter manifests.
+              Public records returned by the authoritative election service.
             </p>
           </div>
           <Link
@@ -229,9 +229,9 @@ export default function HomePage() {
             <div className="size-8 rounded-lg bg-cyan-500/10 text-[#0284C7] flex items-center justify-center font-black">
               1
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Voter Registrar (Teacher Desk)</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Eligibility authority</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Verifies student identity and issues blind eligibility credentials. Has zero access to the ballot box.
+              Confirms enrollment from the approved roster and issues an eligibility credential. It does not receive a ballot choice.
             </p>
           </div>
 
@@ -239,9 +239,9 @@ export default function HomePage() {
             <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center font-black">
               2
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Anonymous Casting Gateway</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Encrypted casting boundary</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Accepts blind tokens and encrypted ballots. Strips IP and identity headers to guarantee total voter privacy.
+              Accepts protocol-formatted encrypted ballots. Privacy depends on the configured engine, gateway policy, logs, and deployment operators.
             </p>
           </div>
 
@@ -249,9 +249,9 @@ export default function HomePage() {
             <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-black">
               3
             </div>
-            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Independent Witness & Auditor</h3>
+            <h3 className="font-bold text-sm text-[#10233F] dark:text-white">Evidence and limitations</h3>
             <p className="text-slate-600 dark:text-slate-400 leading-relaxed">
-              Independently cosigns each checkpoint Merkle root. Anyone can re-run the open-source verifier CLI offline.
+              Checkpoints and offline verification are available for configured evidence profiles. Local development witness custody is not independent.
             </p>
           </div>
         </div>
