@@ -31,7 +31,6 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [mfaToken, setMfaToken] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [grantedRoles, setGrantedRoles] = useState<string[] | null>(null);
@@ -42,24 +41,20 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await identityClient.login(email, password, mfaToken || undefined);
-      if (data.mfa_required) {
-        setError("MFA is required before an authenticated session can be created.");
-      } else {
-        const profile = await identityClient.getSession();
-        const availableRoles = profile.roles && profile.roles.length > 0 ? profile.roles : [data.role];
+      const data = await identityClient.login(email, password);
+      const profile = await identityClient.getSession();
+      const availableRoles = profile.roles && profile.roles.length > 0 ? profile.roles : [data.role];
 
-        // P1-29: For multi-role accounts, check preferred primary workspace or prompt choice
-        if (availableRoles.length > 1) {
-          const preferred = typeof window !== "undefined" ? window.localStorage.getItem("himvote_primary_role") : null;
-          if (preferred && availableRoles.map(normalizeRoleKey).includes(normalizeRoleKey(preferred))) {
-            router.push(workspaceForRole(preferred));
-            return;
-          }
-          setGrantedRoles(availableRoles);
-        } else {
-          router.push(workspaceForRole(availableRoles[0]));
+      // P1-29: For multi-role accounts, check preferred primary workspace or prompt choice
+      if (availableRoles.length > 1) {
+        const preferred = typeof window !== "undefined" ? window.localStorage.getItem("himvote_primary_role") : null;
+        if (preferred && availableRoles.map(normalizeRoleKey).includes(normalizeRoleKey(preferred))) {
+          router.push(workspaceForRole(preferred));
+          return;
         }
+        setGrantedRoles(availableRoles);
+      } else {
+        router.push(workspaceForRole(availableRoles[0]));
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The identity service rejected the sign in request.");
@@ -167,19 +162,6 @@ export default function LoginPage() {
                   className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <label htmlFor="login-mfa-token" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">MFA token (if required)</label>
-                <input
-                  id="login-mfa-token"
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  className="w-full min-h-[44px] rounded-lg border border-slate-300 dark:border-[#1E3352] bg-[#F3F6FA] dark:bg-[#0B1524] text-[#17233B] dark:text-white px-3 py-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
-                  placeholder="6-digit code"
-                  value={mfaToken}
-                  onChange={(e) => setMfaToken(e.target.value)}
                 />
               </div>
               <button

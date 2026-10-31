@@ -267,26 +267,15 @@ def login(
     roles = get_user_roles(user, db)
     primary_role = roles[0] if roles else "student"
 
-    # Handle MFA check
-    is_mfa_authenticated = False
-    if user.mfa_enrolled:
-        if not req.mfa_token:
-            # Privileged roles require MFA before issuing active session
-            return LoginResponse(
-                session_token="",
-                user_id=user.id,
-                role=primary_role,
-                mfa_required=True,
-            )
-
-        # Verify MFA token against enrolled credentials
+    # MFA requirement disabled: normal login issues active session directly
+    is_mfa_authenticated = True
+    if user.mfa_enrolled and req.mfa_token:
+        # Optional validation if client explicitly provides MFA token
         mfa_creds = db.query(MfaCredential).filter(
             MfaCredential.user_id == user.id,
             MfaCredential.type == "totp",
         ).all()
-
-        mfa_valid = any(verify_totp(cred.secret_hash, req.mfa_token) for cred in mfa_creds)
-        if not mfa_valid:
+        if mfa_creds and not any(verify_totp(cred.secret_hash, req.mfa_token) for cred in mfa_creds):
             _record_login_failure(login_key)
             record_audit_event(
                 db=db,
@@ -298,7 +287,6 @@ def login(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid MFA verification code",
             )
-        is_mfa_authenticated = True
 
     # Generate session token
     session_token = str(uuid.uuid4())
