@@ -140,14 +140,9 @@ export async function middleware(request: NextRequest) {
       requestHeaders.set("x-user-roles", roles.join(","));
       requestHeaders.set("x-user-scopes", JSON.stringify(scopes));
     } catch {
-      // If backend identity service is not running on localhost, allow client-side gate to validate session
-      if (sessionCookie?.value) {
-        requestHeaders.set("x-session-token", sessionCookie.value);
-        const ok = NextResponse.next({ request: { headers: requestHeaders } });
-        ok.headers.set("Content-Security-Policy", csp);
-        return ok;
-      }
+      // Protected workspaces require a response from the authoritative identity service.
       const loginUrl = new URL("/auth/login", request.url);
+      loginUrl.searchParams.set("error", "service_unavailable");
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
     }
