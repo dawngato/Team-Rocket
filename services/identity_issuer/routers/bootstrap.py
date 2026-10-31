@@ -31,7 +31,7 @@ def bootstrap_claim(
     if not BOOTSTRAP_ALLOWED:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bootstrap not permitted by configuration",
+            detail="Bootstrap not permitted by configuration.",
         )
 
     if APP_ENV == "production":
@@ -41,13 +41,13 @@ def bootstrap_claim(
         # expose a production secret in an HTTP response.
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Bootstrap MFA provisioning is not configured",
+            detail="Bootstrap MFA provisioning is not configured.",
         )
 
     if not BOOTSTRAP_INVITATION_TOKEN:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Bootstrap invitation token is not configured",
+            detail="Bootstrap invitation token is not configured.",
         )
 
     # Check database permanent flag
@@ -55,14 +55,14 @@ def bootstrap_claim(
     if claimed_setting and claimed_setting.value == "true":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Bootstrap has already been claimed and is permanently disabled",
+            detail="Bootstrap has already been claimed and is permanently disabled.",
         )
 
     # Verify invitation token
     if not hmac.compare_digest(req.invitation_token, BOOTSTRAP_INVITATION_TOKEN):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid bootstrap invitation token",
+            detail="Invalid bootstrap invitation token.",
         )
 
     # Check if a super admin already exists
@@ -79,7 +79,7 @@ def bootstrap_claim(
             db.commit()
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Super administrator already established",
+            detail="Super administrator account has already been established.",
         )
 
     # Hash password with Argon2id and recorded parameters

@@ -45,7 +45,9 @@ class AnchorRelayerService:
     ):
         self.config = config
         self.w3 = w3 or Web3(Web3.HTTPProvider(config.rpc_url))
-        self.repository = repository or SQLiteOutboxRepository()
+        self.repository = repository or SQLiteOutboxRepository(
+            database_path=config.database_url or "anchor_outbox.sqlite"
+        )
 
         if signer is None:
             if config.relayer_private_key:
@@ -83,6 +85,8 @@ class AnchorRelayerService:
 
         self.witness_client = witness_client or WitnessClient(
             base_url=config.witness_base_url,
+            pinned_public_key=config.witness_public_key,
+            election_commitments=config.election_commitments,
         )
 
         self._running = False
@@ -220,6 +224,7 @@ class AnchorRelayerService:
         """
         Executes a single processing iteration.
         """
+        self.fetch_and_ingest_witnessed()
         self.process_pending_outbox()
         self.poll_confirmations()
 

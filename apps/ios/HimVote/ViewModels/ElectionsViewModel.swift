@@ -11,29 +11,7 @@ public enum ElectionFilter: String, CaseIterable, Sendable {
 @Observable
 @MainActor
 public final class ElectionsViewModel {
-    public var elections: [ElectionSummary] = [
-        ElectionSummary(
-            id: "elec_01",
-            title: "Student Council General Election 2026",
-            state: "open",
-            opensAtUtc: "2026-10-30T09:00:00Z",
-            closesAtUtc: "2026-10-31T17:00:00Z"
-        ),
-        ElectionSummary(
-            id: "elec_02",
-            title: "Department of Computer Science Academic Senate",
-            state: "published",
-            opensAtUtc: "2026-10-25T09:00:00Z",
-            closesAtUtc: "2026-10-26T17:00:00Z"
-        ),
-        ElectionSummary(
-            id: "elec_03",
-            title: "Hostel Committee Representative 2026",
-            state: "frozen",
-            opensAtUtc: "2026-11-02T09:00:00Z",
-            closesAtUtc: "2026-11-03T17:00:00Z"
-        )
-    ]
+    public var elections: [ElectionSummary] = []
     public var selectedElection: Election?
     public var activeFilter: ElectionFilter = .all
     public var searchQuery: String = ""

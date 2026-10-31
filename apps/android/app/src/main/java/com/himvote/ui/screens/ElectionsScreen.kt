@@ -108,13 +108,13 @@ fun ElectionsScreen(
                 Tab(
                     selected = state.selectedTab == ElectionFilterTab.OPEN_ACTIVE,
                     onClick = { viewModel.selectTab(ElectionFilterTab.OPEN_ACTIVE) },
-                    text = { Text("Open to Vote", fontWeight = FontWeight.SemiBold) },
+                    text = { Text("Open for Voting", fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.accessibleTouchTarget()
                 )
                 Tab(
                     selected = state.selectedTab == ElectionFilterTab.COMPLETED,
                     onClick = { viewModel.selectTab(ElectionFilterTab.COMPLETED) },
-                    text = { Text("Audited", fontWeight = FontWeight.SemiBold) },
+                    text = { Text("Certified", fontWeight = FontWeight.SemiBold) },
                     modifier = Modifier.accessibleTouchTarget()
                 )
             }
@@ -138,7 +138,7 @@ fun ElectionsScreen(
                         verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingMedium)
                     ) {
                         Text(
-                            text = "No elections found in this section",
+                            text = "No elections found matching selected criteria",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = DesignTokens.TextPrimary.copy(alpha = 0.7f)

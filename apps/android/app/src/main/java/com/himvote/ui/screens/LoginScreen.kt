@@ -200,7 +200,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.weight(1f))
 
         Text(
-            text = "Keystore Backed Hardware Security • Excluded From Backup",
+            text = "Keystore Backed Hardware Isolation • Cloud Backup and Device Transfer Prohibited",
             fontSize = 11.sp,
             color = DesignTokens.TextPrimary.copy(alpha = 0.6f),
             fontWeight = FontWeight.Medium

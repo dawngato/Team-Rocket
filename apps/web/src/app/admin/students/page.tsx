@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Users, Search, GraduationCap } from "lucide-react";
+import { motion } from "motion/react";
+import { Users, Search, GraduationCap, ShieldCheck, CheckCircle2, UserCheck } from "lucide-react";
 import { StudentRecord } from "@/lib/types";
 import { apiClient } from "@/lib/api_client";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -59,16 +60,78 @@ export default function AdminStudentsPage() {
             Voter Roster Registry
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
-            Enrolled Student Directory
+            Enrolled Student Voter Directory
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            Master student voter roll across all academic divisions.
+            Master student voter roll across all university academic divisions. Authoritative credential issuance for anonymous cryptographic ballot casting.
           </p>
         </div>
-        <span className="font-mono text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
-          {loading ? "Loading…" : `${students.length} Records`}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#15805D] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#15805D]" />
+            </span>
+            <span>{loading ? "Loading…" : `${students.length} Total Enrolled`}</span>
+          </span>
+        </div>
       </header>
+
+      {/* Statistics Tiles on Entrance */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Total Student Voters
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+            {loading ? "…" : students.length}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Authoritative university enrollment records
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Verified Credentials
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#15805D] dark:text-[#34D399]">
+            {loading ? "…" : students.filter((s) => s.verified).length}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Active blind voting tokens issued
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Verification Rate
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#157E92] dark:text-[#38BDF8]">
+            {loading || students.length === 0
+              ? "…"
+              : `${Math.round((students.filter((s) => s.verified).length / students.length) * 100)}%`}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Institutional verification completion
+          </span>
+        </motion.div>
+      </div>
 
       {error && (
         <div
@@ -142,7 +205,7 @@ export default function AdminStudentsPage() {
                 </tr>
               ) : (
                 filtered.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <tr key={s.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150">
                     <td className="px-6 py-4">
                       <div className="font-bold text-sm text-[#10233F] dark:text-white">
                         {s.full_name}

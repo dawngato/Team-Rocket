@@ -67,7 +67,7 @@ class ConfirmationPoller:
             receipt = None
         except Exception as exc:
             logger.warning(f"Error fetching receipt for tx {record.tx_hash}: {exc}")
-            receipt = None
+            return record
 
         if not receipt:
             # Check if checkpoint was already anchored on chain despite missing local receipt
@@ -214,5 +214,12 @@ class ConfirmationPoller:
         """
         in_flight = self.repository.get_in_flight()
         for rec in in_flight:
-            self.poll_record(rec)
+            try:
+                self.poll_record(rec)
+            except Exception as exc:
+                logger.warning(
+                    "Confirmation state is indeterminate for record %s: %s",
+                    rec.id,
+                    exc,
+                )
         return len(in_flight)

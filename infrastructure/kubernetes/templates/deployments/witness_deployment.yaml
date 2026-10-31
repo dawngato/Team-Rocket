@@ -43,11 +43,18 @@ spec:
               value: {{ .Values.witness.env.logLevel | quote }}
             - name: LOG_REDACTION_ENABLED
               value: {{ .Values.witness.env.logRedactionEnabled | quote }}
+            - name: WITNESS_KEY_FILE_PATH
+              value: "/data/witness_key.hex"
+            - name: WITNESS_DB_PATH
+              value: "/data/witness.db"
+            - name: WITNESS_AUDIT_LOG_PATH
+              value: "/data/audit.jsonl"
           resources:
             {{- toYaml .Values.witness.resources | nindent 12 }}
           volumeMounts:
-            - name: tmp-volume
-              mountPath: /tmp
+            - name: witness-data
+              mountPath: /data
       volumes:
-        - name: tmp-volume
-          emptyDir: {}
+        - name: witness-data
+          persistentVolumeClaim:
+            claimName: himvote-witness-data

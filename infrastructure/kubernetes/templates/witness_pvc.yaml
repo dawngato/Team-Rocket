@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: himvote-witness-data
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: witness
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.witness.persistence.size | quote }}
+  {{- if .Values.witness.persistence.storageClassName }}
+  storageClassName: {{ .Values.witness.persistence.storageClassName | quote }}
+  {{- end }}

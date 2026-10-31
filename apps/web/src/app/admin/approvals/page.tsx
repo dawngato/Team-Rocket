@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, Clock, ShieldCheck, XCircle } from "lucide-react";
+import { motion } from "motion/react";
+import { CheckCircle2, Clock, ShieldCheck, XCircle, Users, AlertCircle } from "lucide-react";
 import { adminApprovalsClient, type RoleApproval } from "@/lib/admin_approvals";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 
@@ -32,14 +33,29 @@ export default function AdminApprovalsPage() {
       await adminApprovalsClient.decideApproval(
         id,
         decision,
-        reason[id] || "Reviewed through the authenticated approval queue."
+        reason[id] || "Reviewed through the authenticated administrative approval console."
       );
-      setSuccessMessage(`Request ${decision === "approved" ? "approved" : "rejected"} successfully.`);
+      setSuccessMessage(`Authoritative decision successfully committed: delegation ${decision === "approved" ? "authorized" : "rejected"} in audit ledger.`);
       load();
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The identity service rejected the decision.");
+      setError(cause instanceof Error ? cause.message : "The institutional identity service rejected the decision.");
     } finally {
       setBusyId(null);
+    }
+  };
+
+  const formatRoleLabel = (role: string) => {
+    switch (role?.toLowerCase()) {
+      case "administrator":
+        return "Campus Administrator";
+      case "teacher":
+        return "Faculty Teacher";
+      case "election_officer":
+        return "Transparency Officer";
+      case "student":
+        return "Student Voter";
+      default:
+        return role;
     }
   };
 
@@ -61,9 +77,68 @@ export default function AdminApprovalsPage() {
           Privileged Role Approvals
         </h1>
         <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-          Requests for teacher, election officer, and administrator delegations within your institutional scope. Approvals are signed and logged immutably in the identity audit trail.
+          Authorization queue for Faculty Teacher, Transparency Officer, and Campus Administrator delegations within your institutional scope. Approvals are cryptographically signed and logged immutably in the identity audit trail.
         </p>
       </header>
+
+      {/* Statistics and Telemetry Tile */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Queue Status
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+            {approvals ? approvals.length : "…"}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Pending institutional reviews
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Governance Rule
+          </span>
+          <div className="mt-2 text-base font-bold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
+            <ShieldCheck className="size-4" />
+            <span>Dual Control Enforced</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Mandatory two-party sign-off
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Audit Ledger
+          </span>
+          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+            </span>
+            <span>Append-Only Sync</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Direct cryptographic recording
+          </span>
+        </motion.div>
+      </div>
 
       {error && (
         <div
@@ -97,12 +172,15 @@ export default function AdminApprovalsPage() {
         </div>
       ) : (
         <section className="space-y-4" aria-label="Pending approvals list">
-          {approvals.map((approval) => {
+          {approvals.map((approval, idx) => {
             const isItemBusy = busyId === approval.id;
             return (
-              <article
+              <motion.article
                 key={approval.id}
-                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
@@ -110,7 +188,7 @@ export default function AdminApprovalsPage() {
                       {approval.email || approval.applicant}
                     </h2>
                     <p className="mt-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
-                      Requesting role: <span className="uppercase">{approval.requestedRole}</span> · Scope: {approval.scope}
+                      Requesting role: <span className="font-bold">{formatRoleLabel(approval.requestedRole)}</span> · Scope: {approval.scope}
                     </p>
                   </div>
                   <span className="rounded-md bg-[#AA6C0B]/10 px-2.5 py-1 text-xs font-bold text-[#AA6C0B]">
@@ -165,7 +243,7 @@ export default function AdminApprovalsPage() {
                     <span>{isItemBusy ? "Recording…" : "Approve Role"}</span>
                   </button>
                 </div>
-              </article>
+              </motion.article>
             );
           })}
         </section>

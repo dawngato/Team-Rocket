@@ -330,9 +330,9 @@ fun BiometricAuthFeedbackCard(
                 val bodyText = when (state) {
                     BiometricState.IDLE -> "Touch sensor or look at screen to authorize cryptographic key access."
                     BiometricState.SCANNING -> "Communicating with Android Keystore secure hardware enclave..."
-                    BiometricState.SUCCESS -> "Hardware key unlocked. Cryptographic proof signed securely."
-                    BiometricState.ERROR -> errorMessage ?: "Fingerprint or face not recognized. Please tap to retry."
-                    BiometricState.LOCKOUT -> errorMessage ?: "Too many attempts. Use university password fallback."
+                    BiometricState.SUCCESS -> "Hardware key unlocked. Cryptographic credential authorized."
+                    BiometricState.ERROR -> errorMessage ?: "Biometric identity verification unsuccessful. Please tap to retry."
+                    BiometricState.LOCKOUT -> errorMessage ?: "Maximum verification attempts exceeded. Please authenticate using university credentials."
                 }
 
                 Text(

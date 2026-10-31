@@ -169,7 +169,7 @@ checkpointWorker:
     logRedactionEnabled: "true"
 
 witness:
-  replicaCount: 2
+  replicaCount: 1
   image:
     repository: himvote/witness
     tag: 2.0.0
@@ -185,6 +185,9 @@ witness:
   env:
     logLevel: info
     logRedactionEnabled: "true"
+  persistence:
+    size: 1Gi
+    storageClassName: ""
 
 anchorRelayer:
   replicaCount: 1
@@ -201,7 +204,17 @@ anchorRelayer:
   env:
     logLevel: info
     logRedactionEnabled: "true"
-    chainId: "1"
+    workerEnabled: false
+    chainRpcUrl: ""
+    chainId: ""
+    contractAddress: ""
+    witnessPublicKey: ""
+    witnessElectionCommitments: "{}"
+    privateKeySecretName: ""
+    privateKeySecretKey: ""
+  persistence:
+    size: 1Gi
+    storageClassName: ""
 
 redis:
   enabled: true

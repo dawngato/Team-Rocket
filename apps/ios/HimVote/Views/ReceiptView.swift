@@ -89,7 +89,7 @@ public struct ReceiptView: View {
                 .font(Typography.sectionHeader)
                 .foregroundStyle(ColorTokens.institutionalNavy)
             
-            Text("Inclusion Tracking in Public Merkle Log")
+            Text("Receipt and Merkle Proof Status")
                 .font(Typography.callout)
                 .foregroundStyle(ColorTokens.textSecondary)
         }

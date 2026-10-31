@@ -43,7 +43,7 @@ fun ResultsScreen(
     Scaffold(
         topBar = {
             HimVoteTopBar(
-                title = "Audited Results",
+                title = "Published Election Results",
                 canNavigateBack = true,
                 onNavigateBack = onNavigateBack
             )
@@ -122,7 +122,7 @@ fun ResultsScreen(
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = "Total Cast",
+                                        text = "Total Ballots Submitted",
                                         fontSize = 12.sp,
                                         color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
                                     )
@@ -148,12 +148,12 @@ fun ResultsScreen(
                                 }
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Text(
-                                        text = "Audited Status",
+                                        text = "Independent Audit",
                                         fontSize = 12.sp,
                                         color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
                                     )
                                     Text(
-                                        text = "Verified",
+                                        text = "Not verified",
                                         fontSize = 18.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = DesignTokens.Green600
@@ -164,8 +164,8 @@ fun ResultsScreen(
 
                         if (res.privacyLimited) {
                             StatusBanner(
-                                title = "Privacy Limited Mode Enforced",
-                                message = "Turnout was below the minimum anonymity threshold. Per candidate totals are suppressed to protect ballot confidentiality.",
+                                title = "Identity and Ballot Separation Threshold Active",
+                                message = "The results service reports that turnout is below its privacy threshold, so candidate totals are not shown here. This screen does not independently verify the threshold or privacy outcome.",
                                 icon = Icons.Default.Lock,
                                 tintColor = DesignTokens.Amber600,
                                 backgroundColor = DesignTokens.Amber600.copy(alpha = 0.1f)
@@ -182,7 +182,7 @@ fun ResultsScreen(
                                     verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingMedium)
                                 ) {
                                     Text(
-                                        text = "Published Vote Tallies",
+                                        text = "Published Ballot Tallies",
                                         fontSize = 16.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = DesignTokens.Navy900
@@ -256,7 +256,7 @@ fun ResultsScreen(
                                             modifier = Modifier.size(20.dp)
                                         )
                                         Text(
-                                            text = "Auditor Hardware Attestation",
+                                            text = "Service-Reported Audit Attestation",
                                             fontSize = 14.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = DesignTokens.Green600
@@ -264,6 +264,7 @@ fun ResultsScreen(
                                     }
 
                                     IconButton(
+                                        enabled = res.auditAttestation != null,
                                         onClick = {
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                             val clip = ClipData.newPlainText("Attestation", res.auditAttestation ?: "")
@@ -281,7 +282,7 @@ fun ResultsScreen(
                                 }
 
                                 Text(
-                                    text = res.auditAttestation ?: "attestation_rsa_pkcs1_v1_5_valid_sha256",
+                                    text = res.auditAttestation ?: "No attestation reported by the results service",
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
                                     color = DesignTokens.TextPrimary.copy(alpha = 0.8f)
@@ -298,13 +299,14 @@ fun ResultsScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Text(
-                                        text = "Chain Anchor Transaction Hash",
+                                        text = "Reported Anchor Transaction Reference",
                                         fontSize = 12.sp,
                                         fontWeight = FontWeight.SemiBold,
                                         color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
                                     )
 
                                     IconButton(
+                                        enabled = res.chainAnchorTx != null,
                                         onClick = {
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                             val clip = ClipData.newPlainText("Anchor Tx", res.chainAnchorTx ?: "")
@@ -322,7 +324,7 @@ fun ResultsScreen(
                                 }
 
                                 Text(
-                                    text = res.chainAnchorTx ?: "0x89ab12cd34ef567890123456789abcdef0123456789abcdef0123456789abcdef",
+                                    text = res.chainAnchorTx ?: "No blockchain transaction reported by the results service",
                                     fontSize = 11.sp,
                                     fontFamily = FontFamily.Monospace,
                                     color = DesignTokens.Teal600

@@ -44,18 +44,17 @@ public struct VoterBoothPortalView: View {
             .navigationTitle("Voting Booth")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
-                if let openElection = electionsViewModel.elections.first(where: { $0.state == "open" }) {
+                if let openElection {
                     credentialViewModel.loadStoredCredential(electionId: openElection.id)
-                } else {
-                    credentialViewModel.loadStoredCredential(electionId: "elec_01")
                 }
             }
             .sheet(isPresented: $showBoothModal) {
-                if let election = electionsViewModel.elections.first(where: { $0.state == "open" }) {
+                if let election = openElection,
+                   let credential = credentialViewModel.issuedCredential {
                     VotingBoothView(
                         electionId: election.id,
                         electionTitle: election.title,
-                        credentialToken: credentialViewModel.issuedCredential?.credentialToken ?? "synthetic_tok_01",
+                        credentialToken: credential.credentialToken,
                         votingViewModel: votingViewModel
                     )
                 }
@@ -81,7 +80,7 @@ public struct VoterBoothPortalView: View {
                         .font(Typography.sectionHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
                     
-                    Text("RFC 9474 Blind Credential • Zero-Knowledge Casting")
+                    Text("Voting Credential • External Booth Session")
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.textSecondary)
                 }
@@ -89,7 +88,7 @@ public struct VoterBoothPortalView: View {
                 Spacer()
             }
             
-            Text("In accordance with institutional guidelines, voter identities and encrypted ballot choices remain cryptographically unlinkable. Your ballot will be committed to the append-only Merkle tree and independently witnessed.")
+            Text("The design separates identity verification from ballot submission and records receipt status through the casting service. This prototype does not establish complete unlinkability or independent witnessing.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -100,7 +99,7 @@ public struct VoterBoothPortalView: View {
     private var credentialStatusCard: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("1. Anonymous Credential")
+                Text("1. Voting Credential")
                     .font(Typography.cardHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
                 
@@ -144,16 +143,24 @@ public struct VoterBoothPortalView: View {
                 .background(Color.white.opacity(0.6))
                 .clipShape(RoundedRectangle(cornerRadius: 10))
             } else {
-                Text("Reserve an idempotent single-use authorization token without linking your student account to the ballot payload.")
+                Text("Request a credential from the identity issuer. This client does not demonstrate unlinkability or one-use enforcement.")
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.textSecondary)
+
+                if openElection == nil {
+                    Text("No open election is currently available from the elections service.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.tailAdminWarning)
+                }
                 
                 Button {
                     HapticFeedback.medium()
+                    guard let election = openElection,
+                          let sessionToken = authViewModel.currentUser?.sessionToken else { return }
                     Task {
                         await credentialViewModel.requestCredential(
-                            electionId: "elec_01",
-                            sessionToken: authViewModel.currentUser?.sessionToken ?? "mock_token"
+                            electionId: election.id,
+                            sessionToken: sessionToken
                         )
                     }
                 } label: {
@@ -165,7 +172,7 @@ public struct VoterBoothPortalView: View {
                         } else {
                             Image(systemName: "key.fill")
                         }
-                        Text(credentialViewModel.isLoading ? "Requesting Blind Token..." : "Request Anonymous Credential")
+                        Text(credentialViewModel.isLoading ? "Requesting Credential..." : "Request Credential")
                     }
                     .font(Typography.callout)
                     .fontWeight(.semibold)
@@ -175,7 +182,11 @@ public struct VoterBoothPortalView: View {
                     .background(ColorTokens.tailAdminBrand)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
-                .disabled(credentialViewModel.isLoading)
+                .disabled(
+                    credentialViewModel.isLoading
+                        || openElection == nil
+                        || authViewModel.currentUser?.sessionToken == nil
+                )
             }
         }
         .glassCard(cornerRadius: 18, padding: 16)
@@ -190,7 +201,7 @@ public struct VoterBoothPortalView: View {
                 
                 Spacer()
                 
-                Text("STRICT 1-VOTE")
+                Text("SERVICE CONTROL")
                     .font(Typography.badgeText)
                     .foregroundStyle(ColorTokens.tailAdminInfo)
                     .padding(.horizontal, 6)
@@ -199,7 +210,7 @@ public struct VoterBoothPortalView: View {
                     .clipShape(Capsule())
             }
             
-            Text("Ballot encryption takes place in an isolated session. Vetted proofs and encrypted ciphertexts are submitted directly to the casting origin with no identity-bearing cookies.")
+            Text("The configured client submits ballot data to the casting service. This screen does not independently verify encryption, proof validity, or whether identity-bearing cookies are excluded.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
             
@@ -209,7 +220,7 @@ public struct VoterBoothPortalView: View {
             } label: {
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.up.forward.app.fill")
-                    Text("Launch Encrypted Voter Booth")
+                    Text("Launch Voting Booth")
                 }
                 .font(Typography.callout)
                 .fontWeight(.semibold)
@@ -223,7 +234,7 @@ public struct VoterBoothPortalView: View {
                 )
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(credentialViewModel.issuedCredential == nil)
+            .disabled(credentialViewModel.issuedCredential == nil || openElection == nil)
         }
         .glassCard(cornerRadius: 18, padding: 16)
     }
@@ -240,12 +251,16 @@ public struct VoterBoothPortalView: View {
                     .foregroundStyle(ColorTokens.tailAdminWarning)
             }
             
-            Text("Receipts prove cryptographic inclusion in the ordered Merkle tree without revealing candidate selections. Anvil local blockchain anchoring provides reproducible demonstration proof and does not replace independently operated public chains.")
+            Text("A receipt alone does not prove ballot inclusion. Independent checking requires a Merkle proof, a trusted root, and a verifier. A local Anvil chain is for development and does not establish independent network finality.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }
         .padding(14)
         .background(ColorTokens.tailAdminWarningBg)
         .clipShape(RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var openElection: ElectionSummary? {
+        electionsViewModel.elections.first(where: { $0.state == "open" })
     }
 }

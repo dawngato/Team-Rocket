@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence, type Variants } from "motion/react";
 import {
   ArrowRight,
   CalendarDays,
@@ -14,18 +15,16 @@ import {
   Lock,
   Cpu,
   FileCheck2,
-  ExternalLink,
   RefreshCw,
-  Search,
   Sparkles,
   BarChart3,
-  Layers,
-  Award,
+  Sliders,
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
 import { electionClient } from "../lib/election_client";
 import type { Election } from "../lib/types";
 import { StudentIdCardVerifier } from "../components/StudentIdCardVerifier";
+import { BallotBoxHero } from "../components/BallotBoxHero";
 import {
   getStoredElectionConfig,
   type ElectionConfig,
@@ -48,6 +47,26 @@ interface LiveBallotEvent {
   hashPreview: string;
 }
 
+const heroContainerVariants: Variants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.08,
+      delayChildren: 0.04,
+    },
+  },
+};
+
+const heroItemVariants: Variants = {
+  hidden: { opacity: 0, y: 14 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.45, ease: "easeOut" },
+  },
+};
+
 export default function HomePage() {
   const [elections, setElections] = useState<Election[]>([]);
   const [electionsError, setElectionsError] = useState<string | null>(null);
@@ -59,28 +78,30 @@ export default function HomePage() {
     getStoredElectionConfig()
   );
   const [votesCast, setVotesCast] = useState<number>(() => config.votesCast);
-  const [timeLeftStr, setTimeLeftStr] = useState<string>("Calculating...");
-  const [isElectionEnded, setIsElectionEnded] = useState<boolean>(false);
+  const [timeLeftStr, setTimeLeftStr] = useState<string>("Calculating…");
 
-  // Live recent ballot stream
+  // Hero interactive right-card view tab: "protocol" (BallotBoxHero) vs "telemetry"
+  const [heroView, setHeroView] = useState<"protocol" | "telemetry">("protocol");
+
+  // Local sample activity
   const [recentEvents, setRecentEvents] = useState<LiveBallotEvent[]>([
     {
       id: "evt-1",
       ballotNumber: 3412,
       timeAgo: "Just now",
-      hashPreview: "0x8f2a...91ce",
+      hashPreview: "Sample activity",
     },
     {
       id: "evt-2",
       ballotNumber: 3411,
       timeAgo: "2 min ago",
-      hashPreview: "0x3b1c...44a7",
+      hashPreview: "Sample activity",
     },
     {
       id: "evt-3",
       ballotNumber: 3410,
       timeAgo: "5 min ago",
-      hashPreview: "0xe79d...f021",
+      hashPreview: "Sample activity",
     },
   ]);
 
@@ -100,7 +121,7 @@ export default function HomePage() {
       .catch(() => {
         if (!cancelled)
           setElectionsError(
-            "Unable to synchronize with the campus elections ledger. Please check your connectivity and try again."
+            "Unable to load election information from the configured service. Check your connection and try again."
           );
       })
       .finally(() => {
@@ -112,7 +133,7 @@ export default function HomePage() {
     };
   }, [retryCount]);
 
-  // Sync reactive voter telemetry events
+  // Sync local preview values
   useEffect(() => {
     const initialConfig = getStoredElectionConfig();
     setConfig(initialConfig);
@@ -139,14 +160,13 @@ export default function HomePage() {
       }>;
       if (customEvent.detail) {
         const nextNum = customEvent.detail.ballotNumber;
-        const randomHex = Math.random().toString(16).substring(2, 6);
         setVotesCast(nextNum);
         setRecentEvents((old) => [
           {
             id: String(Date.now()),
             ballotNumber: nextNum,
             timeAgo: "Just now",
-            hashPreview: `0x${randomHex}...${nextNum.toString(16)}`,
+            hashPreview: "Local activity only",
           },
           ...old.slice(0, 2),
         ]);
@@ -171,7 +191,7 @@ export default function HomePage() {
     };
   }, []);
 
-  // Countdown timer toward scheduled poll close
+  // Countdown timer for the locally configured demo close time
   useEffect(() => {
     const updateCountdown = () => {
       const endMs = new Date(config.endTimeIso).getTime();
@@ -179,12 +199,10 @@ export default function HomePage() {
       const diffMs = endMs - nowMs;
 
       if (diffMs <= 0) {
-        setTimeLeftStr("Polls Officially Concluded");
-        setIsElectionEnded(true);
+        setTimeLeftStr("Configured demo close time has passed");
         return;
       }
 
-      setIsElectionEnded(false);
       const totalSeconds = Math.floor(diffMs / 1000);
       const days = Math.floor(totalSeconds / (3600 * 24));
       const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
@@ -213,374 +231,562 @@ export default function HomePage() {
 
   return (
     <div className="w-full bg-slate-50/40 dark:bg-[#060e1a]/40 transition-colors">
-      <div className="w-full max-w-[1800px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-24 py-8 sm:py-12 lg:py-16 space-y-16 lg:space-y-24">
+      <div className="w-full max-w-[1850px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-8 sm:py-12 lg:py-16 space-y-16 lg:space-y-24">
         
         {/* ========================================================================= */}
-        {/* SECTION 1: EXPANSIVE WIDESCREEN HERO WITH INSTITUTIONAL HIGH-CONTRAST TYPOGRAPHY */}
+        {/* SECTION 1: EXPANSIVE WIDESCREEN HERO POWERED BY MOTION/REACT */}
         {/* ========================================================================= */}
-        <section
+        <motion.section
           aria-labelledby="hero-heading"
-          className="relative overflow-hidden rounded-[32px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-gradient-to-br dark:from-[#081526] dark:via-[#07111e] dark:to-[#040913] p-6 sm:p-10 lg:p-16 shadow-xl dark:shadow-2xl dark:shadow-cyan-950/30"
+          initial="hidden"
+          animate="visible"
+          variants={heroContainerVariants}
+          className="relative overflow-hidden rounded-[32px] border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-gradient-to-br dark:from-[#081526] dark:via-[#07111e] dark:to-[#040913] p-6 sm:p-10 lg:p-14 xl:p-16 shadow-xl dark:shadow-2xl dark:shadow-cyan-950/30"
         >
           {/* Ambient Lighting Accents */}
           <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl dark:bg-cyan-500/15" />
           <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full bg-emerald-500/10 blur-3xl dark:bg-emerald-500/10" />
 
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-            {/* Left Column: Mission & CTAs (7 cols) */}
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 xl:gap-14 items-center">
+
+            {/* Left Column: Mission, Animated Headlines & CTAs (7 cols) */}
             <div className="lg:col-span-7 space-y-6 sm:space-y-8">
-              {/* Institutional Live Network Badge */}
-              <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-[#116B7B] dark:text-cyan-300">
+              {/* Hero Kicker Badge with strict institutional terminology */}
+              <motion.div
+                variants={heroItemVariants}
+                className="inline-flex flex-wrap items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-xs font-semibold text-[#116B7B] dark:text-cyan-300"
+              >
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500" />
                 </span>
-                <span>Official Institutional Election Network</span>
-                <span className="hidden sm:inline-block text-cyan-500/40">•</span>
-                <span className="hidden sm:inline-block font-mono text-[11px] text-slate-500 dark:text-cyan-200/80">
-                  SHA-256 Ledger Witnessed
-                </span>
-              </div>
+                <span>Campus Election Prototype • Evidence Depends on Configuration</span>
+              </motion.div>
 
-              {/* High-Impact Institutional Headline */}
-              <div className="space-y-3">
-                <h1
+              {/* High-Impact Institutional Headline with Animated Reveals */}
+              <div className="space-y-3.5">
+                <motion.h1
                   id="hero-heading"
+                  variants={heroItemVariants}
                   className="text-balance text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white sm:text-5xl lg:text-6xl xl:text-7xl leading-[1.08]"
                 >
                   Democracy on Campus.
                   <br />
                   <span className="bg-gradient-to-r from-[#157E92] via-teal-600 to-emerald-600 dark:from-cyan-400 dark:via-teal-300 dark:to-emerald-400 bg-clip-text text-transparent">
-                    Engineered for Verifiability.
+                    Designed for Verifiable Review.
                   </span>
-                </h1>
-                <p className="max-w-2xl text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-normal">
-                  HimVote delivers institutional elections with independent cryptographic receipts, complete voter privacy detachment, and a verifiable Merkle ledger.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 pt-2">
-                <Link
-                  href="/elections"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#10687a] dark:from-cyan-500 dark:to-teal-500 dark:hover:from-cyan-400 dark:hover:to-teal-400 px-7 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-950/20 dark:shadow-cyan-500/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                </motion.h1>
+                <motion.p
+                  variants={heroItemVariants}
+                  className="max-w-2xl text-base sm:text-lg lg:text-xl text-slate-600 dark:text-slate-300 leading-relaxed font-normal"
                 >
-                  <Vote className="w-5 h-5" aria-hidden="true" />
-                  <span>Explore Campus Elections</span>
-                  <ArrowRight className="w-4 h-4 ml-0.5" aria-hidden="true" />
-                </Link>
-                <Link
-                  href="/how-it-works"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 px-6 text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-                >
-                  <ShieldCheck className="w-5 h-5 text-[#157E92] dark:text-cyan-400" aria-hidden="true" />
-                  <span>How Verification Works</span>
-                </Link>
+                  HimVote demonstrates campus election workflows and evidence views. Privacy and verification depend on the deployed protocols, configuration, and trusted evidence.
+                </motion.p>
               </div>
 
-              {/* Micro-Features Checklist */}
-              <div className="pt-4 border-t border-slate-200/90 dark:border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium">
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Zero identity-to-vote linkage</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Independent receipt audit</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Immutable witness log</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Live Telemetry Snapshot Card (5 cols) */}
-            <div className="lg:col-span-5">
-              <div className="rounded-3xl border border-slate-200 dark:border-cyan-500/30 bg-slate-50/80 dark:bg-gradient-to-b dark:from-[#0b1b2d] dark:to-[#040b15] p-6 sm:p-7 shadow-lg space-y-6">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-white/10">
-                  <div className="flex items-center gap-2.5">
-                    <span className="flex size-8 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
-                      <Activity className="size-4 animate-pulse" />
-                    </span>
-                    <div>
-                      <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                        Live Electorate Telemetry
-                      </h2>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Campus-wide participation overview
-                      </p>
-                    </div>
-                  </div>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-ping" />
-                    Polls Active
-                  </span>
-                </div>
-
-                {/* Poll Countdown Display */}
-                <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 flex items-center gap-3">
-                  <div className="size-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                    <Hourglass className="size-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-300 block">
-                      Scheduled Close • Sunday 5:00 PM
-                    </span>
-                    <span className="text-sm sm:text-base font-mono font-extrabold text-amber-900 dark:text-amber-200 truncate block">
-                      {timeLeftStr}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Turnout Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                      <BarChart3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
-                      Electorate Turnout
-                    </span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                      {turnoutPercent}%
-                    </span>
-                  </div>
-                  <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-3 overflow-hidden p-0.5 border border-slate-300/60 dark:border-slate-800">
-                    <div
-                      className="bg-gradient-to-r from-[#157E92] to-emerald-500 dark:from-cyan-500 dark:to-emerald-400 h-full rounded-full transition-all duration-700 ease-out shadow-sm"
-                      style={{ width: `${turnoutPercent}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
-                    <span>{votesCast.toLocaleString()} Cast</span>
-                    <span>{config.totalStudents.toLocaleString()} Eligible</span>
-                  </div>
-                </div>
-
-                {/* 3 Metrics Mini Grid */}
-                <div className="grid grid-cols-3 gap-2.5 pt-1">
-                  <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 p-3 text-center">
-                    <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Total</div>
-                    <div className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
-                      {config.totalStudents.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-center">
-                    <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Sealed</div>
-                    <div className="text-lg font-black text-emerald-700 dark:text-emerald-300 font-mono mt-0.5">
-                      {votesCast.toLocaleString()}
-                    </div>
-                  </div>
-                  <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 p-3 text-center">
-                    <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Pending</div>
-                    <div className="text-lg font-black text-slate-800 dark:text-amber-300 font-mono mt-0.5">
-                      {remainingStudents.toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer link to public audit */}
-                <div className="pt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-white/10">
-                  <span className="flex items-center gap-1.5 text-[11px]">
-                    <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" />
-                    Cryptographic Proofs Certified
-                  </span>
+              {/* Action Buttons with Spring Micro-Interactions */}
+              <motion.div
+                variants={heroItemVariants}
+                className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 sm:gap-4 pt-1"
+              >
+                <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
                   <Link
-                    href="/audit"
-                    className="text-[#157E92] hover:text-[#0e5c6a] dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold hover:underline flex items-center gap-1"
+                    href="/elections"
+                    className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#10687a] dark:from-cyan-500 dark:to-teal-500 dark:hover:from-cyan-400 dark:hover:to-teal-400 px-7 text-sm sm:text-base font-bold text-white shadow-lg shadow-cyan-950/20 dark:shadow-cyan-500/20 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
                   >
-                    <span>Audit Explorer</span>
-                    <ArrowRight className="w-3 h-3" />
+                    <Vote className="w-5 h-5" aria-hidden="true" />
+                    <span>Explore Campus Elections</span>
+                    <ArrowRight className="w-4 h-4 ml-0.5" aria-hidden="true" />
                   </Link>
+                </motion.div>
+
+                <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                  <Link
+                    href="/how-it-works"
+                    className="inline-flex min-h-[52px] w-full sm:w-auto items-center justify-center gap-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/80 px-6 text-sm sm:text-base font-semibold text-slate-800 dark:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+                  >
+                    <ShieldCheck className="w-5 h-5 text-[#157E92] dark:text-cyan-400" aria-hidden="true" />
+                    <span>How Verification Works</span>
+                  </Link>
+                </motion.div>
+              </motion.div>
+
+              {/* Micro-Features Checklist with Standardized Institutional Terms */}
+              <motion.div
+                variants={heroItemVariants}
+                className="pt-4 border-t border-slate-200/90 dark:border-white/10 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-600 dark:text-slate-400 font-medium"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Identity separation is an intended design goal</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Published records can support independent review</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                  <span>Merkle checkpoint support depends on configuration</span>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Right Column: Interactive Hero Showcase (5 cols) */}
+            <div className="lg:col-span-5 space-y-3">
+              {/* Showcase Mode Switcher */}
+              <div className="flex items-center justify-between px-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
+                  Interactive Showcase
+                </span>
+                <div className="inline-flex items-center rounded-xl bg-slate-100 dark:bg-slate-900/80 p-1 border border-slate-200/80 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setHeroView("protocol")}
+                    className={`relative px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                      heroView === "protocol"
+                        ? "text-[#10233F] dark:text-white"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    {heroView === "protocol" && (
+                      <motion.div
+                        layoutId="heroTabIndicator"
+                        className="absolute inset-0 rounded-lg bg-white dark:bg-slate-800 shadow-xs"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <Lock className="size-3 text-[#157E92] dark:text-cyan-400" />
+                      Voting Protocol
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setHeroView("telemetry")}
+                    className={`relative px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
+                      heroView === "telemetry"
+                        ? "text-[#10233F] dark:text-white"
+                        : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-300"
+                    }`}
+                  >
+                    {heroView === "telemetry" && (
+                      <motion.div
+                        layoutId="heroTabIndicator"
+                        className="absolute inset-0 rounded-lg bg-white dark:bg-slate-800 shadow-xs"
+                        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                      />
+                    )}
+                    <span className="relative z-10 flex items-center gap-1.5">
+                      <Activity className="size-3 text-emerald-500" />
+                  Sample Metrics
+                    </span>
+                  </button>
                 </div>
               </div>
+
+              {/* View 1: BallotBoxHero (Always mounted for test-id & smooth display) */}
+              <div className={heroView === "protocol" ? "block" : "hidden"}>
+                <BallotBoxHero />
+              </div>
+
+              {/* View 2: Local sample metrics */}
+              <div className={heroView === "telemetry" ? "block" : "hidden"}>
+                <motion.div
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
+                  className="rounded-3xl border border-slate-200 dark:border-cyan-500/30 bg-slate-50/80 dark:bg-gradient-to-b dark:from-[#0b1b2d] dark:to-[#040b15] p-6 sm:p-7 shadow-lg space-y-6"
+                >
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-white/10">
+                    <div className="flex items-center gap-2.5">
+                      <span className="flex size-8 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-600 dark:text-cyan-400">
+                        <Activity className="size-4 animate-pulse" />
+                      </span>
+                      <div>
+                        <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                          Local Participation Preview
+                        </h2>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Sample values from this browser; not live election totals
+                        </p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400">
+                      Sample Preview
+                    </span>
+                  </div>
+
+                  {/* Poll Countdown Display with Micro Spring Ticks */}
+                  <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-3.5 flex items-center gap-3">
+                    <div className="size-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                      <Hourglass className="size-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-300 block">
+                        Configured Demo Close
+                      </span>
+                      <motion.span
+                        key={timeLeftStr}
+                        initial={{ opacity: 0.7, y: 1 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="text-sm sm:text-base font-mono font-extrabold text-amber-900 dark:text-amber-200 truncate block"
+                      >
+                        {timeLeftStr}
+                      </motion.span>
+                    </div>
+                  </div>
+
+                  {/* Animated Turnout Progress Bar Gauge */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <BarChart3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        Demo Turnout Estimate
+                      </span>
+                      <motion.span
+                        key={turnoutPercent}
+                        initial={{ scale: 1.15 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm"
+                      >
+                        {turnoutPercent}%
+                      </motion.span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-3 overflow-hidden p-0.5 border border-slate-300/60 dark:border-slate-800">
+                      <motion.div
+                        className="bg-gradient-to-r from-[#157E92] to-emerald-500 dark:from-cyan-500 dark:to-emerald-400 h-full rounded-full shadow-sm"
+                        initial={{ width: 0 }}
+                        animate={{
+                          width: `${Math.min(100, Math.max(0, Number(turnoutPercent)))}%`,
+                        }}
+                        transition={{ type: "spring", stiffness: 60, damping: 14 }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                      <span>{votesCast.toLocaleString()} Demo Votes</span>
+                      <span>{config.totalStudents.toLocaleString()} Sample Voters</span>
+                    </div>
+                  </div>
+
+                  {/* 3 Metrics Mini Grid */}
+                  <div className="grid grid-cols-3 gap-2.5 pt-1">
+                    <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 p-3 text-center">
+                      <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Sample Total</div>
+                      <div className="text-lg font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                        {config.totalStudents.toLocaleString()}
+                      </div>
+                    </div>
+                    <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/30 p-3 text-center">
+                      <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Local Count</div>
+                      <motion.div
+                        key={votesCast}
+                        initial={{ scale: 1.08 }}
+                        animate={{ scale: 1 }}
+                        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        className="text-lg font-black text-emerald-700 dark:text-emerald-300 font-mono mt-0.5"
+                      >
+                        {votesCast.toLocaleString()}
+                      </motion.div>
+                    </div>
+                    <div className="rounded-xl bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 p-3 text-center">
+                      <div className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400">Remaining in Sample</div>
+                      <div className="text-lg font-black text-slate-800 dark:text-amber-300 font-mono mt-0.5">
+                        {remainingStudents.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer link to public audit */}
+                  <div className="pt-2 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-white/10">
+                    <span className="flex items-center gap-1.5 text-[11px]">
+                      <ShieldCheck className="w-3.5 h-3.5 text-cyan-500" />
+                      No Proofs Verified Here
+                    </span>
+                    <Link
+                      href="/audit"
+                      className="text-[#157E92] hover:text-[#0e5c6a] dark:text-cyan-400 dark:hover:text-cyan-300 font-semibold hover:underline flex items-center gap-1"
+                    >
+                      <span>Audit Explorer</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </motion.div>
+              </div>
+
             </div>
+
           </div>
-        </section>
+        </motion.section>
 
         {/* ========================================================================= */}
-        {/* SECTION 2: BENTO GRID TELEMETRY STRETCHED ACROSS THE FULL SCREEN */}
+        {/* SECTION 2: LOCAL PARTICIPATION PREVIEW */}
         {/* ========================================================================= */}
         <section aria-labelledby="telemetry-bento-title" className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-cyan-400">
-                Institutional Consensus &amp; Ledger Activity
+                Local Demo Data
               </p>
               <h2
                 id="telemetry-bento-title"
                 className="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white"
               >
-                Live Participation Telemetry
+                Participation Preview
               </h2>
             </div>
             <Link
               href="/audit"
               className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-[#157E92] hover:text-[#0E6273] dark:text-cyan-400 dark:hover:text-cyan-300 self-start sm:self-auto"
             >
-              <span>Inspect Raw Merkle Batches</span>
+              <span>Review Available Evidence</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-5 lg:gap-6">
-            {/* Bento Card 1: Live Sealed Ballot Stream (5 cols) */}
-            <div className="lg:col-span-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between">
+
+            {/* Bento Card 1: Local demo values */}
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="lg:col-span-5 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between space-y-6"
+            >
               <div>
                 <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="flex items-center gap-2">
                     <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Live Sealed Ballot Ledger
+                      Local Participation Preview
+                    </h3>
+                  </div>
+                  <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                    Sample Values
+                  </span>
+                </div>
+
+                {/* Poll Countdown Display */}
+                <div className="mt-4 rounded-2xl bg-amber-500/10 border border-amber-500/25 p-3 flex items-center gap-3">
+                  <div className="size-8 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <Hourglass className="size-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-amber-700 dark:text-amber-300 block">
+                      Configured Demo Close
+                    </span>
+                    <motion.span
+                      key={timeLeftStr}
+                      initial={{ opacity: 0.7, y: 1 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="text-xs sm:text-sm font-mono font-extrabold text-amber-900 dark:text-amber-200 truncate block"
+                    >
+                      {timeLeftStr}
+                    </motion.span>
+                  </div>
+                </div>
+
+                {/* Spring Animated Turnout Gauge */}
+                <div className="mt-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <BarChart3 className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      Demo Turnout Estimate
+                    </span>
+                    <motion.span
+                      key={turnoutPercent}
+                      initial={{ scale: 1.15 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm"
+                    >
+                      {turnoutPercent}%
+                    </motion.span>
+                  </div>
+                  <div className="w-full bg-slate-200 dark:bg-slate-900 rounded-full h-3 overflow-hidden p-0.5 border border-slate-300/60 dark:border-slate-800">
+                    <motion.div
+                      className="bg-gradient-to-r from-[#157E92] to-emerald-500 dark:from-cyan-500 dark:to-emerald-400 h-full rounded-full shadow-sm"
+                      initial={{ width: 0 }}
+                      animate={{
+                        width: `${Math.min(100, Math.max(0, Number(turnoutPercent)))}%`,
+                      }}
+                      transition={{ type: "spring", stiffness: 60, damping: 14 }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+                    <span>{votesCast.toLocaleString()} Demo Votes</span>
+                    <span>{config.totalStudents.toLocaleString()} Sample Voters</span>
+                  </div>
+                </div>
+
+                {/* Metrics 3-box */}
+                <div className="grid grid-cols-3 gap-2 pt-3">
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-2.5 text-center">
+                    <div className="text-[10px] uppercase font-bold text-slate-500">Sample Total</div>
+                    <div className="text-base font-black text-slate-900 dark:text-white font-mono mt-0.5">
+                      {config.totalStudents.toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="rounded-xl bg-emerald-500/10 border border-emerald-500/25 p-2.5 text-center">
+                    <div className="text-[10px] uppercase font-bold text-emerald-700 dark:text-emerald-400">Local Count</div>
+                    <motion.div
+                      key={votesCast}
+                      initial={{ scale: 1.08 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="text-base font-black text-emerald-700 dark:text-emerald-300 font-mono mt-0.5"
+                    >
+                      {votesCast.toLocaleString()}
+                    </motion.div>
+                  </div>
+                  <div className="rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800 p-2.5 text-center">
+                    <div className="text-[10px] uppercase font-bold text-slate-500">Remaining in Sample</div>
+                    <div className="text-base font-black text-slate-800 dark:text-amber-300 font-mono mt-0.5">
+                      {remainingStudents.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="size-3.5 text-cyan-500" />
+                  <span>Demo data from this browser</span>
+                </span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">Not Live</span>
+              </div>
+            </motion.div>
+
+            {/* Bento Card 2: Sample activity */}
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="lg:col-span-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between"
+            >
+              <div>
+                <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <span className="size-2 rounded-full bg-cyan-500 animate-ping" />
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Sample Ballot Activity
                     </h3>
                   </div>
                   <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                    Append-Only
+                    Sample Data
                   </span>
                 </div>
 
                 <div className="mt-4 space-y-2.5">
-                  {recentEvents.map((evt) => (
-                    <div
-                      key={evt.id}
-                      className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-xl bg-cyan-500/10 text-[#157E92] dark:text-cyan-400 flex items-center justify-center font-bold text-xs">
-                          <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
-                            Ballot #{evt.ballotNumber} Sealed
+                  <AnimatePresence>
+                    {recentEvents.map((evt) => (
+                      <motion.div
+                        key={evt.id}
+                        layout
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/60"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="size-8 rounded-xl bg-cyan-500/10 text-[#157E92] dark:text-cyan-400 flex items-center justify-center font-bold text-xs">
+                            <CheckCircle2 className="w-4 h-4" />
                           </div>
-                          <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                            Commitment: {evt.hashPreview}
+                          <div>
+                            <div className="text-xs font-bold text-slate-900 dark:text-white font-mono">
+                              Demo Ballot #{evt.ballotNumber}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                              Activity: {evt.hashPreview}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        {evt.timeAgo}
-                      </span>
-                    </div>
-                  ))}
+                        <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                          {evt.timeAgo}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 </div>
               </div>
 
               <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                <span>Cryptographic commitments anchored in memory ledger</span>
-                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">100% Validated</span>
+                <span>Sample values are not blockchain data</span>
+                <span className="font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                  Not Verified
+                </span>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Bento Card 2: Cryptographic Privacy Architecture (4 cols) */}
-            <div className="lg:col-span-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
-                  <div className="size-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-                    <Lock className="w-4 h-4" />
-                  </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Strict Boundary Separation
-                  </h3>
-                </div>
-
-                <div className="mt-4 space-y-3.5 text-xs text-slate-600 dark:text-slate-300">
-                  <div className="flex gap-3">
-                    <div className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 font-bold text-[10px] text-slate-700 dark:text-slate-300">
-                      1
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 dark:text-white">Identity Station:</span> Validates enrollment eligibility and issues a one-time credential token.
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 font-bold text-[10px] text-slate-700 dark:text-slate-300">
-                      2
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 dark:text-white">Detached Origin:</span> The voting station receives only the cryptographic token without your identity.
-                    </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <div className="size-5 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0 font-bold text-[10px] text-slate-700 dark:text-slate-300">
-                      3
-                    </div>
-                    <div>
-                      <span className="font-bold text-slate-900 dark:text-white">Receipt Hash:</span> You retain a private inclusion hash to confirm your vote was counted.
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <Link
-                  href="/security-limits"
-                  className="text-xs font-semibold text-[#157E92] dark:text-cyan-400 hover:underline flex items-center justify-between"
-                >
-                  <span>Review Threat Assumptions</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Bento Card 3: Independent Witness Network (3 cols) */}
-            <div className="lg:col-span-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between">
+            {/* Bento Card 3: Example witness statuses (3 cols) */}
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="lg:col-span-3 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm flex flex-col justify-between"
+            >
               <div>
                 <div className="flex items-center gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
                   <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                     <Cpu className="w-4 h-4" />
                   </div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                    Witness Nodes
+                    Example Witness Statuses
                   </h3>
                 </div>
 
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-xs">
-                    <span className="text-slate-600 dark:text-slate-400">Node Alpha</span>
-                    <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">ONLINE</span>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Example node</span>
+                    <span className="font-mono text-[10px] text-slate-500 font-bold bg-slate-500/10 px-2 py-0.5 rounded">
+                      Sample
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-xs">
-                    <span className="text-slate-600 dark:text-slate-400">Faculty Observer</span>
-                    <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">CO-SIGNED</span>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Example observer</span>
+                    <span className="font-mono text-[10px] text-slate-500 font-bold bg-slate-500/10 px-2 py-0.5 rounded">
+                      Sample
+                    </span>
                   </div>
                   <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-xs">
-                    <span className="text-slate-600 dark:text-slate-400">External Auditor</span>
-                    <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">ACTIVE</span>
+                    <span className="text-slate-600 dark:text-slate-400 font-medium">Example auditor</span>
+                    <span className="font-mono text-[10px] text-slate-500 font-bold bg-slate-500/10 px-2 py-0.5 rounded">
+                      Sample
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-                Zero unilateral modifications permitted.
+              <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                Illustration only. Witness signatures and independent operation are not verified here.
               </div>
-            </div>
+            </motion.div>
+
           </div>
         </section>
 
         {/* ========================================================================= */}
-        {/* SECTION 3: INSTANT VERIFICATION & CHECK-IN STATION (STRETCHED) */}
+        {/* SECTION 3: INSTANT VERIFICATION & CHECK-IN STATION */}
         {/* ========================================================================= */}
         <section aria-labelledby="verification-station-title" className="space-y-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[#157E92] dark:text-cyan-300 text-xs font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Campus Enrollment Check-In</span>
+              <span>Local ID Image Format Demo</span>
             </div>
             <h2
               id="verification-station-title"
               className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white"
             >
-              Instant Student ID Card Verification
+              Student ID Image Format Demo
             </h2>
             <p className="max-w-3xl text-sm sm:text-base text-slate-600 dark:text-slate-300">
-              Verify your eligibility directly before heading to the ballot booth. Enter your College Roll Number and upload your institutional ID card photo for automatic geometric and roster validation.
+              Enter a roll number and choose an image to check input format and image dimensions in this browser. This demo does not read card text, query a roster, determine eligibility, or issue a credential.
             </p>
           </div>
 
-          {/* Full-Width Stretched Verifier Component */}
-          <div className="w-full">
+          {/* Full-Width Stretched Verifier Component with spring hover */}
+          <motion.div
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
+            className="w-full"
+          >
             <StudentIdCardVerifier />
-          </div>
+          </motion.div>
         </section>
 
         {/* ========================================================================= */}
@@ -590,7 +796,7 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
               <p className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-cyan-400">
-                Official Campus Balloting
+                Election Listings
               </p>
               <h2
                 id="featured-elections-title"
@@ -599,7 +805,7 @@ export default function HomePage() {
                 Current Campus Elections
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-slate-600 dark:text-slate-400">
-                Review available elections, examine contesting nominees, and review verified status.
+                Election details and status are reported by the configured service.
               </p>
             </div>
             <Link
@@ -619,7 +825,7 @@ export default function HomePage() {
             >
               <RefreshCw className="w-8 h-8 animate-spin mx-auto text-[#157E92] dark:text-cyan-400" />
               <p className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                Loading official election records from consensus ledger…
+                Loading election records from the configured service…
               </p>
             </div>
           )}
@@ -645,8 +851,9 @@ export default function HomePage() {
           {!electionsLoading && !electionsError && featuredElections.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 lg:gap-6">
               {featuredElections.map((election) => (
-                <article
+                <motion.article
                   key={election.id}
+                  whileHover={{ y: -4, transition: { duration: 0.2 } }}
                   className="group flex flex-col justify-between rounded-3xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#07111e] p-6 shadow-sm hover:shadow-md hover:border-cyan-500/40 transition-all duration-200"
                 >
                   <div className="space-y-4">
@@ -666,7 +873,7 @@ export default function HomePage() {
                       </h3>
                       <p className="mt-2 line-clamp-2 text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                         {election.description ||
-                          "Review candidates, examination criteria, and cast your verified institutional ballot."}
+                          "Review the candidates and election details reported by the configured service."}
                       </p>
                     </div>
                   </div>
@@ -691,7 +898,7 @@ export default function HomePage() {
                       <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           )}
@@ -700,17 +907,17 @@ export default function HomePage() {
             <div className="rounded-3xl border border-dashed border-slate-300 dark:border-slate-800 bg-white/60 dark:bg-slate-900/40 p-12 text-center">
               <Vote className="w-10 h-10 mx-auto text-slate-400 mb-3" />
               <p className="text-base font-bold text-[#10233F] dark:text-white">
-                No active elections scheduled at this moment
+                No election records are currently available
               </p>
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Campus election schedules will appear here automatically upon certification by the election commission.
+                Election listings appear here when the configured election service provides them.
               </p>
             </div>
           )}
         </section>
 
         {/* ========================================================================= */}
-        {/* SECTION 5: CRYPTOGRAPHIC TRUST PILLARS & TRANSPARENCY MATRIX */}
+        {/* SECTION 5: EVIDENCE SCOPE AND TRUST BOUNDARIES */}
         {/* ========================================================================= */}
         <section
           aria-labelledby="trust-pillars-title"
@@ -718,128 +925,123 @@ export default function HomePage() {
         >
           <div className="max-w-3xl space-y-2">
             <p className="text-xs font-bold uppercase tracking-wider text-[#157E92] dark:text-cyan-400">
-              Zero Trust Security Foundation
+              Prototype Design and Verification Limits
             </p>
             <h2
               id="trust-pillars-title"
               className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-[#10233F] dark:text-white"
             >
-              The Four Pillars of Institutional Integrity
+              Evidence and Trust Boundaries
             </h2>
             <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed">
-              Unlike traditional surveys or black-box electronic voting, HimVote enforces mathematical verifiability at every step of the election lifecycle.
+              The prototype includes election and evidence workflows. Independent verification depends on deployed services, published evidence, and trusted keys.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Pillar 1 */}
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3">
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3"
+            >
               <div className="size-10 rounded-xl bg-cyan-500/15 text-[#157E92] dark:text-cyan-400 flex items-center justify-center">
                 <Lock className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-[#10233F] dark:text-white">
-                1. Identity Detachment
+                1. Identity and Ballot Data Separation
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Voter verification and ballot casting run on cryptographically isolated boundaries. The ballot box has no knowledge of which student submitted which ballot.
+                The design uses separate identity and casting services. The local prototype does not establish that ballot activity cannot be linked to a student.
               </p>
-            </div>
+            </motion.div>
 
             {/* Pillar 2 */}
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3">
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3"
+            >
               <div className="size-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <FileCheck2 className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-[#10233F] dark:text-white">
-                2. Cryptographic Receipts
+                2. Independently Verifiable Election Records
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Upon casting, every participant obtains an immutable SHA-256 receipt hash. You can check the public ledger to verify your ballot was included in the final count.
+                A casting service may return a receipt. Checking inclusion requires a published proof and trusted root; a receipt alone does not verify the tally.
               </p>
-            </div>
+            </motion.div>
 
             {/* Pillar 3 */}
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3">
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3"
+            >
               <div className="size-10 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                 <Cpu className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-[#10233F] dark:text-white">
-                3. Merkle Tree Ledger
+                3. Tamper-Evident Merkle Log
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                All votes are committed into an append-only Merkle tree data structure. Any alteration to previously recorded votes invalidates the entire mathematical root hash.
+                Configured services can publish Merkle checkpoints. A matching proof can show inclusion under a supplied root, which must be authenticated separately.
               </p>
-            </div>
+            </motion.div>
 
             {/* Pillar 4 */}
-            <div className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3">
+            <motion.div
+              whileHover={{ y: -4, transition: { duration: 0.2 } }}
+              className="rounded-2xl border border-slate-100 dark:border-slate-800/80 bg-slate-50/70 dark:bg-slate-900/50 p-6 space-y-3"
+            >
               <div className="size-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <ShieldCheck className="w-5 h-5" />
               </div>
               <h3 className="text-base font-bold text-[#10233F] dark:text-white">
-                4. Witness Notarization
+                4. Multi-Party Witness Attestation
               </h3>
               <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                Independent campus faculty and external observer nodes cross-sign the ledger state before, during, and after tally finalization to prevent unilateral manipulation.
+                Independently operated witnesses can sign checkpoints when configured. The local deployment does not establish independent witness custody or prevent every form of manipulation.
               </p>
-            </div>
+            </motion.div>
           </div>
 
-          {/* Institutional Transparency Matrix */}
+          {/* Evidence Scope Table */}
           <div className="pt-6 border-t border-slate-100 dark:border-slate-800 overflow-x-auto">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-semibold">
-                  <th className="py-3 px-4">Verification Capability</th>
-                  <th className="py-3 px-4">Standard Paper Ballot</th>
-                  <th className="py-3 px-4">Commercial Web Forms</th>
-                  <th className="py-3 px-4 text-[#157E92] dark:text-cyan-400">HimVote Cryptographic Protocol</th>
+                  <th className="py-3 px-4">Area</th>
+                  <th className="py-3 px-4">What This Prototype Shows</th>
+                  <th className="py-3 px-4 text-[#157E92] dark:text-cyan-400">What Requires Verification</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
                 <tr>
                   <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
-                    End-to-End Individual Receipt
+                    Identity and Ballot Separation
                   </td>
-                  <td className="py-3.5 px-4 text-slate-500">No receipt</td>
-                  <td className="py-3.5 px-4 text-slate-500">Generic email confirmation</td>
-                  <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    SHA-256 Merkle Receipt
-                  </td>
+                  <td className="py-3.5 px-4 text-slate-500">Separate identity and casting service boundaries</td>
+                  <td className="py-3.5 px-4 text-slate-500">Deployed data flows, credential protocol, and operator access</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
-                    Cryptographic Identity Detachment
+                    Ballot Receipt
                   </td>
-                  <td className="py-3.5 px-4 text-slate-500">Physical box separation</td>
-                  <td className="py-3.5 px-4 text-rose-500">Stored in database row</td>
-                  <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Strict Boundary Tokens
-                  </td>
+                  <td className="py-3.5 px-4 text-slate-500">Receipt lookup may be available in a configured flow</td>
+                  <td className="py-3.5 px-4 text-slate-500">Published inclusion proof and independently trusted root</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
-                    Public Auditability
+                    Checkpoint Evidence
                   </td>
-                  <td className="py-3.5 px-4 text-slate-500">Manual recount required</td>
-                  <td className="py-3.5 px-4 text-slate-500">Closed database log</td>
-                  <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Open Witness Ledger
-                  </td>
+                  <td className="py-3.5 px-4 text-slate-500">Checkpoint and witness fields from configured services</td>
+                  <td className="py-3.5 px-4 text-slate-500">Signature verification, key custody, and independent witness operation</td>
                 </tr>
                 <tr>
                   <td className="py-3.5 px-4 font-medium text-slate-900 dark:text-white">
-                    Tamper-Evident History
+                    Blockchain Anchoring
                   </td>
-                  <td className="py-3.5 px-4 text-slate-500">Physical seal check</td>
-                  <td className="py-3.5 px-4 text-slate-500">Database updates allowed</td>
-                  <td className="py-3.5 px-4 text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 shrink-0" />
-                    Append-Only Tree Structure
-                  </td>
+                  <td className="py-3.5 px-4 text-slate-500">A durable relayer outbox and chain integration path</td>
+                  <td className="py-3.5 px-4 text-slate-500">Live RPC, deployed contract, signer permissions, and confirmed transaction</td>
                 </tr>
               </tbody>
             </table>
@@ -849,8 +1051,9 @@ export default function HomePage() {
         {/* ========================================================================= */}
         {/* SECTION 6: INSTITUTIONAL ACTION BANNER */}
         {/* ========================================================================= */}
-        <section
+        <motion.section
           aria-labelledby="cta-banner-title"
+          whileHover={{ y: -2, transition: { duration: 0.2 } }}
           className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#10233F] via-[#0D3455] to-[#157E92] p-8 sm:p-12 lg:p-16 text-white shadow-2xl"
         >
           <div className="relative z-10 max-w-3xl space-y-5">
@@ -865,26 +1068,30 @@ export default function HomePage() {
               Ready to Make Your Voice Count?
             </h2>
             <p className="text-slate-200 text-sm sm:text-base leading-relaxed">
-              Verify your institutional enrollment, review contesting nominees across all campus elections, and cast your sealed vote with mathematical certainty.
+              Review election information and available verification evidence. Voting is available only when the election services are configured and active.
             </p>
             <div className="pt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
-              <Link
-                href="/elections"
-                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-white px-7 text-sm font-bold text-[#10233F] hover:bg-slate-100 transition-colors shadow-md"
-              >
-                <span>Browse All Elections</span>
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/audit"
-                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 hover:bg-white/20 px-6 text-sm font-semibold text-white transition-colors"
-              >
-                <FileCheck2 className="w-4 h-4" />
-                <span>Open Public Audit Explorer</span>
-              </Link>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/elections"
+                  className="inline-flex min-h-[50px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-white px-7 text-sm font-bold text-[#10233F] hover:bg-slate-100 transition-colors shadow-md"
+                >
+                  <span>Browse All Elections</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.98 }}>
+                <Link
+                  href="/audit"
+                  className="inline-flex min-h-[50px] w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/10 hover:bg-white/20 px-6 text-sm font-semibold text-white transition-colors"
+                >
+                  <FileCheck2 className="w-4 h-4" />
+                  <span>Open Public Audit Explorer</span>
+                </Link>
+              </motion.div>
             </div>
           </div>
-        </section>
+        </motion.section>
 
       </div>
     </div>

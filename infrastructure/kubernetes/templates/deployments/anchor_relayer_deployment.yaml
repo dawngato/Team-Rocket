@@ -1,3 +1,11 @@
+{{- if .Values.anchorRelayer.env.workerEnabled }}
+{{- $chainRpcUrl := required "anchorRelayer.env.chainRpcUrl is required when the anchoring worker is enabled" .Values.anchorRelayer.env.chainRpcUrl }}
+{{- $chainId := required "anchorRelayer.env.chainId is required when the anchoring worker is enabled" .Values.anchorRelayer.env.chainId }}
+{{- $contractAddress := required "anchorRelayer.env.contractAddress is required when the anchoring worker is enabled" .Values.anchorRelayer.env.contractAddress }}
+{{- $witnessPublicKey := required "anchorRelayer.env.witnessPublicKey is required when the anchoring worker is enabled" .Values.anchorRelayer.env.witnessPublicKey }}
+{{- $commitments := fromJson .Values.anchorRelayer.env.witnessElectionCommitments }}
+{{- if not $commitments }}{{ fail "anchorRelayer.env.witnessElectionCommitments must be a non-empty JSON object when the anchoring worker is enabled" }}{{ end }}
+{{- end }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -35,20 +43,43 @@ spec:
             capabilities:
               drop:
                 - ALL
+          ports:
+            - name: http
+              containerPort: 8087
           env:
             - name: WITNESS_BASE
               value: "http://himvote-witness:8086"
+            - name: WITNESS_PUBLIC_KEY
+              value: {{ .Values.anchorRelayer.env.witnessPublicKey | quote }}
+            - name: WITNESS_ELECTION_COMMITMENTS
+              value: {{ .Values.anchorRelayer.env.witnessElectionCommitments | quote }}
+            - name: OUTBOX_DATABASE_PATH
+              value: "/data/anchor_outbox.sqlite"
+            - name: ANCHOR_WORKER_ENABLED
+              value: {{ .Values.anchorRelayer.env.workerEnabled | toString | quote }}
+            - name: CHAIN_RPC_URL
+              value: {{ .Values.anchorRelayer.env.chainRpcUrl | quote }}
             - name: CHAIN_ID
               value: {{ .Values.anchorRelayer.env.chainId | quote }}
+            - name: CHAIN_CONTRACT_ADDRESS
+              value: {{ .Values.anchorRelayer.env.contractAddress | quote }}
             - name: LOG_LEVEL
               value: {{ .Values.anchorRelayer.env.logLevel | quote }}
             - name: LOG_REDACTION_ENABLED
               value: {{ .Values.anchorRelayer.env.logRedactionEnabled | quote }}
+            {{ if .Values.anchorRelayer.env.workerEnabled }}
+            - name: RELAYER_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "anchorRelayer.env.privateKeySecretName is required when the anchoring worker is enabled" .Values.anchorRelayer.env.privateKeySecretName | quote }}
+                  key: {{ required "anchorRelayer.env.privateKeySecretKey is required when the anchoring worker is enabled" .Values.anchorRelayer.env.privateKeySecretKey | quote }}
+            {{ end }}
           resources:
             {{- toYaml .Values.anchorRelayer.resources | nindent 12 }}
           volumeMounts:
-            - name: tmp-volume
-              mountPath: /tmp
+            - name: outbox-data
+              mountPath: /data
       volumes:
-        - name: tmp-volume
-          emptyDir: {}
+        - name: outbox-data
+          persistentVolumeClaim:
+            claimName: himvote-anchor-relayer-outbox

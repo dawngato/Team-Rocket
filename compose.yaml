@@ -170,6 +170,11 @@ services:
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
       - WITNESS_KEY_ID=local_witness_key
+      - WITNESS_KEY_FILE_PATH=/data/witness_key.hex
+      - WITNESS_DB_PATH=/data/witness.db
+      - WITNESS_AUDIT_LOG_PATH=/data/audit.jsonl
+    volumes:
+      - witness_data:/data
     networks:
       - himvote_casting_net
     restart: unless-stopped
@@ -183,9 +188,16 @@ services:
       - WITNESS_BASE=http://witness:8086
       - CHAIN_RPC_URL=http://chain_node:8545
       - CHAIN_ID=31337
-      - CHAIN_CONTRACT_ADDRESS=${CHAIN_CONTRACT_ADDRESS:-CHANGE_ME}
+      - CHAIN_CONTRACT_ADDRESS=${CHAIN_CONTRACT_ADDRESS:-}
+      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY:-}
+      - WITNESS_PUBLIC_KEY=${WITNESS_PUBLIC_KEY:-}
+      - WITNESS_ELECTION_COMMITMENTS=${WITNESS_ELECTION_COMMITMENTS:-}
+      - ANCHOR_WORKER_ENABLED=${ANCHOR_WORKER_ENABLED:-false}
+      - OUTBOX_DATABASE_PATH=/data/anchor_outbox.sqlite
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
+    volumes:
+      - anchor_relayer_data:/data
     depends_on:
       witness:
         condition: service_started
@@ -198,9 +210,22 @@ services:
   chain_node:
     image: ghcr.io/foundry-rs/foundry:latest
     container_name: himvote_chain_node
-    entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545", "--chain-id", "31337"]
+    entrypoint:
+      - anvil
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8545"
+      - --chain-id
+      - "31337"
+      - --state
+      - /data/anvil-state.json
+      - --state-interval
+      - "5"
     ports:
       - "127.0.0.1:8545:8545"
+    volumes:
+      - anvil_data:/data
     healthcheck:
       test: ["CMD", "cast", "block-number", "--rpc-url", "http://127.0.0.1:8545"]
       interval: 5s
@@ -281,3 +306,6 @@ volumes:
   identity_db_data:
   casting_db_data:
   redis_data:
+  witness_data:
+  anchor_relayer_data:
+  anvil_data:

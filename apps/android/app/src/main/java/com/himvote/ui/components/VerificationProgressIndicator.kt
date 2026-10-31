@@ -198,7 +198,7 @@ class VerificationProgressEngine(
             VerificationStep(
                 id = "merkle_path",
                 title = "Merkle Inclusion Proof Chain",
-                description = "Recompute SHA_256 hash path from ballot receipt leaf to published tree root"
+                description = "Recompute SHA-256 hash path from ballot receipt leaf to published tree root"
             ),
             VerificationStep(
                 id = "witness_attestation",

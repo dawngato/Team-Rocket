@@ -1,4 +1,7 @@
+"use client";
+
 import * as React from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
 
 export interface DialogProps {
@@ -74,27 +77,37 @@ export function DialogContent({
     };
   }, [open, setOpen]);
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
-        onClick={() => setOpen(false)}
-        aria-hidden="true"
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className={cn(
-          "relative z-50 w-full max-w-lg rounded-xl border border-stone-200 dark:border-stone-800 bg-[#FAF8F5] dark:bg-[#1C1917] p-6 shadow-md animate-dialog-spring",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setOpen(false)}
+            aria-hidden="true"
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ type: "spring", damping: 26, stiffness: 360 }}
+            className={cn(
+              "relative z-50 w-full max-w-lg rounded-xl border border-stone-200 dark:border-stone-800 bg-[#FAF8F5] dark:bg-[#1C1917] p-6 shadow-xl",
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }
 

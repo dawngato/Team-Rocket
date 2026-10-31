@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, Plus, ShieldAlert, Trash2, Award } from "lucide-react";
+import { motion } from "motion/react";
+import { AlertCircle, Plus, ShieldAlert, Trash2, Award, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { apiClient } from "@/lib/api_client";
 import type { Candidate, CandidateDraft, Election } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -155,14 +156,59 @@ export default function AdminCandidatesPage() {
 
       {election && (
         <>
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-5 dark:border-[#1E3352] dark:bg-[#132135]">
-            <div>
-              <h2 className="font-bold text-base text-[#10233F] dark:text-white">{election.title}</h2>
-              <p className="mt-0.5 text-xs text-slate-500 font-mono">{election.id} · State: {election.state}</p>
-            </div>
-            <span className="rounded-full border border-slate-200 px-3 py-1 text-xs font-bold text-slate-700 dark:border-[#1E3352] dark:text-slate-300">
-              {candidates.length} Registered Candidates
-            </span>
+          {/* Animated Statistics Tiles */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                Selected Contest
+              </span>
+              <div className="mt-2 text-lg font-extrabold text-[#10233F] dark:text-white truncate">
+                {election.title}
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+                Contest state: <span className="font-bold uppercase">{election.state}</span>
+              </span>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.05 }}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                Official Nominees
+              </span>
+              <div className="mt-2 text-2xl font-extrabold font-mono text-[#157E92] dark:text-[#38BDF8]">
+                {candidates.length}
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+                Validated contestant entries
+              </span>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+                Manifest Integrity
+              </span>
+              <div className="mt-2 text-base font-bold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
+                <ShieldCheck className="size-4" />
+                <span>{editable ? "Mutable Draft" : "Cryptographically Frozen"}</span>
+              </div>
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+                {editable ? "Modifications permitted prior to freeze" : "Immutable hash locked against alteration"}
+              </span>
+            </motion.div>
           </div>
 
           {!editable && (
@@ -223,10 +269,13 @@ export default function AdminCandidatesPage() {
                   No candidates are currently registered for this contest.
                 </p>
               )}
-              {candidates.map((candidate) => (
-                <article
+              {candidates.map((candidate, idx) => (
+                <motion.article
                   key={candidate.id}
-                  className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-2xs dark:border-[#1E3352] dark:bg-[#132135]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  className="flex items-start justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
                 >
                   <div className="min-w-0">
                     <h3 className="font-bold text-sm sm:text-base text-[#10233F] dark:text-white">
@@ -251,7 +300,7 @@ export default function AdminCandidatesPage() {
                       <Trash2 className="size-4" aria-hidden="true" />
                     </button>
                   )}
-                </article>
+                </motion.article>
               ))}
             </section>
           )}

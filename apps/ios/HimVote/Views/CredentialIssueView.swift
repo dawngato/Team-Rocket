@@ -71,11 +71,11 @@ public struct CredentialIssueView: View {
                 .frame(width: shieldIconSize, height: shieldIconSize)
                 .foregroundStyle(ColorTokens.brandAccent)
             
-            Text("Anonymous Voter Credential")
+            Text("Voter Credential")
                 .font(Typography.sectionHeader)
                 .foregroundStyle(ColorTokens.institutionalNavy)
             
-            Text("RFC 9474 Blind Signature Issuance")
+            Text("Credential Issuance Status")
                 .font(Typography.callout)
                 .foregroundStyle(ColorTokens.textSecondary)
         }
@@ -84,27 +84,27 @@ public struct CredentialIssueView: View {
     
     private var securityGuaranteesCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Cryptographic Security Guarantees")
+            Text("Credential Handling and Limits")
                 .font(Typography.cardHeader)
                 .foregroundStyle(ColorTokens.textPrimary)
             
             VStack(alignment: .leading, spacing: 10) {
                 SecurityBulletPoint(
                     icon: "checkmark.circle.fill",
-                    title: "Hardware Enclave Sealing",
-                    description: "Your credential private secret never leaves your device and is stored with kSecAttrAccessibleWhenUnlockedThisDeviceOnly."
+                    title: "Device-Scoped Keychain Storage",
+                    description: "Credential data is stored as a Keychain item with kSecAttrAccessibleWhenUnlockedThisDeviceOnly. It is available when the device is unlocked and is not migrated to another device."
                 )
                 
                 SecurityBulletPoint(
                     icon: "eye.slash.fill",
-                    title: "Mathematical Unlinkability",
-                    description: "The identity issuer signs a blinded token. The issuer cannot correlate your identity to your cast ballot."
+                    title: "Issuance Privacy Limit",
+                    description: "This client sends the request value without an RFC 9474 blinding operation and stores the response as the credential signature. It does not demonstrate that the issuer cannot link credential issuance to ballot use."
                 )
                 
                 SecurityBulletPoint(
                     icon: "1.circle.fill",
-                    title: "Single Cast Enforcement",
-                    description: "The casting origin verifies the signature without discovering which student submitted it."
+                    title: "Receipt Validation",
+                    description: "The casting service reports whether it accepts a receipt. A local client flag does not prevent another device from submitting a ballot."
                 )
             }
         }
@@ -207,7 +207,7 @@ public struct CredentialIssueView: View {
                             .padding(.trailing, 4)
                     }
                     
-                    Text(credentialViewModel.isRequesting ? "Blinding and Requesting..." : "Generate Blind Credential")
+                    Text(credentialViewModel.isRequesting ? "Requesting Credential..." : "Request Credential")
                         .font(Typography.cardHeader)
                         .foregroundStyle(.white)
                 }

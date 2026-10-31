@@ -59,7 +59,7 @@ public struct ElectionGuidelinesSheet: View {
                 .font(Typography.sectionHeader)
                 .foregroundStyle(ColorTokens.institutionalNavy)
             
-            Text("Follow these three steps to vote securely")
+            Text("Review these steps before using the voting prototype")
                 .font(Typography.callout)
                 .foregroundStyle(ColorTokens.textSecondary)
         }
@@ -70,19 +70,19 @@ public struct ElectionGuidelinesSheet: View {
             guidelineStepRow(
                 number: "1",
                 title: "Obtain Blind Credential",
-                detail: "Generate a cryptographic authorization token locally. Your identity issuer signs it without discovering your ballot selection."
+                detail: "The client sends a credential request to the identity issuer. This build does not implement the RFC 9474 blinding and unblinding steps needed to demonstrate unlinkability."
             )
             
             guidelineStepRow(
                 number: "2",
                 title: "Cast Inside Sandboxed Booth",
-                detail: "Review candidates and submit your choice in an isolated ephemeral session. Encryption happens strictly inside the browser sandbox."
+                detail: "The client opens an ephemeral browser session and submits the returned ballot artifacts. Ballot encryption and privacy depend on the booth and casting service."
             )
             
             guidelineStepRow(
                 number: "3",
                 title: "Track Merkle Inclusion",
-                detail: "Receive a unique cryptographic receipt handle. Track the status from outbox commit to independent witness signing and smart contract anchoring."
+                detail: "Use the receipt handle to view reported outbox, witness, and anchor statuses. Verify witness keys and chain finality independently."
             )
         }
     }
@@ -121,11 +121,11 @@ public struct ElectionGuidelinesSheet: View {
     
     private var faqSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Privacy Guarantee")
+            Text("Privacy Limits")
                 .font(Typography.captionBold)
                 .foregroundStyle(ColorTokens.textSecondary)
             
-            Text("Ballot choices cannot be traced back to student records. Even system administrators cannot uncover voter candidate selections.")
+            Text("Blind credentials and encrypted ballots are intended to separate identity verification from ballot submission. This prototype does not prove that administrators cannot infer a voter's choice.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textTertiary)
         }

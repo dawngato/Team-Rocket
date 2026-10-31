@@ -1,6 +1,7 @@
 "use client";
 
 import React, { ReactNode, useEffect, useRef, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 
 export interface AccessibleDialogProps {
   open?: boolean;
@@ -184,44 +185,56 @@ export function AccessibleDialog({
     };
   }, [visible]);
 
-  if (!visible) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-backdrop-fade" />
-      <div
-        ref={dialogRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dialog-title"
-        aria-describedby={description ? "dialog-description" : undefined}
-        className="relative w-full max-w-lg p-6 bg-white dark:bg-[#132135] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#1E3352] origin-center animate-dialog-spring"
-        tabIndex={-1}
-      >
-        <h2 id="dialog-title" className="text-xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">
-          {title}
-        </h2>
-        {description ? (
-          <p id="dialog-description" className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
-            {description}
-          </p>
-        ) : null}
-        <div className="space-y-4">{children}</div>
-        <div className="flex justify-end gap-2 pt-5 border-t border-slate-100 dark:border-[#1E3352]/70 mt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-[44px] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] transition-all duration-75 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
+    <AnimatePresence>
+      {visible && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) onClose();
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-backdrop-fade"
+          />
+          <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dialog-title"
+            aria-describedby={description ? "dialog-description" : undefined}
+            initial={{ opacity: 0, scale: 0.95, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 12 }}
+            transition={{ type: "spring", damping: 26, stiffness: 360 }}
+            className="relative z-10 w-full max-w-lg p-6 bg-white dark:bg-[#132135] rounded-2xl shadow-2xl border border-slate-200 dark:border-[#1E3352] origin-center animate-dialog-spring"
+            tabIndex={-1}
           >
-            Cancel
-          </button>
+            <h2 id="dialog-title" className="text-xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">
+              {title}
+            </h2>
+            {description ? (
+              <p id="dialog-description" className="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+                {description}
+              </p>
+            ) : null}
+            <div className="space-y-4">{children}</div>
+            <div className="flex justify-end gap-2 pt-5 border-t border-slate-100 dark:border-[#1E3352]/70 mt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="min-h-[44px] px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-[0.98] transition-all duration-75 ease-out select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#132135]"
+              >
+                Cancel
+              </button>
+            </div>
+          </motion.div>
         </div>
-      </div>
-    </div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -112,7 +112,7 @@ public final class CredentialViewModel {
             
             self.currentCredential = credential
             self.issuanceStatus = .delivered
-            self.successMessage = "Credential issued and sealed into hardware Keychain."
+            self.successMessage = "Credential issued and stored in Keychain."
         } catch {
             self.errorMessage = error.localizedDescription
             self.issuanceStatus = .reserved

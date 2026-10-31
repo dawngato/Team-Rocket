@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Award, Plus, RefreshCw } from "lucide-react";
+import { motion } from "motion/react";
+import { ArrowRight, Award, Plus, RefreshCw, ShieldCheck } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient, ElectionApiError } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
@@ -38,11 +39,11 @@ export default function OfficerOverviewPage() {
         <div>
           <div className="mb-1 inline-flex items-center gap-1.5 rounded bg-[#157E92]/10 px-2.5 py-0.5 text-xs font-semibold text-[#157E92] dark:text-[#38BDF8]">
             <Award className="h-3.5 w-3.5" aria-hidden="true" />
-            <span>Election administration desk</span>
+            <span>Transparency Officer Workspace</span>
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">Election Officer Desk</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">Transparency Officer Command Desk</h1>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-            Live election service data for assigned elections. No local election fixtures are used on this operational screen.
+            Authoritative election administration console for assigned university contests. Direct verification of candidate manifests, voting window schedules, and publication attestations.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
@@ -88,15 +89,21 @@ export default function OfficerOverviewPage() {
         <>
           <section aria-label="Election service metrics" className="grid grid-cols-1 gap-6 sm:grid-cols-3">
             {[
-              ["Active elections", metrics.active, "OPEN, FROZEN, SCHEDULED, PAUSED, or CLOSING"],
-              ["Draft elections", metrics.drafts, "Not yet frozen"],
-              ["Governed elections", metrics.governed, "Returned by the service"],
-            ].map(([label, value, detail]) => (
-              <div key={label} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+              ["Active Contests", metrics.active, "OPEN, FROZEN, SCHEDULED, PAUSED, or CLOSING"],
+              ["Draft Contests", metrics.drafts, "Pending candidate roster freeze"],
+              ["Governed Contests", metrics.governed, "Authoritative service records"],
+            ].map(([label, value, detail], idx) => (
+              <motion.div
+                key={label}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.05 }}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
+              >
                 <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">{label}</span>
                 <div className="mt-2 font-mono text-3xl font-extrabold tabular-nums text-[#10233F] dark:text-white">{value}</div>
                 <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">{detail}</span>
-              </div>
+              </motion.div>
             ))}
           </section>
 
@@ -146,7 +153,7 @@ export default function OfficerOverviewPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
                   {elections.slice(0, 4).map((election) => (
-                    <tr key={election.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/30">
+                    <tr key={election.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150">
                       <td className="px-6 py-4"><div className="font-bold text-[#10233F] dark:text-white">{election.title}</div><div className="font-mono text-xs text-slate-400">{election.id}</div></td>
                       <td className="px-6 py-4"><StateBadge state={election.state} size="sm" /></td>
                       <td className="px-6 py-4 text-xs text-slate-500">{formatUtcDate(election.closes_at_utc)}</td>

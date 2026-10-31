@@ -184,7 +184,7 @@ public struct TailAdminDashboardView: View {
             metricCard(
                 title: "Witness Checkpoints",
                 value: "48",
-                badgeText: "100% Append",
+                badgeText: "Sample Data",
                 badgeIsPositive: true,
                 iconName: "shield.checkered",
                 iconColor: ColorTokens.tailAdminPurple
@@ -194,7 +194,7 @@ public struct TailAdminDashboardView: View {
             metricCard(
                 title: "EVM Anchors",
                 value: "12",
-                badgeText: "Anvil #142",
+                badgeText: "Local Sample",
                 badgeIsPositive: true,
                 iconName: "link.circle.fill",
                 iconColor: ColorTokens.tailAdminInfo
@@ -426,14 +426,14 @@ public struct TailAdminDashboardView: View {
                     Circle()
                         .fill(ColorTokens.tailAdminBrand)
                         .frame(width: 8, height: 8)
-                    Text("Avg Acceptance Latency: 18ms")
+                    Text("Sample acceptance latency: 18 ms")
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.textSecondary)
                 }
                 
                 Spacer()
                 
-                Text("Zero Plaintext Leakage")
+                Text("No plaintext selection shown in this sample")
                     .font(Typography.captionBold)
                     .foregroundStyle(ColorTokens.tailAdminSuccess)
             }
@@ -597,37 +597,37 @@ public struct TailAdminDashboardView: View {
     // MARK: - Security Trust Matrix Section
     private var securityTrustMatrixSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Cryptographic Security Properties")
+            Text("Verification Status for Sample Data")
                 .font(Typography.cardHeader)
                 .foregroundStyle(ColorTokens.textPrimary)
             
             VStack(spacing: 8) {
                 securityCheckRow(
-                    title: "Deterministic Ballot Commitment",
-                    status: "PASS",
-                    desc: "Encrypted ciphertexts appended with immutable leaf indices",
-                    isPass: true
+                    title: "Ballot Commitment",
+                    status: "NOT VERIFIED",
+                    desc: "This dashboard does not verify encryption or inclusion for the displayed sample records.",
+                    isPass: false
                 )
                 
                 securityCheckRow(
-                    title: "Single Cast Guarantee",
-                    status: "ENFORCED",
-                    desc: "Nullifiers strictly unique per election, duplicate attempts rejected",
-                    isPass: true
+                    title: "Single Cast Status",
+                    status: "NOT VERIFIED",
+                    desc: "This dashboard does not verify one-vote enforcement across users or devices.",
+                    isPass: false
                 )
                 
                 securityCheckRow(
-                    title: "Independent External Witness",
-                    status: "ACKNOWLEDGED",
-                    desc: "Monotonic append-only checkpoints signed outside admin DB",
-                    isPass: true
+                    title: "External Witness",
+                    status: "NOT VERIFIED",
+                    desc: "This dashboard does not verify an external witness signature for the displayed records.",
+                    isPass: false
                 )
                 
                 securityCheckRow(
                     title: "EVM Smart Contract Anchor",
-                    status: "FINALIZED",
-                    desc: "Hashes anchored on-chain with immutable sequence rejection",
-                    isPass: true
+                    status: "LOCAL SAMPLE",
+                    desc: "The displayed anchor uses local Anvil data. Public-chain inclusion and finality are not verified here.",
+                    isPass: false
                 )
             }
         }

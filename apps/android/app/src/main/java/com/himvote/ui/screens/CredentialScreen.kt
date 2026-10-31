@@ -51,7 +51,7 @@ fun CredentialScreen(
     Scaffold(
         topBar = {
             HimVoteTopBar(
-                title = "Voting Credential",
+                title = "Voting Credential Issuance",
                 canNavigateBack = true,
                 onNavigateBack = onNavigateBack
             )
@@ -81,7 +81,7 @@ fun CredentialScreen(
             }
 
             Text(
-                text = "Cryptographic Blind Credential",
+                text = "Voting Credential Issuance",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = DesignTokens.Navy900,
@@ -89,7 +89,7 @@ fun CredentialScreen(
             )
 
             Text(
-                text = "HimVote issues blinded cryptographic tokens to ensure your identity remains completely detached from your cast ballot.",
+                text = "This client facilitates cryptographic voting credential issuance. Cryptographic blinding protocols ensure complete identity and ballot separation prior to ballot submission.",
                 fontSize = 14.sp,
                 color = DesignTokens.TextPrimary,
                 lineHeight = 20.sp
@@ -97,8 +97,8 @@ fun CredentialScreen(
 
             StyledStatusBanner(
                 style = BannerStyle.INFO,
-                title = "Section 10 Privacy Rule",
-                message = "Issuance is finalized prior to ballot casting to eliminate identity to cast timing correlations."
+                title = "Identity and Ballot Separation",
+                message = "Separating credential issuance from ballot submission ensures identity and ballot separation, mitigating timing correlation risks."
             )
 
             Card(
@@ -121,7 +121,7 @@ fun CredentialScreen(
                     )
 
                     Text(
-                        text = "Your unblinded token is kept exclusively in your device Android Keystore chip. It is excluded from cloud backups and device to device transfers.",
+                        text = "Credentials are stored in encrypted preferences protected by an Android Keystore hardware master key. Cloud backup and device migration are permanently disabled.",
                         fontSize = 13.sp,
                         color = DesignTokens.TextPrimary.copy(alpha = 0.8f),
                         lineHeight = 18.sp
@@ -144,7 +144,7 @@ fun CredentialScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Credential Stored in Android Keystore",
+                                text = "Credential Stored on This Device",
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DesignTokens.Green600
@@ -169,22 +169,22 @@ fun CredentialScreen(
 
             if (!state.isIssued) {
                 HimVoteButton(
-                    text = "Request Blind Credential",
+                    text = "Request Credential",
                     onClick = { viewModel.requestCredential() },
                     isLoading = state.isLoading,
-                    contentDesc = "Request anonymous blind voting credential"
+                    contentDesc = "Request voting credential"
                 )
             } else {
                 StyledStatusBanner(
-                    style = BannerStyle.VERIFIED,
-                    title = "Cryptographic Token Ready",
-                    message = "Your blind token is securely stored and ready for ballot casting in the isolated voting booth."
+                    style = BannerStyle.INFO,
+                    title = "Cryptographic Credential Active",
+                    message = "An authenticated credential is stored for this election. The election service verifies credential signatures during ballot submission while preserving identity and ballot separation."
                 )
 
                 HimVoteButton(
-                    text = "Continue to Voting Booth",
+                    text = "Proceed to Ballot Submission",
                     onClick = { onProceedToVoting(state.electionId) },
-                    contentDesc = "Proceed to voting booth with valid credential"
+                    contentDesc = "Proceed to ballot submission with cryptographic credential"
                 )
             }
         }

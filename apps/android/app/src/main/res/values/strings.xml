@@ -1,11 +1,14 @@
 <resources>
     <string name="app_name">HimVote</string>
-    <string name="title_login">Sign In to HimVote</string>
-    <string name="title_elections">Elections</string>
-    <string name="title_candidates">Candidates</string>
-    <string name="title_credential">Voting Credential</string>
-    <string name="title_voting">Cast Ballot</string>
-    <string name="title_receipt">Ballot Receipt</string>
-    <string name="title_inclusion">Inclusion Proof</string>
-    <string name="title_results">Election Results</string>
+    <string name="title_login">Institutional Authentication</string>
+    <string name="title_elections">Institutional Elections</string>
+    <string name="title_candidates">Nominated Candidates</string>
+    <string name="title_credential">Voting Credential Issuance</string>
+    <string name="title_voting">Ballot Submission</string>
+    <string name="title_receipt">Cryptographic Receipt</string>
+    <string name="title_inclusion">Cryptographic Inclusion Proof</string>
+    <string name="title_results">Certified Election Results</string>
+    <string name="label_ballot_submission">Ballot Submission</string>
+    <string name="label_identity_separation">Identity and Ballot Separation</string>
+    <string name="label_cryptographic_receipt">Cryptographic Receipt</string>
 </resources>

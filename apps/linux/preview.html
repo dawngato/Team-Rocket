@@ -635,7 +635,7 @@
                   Institutional Zero-Knowledge Voting System
                 </div>
                 <div style="font-size: 9px; color: var(--muted); line-height: 1.4; margin-bottom: 12px; max-width: 500px;">
-                  Specification Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. The ballot booth runs in an isolated cryptographic enclave communicating via verified API contracts.
+                  This browser preview does not run an isolated cryptographic enclave or verify API contracts. It does not encrypt ballots or establish ballot privacy.
                 </div>
                 <button class="btn btn-secondary" id="btn-motion-toggle" onclick="toggleMotion()">Reduce 3D Motion</button>
               </div>
@@ -731,7 +731,7 @@
             <div class="view-eyebrow">Student Receipt Inspection</div>
             <div class="view-title">Verify Voter Receipt Inclusion in Merkle Log</div>
             <div class="view-detail">
-              Voter receipts never reveal candidate choice. Enter your receipt handle below to mathematically verify its inclusion in the RFC 9162 Merkle log.
+              This preview uses sample receipt data. A local receipt handle does not establish ballot privacy or prove inclusion in an independently verified Merkle log.
             </div>
           </div>
 
@@ -819,15 +819,15 @@
             <div class="view-eyebrow">Cryptographic Trust Pipeline &amp; Implementation</div>
             <div class="view-title">How HimVote Mathematical Verification &amp; Member Voting Works</div>
             <div class="view-detail">
-              HimVote completely replaces administrator trust with 4 independent, mathematically provable layers. Every vote for real candidates (President, VP, GenSec) is cast secretly, logged without tampering, and provable offline with zero knowledge of identity.
+              This page simulates HimVote's intended verification workflow using sample values. Its actions do not issue credentials, encrypt ballots, contact witnesses, or publish blockchain anchors.
             </div>
           </div>
 
           <!-- 6-Stage Isometric Pipeline Canvas -->
           <div class="card card-padding">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">6-Stage Independent Trust Boundary Architecture</div>
-              <span class="status-chip chip-success">● RFC 9474 &amp; RFC 9162 COMPLIANT</span>
+              <div style="font-size: 12px; font-weight: 700; color: var(--navy);">Six-Stage Verification Design (Illustrative)</div>
+              <span class="status-chip chip-info">● ILLUSTRATIVE PROTOCOL FLOW</span>
             </div>
             <canvas id="pipeline-canvas" width="800" height="150" style="width: 100%; border-radius: var(--radius-sm); background: #0F172A;"></canvas>
           </div>
@@ -835,10 +835,10 @@
           <!-- 4 Architectural Tiers Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
             <div class="card card-padding card-accent-teal">
-              <div style="font-size: 10px; font-weight: 700; color: var(--green);">TIER 01: ELIGIBILITY &amp; UNLINKABLE CREDENTIALS</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--green);">TIER 01: ELIGIBILITY &amp; CREDENTIAL ISSUANCE (DESIGN)</div>
               <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">RFC 9474 RSA Blind Signature Tokens</div>
               <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
-                Students authenticate via SSO / OTP against the frozen college roster. Voter client blinds a random secret token (r) and sends the blinded envelope to the Identity Issuer. The issuer signs that the voter is eligible, without seeing the secret token or ever knowing who is voted for. Unblinded credential gives 100% unlinkability.
+                In a deployed design, the student authenticates against an institutional roster and receives a blinded credential. This preview does not implement RFC 9474 blinding or establish unlinkability between identity and ballot use.
               </div>
             </div>
 
@@ -846,23 +846,23 @@
               <div style="font-size: 10px; font-weight: 700; color: #0284C7;">TIER 02: BALLOT ENCRYPTION &amp; ZERO KNOWLEDGE</div>
               <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">Exponential ElGamal + CDS 1-out-of-k Proofs</div>
               <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
-                When a student selects a candidate (e.g., Suzi or Priya Patel), the browser client encrypts the selection using the election public key into ciphertext (c1, c2). A Chaum-Pedersen / CDS zero-knowledge proof proves mathematically that the ballot is a valid vote (0 or 1) without disclosing the choice.
+                A deployed voting engine may encrypt candidate selections with an election public key and attach a zero-knowledge proof. This preview does not encrypt selections or generate such a proof.
               </div>
             </div>
 
             <div class="card card-padding card-accent-teal">
-              <div style="font-size: 10px; font-weight: 700; color: var(--teal);">TIER 03: TAMPER-EVIDENT MERKLE LOGGING</div>
+              <div style="font-size: 10px; font-weight: 700; color: var(--teal);">TIER 03: MERKLE LOGGING (DESIGN)</div>
               <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">RFC 8785 Canonical JCS &amp; RFC 9162 Trees</div>
               <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
-                Every cast ballot is canonicalized per RFC 8785 (JCS) and inserted into an append-only RFC 9162 SHA-256 Merkle tree. A deterministic nullifier prevents double-voting. The student receives a cryptographic receipt handle (e.g., HIM-REC-9821-X4) carrying their leaf inclusion proof path.
+                A deployed casting service can append ballot records to a Merkle tree and use nullifiers to detect repeated submissions. This preview stores local demo data and does not create RFC 9162 inclusion proofs.
               </div>
             </div>
 
             <div class="card card-padding card-accent-slate">
-              <div style="font-size: 10px; font-weight: 700; color: #475569;">TIER 04: WITNESS CO-SIGNING &amp; ETHEREUM ANCHOR</div>
+              <div style="font-size: 10px; font-weight: 700; color: #475569;">TIER 04: WITNESSES &amp; CHAIN ANCHOR (DESIGN)</div>
               <div style="font-size: 13px; font-weight: 700; color: var(--navy); margin: 4px 0;">Ed25519 Checkpoints &amp; HimVoteAnchor.sol</div>
               <div style="font-size: 11px; color: var(--text); line-height: 1.5;">
-                Independent witness service nodes verify monotonic sequence numbers and co-sign tree heads with Ed25519 signatures. Checkpoints are anchored on an EVM smart contract. Even a rogue university database administrator cannot rewrite, erase, or fabricate ballots after anchoring.
+                A deployed design can use independent witnesses and an EVM contract to make conflicting checkpoints detectable. This preview does not contact witness services or anchor checkpoints on a blockchain.
               </div>
             </div>
           </div>
@@ -874,7 +874,7 @@
                 <div style="font-size: 13px; font-weight: 800; color: var(--navy);">⚡ Interactive Member Voting &amp; Verification Simulator</div>
                 <div style="font-size: 10px; color: var(--muted);">Step-by-step cryptographic execution with live mathematical telemetry:</div>
               </div>
-              <span class="status-chip chip-info">LIVE CRYPTO WORKBENCH</span>
+              <span class="status-chip chip-info">SIMULATED WORKFLOW</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 240px 1fr; gap: 16px;">
@@ -897,7 +897,7 @@
                 <div style="margin-top: 14px; display: flex; flex-direction: column; gap: 6px;">
                   <button class="btn btn-action" id="sim-btn-step1" onclick="runSimStep(1)" style="justify-content: center;">1. Request Blind Token</button>
                   <button class="btn btn-secondary" id="sim-btn-step2" onclick="runSimStep(2)" disabled style="justify-content: center;">2. Encrypt &amp; Generate ZKP</button>
-                  <button class="btn btn-secondary" id="sim-btn-step3" onclick="runSimStep(3)" disabled style="justify-content: center;">3. Anonymous Cast</button>
+                  <button class="btn btn-secondary" id="sim-btn-step3" onclick="runSimStep(3)" disabled style="justify-content: center;">3. Simulated Cast</button>
                   <button class="btn btn-secondary" id="sim-btn-step4" onclick="runSimStep(4)" disabled style="justify-content: center;">4. Issue Merkle Receipt</button>
                 </div>
               </div>
@@ -925,19 +925,19 @@
         <div id="view-security_limits" class="view-pane">
           <div class="view-header">
             <div class="view-eyebrow">Institutional Trust Model</div>
-            <div class="view-title">Security Guarantees & Cryptographic Limits</div>
+            <div class="view-title">Security Limits & Verification Scope</div>
             <div class="view-detail">
-              In strict compliance with Specification Rule 0.1(7), HimVote never makes unqualified claims such as 'unhackable' or '100% secure'. Below are the exact verified mathematical properties and assumptions.
+              This preview does not verify system-wide security properties. The checks below describe what a properly configured verifier could establish from trusted inputs.
             </div>
           </div>
 
           <div class="card card-padding">
-            <div style="font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 8px;">What Independent Verification Proves</div>
+              <div style="font-size: 13px; font-weight: 700; color: var(--green); margin-bottom: 8px;">What a Valid Proof Can Show</div>
             <div style="font-size: 11px; color: var(--text); line-height: 1.6;">
-              &bull; <strong>Cast-as-Intended:</strong> The voting booth encrypts the ballot using the election public key before submission.<br>
-              &bull; <strong>Recorded-as-Cast:</strong> The Merkle inclusion proof mathematically guarantees the voter's encrypted ballot exists unaltered in the log.<br>
-              &bull; <strong>Tallied-as-Recorded:</strong> Universal verifiability allows any auditor to recompute candidate vote counts from the published archive.<br>
-              &bull; <strong>Monotonic Continuity:</strong> External witness co-signatures detect if an election database attempts to rewind or erase votes.
+              &bull; <strong>Encrypted ballot:</strong> Encryption can hide a selection from parties without the decryption key; it does not prove the voter selected the intended candidate.<br>
+              &bull; <strong>Merkle inclusion:</strong> A valid proof shows that a leaf is included under a supplied root. The root must be authenticated separately.<br>
+              &bull; <strong>Tally recomputation:</strong> An auditor can recompute totals from a complete, trusted archive; this preview does not provide one.<br>
+              &bull; <strong>Checkpoint continuity:</strong> Independently trusted witness signatures can help detect conflicting checkpoints; this preview does not verify them.
             </div>
           </div>
         </div>
@@ -948,7 +948,7 @@
             <div class="view-eyebrow">Identity Management</div>
             <div class="view-title">Institutional User Session & Role-Based Access</div>
             <div class="view-detail">
-              Role-based capabilities with strict separation between identity and anonymous casting. Switch between institutional personas to inspect scoped capabilities.
+              This preview illustrates role-based access with sample personas. It does not connect identity and casting services or establish anonymous voting.
             </div>
           </div>
 
@@ -1004,9 +1004,9 @@
         <div id="view-admin" class="view-pane">
           <div class="view-header">
             <div class="view-eyebrow">Administrative Oversight</div>
-            <div class="view-title">Immutable Audit Trail & Cryptographic Event Stream</div>
+            <div class="view-title">Audit Trail & Event Records</div>
             <div class="view-detail">
-              All sensitive administrative actions are cryptographically hashed and logged. Any unauthorized retro-modification will invalidate the chain.
+                  This preview displays sample audit entries. It does not verify signatures or detect changes to an external log.
             </div>
           </div>
 
@@ -1167,7 +1167,7 @@
           <tr><td><strong>Ctrl + 2</strong></td><td>Receipt Verifier</td></tr>
           <tr><td><strong>Ctrl + 3</strong></td><td>Offline Audit Engine</td></tr>
           <tr><td><strong>Ctrl + 4</strong></td><td>How It Works & Pipeline</td></tr>
-          <tr><td><strong>Ctrl + 5</strong></td><td>Security Guarantees & Limits</td></tr>
+          <tr><td><strong>Ctrl + 5</strong></td><td>Security Limits & Verification Scope</td></tr>
           <tr><td><strong>Ctrl + 6</strong></td><td>Session & SSO Personas</td></tr>
           <tr><td><strong>Ctrl + 7</strong></td><td>System Settings</td></tr>
           <tr><td><strong>Ctrl + 8</strong></td><td>Audit Trail Logs</td></tr>
@@ -1188,10 +1188,10 @@
       receipt: "Student Receipt Inspection  /  Verify Voter Receipt Inclusion in Merkle Log",
       audit: "Offline Election Audit  /  Inspect archive, verify Merkle tree, and visualize tallies",
       how_it_works: "Verification Architecture  /  How Mathematical Election Verification Works",
-      security_limits: "Institutional Trust Model  /  Security Guarantees & Cryptographic Limits",
+      security_limits: "Institutional Trust Model  /  Security Limits & Verification Scope",
       login: "Identity Management  /  Institutional User Session & Role-Based Access",
       settings: "Configuration & Diagnostics  /  System Settings & Origin Endpoints",
-      admin: "Administrative Oversight  /  Immutable Audit Trail & Cryptographic Event Stream"
+      admin: "Administrative Oversight  /  Audit Trail & Event Records"
     };
 
     function switchView(viewKey) {
@@ -1686,7 +1686,7 @@
       if (c) {
         c.innerHTML = `
           <div style="color: #94A3B8;">// Simulator reset. Active Candidate selection locked.</div>
-          <div style="color: #94A3B8;">// Click '1. Request Blind Token' to execute cryptographic proof pipeline.</div>
+          <div style="color: #94A3B8;">// Select a stage to view sample values from the simulated workflow.</div>
         `;
       }
       document.getElementById('sim-btn-step1').disabled = false;
@@ -1710,8 +1710,8 @@
         setTimeout(() => {
           logSim(`  > Blinding secret r: 0x9b4f2c019d...`, '#94A3B8');
           logSim(`  > Blinded payload m' = (m * r^e) mod N sent to Identity Issuer`, '#94A3B8');
-          logSim(`  > Verified voter against frozen institutional roster: Roll ${cand.rollNo}`, '#10B981');
-          logSim(`[TIER 1 SUCCESS] RSA Blind Signature granted! Unblinded on client: sigma = s' / r mod N`, '#10B981');
+          logSim(`  > Sample roster check for roll ${cand.rollNo}`, '#10B981');
+          logSim(`[SIMULATION] Credential issuance is illustrated; no RFC 9474 signature is generated.`, '#10B981');
           document.getElementById('sim-btn-step1').className = 'btn btn-secondary';
           document.getElementById('sim-btn-step1').disabled = true;
           document.getElementById('sim-btn-step2').disabled = false;
@@ -1723,7 +1723,7 @@
           logSim(`  > Ephemeral randomness k = 0x7c41...`, '#94A3B8');
           logSim(`  > Ciphertext (c1, c2) = (g^k mod p, h^k * g^vote mod p)`, '#94A3B8');
           logSim(`  > Synthesizing CDS 1-out-of-k Zero Knowledge Proof (Chaum-Pedersen)`, '#94A3B8');
-          logSim(`[TIER 2 SUCCESS] ZKP Proof constructed: proves ballot is in {0, 1} without revealing vote!`, '#10B981');
+          logSim(`[SIMULATION] Zero-knowledge proof generation is illustrated; no proof is created.`, '#10B981');
           document.getElementById('sim-btn-step2').className = 'btn btn-secondary';
           document.getElementById('sim-btn-step2').disabled = true;
           document.getElementById('sim-btn-step3').disabled = false;
@@ -1733,9 +1733,9 @@
         logSim(`[TIER 3] Submitting anonymous payload to casting service boundary...`, '#F59E0B');
         setTimeout(() => {
           logSim(`  > Checking nullifier index 0x${cand.cryptoDigest.substring(0, 16)}...`, '#94A3B8');
-          logSim(`  > Nullifier status: UNUSED. No double-voting detected.`, '#10B981');
-          logSim(`  > Verifying RSA blind token against Election Public Key... OK!`, '#10B981');
-          logSim(`[TIER 3 SUCCESS] Ballot accepted anonymously! Zero link between student and ballot.`, '#10B981');
+          logSim(`  > Sample nullifier status: UNUSED.`, '#10B981');
+          logSim(`  > Signature verification is illustrated; no RSA credential is checked.`, '#10B981');
+          logSim(`[SIMULATION] The preview does not submit a ballot or prove identity unlinkability.`, '#10B981');
           document.getElementById('sim-btn-step3').className = 'btn btn-secondary';
           document.getElementById('sim-btn-step3').disabled = true;
           document.getElementById('sim-btn-step4').disabled = false;
@@ -1747,15 +1747,15 @@
           const receiptCode = `HIM-${cand.initials}-${Math.floor(1000 + Math.random() * 9000)}-X4`;
           logSim(`  > RFC 9162 Merkle Leaf Hash: SHA-256(0x00 || JCS(ballot))`, '#94A3B8');
           logSim(`  > Inserted at Leaf Index: #101. Updated Tree Root: 0x8a7f92b...`, '#94A3B8');
-          logSim(`  > Checkpoint signed by Independent External Witness (Ed25519)`, '#10B981');
-          logSim(`  > Root anchored on EVM Consensus Smart Contract (HimVoteAnchor.sol)`, '#10B981');
-          logSim(`[COMPLETE] Official voter receipt created: ${receiptCode}`, '#38BDF8');
+          logSim(`  > Sample witness checkpoint; no external signature is verified.`, '#10B981');
+          logSim(`  > Sample EVM anchor; no blockchain transaction is submitted.`, '#10B981');
+          logSim(`[SIMULATION] Sample receipt displayed: ${receiptCode}`, '#38BDF8');
 
           document.getElementById('sim-btn-step4').className = 'btn btn-secondary';
           document.getElementById('sim-btn-step4').disabled = true;
           document.getElementById('sim-receipt-handle').textContent = receiptCode;
           document.getElementById('sim-receipt-box').style.display = 'flex';
-          showToast(`Ballot cast! Receipt: ${receiptCode}`, 'success');
+          showToast(`Simulation complete. Sample receipt: ${receiptCode}`, 'success');
         }, 300);
       }
     }
@@ -1935,7 +1935,7 @@ function submitStudentRegistration() {
 
   students.push({ student_id: sid, name, email, department: dept });
   saveStoredStudents(students);
-  document.getElementById('reg-stu-status').innerHTML = `<div class="status-chip chip-green">Successfully registered ${name} (${sid}) with eligible voting credentials.</div>`;
+  document.getElementById('reg-stu-status').innerHTML = `<div class="status-chip chip-green">${name} (${sid}) was added to this browser's demo roster. No institutional eligibility check was performed.</div>`;
   showToast(`Registered ${name} (${sid})`, "success");
 }
 
@@ -1990,14 +1990,14 @@ function checkVoterEligibilityStatus() {
 
   const voted = (camp.voted_student_ids || []).map(s => s.toUpperCase());
   if (voted.includes(sid)) {
-    msgEl.innerHTML = `<span style="color: var(--red); font-weight: 700;">ONE STUDENT, ONE VOTE: Student ${sid} has ALREADY cast a ballot in this election. Duplicate votes are strictly blocked.</span>`;
+    msgEl.innerHTML = `<span style="color: var(--red); font-weight: 700;">A ballot for ${sid} is already recorded in this browser's demo data. This local check does not prevent submissions from other devices.</span>`;
   } else {
     const students = getStoredStudents();
     const st = students.find(s => s.student_id.toUpperCase() === sid);
     if (st) {
-      msgEl.innerHTML = `<span style="color: var(--green); font-weight: 700;">Verified: ${st.name} (${st.department}) is eligible and has NOT yet voted.</span>`;
+      msgEl.innerHTML = `<span style="color: var(--green); font-weight: 700;">${st.name} (${st.department}) appears in this browser's demo roster. No institutional eligibility check was performed.</span>`;
     } else {
-      msgEl.innerHTML = `<span style="color: var(--amber);">Unregistered ID. Enter to vote and register automatically.</span>`;
+      msgEl.innerHTML = `<span style="color: var(--amber);">This ID is not in the demo roster. The preview does not verify voter eligibility.</span>`;
     }
   }
 }
@@ -2023,7 +2023,7 @@ function submitCastBallot() {
   // STRICT ONE STUDENT, ONE VOTE ENFORCEMENT
   const votedIds = (camp.voted_student_ids || []).map(s => s.toUpperCase());
   if (votedIds.includes(sid)) {
-    alert("⛔ ONE STUDENT, ONE VOTE VIOLATION: Student " + sid + " has already cast a ballot in this election! Duplicate voting is mathematically prohibited.");
+    alert("A ballot for student " + sid + " is already saved in this browser's demo data. Duplicate prevention applies only to this local preview.");
     showToast(`ONE STUDENT, ONE VOTE: Duplicate ballot rejected for ${sid}`, "danger");
     return;
   }
@@ -2060,7 +2060,7 @@ function submitCastBallot() {
   saveStoredCampaigns(camps);
 
   closeModal('modal-voting-booth');
-  showToast(`Ballot Cast! Verifiable Receipt: ${rcpt}`, "success");
+  showToast(`Demo ballot recorded. Local receipt: ${rcpt}`, "success");
   alert(`Ballots Cast Successfully!
 
 Election: ${camp.title}
@@ -2069,7 +2069,7 @@ Student ID: ${sid}
 Receipt Code: ${rcpt}
 Nullifier: ${nullifier}
 
-Your receipt is permanently secured in the local cryptographic log.`);
+This preview stores the student ID, candidate selection, and receipt in this browser's local data. It does not provide ballot secrecy or an independently verified receipt.`);
   renderCampaignDirectory();
 }
 
@@ -2245,9 +2245,9 @@ function openAnalyticalReport(elecId) {
     </div>
 
     <div style="background: var(--surface); padding: 10px; border-radius: 4px; border: 1px solid var(--line); font-size: 9px; color: var(--muted);">
-      <strong>Zero-Knowledge Audit Attestation:</strong><br>
-      Merkle Root: sha256:7f9a2b8e3c1d4a0e9f8b2c4d6e8a0b2c4d6e8a0b2c4d6e8a0b2c4d6e8a0b2c4d<br>
-      One-Student-One-Vote Nullifier Status: 100% Unique & Verified (0 Replays, 0 Double-Ballots).
+      <strong>Sample Integrity Panel:</strong><br>
+      Sample hash: not computed from the ballots shown above.<br>
+      Duplicate-ID checks apply only to demo data in this browser; no independent audit was performed.
     </div>
   `;
 
@@ -2296,7 +2296,7 @@ function downloadAnalyticalReport(format) {
     a.click();
     showToast("Downloaded analytical report (JSON)", "success");
   } else {
-    let md = `# HimVote Certified Election Analytical Report\n\n`;
+    let md = `# HimVote Local Demo Analytics Report\n\n`;
     md += `**Election Title:** ${camp.title}  \n`;
     md += `**Contest:** ${camp.contest}  \n`;
     md += `**Total Ballots Cast:** ${totalVotes}  \n`;
@@ -2310,7 +2310,7 @@ function downloadAnalyticalReport(format) {
       const pct = totalVotes > 0 ? ((cnt / totalVotes) * 100).toFixed(1) : '0.0';
       md += `| #${idx + 1} | ${c.name} | ${c.department} | ${c.slate} | ${cnt} | ${pct}% |\n`;
     });
-    md += `\n*Report certified by HimVote Linux Independent Verification Engine.*\n`;
+    md += `\n*Generated from this browser's local demo data. This report is not an independent audit or certification.*\n`;
 
     const blob = new Blob([md], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
@@ -2497,14 +2497,14 @@ function renderCampaignDirectory() {
   <div class="modal-window" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
     <div class="modal-header">
       <div class="modal-title" style="color: var(--navy); font-weight: 700; font-size: 15px;">
-        🗳 Official Voting Booth — One Student, One Vote
+        🗳 Demo Voting Booth — Local One-Ballot-per-ID Check
       </div>
       <button class="modal-close" onclick="closeModal('modal-voting-booth')">&times;</button>
     </div>
     <div class="modal-body" style="padding: 16px; font-size: 11px;">
       <div style="background: var(--light-bg); border-left: 3px solid var(--teal); padding: 8px 12px; margin-bottom: 12px; border-radius: 2px;">
         <strong id="vote-modal-election-title" style="color: var(--navy);">Election Title</strong><br>
-        <span style="color: var(--muted); font-size: 10px;">Strictly Enforced: Each verified student roll number can only cast exactly <strong>ONE</strong> ballot. Duplicate attempts are mathematically blocked by nullifier derivation.</span>
+        <span style="color: var(--muted); font-size: 10px;">This preview stores student IDs and candidate selections together in this browser. It checks for a repeated ID in local demo data but does not provide anonymous voting or cross-device duplicate prevention.</span>
       </div>
 
       <div style="margin-bottom: 12px;">
@@ -2524,13 +2524,13 @@ function renderCampaignDirectory() {
       </div>
 
       <div style="background: var(--surface); padding: 10px; border-radius: 6px; border: 1px solid var(--line);">
-        <div style="font-weight: 600; color: var(--navy); margin-bottom: 4px;">Cryptographic Receipt Guarantee:</div>
-        <div style="font-size: 10px; color: var(--muted);">Upon submission, a unique SHA-256 nullifier is computed. You will receive an official verifiable receipt code included in the Merkle audit tree.</div>
+        <div style="font-weight: 600; color: var(--navy); margin-bottom: 4px;">Demo Receipt:</div>
+        <div style="font-size: 10px; color: var(--muted);">The preview creates a local receipt handle and stores it with the ballot data in this browser. It does not create a cryptographically verified or blockchain-anchored receipt.</div>
       </div>
     </div>
     <div class="modal-footer" style="padding: 12px 16px; background: var(--surface); display: flex; justify-content: flex-end; gap: 8px;">
       <button class="btn btn-secondary" onclick="closeModal('modal-voting-booth')">Cancel</button>
-      <button class="btn btn-primary" onclick="submitCastBallot()">Confirm & Cast Secret Ballot</button>
+      <button class="btn btn-primary" onclick="submitCastBallot()">Record Demo Ballot</button>
     </div>
   </div>
 </div>

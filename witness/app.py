@@ -219,6 +219,20 @@ def create_app(config: Optional[WitnessConfig] = None) -> FastAPI:
         """Return latest witnessed checkpoint acknowledgement."""
         return service.get_latest(election_id=election_id)
 
+    @app.get(
+        "/elections/{id}/checkpoints",
+        response_model=list[WitnessAcknowledgement],
+        status_code=status.HTTP_200_OK,
+    )
+    async def get_election_checkpoints(id: str, after_sequence: int = 0) -> list[WitnessAcknowledgement]:
+        """Return signed checkpoint acknowledgements for a configured relayer to ingest."""
+        if after_sequence < 0:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="after_sequence must be a non-negative integer",
+            )
+        return service.list_checkpoints(election_id=id, after_sequence=after_sequence)
+
     return app
 
 

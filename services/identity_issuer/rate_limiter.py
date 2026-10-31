@@ -99,7 +99,7 @@ class DistributedRateLimiter:
         if self._production:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Shared rate limiting is unavailable",
+                detail="Shared rate limiting service is currently unavailable. Please retry shortly.",
             )
 
         # In-memory bounded sliding window fallback

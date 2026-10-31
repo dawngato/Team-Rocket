@@ -5,7 +5,6 @@ import Link from "next/link";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 import { ArrowRight, Users, Vote } from "lucide-react";
 
 export default function StudentElectionsPage() {
@@ -16,44 +15,17 @@ export default function StudentElectionsPage() {
   useEffect(() => {
     let cancelled = false;
     void electionClient.getElections()
+      .then((summaries) => Promise.all(summaries.map((election) => electionClient.getElection(election.id))))
       .then((nextElections) => {
         if (!cancelled) {
           setElections(nextElections);
           setError(null);
         }
       })
-      .catch(() => {
+      .catch((cause) => {
         if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElections([
-            {
-              id: "demo_union_2026",
-              title: "Student Union Council 2026",
-              state: "OPEN",
-              contest: "Council Executive Board",
-              selection_rule: "Choose one president & executive slate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-              eligible_count: 4800,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_union_2026"),
-            },
-            {
-              id: "demo_design_2026",
-              title: "School of Design Representatives",
-              state: "OPEN",
-              contest: "School of Design Cohort",
-              selection_rule: "Select one departmental delegate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 12).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 72).toISOString(),
-              manifest_digest: "sha256:7b4e91c2a8f0d365e1029384756cba9182736450f1e2d3c4b5a6978102f9e8d7",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              eligible_count: 1250,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_design_2026"),
-            },
-          ]);
-          setError(null);
+          setElections([]);
+          setError(cause instanceof Error ? cause.message : "The election list could not be loaded.");
         }
       })
       .finally(() => {
@@ -69,14 +41,14 @@ export default function StudentElectionsPage() {
     <div className="max-w-5xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">My Elections</h1>
-          <p className="text-slate-600 dark:text-slate-400">View active ballots, verify contestant manifestos, and cast your cryptographic vote.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[#17233B] dark:text-white mb-2">Elections</h1>
+          <p className="text-slate-600 dark:text-slate-400">Review election records returned by the configured service. Eligibility and ballot evidence are not independently verified on this page.</p>
         </div>
       </div>
 
       {loading && (
         <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-300" role="status">
-          Loading eligible elections…
+          Loading elections and their published manifests…
         </div>
       )}
 
@@ -88,7 +60,7 @@ export default function StudentElectionsPage() {
 
       {!loading && !error && elections.length === 0 && (
         <div className="rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 text-sm text-slate-600 dark:text-slate-300" role="status">
-          No eligible elections are available.
+          The configured election service returned no elections.
         </div>
       )}
 
@@ -110,7 +82,7 @@ export default function StudentElectionsPage() {
                 <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
                   <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
                     <Users className="w-3.5 h-3.5" />
-                    {e.candidates?.length ? `${e.candidates.length} Registered Contestants` : "Contestants ready"}
+                    {e.candidates?.length ?? 0} candidates returned
                   </span>
                   <span>•</span>
                   <span>Closes: {new Date(e.closes_at_utc).toLocaleDateString()}</span>

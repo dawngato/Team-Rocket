@@ -58,7 +58,7 @@ async def cast_ballot_transaction(
     if election_id != request.election_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Path election parameter does not match payload election identifier"
+            detail="Path election parameter does not match payload election identifier for Ballot Submission."
         )
 
     # Compute deterministic request digest for idempotency checking
@@ -85,14 +85,14 @@ async def cast_ballot_transaction(
         if election is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Election not found"
+                detail="The requested election was not found."
             )
 
         # 2. Check state is OPEN
         if election.state != "OPEN":
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail=f"Election is in state '{election.state}', must be OPEN to cast ballots"
+                detail=f"Election is currently in state '{election.state}'; the election must be OPEN to accept a Ballot Submission."
             )
 
         # Check UTC voting window
@@ -107,12 +107,12 @@ async def cast_ballot_transaction(
         if now_utc < opens_at:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Election voting window has not opened yet"
+                detail="Election voting window has not opened yet for Ballot Submission."
             )
         if now_utc > closes_at:
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="Election voting window has already closed"
+                detail="Election voting window has already closed for Ballot Submission."
             )
 
         # Check unwitnessed backlog limit
@@ -120,7 +120,7 @@ async def cast_ballot_transaction(
         if unwitnessed_backlog >= election.max_unwitnessed_backlog:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Witness acknowledgement backlog limit exceeded, temporarily pausing acceptance"
+                detail="Independent Verification backlog limit exceeded; temporarily pausing Ballot Submission acceptance."
             )
 
         # Base64 decoding is not cryptographic ballot validation. In remote
@@ -147,7 +147,7 @@ async def cast_ballot_transaction(
             )
             raise HTTPException(
                 status_code=error_status,
-                detail=ballot_err or "Invalid engine ballot or proofs",
+                detail=ballot_err or "Invalid engine ballot or cryptographic proofs for Ballot Submission.",
             )
 
         # 3. Verify anonymous credential proof against election manifest
@@ -159,7 +159,7 @@ async def cast_ballot_transaction(
         if not is_proof_valid:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Credential proof verification failed: {proof_err}"
+                detail=f"Student Eligibility Verification Credential proof verification failed: {proof_err}"
             )
 
         nullifier_commitment = compute_nullifier_commitment(credential_nullifier)
@@ -189,7 +189,7 @@ async def cast_ballot_transaction(
                 # Duplicate nullifier with different request digest: reject
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Credential nullifier already spent with a different ballot submission"
+                    detail="Credential nullifier already spent with a different Ballot Submission."
                 )
 
         # 5. Insert ballot into accepted_encrypted_ballots at next_leaf_index
@@ -280,7 +280,7 @@ async def get_receipt_status(
     if ballot is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Receipt handle not found for this election"
+            detail="Receipt handle not found for this election."
         )
 
     # Check for witness acknowledgement covering this leaf index
@@ -328,7 +328,7 @@ async def get_receipt_status(
             if actual_indexes != expected_indexes:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Witnessed evidence is incomplete for this receipt",
+                    detail="Independent Verification evidence is incomplete for this receipt.",
                 )
 
             try:
@@ -338,7 +338,7 @@ async def get_receipt_status(
                 if computed_root != expected_root:
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
-                        detail="Witnessed Merkle root does not match committed evidence",
+                        detail="Independent Verification Merkle root does not match committed evidence.",
                     )
                 leaf_digest = leaf_digests[ballot.leaf_index].hex()
                 proof = [
@@ -351,7 +351,7 @@ async def get_receipt_status(
             except ValueError as exc:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail="Witnessed evidence contains an invalid Merkle digest",
+                    detail="Independent Verification evidence contains an invalid Merkle digest.",
                 ) from exc
 
             evidence = {
@@ -392,7 +392,7 @@ async def open_election_state(
         if election is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Election not found"
+                detail="The requested election was not found."
             )
         election.state = "OPEN"
         now_utc = datetime.now(timezone.utc)
@@ -417,7 +417,7 @@ async def close_election_state(
         if election is None:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Election not found"
+                detail="The requested election was not found."
             )
         election.state = "CLOSING"
         election.final_tree_size = election.next_leaf_index

@@ -168,7 +168,7 @@ public struct ManifestInspectorSheet: View {
             Image(systemName: "checkmark.seal.fill")
                 .foregroundStyle(ColorTokens.stateSuccess)
             
-            Text("This manifest digest is immutably anchored into the Merkle log prior to credential issuance, preventing administrative alteration of contest rules.")
+            Text("This view displays a manifest digest returned by the service. It does not independently confirm that the digest was anchored or that contest rules remained unchanged before submission.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }

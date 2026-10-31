@@ -99,6 +99,9 @@ function candidate(value: unknown): Candidate | null {
     contest: value.contest,
     ...(typeof value.statement === "string" ? { statement: value.statement } : {}),
     ...(typeof value.avatar_url === "string" ? { avatar_url: value.avatar_url } : {}),
+    ...(typeof value.position === "string" ? { position: value.position } : {}),
+    ...(typeof value.department === "string" ? { department: value.department } : {}),
+    ...(typeof value.slate === "string" ? { slate: value.slate } : {}),
   };
 }
 

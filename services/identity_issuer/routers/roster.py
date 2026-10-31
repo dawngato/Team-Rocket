@@ -150,13 +150,13 @@ def submit_roster_correction(
     ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Teacher is not authorized for the assigned department or class",
+            detail="Teacher is not authorized for the assigned department or class.",
         )
 
     student_id_clean = req.student_id.strip()
     profile = db.query(StudentProfile).filter(StudentProfile.student_id == student_id_clean).first()
     if not profile or not profile.department:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Authoritative student enrollment is required")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Authoritative student enrollment is required for Student Eligibility Verification.")
     if target_dept.lower() not in {
         profile.department.id.lower(),
         profile.department.name.strip().lower(),
@@ -164,10 +164,10 @@ def submit_roster_correction(
     }:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Correction department does not match the authoritative enrollment record",
+            detail="Correction department does not match the authoritative enrollment record.",
         )
     if not is_admin and not _teacher_has_department_scope(current_user, db, profile.department, req.class_id):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher is not authorized for this department or class")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher is not authorized for the assigned department or class.")
 
     correction = RosterCorrection(
         student_id=student_id_clean,
@@ -210,7 +210,7 @@ def register_student(
         rate_limiter.key("student_registration", str(req.email)),
         limit=3,
         window_seconds=3600,
-        detail="Too many registration attempts; try again later",
+        detail="Too many student registration attempts have been detected. Please try again later.",
     )
     # Check for existing profile or user
     existing_profile = db.query(StudentProfile).filter(StudentProfile.student_id == req.student_id).first()
@@ -301,9 +301,9 @@ def import_students(
     normalized_ids = [item.student_id.strip() for item in req.records]
     normalized_emails = [str(item.email).lower() for item in req.records]
     if len(set(normalized_ids)) != len(normalized_ids):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate student IDs in import")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate student identifiers detected in the import roster.")
     if len(set(normalized_emails)) != len(normalized_emails):
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate email addresses in import")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Duplicate email addresses detected in the import roster.")
     existing_ids = {
         row[0]
         for row in db.query(StudentProfile.student_id).filter(StudentProfile.student_id.in_(normalized_ids)).all()
@@ -313,7 +313,7 @@ def import_students(
         for row in db.query(User.email).filter(User.email.in_(normalized_emails)).all()
     }
     if existing_ids or existing_emails:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Import contains an existing student ID or email address")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Import contains an existing student ID or email address.")
 
     source = EnrollmentSource(
         name=f"import_{req.source}_{datetime.now(timezone.utc).isoformat()}",
@@ -441,27 +441,27 @@ def verify_student(
     if not authoritative_department:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Authoritative enrollment department is missing",
+            detail="Authoritative enrollment department is missing.",
         )
     if req.department.strip().lower() not in {
         authoritative_department.id.lower(),
         authoritative_department.name.strip().lower(),
         authoritative_department.code.strip().lower(),
     }:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Submitted department does not match authoritative enrollment")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Submitted department does not match authoritative enrollment.")
     if "teacher" in current_roles and not ({"super_admin", "administrator"} & set(current_roles)):
         if not _teacher_has_department_scope(current_user, db, authoritative_department):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher scope does not include the student's authoritative department")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher scope does not include the student's authoritative department.")
 
     verified_by = req.verified_by or current_user.id
     if verified_by not in {current_user.id, current_user.email}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="verified_by must identify the authenticated verifier",
+            detail="verified_by must identify the authenticated verifier.",
         )
 
     if db.query(StudentVerification).filter(StudentVerification.student_id == profile.id).first():
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Student has already been verified")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Student Eligibility Verification has already been completed for this student.")
 
     verification = StudentVerification(
         student_id=profile.id,

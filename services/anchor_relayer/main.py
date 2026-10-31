@@ -9,26 +9,20 @@ block, or claim finality. Broadcasting and confirmation are performed by
 import logging
 import os
 import sqlite3
-from typing import Optional
+import json
+from typing import Any, Optional
 
 from fastapi import FastAPI, HTTPException, status
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict
 
 from anchor_relayer.models import OutboxRecord, OutboxStatus, WitnessedCheckpoint
 from anchor_relayer.storage import SQLiteOutboxRepository
-
-
-def _normalize_bytes32(value: str) -> str:
-    if not isinstance(value, str):
-        raise ValueError("value must be a hexadecimal string")
-    normalized = value[2:] if value.startswith(("0x", "0X")) else value
-    if len(normalized) != 64:
-        raise ValueError("value must contain exactly 32 bytes")
-    try:
-        bytes.fromhex(normalized)
-    except ValueError as exc:
-        raise ValueError("value must contain only hexadecimal characters") from exc
-    return "0x" + normalized.lower()
+from anchor_relayer.witness_verification import (
+    WitnessTrustError,
+    normalize_chain_commitment,
+    resolve_election_commitment,
+    verify_witness_acknowledgement,
+)
 
 
 def _configured_log_level() -> int:
@@ -40,7 +34,16 @@ logging.basicConfig(level=_configured_log_level())
 logger = logging.getLogger("anchor_relayer")
 
 RELAYER_KEY_ID = os.getenv("ANCHOR_RELAYER_KEY_ID", "local_relayer_key")
-OUTBOX_DATABASE_PATH = os.getenv("OUTBOX_DATABASE_PATH", ":memory:")
+OUTBOX_DATABASE_PATH = os.getenv("OUTBOX_DATABASE_PATH", "anchor_outbox.sqlite")
+WITNESS_PUBLIC_KEY = os.getenv("WITNESS_PUBLIC_KEY")
+try:
+    WITNESS_ELECTION_COMMITMENTS = json.loads(
+        os.getenv("WITNESS_ELECTION_COMMITMENTS", "{}").strip() or "{}"
+    )
+except json.JSONDecodeError as exc:
+    raise RuntimeError("WITNESS_ELECTION_COMMITMENTS must be a JSON object") from exc
+if not isinstance(WITNESS_ELECTION_COMMITMENTS, dict):
+    raise RuntimeError("WITNESS_ELECTION_COMMITMENTS must map election IDs to chain commitments")
 
 try:
     repository = SQLiteOutboxRepository(database_path=OUTBOX_DATABASE_PATH)
@@ -49,18 +52,9 @@ except (OSError, sqlite3.Error) as exc:
 
 
 class AnchorRequest(BaseModel):
-    election_id: str = Field(min_length=1, max_length=128)
-    commitment: str
-    sequence: int = Field(ge=1)
-    digest: str
-    previous_digest: str
-    is_final: bool
-    witness_signature: Optional[str] = None
+    model_config = ConfigDict(extra="forbid")
 
-    @field_validator("commitment", "digest", "previous_digest")
-    @classmethod
-    def validate_bytes32(cls, value: str) -> str:
-        return _normalize_bytes32(value)
+    witness_ack: dict[str, Any]
 
 
 class AnchorResponse(BaseModel):
@@ -86,6 +80,10 @@ def _record_response(record: OutboxRecord) -> AnchorResponse:
 
 @app.on_event("startup")
 def startup() -> None:
+    if not WITNESS_PUBLIC_KEY:
+        logger.error("WITNESS_PUBLIC_KEY is missing; checkpoint ingestion will remain unavailable")
+    if not WITNESS_ELECTION_COMMITMENTS:
+        logger.error("WITNESS_ELECTION_COMMITMENTS is empty; no election can be anchored")
     logger.info(
         "Anchor relayer started key_id=%s anchoring_mode=transactional_outbox",
         RELAYER_KEY_ID,
@@ -94,11 +92,15 @@ def startup() -> None:
 
 @app.get("/health", tags=["admin"])
 def health() -> dict[str, object]:
+    trust_configured = bool(WITNESS_PUBLIC_KEY and WITNESS_ELECTION_COMMITMENTS)
+    worker_enabled = os.getenv("ANCHOR_WORKER_ENABLED", "false").lower() in {"1", "true", "yes"}
     return {
-        "status": "healthy",
+        "status": "ready" if trust_configured and worker_enabled else "degraded",
         "service": "anchor_relayer",
         "key_id": RELAYER_KEY_ID,
         "anchoring_mode": "transactional_outbox",
+        "witness_trust_configured": trust_configured,
+        "worker_enabled": worker_enabled,
         "finality": "confirmation_poller_required",
         "independence": "not_claimed",
     }
@@ -106,14 +108,29 @@ def health() -> dict[str, object]:
 
 @app.post("/v1/anchor", response_model=AnchorResponse, tags=["anchor"])
 def anchor_checkpoint(req: AnchorRequest) -> AnchorResponse:
-    """Persist a witnessed checkpoint without claiming chain inclusion."""
+    """Verify a pinned witness acknowledgement and persist it without claiming inclusion."""
+    if not WITNESS_PUBLIC_KEY or not WITNESS_ELECTION_COMMITMENTS:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="WITNESS_PUBLIC_KEY and WITNESS_ELECTION_COMMITMENTS must be configured before accepting witness acknowledgements.",
+        )
+    try:
+        verified = verify_witness_acknowledgement(req.witness_ack, WITNESS_PUBLIC_KEY)
+        commitment = resolve_election_commitment(
+            verified["election_id"], WITNESS_ELECTION_COMMITMENTS
+        )
+    except WitnessTrustError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
     checkpoint = WitnessedCheckpoint(
-        election_commitment=req.commitment,
-        sequence=req.sequence,
-        digest=req.digest,
-        previous_digest=req.previous_digest,
-        is_final=req.is_final,
-        witness_signature=req.witness_signature,
+        election_commitment=commitment,
+        sequence=verified["sequence"],
+        digest=verified["digest"],
+        previous_digest=verified["previous_digest"],
+        is_final=verified["is_final"],
+        witness_signature=verified["witness_signature"],
     )
     try:
         record = repository.enqueue(checkpoint)
@@ -121,7 +138,7 @@ def anchor_checkpoint(req: AnchorRequest) -> AnchorResponse:
         if "conflicting checkpoint" in str(exc):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
-                detail="checkpoint conflicts with an existing immutable sequence",
+                detail="Cryptographic Checkpoint conflicts with an existing immutable sequence.",
             ) from exc
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -139,7 +156,7 @@ def get_anchor(election_id: str) -> AnchorResponse:
     commitment rather than an identity-bearing election identifier.
     """
     try:
-        commitment = _normalize_bytes32(election_id)
+        commitment = normalize_chain_commitment(election_id)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -147,7 +164,7 @@ def get_anchor(election_id: str) -> AnchorResponse:
         ) from exc
     record = repository.get_latest_for_election(commitment)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No anchor for commitment")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No Cryptographic Checkpoint anchor found for the specified commitment.")
     return _record_response(record)
 
 
@@ -156,5 +173,12 @@ def reconcile_anchor(tx_hash: str) -> dict[str, object]:
     """Read a locally durable transaction outcome after an unknown response."""
     record = repository.get_by_tx_hash(tx_hash)
     if record is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Transaction not found")
-    return {"status": record.status.value, "record": _record_response(record).model_dump()}
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cryptographic Checkpoint anchoring transaction not found.")
+    return {
+        "status": record.status.value,
+        "tx_hash": record.tx_hash,
+        "block_number": record.block_number,
+        "block_hash": record.block_hash,
+        "confirmations": record.confirmation_count,
+        "finalized": record.status == OutboxStatus.ANCHOR_FINALIZED,
+    }

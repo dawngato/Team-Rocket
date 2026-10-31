@@ -50,7 +50,7 @@ object StateBadges {
                 backgroundColor = DesignTokens.Teal600.copy(alpha = 0.14f),
                 textColor = DesignTokens.Teal600,
                 icon = Icons.Default.HowToVote,
-                accessibilityLabel = "Status: Open, voting active"
+                accessibilityLabel = "Status: Open, ballot submission active"
             )
             ElectionStatus.PENDING_WITNESS -> StateVisualConfig(
                 backgroundColor = DesignTokens.Amber600.copy(alpha = 0.14f),
@@ -92,7 +92,7 @@ object StateBadges {
                 backgroundColor = DesignTokens.Red600.copy(alpha = 0.14f),
                 textColor = DesignTokens.Red600,
                 icon = Icons.Default.Error,
-                accessibilityLabel = "Status: Failed proof verification"
+                accessibilityLabel = "Status: Failed cryptographic verification"
             )
             ElectionStatus.DISPUTED -> StateVisualConfig(
                 backgroundColor = DesignTokens.Red600.copy(alpha = 0.14f),
@@ -119,7 +119,9 @@ object StateBadges {
 @Composable
 fun StateBadge(
     status: ElectionStatus,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    labelOverride: String? = null,
+    accessibilityLabelOverride: String? = null
 ) {
     val config = StateBadges.getConfig(status)
 
@@ -131,7 +133,7 @@ fun StateBadge(
             )
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .semantics(mergeDescendants = true) {
-                contentDescription = config.accessibilityLabel
+                contentDescription = accessibilityLabelOverride ?: config.accessibilityLabel
             },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -143,7 +145,7 @@ fun StateBadge(
             modifier = Modifier.size(14.dp)
         )
         Text(
-            text = status.label,
+            text = labelOverride ?: status.label,
             color = config.textColor,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold

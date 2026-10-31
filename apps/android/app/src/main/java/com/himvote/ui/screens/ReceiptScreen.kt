@@ -70,7 +70,7 @@ fun ReceiptScreen(
     Scaffold(
         topBar = {
             HimVoteTopBar(
-                title = "Cast Ballot Receipt",
+                title = "Cryptographic Receipt",
                 canNavigateBack = true,
                 onNavigateBack = onNavigateBack
             )
@@ -100,7 +100,7 @@ fun ReceiptScreen(
             }
 
             Text(
-                text = "Ballot Confirmed & Recorded",
+                text = "Cryptographic Receipt Recorded",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = DesignTokens.Navy900,
@@ -108,7 +108,7 @@ fun ReceiptScreen(
             )
 
             Text(
-                text = "Your encrypted vote has been committed to the immutable election ledger. Retain your receipt handle to verify inclusion in the cryptographic Merkle tree.",
+                text = "The election authority has verified your ballot submission and issued this cryptographic receipt. Preserve your receipt handle to verify mathematical inclusion in the certified Merkle tree ledger.",
                 fontSize = 14.sp,
                 color = DesignTokens.TextPrimary,
                 lineHeight = 20.sp
@@ -133,7 +133,7 @@ fun ReceiptScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Receipt Handle",
+                                text = "Cryptographic Receipt Handle",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
@@ -167,7 +167,7 @@ fun ReceiptScreen(
                                     } else {
                                         Icon(
                                             imageVector = Icons.Default.ContentCopy,
-                                            contentDescription = "Copy receipt handle",
+                                            contentDescription = "Copy cryptographic receipt handle",
                                             tint = DesignTokens.Teal600,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -195,7 +195,7 @@ fun ReceiptScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Ballot Hash (SHA_256)",
+                                text = "Ballot Hash (SHA-256)",
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = DesignTokens.TextPrimary.copy(alpha = 0.6f)
@@ -229,7 +229,7 @@ fun ReceiptScreen(
                                     } else {
                                         Icon(
                                             imageVector = Icons.Default.ContentCopy,
-                                            contentDescription = "Copy ballot hash",
+                                            contentDescription = "Copy cryptographic ballot hash",
                                             tint = DesignTokens.Teal600,
                                             modifier = Modifier.size(18.dp)
                                         )
@@ -280,7 +280,7 @@ fun ReceiptScreen(
                                     modifier = Modifier.size(18.dp)
                                 )
                                 Text(
-                                    text = "Offline Cryptographic Verification: Valid",
+                                    text = "Receipt Format Verification: Valid",
                                     fontSize = 13.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = DesignTokens.Green600
@@ -294,14 +294,14 @@ fun ReceiptScreen(
                     StyledStatusBanner(
                         style = BannerStyle.SUCCESS,
                         title = "Copied to Clipboard",
-                        message = "Cryptographic handle has been copied to your system clipboard."
+                        message = "Cryptographic receipt handle copied to system clipboard."
                     )
                 }
 
                 StyledStatusBanner(
-                    style = BannerStyle.VERIFIED,
-                    title = "Cryptographic Verification Available",
-                    message = "You can mathematically confirm your ballot is part of the final audited tally without revealing your secret choice."
+                    style = BannerStyle.INFO,
+                    title = "Cryptographic Inclusion Verification Available",
+                    message = "Cryptographic inclusion verification confirms mathematical presence of your ballot within the certified Merkle root published by election trustees."
                 )
 
                 HimVoteButton(
@@ -309,7 +309,7 @@ fun ReceiptScreen(
                     onClick = {
                         onNavigateToInclusionProof(receipt.electionId, receipt.receiptHandle)
                     },
-                    contentDesc = "Inspect Merkle tree inclusion proof"
+                    contentDesc = "Verify cryptographic Merkle tree inclusion proof"
                 )
 
                 HimVoteButton(
@@ -320,8 +320,8 @@ fun ReceiptScreen(
             } ?: run {
                 StyledStatusBanner(
                     style = BannerStyle.WARNING,
-                    title = "No Receipt Located",
-                    message = "No receipt was found in the secure hardware store for this election identifier."
+                    title = "Cryptographic Receipt Not Located",
+                    message = "No cryptographic receipt has been recorded for this election on this device."
                 )
             }
         }

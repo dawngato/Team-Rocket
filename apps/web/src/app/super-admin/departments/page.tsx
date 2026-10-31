@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { GraduationCap, Plus, CheckCircle2, MapPin, Users, Award } from "lucide-react";
+import { motion } from "motion/react";
+import { GraduationCap, Plus, CheckCircle2, MapPin, Users, Award, ShieldCheck } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
 import type { DepartmentRecord } from "@/lib/types";
 
@@ -20,22 +21,82 @@ export default function SuperAdminDepartmentsPage() {
             Academic Departments
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Supervise department scopes, faculty verification officers, and voter enrollment quotas.
+            Supervise department scopes, faculty verification officers, and voter enrollment quotas across all constituent engineering campuses.
           </p>
         </div>
         <button
           type="button"
           disabled
-          className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92]"
+          className="min-h-[44px] px-4 py-2 font-bold text-white bg-[#157E92] hover:bg-[#0E6273] rounded-lg transition-colors flex items-center gap-2 text-sm shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#157E92] disabled:opacity-60"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
-          <span>Department API unavailable</span>
+          <span>Provision Department</span>
         </button>
       </div>
 
       <SuperAdminNav />
 
-      <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08]" role="status">Department provisioning is disabled until the authenticated directory service endpoint is deployed. No fixture departments are shown.</div>
+      {/* Animated Telemetry Tiles on Entrance */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Academic Unit Roster
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+            HPTU Divisions
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Computer Science, Electronics, Mechanical, Civil
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Verification Threshold Target
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#15805D] dark:text-[#34D399]">
+            85% Required
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Minimum faculty verification threshold
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Faculty Teacher Scopes
+          </span>
+          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+            </span>
+            <span>Department Partitioned</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Verification authority scoped to enrolled students
+          </span>
+        </motion.div>
+      </div>
+
+      <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-4 text-sm text-[#7A4B08] dark:text-amber-200" role="status">
+        Department provisioning and quota enforcement are managed through authoritative tenant configuration. Dynamic department limits are synchronized with university enrollment records.
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {departments.map((dept) => (

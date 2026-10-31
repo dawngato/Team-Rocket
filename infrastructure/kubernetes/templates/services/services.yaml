@@ -137,3 +137,20 @@ spec:
   selector:
     app.kubernetes.io/name: himvote
     app.kubernetes.io/component: witness
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: himvote-anchor-relayer
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: anchor-relayer
+spec:
+  ports:
+    - name: http
+      port: 8087
+      targetPort: 8087
+  selector:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: anchor-relayer

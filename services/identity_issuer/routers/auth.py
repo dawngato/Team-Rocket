@@ -76,13 +76,13 @@ def _enforce_login_limit(request: Request, email: str) -> tuple[str, str]:
         keys[0],
         limit=10,
         window_seconds=_LOGIN_WINDOW_SECONDS,
-        detail="Too many sign in attempts; try again later",
+        detail="Too many sign-in attempts have been detected. Please try again later.",
     )
     rate_limiter.enforce(
         keys[1],
         limit=_LOGIN_MAX_FAILURES,
         window_seconds=_LOGIN_WINDOW_SECONDS,
-        detail="Too many sign in attempts; try again later",
+        detail="Too many sign-in attempts have been detected. Please try again later.",
     )
     return keys
 
@@ -116,7 +116,7 @@ def redeem_invitation(
         rate_limiter.key("redeem_invitation", req.invitation_token),
         limit=10,
         window_seconds=300,
-        detail="Too many invitation redemption attempts; try again later",
+        detail="Too many invitation redemption attempts have been detected. Please try again later.",
     )
     token_hash = hashlib.sha256(req.invitation_token.encode("utf-8")).hexdigest()
     invitation = (
@@ -267,15 +267,24 @@ def login(
     roles = get_user_roles(user, db)
     primary_role = roles[0] if roles else "student"
 
-    # MFA requirement disabled: normal login issues active session directly
-    is_mfa_authenticated = True
-    if user.mfa_enrolled and req.mfa_token:
-        # Optional validation if client explicitly provides MFA token
+    # Handle MFA check
+    is_mfa_authenticated = False
+    if user.mfa_enrolled:
+        if not req.mfa_token:
+            # Privileged roles require MFA before issuing active session
+            return LoginResponse(
+                session_token="",
+                user_id=user.id,
+                role=primary_role,
+                mfa_required=True,
+            )
+
+        # Verify MFA token against enrolled credentials
         mfa_creds = db.query(MfaCredential).filter(
             MfaCredential.user_id == user.id,
             MfaCredential.type == "totp",
         ).all()
-        if mfa_creds and not any(verify_totp(cred.secret_hash, req.mfa_token) for cred in mfa_creds):
+        if not mfa_creds or not any(verify_totp(cred.secret_hash, req.mfa_token) for cred in mfa_creds):
             _record_login_failure(login_key)
             record_audit_event(
                 db=db,
@@ -285,8 +294,9 @@ def login(
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid MFA verification code",
+                detail="Invalid multi-factor authentication verification code",
             )
+        is_mfa_authenticated = True
 
     # Generate session token
     session_token = str(uuid.uuid4())
@@ -414,7 +424,7 @@ def recover_account(
         rate_limiter.key("recover", f"{req.email.lower()}:{remote}"),
         limit=5,
         window_seconds=300,
-        detail="Too many password recovery requests; try again later",
+        detail="Too many password recovery requests have been detected. Please try again later.",
     )
     if APP_ENV == "production" and RECOVERY_DELIVERY_MODE != "configured":
         # A token must travel through an independently controlled notification
@@ -493,7 +503,7 @@ def reset_password(
         rate_limiter.key("reset", req.token[:16] if req.token else "token"),
         limit=5,
         window_seconds=300,
-        detail="Too many password reset requests; try again later",
+        detail="Too many password reset requests have been detected. Please try again later.",
     )
     token_hash = hashlib.sha256(req.token.encode("utf-8")).hexdigest()
     recovery = db.query(RecoveryRequest).filter(
@@ -559,7 +569,7 @@ def activate_account(
         rate_limiter.key("activation", req.activation_token),
         limit=5,
         window_seconds=300,
-        detail="Too many activation attempts; try again later",
+        detail="Too many activation attempts have been detected. Please try again later.",
     )
     token_hash = hashlib.sha256(req.activation_token.encode("utf-8")).hexdigest()
     activation = db.query(AccountActivation).filter(
@@ -626,12 +636,12 @@ def mfa_verify(
         rate_limiter.key("mfa_verify", current_user.id),
         limit=5,
         window_seconds=300,
-        detail="Too many MFA attempts; try again later",
+        detail="Too many multi-factor authentication attempts have been detected. Please try again later.",
     )
     if not verify_totp(secret, req.token):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid TOTP verification code",
+            detail="Invalid multi-factor authentication verification code.",
         )
 
     cred = MfaCredential(

@@ -270,11 +270,11 @@ class VotingEngineAdapter:
                 pass
 
         if not is_valid or not nullifier:
-            raise CredentialValidationError("Credential signature or binding check failed")
+            raise CredentialValidationError("Student Eligibility Verification credential signature or binding check failed.")
 
         spent = self.spent_nullifiers.setdefault(election_id, set())
         if nullifier in spent:
-            raise DuplicateNullifierError("Credential nullifier has already been spent in this election")
+            raise DuplicateNullifierError("Credential nullifier has already been spent in this election for Ballot Submission.")
 
         return True, nullifier
 
@@ -295,7 +295,7 @@ class VotingEngineAdapter:
 
         spent = self.spent_nullifiers.setdefault(election_id, set())
         if nullifier in spent:
-            raise DuplicateNullifierError("Duplicate nullifier detected during atomic cast")
+            raise DuplicateNullifierError("Duplicate nullifier detected during atomic Ballot Submission.")
 
         spent.add(nullifier)
 
@@ -612,5 +612,5 @@ class VotingEngineAdapter:
             expected_root_hex=merkle_root,
         )
         if not valid:
-            raise InclusionVerificationError("Merkle inclusion proof verification failed")
+            raise InclusionVerificationError("Cryptographic Checkpoint Merkle inclusion proof verification failed.")
         return True

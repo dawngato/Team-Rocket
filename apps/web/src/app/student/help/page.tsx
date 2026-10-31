@@ -21,39 +21,39 @@ export default function StudentHelpPage() {
             Voter Assistance
           </div>
           <h1 className="text-3xl font-bold text-[#10233F] dark:text-white tracking-tight">
-            Voter Rights and Privacy Guide
+            Student Voting and Privacy Guide
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1">
-            Understand how your identity remains unlinked from your ballot and what protections you have.
+            Review the intended voting flow and the limits of the protections available in this prototype.
           </p>
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* Core Guarantees */}
+        {/* Privacy and security notes */}
         <div className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-4">
           <h2 className="text-lg font-bold text-[#10233F] dark:text-white flex items-center gap-2">
             <Shield className="w-5 h-5 text-[#15805D]" aria-hidden="true" />
-            <span>Cryptographic Privacy Guarantees</span>
+            <span>Privacy and Security Notes</span>
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
             <div className="p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
               <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-2">
                 <EyeOff className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                <span>Blind Credential Issuance</span>
+                <span>Credential Issuance</span>
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                When you obtain your voting token, your browser blinds the request per RFC 9474. The university server signs that you are eligible without seeing the credential token itself.
+                The intended design uses blind credentials to separate eligibility checks from ballot use. The current prototype does not establish RFC 9474 unlinkability in every client or deployment.
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-slate-50/50 dark:bg-slate-900/30 space-y-2">
               <h3 className="font-bold text-sm text-[#10233F] dark:text-white flex items-center gap-2">
                 <Lock className="w-4 h-4 text-[#157E92]" aria-hidden="true" />
-                <span>Isolated Ballot Origins</span>
+                <span>Service Boundaries</span>
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                Ballots are cast to a distinct casting service origin that shares no database tables, networks, or session cookies with the student identity database.
+                Identity and casting services have separate roles, but shared infrastructure, operators, and timing data can still create links. Deployment controls determine what separation is active.
               </p>
             </div>
           </div>
@@ -62,7 +62,7 @@ export default function StudentHelpPage() {
         {/* Voting Instructions */}
         <div className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-4">
           <h2 className="text-lg font-bold text-[#10233F] dark:text-white">
-            Step by Step Voting Instructions
+            Voting Steps
           </h2>
           <ol className="space-y-3 text-xs text-slate-600 dark:text-slate-300">
             <li className="flex items-start gap-3">
@@ -75,22 +75,22 @@ export default function StudentHelpPage() {
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-[#157E92] text-white flex items-center justify-center font-bold flex-shrink-0">2</span>
               <div>
-                <strong className="text-[#10233F] dark:text-white block">Request Blind Credential</strong>
-                <span>Navigate to the contest and click Request Credential. Your browser saves the unblinded proof in secure local storage.</span>
+                <strong className="text-[#10233F] dark:text-white block">Request a voting credential</strong>
+                <span>Follow the election page instructions. Credential issuance and local storage depend on the client and deployment configuration.</span>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-[#157E92] text-white flex items-center justify-center font-bold flex-shrink-0">3</span>
               <div>
-                <strong className="text-[#10233F] dark:text-white block">Submit Encrypted Ballot</strong>
-                <span>Select your candidate, review choices, and submit. You receive a unique receipt handle like HV_24F8_19C2.</span>
+                <strong className="text-[#10233F] dark:text-white block">Submit your ballot</strong>
+                <span>Review your selection before submitting. If the casting service accepts the ballot, it may return a receipt handle.</span>
               </div>
             </li>
             <li className="flex items-start gap-3">
               <span className="w-6 h-6 rounded-full bg-[#157E92] text-white flex items-center justify-center font-bold flex-shrink-0">4</span>
               <div>
-                <strong className="text-[#10233F] dark:text-white block">Verify Inclusion Offline</strong>
-                <span>Visit the Inclusion Verifier to prove your leaf hash is included in the witnessed Merkle checkpoint tree.</span>
+                <strong className="text-[#10233F] dark:text-white block">Check ballot inclusion</strong>
+                <span>An inclusion check requires a published proof and root. It does not authenticate the root or verify the final tally.</span>
               </div>
             </li>
           </ol>
@@ -100,10 +100,10 @@ export default function StudentHelpPage() {
         <div className="p-6 rounded-xl border border-amber-200 dark:border-amber-900/40 bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
           <h3 className="text-sm font-bold text-amber-800 dark:text-amber-300 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-600" aria-hidden="true" />
-            <span>Coercion Resistance Notice</span>
+            <span>Privacy and Device Safety</span>
           </h3>
           <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
-            Your receipt handle proves that a ballot was accepted into the ledger, but it does NOT reveal which candidate you chose. Never disclose your private credential proof to anyone. If you suspect your student account or device was compromised, contact the campus election desk immediately.
+            A receipt handle reports that the casting service accepted a ballot record. It does not prove ballot secrecy, inclusion in the final tally, or resistance to coercion. Do not share your credentials. Contact the campus election desk if your account or device may be compromised.
           </p>
         </div>
       </div>

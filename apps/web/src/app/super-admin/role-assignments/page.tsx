@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { UserCog, CheckCircle2, AlertTriangle, ShieldCheck, Search, Shield, RefreshCw } from "lucide-react";
+import { motion } from "motion/react";
+import { UserCog, CheckCircle2, AlertTriangle, ShieldCheck, Search, Shield, RefreshCw, Users, Key } from "lucide-react";
 import { SuperAdminNav } from "@/components/SuperAdminNav";
 
 interface RegisteredUser {
@@ -15,9 +16,9 @@ interface RegisteredUser {
 
 const AVAILABLE_ROLES = [
   { value: "super_admin", label: "Super Administrator", desc: "Full campus governance & system configuration" },
-  { value: "administrator", label: "Campus Administrator", desc: "Teacher rosters & departmental management" },
-  { value: "election_officer", label: "Election Officer", desc: "Build elections & manage candidate rosters" },
-  { value: "teacher", label: "Teacher / Faculty", desc: "Class rosters & student verification queue" },
+  { value: "administrator", label: "Campus Administrator", desc: "Faculty teacher rosters & departmental management" },
+  { value: "election_officer", label: "Transparency Officer", desc: "Oversee election lifecycles & manage candidate rosters" },
+  { value: "teacher", label: "Faculty Teacher", desc: "Class rosters & student voter verification queue" },
   { value: "auditor", label: "Independent Auditor", desc: "Cryptographic proof verification & trust pins" },
   { value: "student", label: "Student Voter", desc: "Ballot casting & receipt verification" },
 ];
@@ -135,6 +136,65 @@ export default function SuperAdminRoleAssignmentsPage() {
       </header>
 
       <SuperAdminNav />
+
+      {/* Animated Telemetry Tiles */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Registered Accounts
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+            {loadingUsers ? "…" : users.length}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Identity cluster accounts in scope
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Delegation Authority
+          </span>
+          <div className="mt-2 text-base font-bold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
+            <ShieldCheck className="size-4" />
+            <span>Sole Sovereign Delegator</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Direct backend role assignment
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Identity Issuer Stream
+          </span>
+          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2" aria-hidden="true">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+            </span>
+            <span>Cluster Direct Sync</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Synchronized with identity service
+          </span>
+        </motion.div>
+      </div>
 
       {error && (
         <div className="rounded-xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-4 text-sm text-[#8B2630] dark:text-[#FCA5A5] flex items-center gap-2" role="alert">
@@ -268,7 +328,7 @@ export default function SuperAdminRoleAssignmentsPage() {
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-[#1E3352]">
                   {filteredUsers.map((u) => (
-                    <tr key={u.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                    <tr key={u.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150 cursor-pointer">
                       <td className="px-4 py-3.5 font-medium text-[#10233F] dark:text-white">
                         <div>{u.email}</div>
                         <div className="text-[10px] text-slate-400 font-mono">{u.external_id}</div>

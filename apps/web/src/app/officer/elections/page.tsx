@@ -2,7 +2,8 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Award, Filter, Plus, RefreshCw, Search } from "lucide-react";
+import { motion } from "motion/react";
+import { ArrowRight, Award, Filter, Plus, RefreshCw, Search, ShieldCheck } from "lucide-react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient, ElectionApiError } from "@/lib/election_client";
 import type { Election, ElectionState } from "@/lib/types";
@@ -133,8 +134,14 @@ export default function OfficerElectionsPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              {filteredElections.map((election) => (
-                <article key={election.id} className="flex flex-col justify-between space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+              {filteredElections.map((election, idx) => (
+                <motion.article
+                  key={election.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  className="flex flex-col justify-between space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-shadow dark:border-[#1E3352] dark:bg-[#132135]"
+                >
                   <div className="space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-mono text-xs text-slate-400">{election.id}</span>
@@ -165,13 +172,13 @@ export default function OfficerElectionsPage() {
                       <Link
                         key={route}
                         href={`/officer/elections/${election.id}/${route}`}
-                        className="min-h-[40px] rounded bg-slate-50 px-2 py-2 text-center font-semibold text-slate-700 transition-colors hover:bg-[#157E92]/10 hover:text-[#157E92] dark:bg-slate-800 dark:text-slate-300"
+                        className="min-h-[40px] rounded-lg bg-slate-50 px-2 py-2 text-center font-semibold text-slate-700 transition-colors hover:bg-[#157E92]/10 hover:text-[#157E92] dark:bg-slate-800 dark:text-slate-300"
                       >
                         {label}
                       </Link>
                     ))}
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           )}

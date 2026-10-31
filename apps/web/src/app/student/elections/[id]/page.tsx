@@ -6,7 +6,6 @@ import { useParams } from "next/navigation";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 
 export default function ElectionDetailPage() {
   const params = useParams();
@@ -25,23 +24,10 @@ export default function ElectionDetailPage() {
           setError(null);
         }
       })
-      .catch(() => {
+      .catch((cause) => {
         if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElection({
-            id: electionId || "demo_union_2026",
-            title: electionId.includes("design") ? "School of Design Representatives" : "Student Union Council 2026",
-            state: "OPEN",
-            contest: "Council Executive Board",
-            selection_rule: "Choose one executive candidate",
-            opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-            closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-            manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-    issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-            eligible_count: 4800,
-            candidates: stored.filter(c => electionId.includes("design") ? c.election_id === "demo_design_2026" : c.election_id === "demo_union_2026"),
-          });
-          setError(null);
+          setElection(null);
+          setError(cause instanceof Error ? cause.message : "The election manifest could not be loaded.");
         }
       })
       .finally(() => {
@@ -82,13 +68,13 @@ export default function ElectionDetailPage() {
             </div>
             <h1 className="text-2xl font-bold text-[#17233B] dark:text-white">{election.title}</h1>
             <p className="text-slate-600 dark:text-slate-400">
-              {election.description || "Review the server-authoritative manifest before proceeding."}
+              {election.description || "Review the election information returned by the configured service."}
             </p>
           </div>
 
           <div className="grid gap-4">
             <div className="bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] rounded-xl p-6">
-              <h2 className="font-bold text-lg mb-4">Election status</h2>
+                <h2 className="font-bold text-lg mb-4">Service-reported election information</h2>
               <dl className="grid gap-3 text-sm sm:grid-cols-2">
                 <div>
                   <dt className="text-slate-500 dark:text-slate-400">Opens</dt>
@@ -103,15 +89,15 @@ export default function ElectionDetailPage() {
                   <dd className="font-mono text-xs break-all text-[#17233B] dark:text-white">{election.manifest_digest || "Not frozen"}</dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500 dark:text-slate-400">Eligibility</dt>
-                  <dd className="font-medium text-[#17233B] dark:text-white">{election.eligible_count ?? "Not published"}</dd>
+                  <dt className="text-slate-500 dark:text-slate-400">Eligible voter count</dt>
+                  <dd className="font-medium text-[#17233B] dark:text-white">{election.eligible_count ?? "Not provided"}</dd>
                 </div>
               </dl>
             </div>
 
             <div className="bg-white dark:bg-[#132135] border border-slate-200 dark:border-[#1E3352] rounded-xl p-6">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="font-bold text-lg text-[#10233F] dark:text-white">Registered Contestants &amp; Manifestos</h2>
+                <h2 className="font-bold text-lg text-[#10233F] dark:text-white">Candidates and Statements</h2>
                 <Link
                   href={`/student/elections/${encodeURIComponent(election.id)}/candidates`}
                   className="text-xs font-bold text-[#157E92] dark:text-[#38BDF8] hover:underline"
@@ -122,10 +108,6 @@ export default function ElectionDetailPage() {
               {election.candidates?.length ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {election.candidates.map((candidate) => {
-                    const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-                    const rich = stored.find(
-                      (s) => s.name.toLowerCase() === candidate.name.toLowerCase() || s.id === candidate.id
-                    );
                     return (
                       <div
                         key={candidate.id}
@@ -133,19 +115,14 @@ export default function ElectionDetailPage() {
                       >
                         <div className="flex items-start gap-3">
                           <div className="relative size-14 rounded-xl overflow-hidden border-2 border-[#157E92] shrink-0 shadow-md bg-slate-100 dark:bg-slate-800">
-                            {rich?.photo_url ? (
+                            {candidate.avatar_url ? (
                               <img
-                                src={rich.photo_url}
+                                src={candidate.avatar_url}
                                 alt={candidate.name}
                                 onError={(e) => {
                                   e.currentTarget.style.display = "none";
                                 }}
                                 className="w-full h-full object-cover object-top"
-                              />
-                            ) : rich?.avatar_svg ? (
-                              <div
-                                className="w-full h-full"
-                                dangerouslySetInnerHTML={{ __html: rich.avatar_svg }}
                               />
                             ) : (
                               <div className="flex size-full items-center justify-center bg-[#157E92]/10 font-bold text-base text-[#157E92]">
@@ -157,23 +134,25 @@ export default function ElectionDetailPage() {
                             <h3 className="font-bold text-sm text-[#10233F] dark:text-white truncate">
                               {candidate.name}
                             </h3>
-                            {rich?.position && (
+                            {candidate.position && (
                               <span className="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] mt-0.5">
-                                {rich.position}
+                                {candidate.position}
                               </span>
                             )}
-                            {rich?.department && (
-                              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{rich.department}</p>
+                            {candidate.department && (
+                              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{candidate.department}</p>
                             )}
                           </div>
                         </div>
 
-                        <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic">
-                          "{candidate.statement || rich?.statement || "Official election contestant manifesto."}"
-                        </p>
+                        {candidate.statement && (
+                          <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 italic">
+                            &ldquo;{candidate.statement}&rdquo;
+                          </p>
+                        )}
 
                         <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-2">
-                          {rich?.roll_number ? <span>Roll: {rich.roll_number}</span> : <span>Verified Candidate</span>}
+                          {candidate.slate ? <span>Slate: {candidate.slate}</span> : <span>Candidate record</span>}
                           <span>ID: {candidate.id.substring(0, 10)}</span>
                         </div>
                       </div>

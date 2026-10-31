@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
 import {
   ShieldCheck,
   CheckCircle2,
@@ -148,7 +149,7 @@ export default function SuperAdminRoleRequestsPage() {
       case "administrator":
         return "Campus Administrator";
       case "teacher":
-        return "Academic Faculty";
+        return "Faculty Teacher";
       case "student":
         return "Student Voter";
       case "election_officer":
@@ -232,7 +233,7 @@ export default function SuperAdminRoleRequestsPage() {
               User Role Delegation Command Center
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base mt-2 max-w-4xl leading-relaxed">
-              In accordance with institutional governance, self-registration does not confer permissions. Only the Super Administrator holds sovereign authority to elevate accounts to <strong className="text-[#10233F] dark:text-white">Campus Administrator</strong>, <strong className="text-[#10233F] dark:text-white">Academic Faculty</strong>, <strong className="text-[#10233F] dark:text-white">Student Voter</strong>, or <strong className="text-[#10233F] dark:text-white">Transparency & Audit Officer</strong>.
+              In accordance with institutional governance, self-registration does not confer permissions. Only the Super Administrator holds sovereign authority to elevate accounts to <strong className="text-[#10233F] dark:text-white">Campus Administrator</strong>, <strong className="text-[#10233F] dark:text-white">Faculty Teacher</strong>, <strong className="text-[#10233F] dark:text-white">Student Voter</strong>, or <strong className="text-[#10233F] dark:text-white">Transparency Officer</strong>.
             </p>
           </div>
 
@@ -300,7 +301,12 @@ export default function SuperAdminRoleRequestsPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-7 gap-4">
           {/* Total Registered */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all"
+          >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-xs font-bold uppercase tracking-wider">Total Users</span>
               <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#1E3352] flex items-center justify-center text-slate-600 dark:text-slate-300">
@@ -311,10 +317,15 @@ export default function SuperAdminRoleRequestsPage() {
               {totalCount}
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Enrolled institutional base</p>
-          </div>
+          </motion.div>
 
           {/* Pending Assignment */}
-          <div className="p-5 rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/20 shadow-sm relative overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.04 }}
+            className="p-5 rounded-2xl border border-rose-300 dark:border-rose-900/60 bg-rose-50/60 dark:bg-rose-950/20 shadow-sm relative overflow-hidden hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center justify-between text-rose-700 dark:text-rose-300">
               <span className="text-xs font-bold uppercase tracking-wider">Pending Role</span>
               <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center text-rose-600 dark:text-rose-300">
@@ -325,10 +336,15 @@ export default function SuperAdminRoleRequestsPage() {
               {pendingCount}
             </div>
             <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 font-medium">Awaiting delegation</p>
-          </div>
+          </motion.div>
 
           {/* Campus Admins */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.08 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all"
+          >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-xs font-bold uppercase tracking-wider">Campus Admins</span>
               <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400">
@@ -339,12 +355,17 @@ export default function SuperAdminRoleRequestsPage() {
               {adminCount}
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Scoped election managers</p>
-          </div>
+          </motion.div>
 
           {/* Teachers / Faculty */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.12 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all"
+          >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
-              <span className="text-xs font-bold uppercase tracking-wider">Academic Faculty</span>
+              <span className="text-xs font-bold uppercase tracking-wider">Faculty Teachers</span>
               <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
                 <GraduationCap className="w-4 h-4" />
               </div>
@@ -352,11 +373,16 @@ export default function SuperAdminRoleRequestsPage() {
             <div className="mt-3 text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 tabular-nums">
               {teacherCount}
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Department instructors</p>
-          </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Department verification officers</p>
+          </motion.div>
 
           {/* Students */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.16 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all"
+          >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-xs font-bold uppercase tracking-wider">Student Voters</span>
               <div className="w-8 h-8 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
@@ -367,10 +393,15 @@ export default function SuperAdminRoleRequestsPage() {
               {studentCount}
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Verified elector base</p>
-          </div>
+          </motion.div>
 
           {/* Transparency Officers */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all"
+          >
             <div className="flex items-center justify-between text-slate-500 dark:text-slate-400">
               <span className="text-xs font-bold uppercase tracking-wider">Transparency Officers</span>
               <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-950/60 flex items-center justify-center text-amber-600 dark:text-amber-400">
@@ -380,11 +411,16 @@ export default function SuperAdminRoleRequestsPage() {
             <div className="mt-3 text-3xl font-extrabold text-amber-600 dark:text-amber-400 tabular-nums">
               {officerCount}
             </div>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Audit & integrity supervisors</p>
-          </div>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Audit &amp; integrity supervisors</p>
+          </motion.div>
 
           {/* Audit Integrity Status */}
-          <div className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-[#10233F]/5 dark:bg-[#10233F]/30 shadow-sm">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.24 }}
+            className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-[#10233F]/5 dark:bg-[#10233F]/30 shadow-sm hover:shadow-md transition-shadow"
+          >
             <div className="flex items-center justify-between text-[#157E92] dark:text-[#38BDF8]">
               <span className="text-xs font-bold uppercase tracking-wider">Ledger Integrity</span>
               <div className="w-8 h-8 rounded-lg bg-[#157E92]/10 flex items-center justify-center">
@@ -395,7 +431,7 @@ export default function SuperAdminRoleRequestsPage() {
               100%
             </div>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Sovereign dual-control active</p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -474,7 +510,7 @@ export default function SuperAdminRoleRequestsPage() {
             }`}
           >
             <UserCheck2 className="w-3 h-3" />
-            <span>Campus Admins ({adminCount})</span>
+            <span>Campus Administrators ({adminCount})</span>
           </button>
 
           <button
@@ -487,7 +523,7 @@ export default function SuperAdminRoleRequestsPage() {
             }`}
           >
             <GraduationCap className="w-3 h-3" />
-            <span>Academic Faculty ({teacherCount})</span>
+            <span>Faculty Teachers ({teacherCount})</span>
           </button>
 
           <button
@@ -574,7 +610,7 @@ export default function SuperAdminRoleRequestsPage() {
                   return (
                     <tr
                       key={user.id}
-                      className="hover:bg-slate-50/80 dark:hover:bg-[#0E1A2B]/60 transition-colors group"
+                      className="hover:bg-slate-50/90 dark:hover:bg-[#0E1A2B]/80 hover:shadow-sm transition-all duration-150 group"
                     >
                       {/* Identity & Email */}
                       <td className="px-6 py-4.5">
@@ -786,49 +822,65 @@ export default function SuperAdminRoleRequestsPage() {
       </section>
 
       {/* Delete User Confirmation Modal */}
-      {deleteConfirmUser && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="delete-dialog-title"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-100"
-        >
-          <div className="w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
-              <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center flex-shrink-0">
-                <ShieldAlert className="w-5 h-5" />
+      <AnimatePresence>
+        {deleteConfirmUser && (
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-dialog-title"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setDeleteConfirmUser(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 12 }}
+              transition={{ type: "spring", damping: 26, stiffness: 360 }}
+              className="relative z-10 w-full max-w-md rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] p-6 shadow-2xl space-y-4"
+            >
+              <div className="flex items-center gap-3 text-rose-600 dark:text-rose-400">
+                <div className="w-10 h-10 rounded-xl bg-rose-100 dark:bg-rose-950/60 flex items-center justify-center flex-shrink-0">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 id="delete-dialog-title" className="text-base font-bold text-[#10233F] dark:text-white">
+                    Confirm User Account Deletion
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Institutional Identity Ledger Action</p>
+                </div>
               </div>
-              <div>
-                <h3 id="delete-dialog-title" className="text-base font-bold text-[#10233F] dark:text-white">
-                  Confirm User Account Deletion
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Institutional Identity Ledger Action</p>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Are you sure you want to permanently delete the account for <strong className="text-[#10233F] dark:text-white font-semibold">{deleteConfirmUser.fullName}</strong> (<span className="font-mono">{deleteConfirmUser.email}</span>)? This will erase their assigned capabilities and identity credentials.
+              </p>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-[#1E3352]">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmUser(null)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#1E3352] hover:bg-slate-100 dark:hover:bg-[#1E3352] text-slate-700 dark:text-slate-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmDelete}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
+                >
+                  Permanently Delete User
+                </button>
               </div>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Are you sure you want to permanently delete the account for <strong className="text-[#10233F] dark:text-white font-semibold">{deleteConfirmUser.fullName}</strong> (<span className="font-mono">{deleteConfirmUser.email}</span>)? This will erase their assigned capabilities and identity credentials.
-            </p>
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-[#1E3352]">
-              <button
-                type="button"
-                onClick={() => setDeleteConfirmUser(null)}
-                className="px-4 py-2 text-xs font-semibold rounded-xl border border-slate-300 dark:border-[#1E3352] hover:bg-slate-100 dark:hover:bg-[#1E3352] text-slate-700 dark:text-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-sm transition-colors"
-              >
-                Permanently Delete User
-              </button>
-            </div>
+            </motion.div>
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       {/* Governance Invariants Callout */}
       <footer className="rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/80 dark:bg-[#0E1A2B] p-6 space-y-3 shadow-sm">

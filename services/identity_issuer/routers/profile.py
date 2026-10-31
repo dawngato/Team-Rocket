@@ -50,7 +50,7 @@ def update_my_profile(
         rate_limiter.key("profile_update", current_user.id),
         limit=20,
         window_seconds=300,
-        detail="Too many profile updates; try again later",
+        detail="Too many profile updates have been attempted. Please try again later.",
     )
 
     for field, value in changes.items():

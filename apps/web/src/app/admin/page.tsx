@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import {
   Users,
   UserCheck,
@@ -62,19 +63,19 @@ export default function AdminOverviewPage() {
     },
     {
       kicker: "Voter Registry",
-      title: "Manage Students",
+      title: "Student Voters",
       href: "/admin/students",
       count: totalStudents ? `${totalStudents} Records` : "Live data unavailable",
       icon: Users,
-      desc: "Enrollment verification and blind credential authorization.",
+      desc: "Enrollment verification and blind credential authorization for student voters.",
     },
     {
       kicker: "Faculty Roster",
-      title: "Manage Teachers",
+      title: "Faculty Teachers",
       href: "/admin/teachers",
       count: teachers.length ? `${teachers.length} Officers` : "Live data unavailable",
       icon: UserCheck,
-      desc: "Verification permissions and class supervision assignments.",
+      desc: "Delegated verification permissions and departmental class supervision assignments.",
     },
     {
       kicker: "CSV Ingestion",
@@ -82,7 +83,7 @@ export default function AdminOverviewPage() {
       href: "/admin/roster-imports",
       count: "Batch Upload",
       icon: FileSpreadsheet,
-      desc: "Immutable CSV parsing with SHA 256 digest locking.",
+      desc: "Immutable CSV parsing with SHA-256 digest cryptographic locking.",
     },
     {
       kicker: "Access Control",
@@ -90,7 +91,7 @@ export default function AdminOverviewPage() {
       href: "/admin/approvals",
       count: "Live API required",
       icon: CheckCircle2,
-      desc: "Dual control approval for elevated election officer roles.",
+      desc: "Dual-control authorization queue for Campus Administrator, Faculty Teacher, and Transparency Officer roles.",
     },
     {
       kicker: "Department Scope",
@@ -114,7 +115,7 @@ export default function AdminOverviewPage() {
       href: "/admin/audit-logs",
       count: auditEvents.length ? `${auditEvents.length} Events` : "Live data unavailable",
       icon: ShieldCheck,
-      desc: "Tamper evident append only log of administrative actions.",
+      desc: "Tamper-evident append-only ledger of authoritative administrative actions.",
     },
   ];
 
@@ -131,7 +132,7 @@ export default function AdminOverviewPage() {
             Administrator Console
           </h1>
           <p className="text-slate-600 dark:text-slate-400 text-sm mt-1 max-w-2xl leading-relaxed">
-            Supervise voter rosters, faculty permissions, security events, and election status.
+            Authoritative institutional governance console for Himachal Pradesh Technical University. Oversee student voter rolls, faculty authorizations, cryptographic telemetry, and election lifecycle status.
           </p>
         </div>
       </div>
@@ -167,24 +168,38 @@ export default function AdminOverviewPage() {
 
       {/* Metric Cards with High Contrast Status Indicators */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2 hover:shadow-md transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Active Elections
             </span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
-              Live
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] border border-[#157E92]/30">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] dark:bg-[#38BDF8] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92] dark:bg-[#38BDF8]" />
+              </span>
+              <span>Live</span>
             </span>
           </div>
           <div className="text-3xl font-extrabold text-[#157E92] dark:text-[#38BDF8] font-mono tabular-nums">
             {openCount}
           </div>
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
-            Reported by the election service
+            Reported by authoritative election service
           </span>
-        </div>
+        </motion.div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2 hover:shadow-md transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Verified Student Voters
@@ -199,9 +214,14 @@ export default function AdminOverviewPage() {
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             Reported by the identity service
           </span>
-        </div>
+        </motion.div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2 hover:shadow-md transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Faculty Officers
@@ -216,9 +236,14 @@ export default function AdminOverviewPage() {
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             Reported by the identity service
           </span>
-        </div>
+        </motion.div>
 
-        <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.15 }}
+          className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm space-y-2 hover:shadow-md transition-shadow"
+        >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Nullifier Integrity
@@ -233,7 +258,7 @@ export default function AdminOverviewPage() {
           <span className="text-xs text-slate-500 dark:text-slate-400 block">
             Requires the independent verifier and released evidence package
           </span>
-        </div>
+        </motion.div>
       </div>
 
       {/* Workspace Quick Links */}
@@ -248,7 +273,7 @@ export default function AdminOverviewPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] transition-all duration-75 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+                className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] hover:shadow-md transition-all duration-150 ease-out active:scale-[0.98] select-none flex flex-col justify-between space-y-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
               >
                 <div className="flex items-start gap-4">
                   <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -302,7 +327,7 @@ export default function AdminOverviewPage() {
 
         {/* Candidate Mini Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-1">
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3 hover:shadow-md transition-shadow duration-150">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-teal-500 shrink-0 shadow-sm bg-slate-100">
                 <img src="/candidates/suzi.jpg" alt="Suzi" className="w-full h-full object-cover object-top" />
@@ -317,7 +342,7 @@ export default function AdminOverviewPage() {
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023CSE1001</div>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3 hover:shadow-md transition-shadow duration-150">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-rose-500 shrink-0 shadow-sm bg-slate-100">
                 <img src="/candidates/priya.jpg" alt="Priya Patel" className="w-full h-full object-cover object-top" />
@@ -332,7 +357,7 @@ export default function AdminOverviewPage() {
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2024IT2088</div>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3 hover:shadow-md transition-shadow duration-150">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-amber-500 shrink-0 shadow-sm bg-slate-100">
                 <img src="/candidates/kabir.jpg" alt="Kabir Mehta" className="w-full h-full object-cover object-top" />
@@ -347,7 +372,7 @@ export default function AdminOverviewPage() {
             <div className="text-[10px] font-mono text-slate-400 border-t border-slate-200 dark:border-slate-800 pt-1.5">Roll: 2023ECE1015</div>
           </div>
 
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/60 dark:bg-slate-900/30 flex flex-col justify-between space-y-3 hover:shadow-md transition-shadow duration-150">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-emerald-500 shrink-0 shadow-sm bg-slate-100">
                 <img src="/candidates/ananya.jpg" alt="Ananya Iyer" className="w-full h-full object-cover object-top" />
@@ -388,7 +413,7 @@ export default function AdminOverviewPage() {
           {auditEvents.slice(0, 3).map((evt) => (
             <div
               key={evt.id}
-              className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-slate-900/40 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+              className="p-3.5 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-slate-900/40 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150"
             >
               <div className="space-y-1">
                 <div className="flex items-center gap-2">

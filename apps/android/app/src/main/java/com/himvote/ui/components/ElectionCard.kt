@@ -84,7 +84,7 @@ fun ElectionCard(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "Ballot Cast",
+                                text = "Ballot Submitted",
                                 color = DesignTokens.Green600,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold
@@ -112,7 +112,7 @@ fun ElectionCard(
                                 modifier = Modifier.size(16.dp)
                             )
                             Text(
-                                text = "Ballot Cast",
+                                text = "Ballot Submitted",
                                 color = DesignTokens.Green600,
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold

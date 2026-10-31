@@ -67,36 +67,36 @@ public struct InstitutionalSecuritySheet: View {
     
     private var securityPillarsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Foundational Guarantees")
+            Text("Security Controls and Limits")
                 .font(Typography.cardHeader)
                 .foregroundStyle(ColorTokens.textPrimary)
             
             pillarCard(
                 icon: "eye.slash.circle.fill",
                 color: ColorTokens.brandAccent,
-                title: "RFC 9474 Blind Credentials",
-                description: "Voter identity tokens are cryptographically blinded locally before transmission to identity services. The server issues signatures over blinded values, rendering ballot choices mathematically unlinkable to student identities."
+                title: "Credential Issuance Status",
+                description: "This client sends a randomly generated request value to the credential issuer without applying RFC 9474 blinding or unblinding. The current flow does not establish that voter identity and ballot use are unlinkable."
             )
             
             pillarCard(
                 icon: "shield.lefthalf.filled",
                 color: ColorTokens.stateSuccess,
-                title: "Zero Plaintext Visibility",
-                description: "In compliance with Section 0.1 Rule 3, voting choices are processed entirely inside an ephemeral browser sandbox. Plaintext voter selections are never stored or exposed within native mobile memory."
+                title: "Ballot Data Handling",
+                description: "The iOS app opens the booth in an ephemeral browser session and submits the returned ballot artifacts. The app does not receive a plaintext candidate selection in this flow; ballot privacy also depends on the booth and casting service."
             )
             
             pillarCard(
                 icon: "key.fill",
                 color: ColorTokens.institutionalGold,
-                title: "Hardware Enclave Keychain",
-                description: "All voter secrets are persisted using Apple Keychain with kSecAttrAccessibleWhenUnlockedThisDeviceOnly, preventing extraction across cloud backups or unauthorized device migration."
+                title: "Device-Scoped Keychain Storage",
+                description: "The app stores credentials and receipts as Keychain items with kSecAttrAccessibleWhenUnlockedThisDeviceOnly. This setting limits access to an unlocked device and excludes migration to another device; it does not make each item a Secure Enclave object."
             )
             
             pillarCard(
                 icon: "point.3.connected.trianglepath.dotted",
                 color: ColorTokens.stateWitnessed,
-                title: "Merkle Audit Log and Blockchain Anchor",
-                description: "Every ballot receipt is sequenced into an append only Merkle log signed by independent witness nodes and immutably anchored to the Ethereum public ledger."
+                title: "Merkle Proof and Local Chain Anchor",
+                description: "The app can check a receipt against a supplied Merkle inclusion proof and root. This prototype uses a local Anvil EVM chain for demonstrations; that anchor is not an independent Ethereum public ledger."
             )
         }
     }
@@ -137,7 +137,7 @@ public struct InstitutionalSecuritySheet: View {
             Image(systemName: "checkmark.seal.fill")
                 .foregroundStyle(ColorTokens.stateSuccess)
             
-            Text("HimVote security audits verify end to end cryptographic compliance for institutional campus elections.")
+            Text("This educational prototype demonstrates selected verification steps. It does not establish end-to-end security for production elections.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }

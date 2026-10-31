@@ -156,7 +156,7 @@ export default function GetCredentialPage() {
           <KeyRound className="size-6" aria-hidden="true" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-[#10233F] dark:text-white">
-          Anonymous Credential Issuance
+          Blinded Credential Request
         </h1>
         <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 max-w-md mx-auto">
           {election.title}
@@ -166,14 +166,14 @@ export default function GetCredentialPage() {
       <section className="space-y-6 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4 dark:border-[#1E3352]">
           <div className="space-y-0.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Authority Status</span>
-            <h2 className="text-sm font-bold text-[#10233F] dark:text-white">Identity Registrar</h2>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Service Status</span>
+            <h2 className="text-sm font-bold text-[#10233F] dark:text-white">Configured Identity Service</h2>
           </div>
           <StateBadge state={election.state} size="sm" />
         </div>
 
         <p className="text-xs sm:text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          This browser created a fresh blinded request locally. The registrar signs only the blinded value and never learns your final ballot token or serial number. Once unblinded, the credential binds strictly to this election manifest.
+          This browser prepares a blinded request locally. If the configured issuer implements the protocol correctly, the client can unblind and verify its signature. This page cannot rule out linkage through service logs, timing, shared operators, or other deployment records.
         </p>
 
         {error && (
@@ -207,10 +207,10 @@ export default function GetCredentialPage() {
           <div className="space-y-3 rounded-xl border border-[#15805D]/30 bg-[#15805D]/10 p-5 text-xs sm:text-sm text-[#0F5B43] dark:text-[#86EFAC]" role="status">
             <div className="flex items-center gap-2 font-bold text-sm">
               <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
-              <span>Blind Signature Verified & Unblinded Locally</span>
+              <span>Signature verified and unblinded in this browser</span>
             </div>
             <p className="leading-relaxed">
-              Your anonymous credential proof is safely stored in this browser session. The identity registrar cannot link this credential to your cast ballot.
+              The credential proof is stored in this browser session. This local check does not establish that issuance records cannot be linked to ballot activity in the deployed system.
             </p>
           </div>
         )}
@@ -232,7 +232,7 @@ export default function GetCredentialPage() {
               ) : (
                 <>
                   <KeyRound className="size-4" aria-hidden="true" />
-                  <span>Request Anonymous Credential</span>
+              <span>Request Blinded Credential</span>
                 </>
               )}
             </button>

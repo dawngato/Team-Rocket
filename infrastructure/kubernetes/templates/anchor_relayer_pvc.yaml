@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: himvote-anchor-relayer-outbox
+  namespace: himvote-casting
+  labels:
+    app.kubernetes.io/name: himvote
+    app.kubernetes.io/component: anchor-relayer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.anchorRelayer.persistence.size | quote }}
+  {{- if .Values.anchorRelayer.persistence.storageClassName }}
+  storageClassName: {{ .Values.anchorRelayer.persistence.storageClassName | quote }}
+  {{- end }}

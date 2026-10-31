@@ -55,7 +55,7 @@ class VotingViewModel @Inject constructor(
             castSuccessReceipt = existingReceipt,
             isOfflineVerified = isVerifiedOffline,
             offlineVerificationSummary = if (isVerifiedOffline) {
-                "Offline cryptographic receipt validated in hardware Keystore"
+                "Receipt handle and ballot hash formats are valid. No inclusion proof has been checked."
             } else null
         )
     }
@@ -74,7 +74,7 @@ class VotingViewModel @Inject constructor(
                 if (!isValid) throw IllegalStateException("Authenticated inclusion proof did not verify")
                 _uiState.value = _uiState.value.copy(
                     isOfflineVerified = true,
-                    offlineVerificationSummary = "Authenticated Merkle inclusion proof verified offline"
+                    offlineVerificationSummary = "Cached Merkle inclusion proof matched its supplied root offline"
                 )
             } catch (ex: Exception) {
                 _uiState.value = _uiState.value.copy(

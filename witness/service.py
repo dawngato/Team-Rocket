@@ -522,3 +522,26 @@ class WitnessService:
             witness_signature=audit_entry["witness_signature"],
             witnessed_at_utc=audit_entry["witnessed_at_utc"]
         )
+
+    def list_checkpoints(
+        self, election_id: str, after_sequence: int = 0
+    ) -> list[WitnessAcknowledgement]:
+        """Return the signed acknowledgements used by the relayer ingestion flow."""
+        if isinstance(after_sequence, bool) or not isinstance(after_sequence, int) or after_sequence < 0:
+            raise ValueError("after_sequence must be a non-negative integer")
+        entries = self.storage.list_checkpoints(election_id, after_sequence)
+        return [
+            WitnessAcknowledgement(
+                status="ACCEPTED",
+                election_id=entry["election_id"],
+                checkpoint_sequence=entry["checkpoint_sequence"],
+                witness_sequence=entry["witness_sequence"],
+                previous_witness_sequence=entry["previous_witness_sequence"],
+                checkpoint_digest=entry["checkpoint_digest"],
+                checkpoint=json.loads(entry["checkpoint_canonical_json"]),
+                witness_public_key=entry["witness_public_key"],
+                witness_signature=entry["witness_signature"],
+                witnessed_at_utc=entry["witnessed_at_utc"],
+            )
+            for entry in entries
+        ]

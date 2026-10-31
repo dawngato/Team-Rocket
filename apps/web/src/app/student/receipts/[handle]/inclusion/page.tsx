@@ -162,13 +162,13 @@ export default function VerifyInclusionPage() {
           </Link>
           <div className="mb-2 inline-flex max-w-full items-center gap-1.5 rounded bg-[#157E92]/10 px-2.5 py-1 text-xs font-semibold text-[#0E6273] dark:text-[#7DD3FC]">
             <Layers className="size-3.5 shrink-0" aria-hidden="true" />
-            <span className="truncate">Authenticated receipt evidence</span>
+            <span className="truncate">Service-returned receipt evidence</span>
           </div>
           <h1 className="text-balance text-2xl font-bold tracking-tight text-[#10233F] dark:text-white sm:text-3xl">
-            Cryptographic inclusion verifier
+            Merkle Inclusion Path Checker
           </h1>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-            This page evaluates the Merkle audit path returned for this opaque receipt. It never invents a leaf, root, witness, or proof when the casting service has not supplied one.
+            This page computes whether the path returned by the casting service matches its supplied root. A match does not authenticate the root, verify a witness signature, or prove blockchain finality.
           </p>
         </div>
         <ReceiptStatusBadge status={receipt?.status ?? "UNKNOWN"} size="md" />
@@ -176,7 +176,7 @@ export default function VerifyInclusionPage() {
 
       {loading && (
         <div className="rounded-xl border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-5 text-sm text-[#6B4707] dark:text-[#FCD34D]" role="status">
-          Loading authenticated inclusion evidence from the casting origin…
+          Loading inclusion fields from the configured casting service…
         </div>
       )}
 
@@ -207,7 +207,7 @@ export default function VerifyInclusionPage() {
                   RFC 9162 audit path
                 </h2>
                 <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                  The server supplied the authenticated tree size, leaf digest, witness root, and sibling digests. Only those values are evaluated here.
+                  The service supplied the tree size, leaf digest, root, and sibling digests. Only those values are evaluated here; their source and signatures are not authenticated by this page.
                 </p>
               </div>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -245,11 +245,11 @@ export default function VerifyInclusionPage() {
                 {isTampered && <p className="mt-2 text-[11px] font-bold uppercase tracking-wide text-[#C23C45]">Local tamper drill changed one leaf bit</p>}
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#1E3352] dark:bg-slate-900/30">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Witnessed tree size</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Service-reported tree size</p>
                 <p className="mt-2 font-mono text-lg font-bold text-[#10233F] dark:text-white">{evidence.tree_size}</p>
               </div>
               <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4 dark:border-[#1E3352] dark:bg-slate-900/30">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Witnessed root</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">Service-reported root</p>
                 <code className="mt-2 block break-all text-[11px] text-[#10233F] dark:text-white">{evidence.merkle_root}</code>
               </div>
             </div>
@@ -287,7 +287,7 @@ export default function VerifyInclusionPage() {
           {verificationResult === "FAILED" && (
             <div className="rounded-xl border border-[#C23C45]/40 bg-[#C23C45]/10 p-5 text-sm leading-relaxed text-[#8B2630] dark:text-[#FCA5A5]" role="alert">
               <div className="flex items-center gap-2 font-bold"><XCircle className="size-5" aria-hidden="true" />Inclusion verification failed</div>
-              <p className="mt-2">The supplied path does not reconstruct the supplied witness root. Treat the evidence as inconsistent and do not retry a ballot because of this result.</p>
+              <p className="mt-2">The supplied path does not reconstruct the supplied root. Treat the returned evidence as inconsistent and do not retry a ballot because of this result.</p>
             </div>
           )}
         </>

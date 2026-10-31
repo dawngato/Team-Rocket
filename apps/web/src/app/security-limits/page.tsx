@@ -34,11 +34,10 @@ export default function SecurityLimitsPage() {
       severity: "PHYSICAL BOUNDARY",
       badgeColor: "border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10",
       description:
-        "The cryptographic protocol cannot prevent a student or staff member from being coerced, watched, or intimidated in unsupervised physical locations (such as a hostel room or student union office). Digital receipts intentionally contain zero information about chosen candidates to prevent vote-selling, but outside physical influence cannot be eliminated purely through software.",
+        "Software cannot prevent a voter from being coerced, watched, or intimidated in an unsupervised physical location. Whether receipt data reveals information about a selection depends on the deployed protocol and records; this page does not verify that property.",
       assumption:
         "Voters access the platform in a private, unmonitored physical setting without third-party physical surveillance.",
-      mitigation:
-        "Zero Candidate Exposure: The receipt handle contains strictly a deterministic nullifier and Merkle tree inclusion hash : never candidate IDs. Even if forced to show their receipt handle, no one can prove which candidate was chosen.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "device-malware",
@@ -47,11 +46,10 @@ export default function SecurityLimitsPage() {
       severity: "CLIENT-SIDE LIMIT",
       badgeColor: "border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-500/10",
       description:
-        "If a voter's smartphone or personal laptop has active keyloggers, screen recording spyware, or rogue browser extensions installed, malicious code can intercept screen taps or keystrokes before browser-level client-side encryption occurs.",
+        "If a device has keyloggers, screen recording spyware, or malicious browser extensions, they may intercept a selection before any client-side protection runs. The active encryption and endpoint protections depend on the deployed client.",
       assumption:
         "The voter's runtime environment (web browser and operating system) executes without malware intercepting memory buffers during ballot sealing.",
-      mitigation:
-        "Strict Content Security Policy (CSP), subresource integrity, memory-clearing after encryption, and recommendation to use updated personal browsers or campus-certified kiosk workstations.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "crypto-hardness",
@@ -60,11 +58,10 @@ export default function SecurityLimitsPage() {
       severity: "HARDNESS ASSUMPTION",
       badgeColor: "border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10",
       description:
-        "System security guarantees strictly rely on classical cryptographic hardness. If classical SHA-256 collision resistance fails or future cryptanalytic breakthroughs break 2048/4096-bit RSA discrete logarithm/factoring before post-quantum transitions, mathematical guarantees would degrade.",
+        "When a protocol relies on SHA-256 or RSA, its security depends on the relevant cryptographic assumptions and correct implementation. This page does not establish which algorithms or key sizes are active in a deployment.",
       assumption:
         "Standard cryptographic hardness assumptions hold: SHA-256 requires ~2^128 operations for collision, and RFC 9474 RSA blind signatures remain computationally unforgeable.",
-      mitigation:
-        "HimVote strictly avoids proprietary crypto and adheres directly to RFC 9474 (Blind Signatures) and RFC 9162 (Merkle Transparency). Algorithm agility allows seamless migration to post-quantum signature schemes.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "small-electorate",
@@ -75,9 +72,8 @@ export default function SecurityLimitsPage() {
       description:
         "In university departments or club elections where voter turnout is tiny (e.g. fewer than 20 students), an adversary who knows that 19 students voted for Candidate A can deduce the 20th student's ballot by pure demographic elimination, regardless of cryptographic strength.",
       assumption:
-        "Voter cohorts exceed minimal demographic anonymity thresholds (minimum 20 voters per reported election segment).",
-      mitigation:
-        "Automated Privacy Guard: HimVote automatically flags electorates with fewer than 20 voters as 'PRIVACY_LIMITED' and strictly suppresses granular department breakdowns to prevent deductive de-anonymization.",
+        "Published totals or outside knowledge may make a small group of voters identifiable. No minimum anonymity threshold is established by this page.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "multi-authority-collusion",
@@ -89,8 +85,7 @@ export default function SecurityLimitsPage() {
         "If university administrators, internal IT database managers, and appointed external auditors all deliberately conspire to falsify records, internal checks alone would be insufficient without external transparency checkpoints.",
       assumption:
         "The external Witness node (e.g., student union or external auditor) operates on independent infrastructure and will not sign conflicting checkpoints.",
-      mitigation:
-        "Current prototype boundary: the identity database and casting ledger use separate service boundaries, but independent witness custody and externally pinned checkpoints are not established in the local profile. A release must supply those trust anchors before claiming administrator-independent tamper detection.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "traffic-timing",
@@ -102,8 +97,7 @@ export default function SecurityLimitsPage() {
         "A passive network adversary monitoring campus ISP packet arrival times could theoretically attempt to correlate the millisecond an identity token was issued with the millisecond an anonymous ballot packet hit the casting gateway.",
       assumption:
         "Sufficient concurrent campus network traffic or anonymizing jitter to prevent microsecond packet-pairing attacks.",
-      mitigation:
-        "Blind issuance includes randomized timing jitter, separate DNS endpoints, and advice to cast through varied networks or delayed submission queues.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "identity-theft",
@@ -115,8 +109,7 @@ export default function SecurityLimitsPage() {
         "If a student willingly shares their campus credentials, password, and OTP, or falls victim to targeted phishing before the credential freeze window, an attacker could claim the voter's blind token before the student does.",
       assumption:
         "Students safeguard their university credentials and physical institutional ID cards against unauthorized handover.",
-      mitigation:
-        "Strict issuance cutoff window, multi-factor OTP verification, automated registration conflict alerts, and the interactive Physical ID Card verifier that checks photo geometry and roll credentials.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "witness-outage",
@@ -127,9 +120,8 @@ export default function SecurityLimitsPage() {
       description:
         "If external witness nodes experience a prolonged cloud network outage or deliberate network partition during tally publication, the platform cannot produce co-signed transparency proofs.",
       assumption:
-        "At least one configured independent witness node achieves 99.5% uptime during election audit windows.",
-      mitigation:
-        "Fail-Closed Publication: HimVote will automatically transition into 'UNVERIFIABLE' state rather than publishing unchecked results, preventing unverified or disputed election outcomes from being declared valid.",
+        "Witness availability and independence must be established for each deployment; this page does not measure uptime.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "blockchain-reorg",
@@ -138,11 +130,10 @@ export default function SecurityLimitsPage() {
       severity: "FINALITY ASSUMPTION",
       badgeColor: "border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10",
       description:
-        "HimVote anchors Merkle tree root commitments to an EVM smart contract for permanent timestamped anchoring. If an underlying network experiences a 51% attack or chain reorganization deeper than 64 blocks, state anchors could experience temporary forks.",
+        "If a deployment anchors checkpoints to an EVM chain, network attacks or reorganizations can affect the observed transaction history. This interface does not establish that a chain or contract is configured.",
       assumption:
-        "The anchoring EVM blockchain maintains standard BFT/PoS finality without consensus collapse or deep history rollbacks.",
-      mitigation:
-        "Finality Threshold Requirements: Audits require 12+ block depth confirmations before final tally certification.",
+        "Any configured blockchain may reorganize or fail to reach the expected finality. The chain and finality policy are not verified here.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     },
     {
       id: "clock-drift",
@@ -153,9 +144,8 @@ export default function SecurityLimitsPage() {
       description:
         "Election cutoff windows (such as Sunday 5:00 PM) require consistent time recognition across distributed voter clients and identity gateways.",
       assumption:
-        "Server clocks across identity and casting clusters synchronize via authenticated NTP with drift bounded below 500ms.",
-      mitigation:
-        "Server-authoritative timestamps: Client system clocks are never trusted for election open/close enforcement; monotonic server time controls issuance freezing.",
+        "A deployment must define how identity and casting services handle clock synchronization and election cutoffs. This page does not measure clock drift.",
+      mitigation: "This page does not verify that a related control is enabled. Confirm implementation and evidence for the deployed system.",
     }
   ];
 
@@ -174,96 +164,35 @@ export default function SecurityLimitsPage() {
       <div className="space-y-4 pb-6 border-b border-slate-200 dark:border-[#1E3352]">
         <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-[#AA6C0B]/10 text-[#AA6C0B] dark:text-[#FBBF24]">
           <AlertTriangle className="w-3.5 h-3.5" aria-hidden="true" />
-          Radical Honesty & Cryptographic Transparency
+          Deployment Review Notes
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#10233F] dark:text-white tracking-tight">
           Security Limits, Boundaries & Assumptions
         </h1>
         <p className="text-slate-600 dark:text-slate-300 text-base leading-relaxed">
-          HimVote rejects marketing buzzwords like &quot;100% unhackable&quot; or &quot;impenetrable blockchain security&quot;. 
-          Every real-world security protocol operates under strictly defined physical, operational, and mathematical boundaries. 
-          Here we transparently disclose every boundary, threat model assumption, and engineering mitigation in plain campus terms.
+          This page outlines security questions for system owners and reviewers. It does not certify this software, its cryptography, or any connected deployment.
         </p>
       </div>
 
-      {/* Primary Invariant Banner */}
-      <div className="p-6 rounded-2xl bg-gradient-to-br from-[#10233F] to-[#0A1627] dark:from-[#0B1524] dark:to-[#07111E] text-white space-y-3 shadow-lg border border-cyan-500/20">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[#38BDF8] font-bold text-sm">
-            <ShieldCheck className="w-5 h-5 flex-shrink-0" aria-hidden="true" />
-            <span>The HimVote Verified Standard</span>
-          </div>
-          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 border border-cyan-500/30 text-cyan-300">
-            Audit v7.0
-          </span>
-        </div>
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          A security claim is presented on this platform <strong>only if verified by independent mathematical checks and test suites</strong>. 
-          All cryptographic operations use open, peer-reviewed RFC specifications (RFC 9474 Blind Signatures, RFC 9162 Merkle Transparency Logs, RFC 8785 Canonical JSON). 
-          Where technology stops and human trust begins, we explicitly document the boundary.
+      <section className="rounded-2xl border border-amber-500/30 bg-amber-500/5 p-6 space-y-3" aria-labelledby="scope-heading">
+        <h2 id="scope-heading" className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-white">
+          <Info className="size-5 text-amber-600 dark:text-amber-400" aria-hidden="true" />
+          Prototype threat model, not a security certification
+        </h2>
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+          The topics below describe risks to assess. This page does not run cryptographic verification or prove that any mitigation is enabled in a deployment. The local configuration does not establish production witness keys, an election commitment map, a blockchain RPC endpoint, a deployed contract, or relayer authority. Do not treat this page as evidence that a real election is secure.
         </p>
-      </div>
-
-      {/* Key Guarantees vs Non-Guarantees Comparison */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="p-5 rounded-lg border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="font-bold text-sm text-[#0F172A] dark:text-white">
-              Mathematical Guarantees
-            </span>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#15805D]/10 text-[#15805D] border border-[#15805D]/20">
-              ENFORCED
-            </span>
+        <div className="grid gap-4 border-t border-amber-500/20 pt-4 text-xs sm:grid-cols-2">
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white">Threat areas described</h3>
+            <p className="mt-1 leading-relaxed text-slate-600 dark:text-slate-400">Endpoint compromise, coercion, small electorates, service outages, operator collusion, traffic analysis, and chain reorganization.</p>
           </div>
-          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5 leading-relaxed">
-            <li className="flex items-start gap-2">
-              <span className="text-[#15805D] font-bold shrink-0">•</span>
-              <span><strong>Ballot Privacy:</strong> Cryptographic separation ensures database administrators, teachers, and faculty cannot associate votes with voter identities.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#15805D] font-bold shrink-0">•</span>
-              <span><strong>One Student, One Vote:</strong> Duplicate ballot attempts and token replay are rejected mathematically via spent nullifiers.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#15805D] font-bold shrink-0">•</span>
-              <span><strong>Tamper-Proof Ledger:</strong> Checkpoints committed to the RFC 9162 Merkle log cannot be rewritten without invalidating root cryptographic hashes.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-[#15805D] font-bold shrink-0">•</span>
-              <span><strong>Individual Verifiability:</strong> Every voter receives a receipt handle to verify ballot inclusion in the public tree offline.</span>
-            </li>
-          </ul>
-        </div>
-
-        <div className="p-5 rounded-lg border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] space-y-3">
-          <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
-            <span className="font-bold text-sm text-[#0F172A] dark:text-white">
-              Operational Assumptions & Physical Limits
-            </span>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-              OUT OF SCOPE
-            </span>
+          <div>
+            <h3 className="font-bold text-slate-900 dark:text-white">Evidence still required</h3>
+            <p className="mt-1 leading-relaxed text-slate-600 dark:text-slate-400">Review the deployed protocols and source, pinned keys, election configuration, independent witness custody, chain and contract settings, operational policies, and test evidence.</p>
           </div>
-          <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5 leading-relaxed">
-            <li className="flex items-start gap-2">
-              <span className="text-slate-400 font-bold shrink-0">•</span>
-              <span><strong>Physical Intimidation:</strong> Coercion occurring directly in person during device screen interaction cannot be prevented by software protocols.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-slate-400 font-bold shrink-0">•</span>
-              <span><strong>Device Compromise:</strong> Client endpoint malware or screen recorders that intercept user input before encryption violate client trust.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-slate-400 font-bold shrink-0">•</span>
-              <span><strong>Voluntary Credential Sharing:</strong> If credentials and MFA codes are voluntarily delegated to third parties, identity authenticity is compromised.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-slate-400 font-bold shrink-0">•</span>
-              <span><strong>Small Quorum Elimination:</strong> Contests with extremely small voter pools cannot mathematically conceal unanimous outcomes.</span>
-            </li>
-          </ul>
         </div>
-      </div>
+      </section>
 
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4">
@@ -273,13 +202,15 @@ export default function SecurityLimitsPage() {
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+              type="button"
+              aria-pressed={activeCategory === cat}
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-colors ${
                 activeCategory === cat
                   ? "bg-[#10233F] text-white dark:bg-[#38BDF8] dark:text-[#07111E] shadow-sm"
                   : "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
               }`}
             >
-              {cat === "ALL" ? "All Boundaries (10)" : cat.charAt(0) + cat.slice(1).toLowerCase()}
+              {cat === "ALL" ? `All Boundaries (${securityLimits.length})` : cat.charAt(0) + cat.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
@@ -287,8 +218,9 @@ export default function SecurityLimitsPage() {
         {/* Search Input */}
         <div className="relative w-full sm:w-64">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-          <input
+            <input
             type="text"
+              aria-label="Search security limits"
             placeholder="Search boundaries & limits..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -325,11 +257,11 @@ export default function SecurityLimitsPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
                 <div className="p-3 rounded-lg bg-amber-500/5 border border-amber-500/15 text-xs text-slate-600 dark:text-slate-400">
-                  <strong className="text-amber-800 dark:text-amber-300 block mb-0.5">Assumed Environmental Condition:</strong>
+            <strong className="text-amber-800 dark:text-amber-300 block mb-0.5">Threat assumption:</strong>
                   {item.assumption}
                 </div>
                 <div className="p-3 rounded-lg bg-cyan-500/5 border border-cyan-500/15 text-xs text-slate-600 dark:text-slate-400">
-                  <strong className="text-cyan-800 dark:text-cyan-300 block mb-0.5">Engineered System Mitigation:</strong>
+            <strong className="text-cyan-800 dark:text-cyan-300 block mb-0.5">Implementation status:</strong>
                   {item.mitigation}
                 </div>
               </div>
@@ -338,62 +270,30 @@ export default function SecurityLimitsPage() {
         )}
       </div>
 
-      {/* Assumptions Breakdown Matrix Table */}
-      <div className="p-6 rounded-xl border border-slate-200 dark:border-[#1E3352] bg-slate-50/70 dark:bg-[#0E1A2B] space-y-4">
-        <div className="flex items-center gap-2 text-[#10233F] dark:text-white font-bold text-sm">
-          <Scale className="w-4 h-4 text-[#157E92]" />
-          <span>Operational Assumptions Matrix (At a Glance)</span>
+      <section className="rounded-xl border border-slate-200 bg-slate-50/70 p-6 space-y-4 dark:border-[#1E3352] dark:bg-[#0E1A2B]">
+        <div className="flex items-center gap-2 text-sm font-bold text-[#10233F] dark:text-white">
+          <Scale className="size-4 text-[#157E92]" aria-hidden="true" />
+          <h2>Deployment evidence to confirm</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 dark:border-[#1E3352] text-slate-700 dark:text-slate-300">
-                <th className="py-2 px-3 font-semibold">Subsystem</th>
-                <th className="py-2 px-3 font-semibold">Standard Implemented</th>
-                <th className="py-2 px-3 font-semibold">Underlying Assumption</th>
-                <th className="py-2 px-3 font-semibold">Graceful Degradation Mode</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-600 dark:text-slate-400">
-              <tr>
-                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">Blind Signatures</td>
-                <td className="py-2.5 px-3 font-mono text-[11px]">RFC 9474 RSA-FDH</td>
-                <td className="py-2.5 px-3">Unlinkability of blinded tokens & factoring hardness</td>
-                <td className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Fails closed if signature verify fails</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">Audit Ledger</td>
-                <td className="py-2.5 px-3 font-mono text-[11px]">RFC 9162 Merkle Log</td>
-                <td className="py-2.5 px-3">SHA-256 collision resistance</td>
-                <td className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Witness rejects conflicting tree heads</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">Record Canonicalization</td>
-                <td className="py-2.5 px-3 font-mono text-[11px]">RFC 8785 Canonical JSON</td>
-                <td className="py-2.5 px-3">Determinism of UTF-16 code unit ordering</td>
-                <td className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Rejects malformed non-canonical bodies</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">Witness Governance</td>
-                <td className="py-2.5 px-3 font-mono text-[11px]">Multi-party Co-signing</td>
-                <td className="py-2.5 px-3">Witness nodes operate on isolated external cloud/infra</td>
-                <td className="py-2.5 px-3 text-rose-600 dark:text-rose-400">UNVERIFIABLE state, blocks certification</td>
-              </tr>
-              <tr>
-                <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">Chain Finality</td>
-                <td className="py-2.5 px-3 font-mono text-[11px]">EVM Anchor Contract</td>
-                <td className="py-2.5 px-3">Consortium chain block finality within 12 confirmations</td>
-                <td className="py-2.5 px-3 text-amber-600 dark:text-amber-400">Offline Merkle proof fallback verification</td>
-              </tr>
+          <table className="w-full min-w-[640px] text-left text-xs">
+            <thead><tr className="border-b border-slate-200 text-slate-700 dark:border-[#1E3352] dark:text-slate-300"><th className="px-3 py-2">Area</th><th className="px-3 py-2">Required evidence</th></tr></thead>
+            <tbody className="divide-y divide-slate-100 text-slate-600 dark:divide-slate-800 dark:text-slate-400">
+              <tr><td className="px-3 py-2.5 font-semibold">Election and eligibility</td><td className="px-3 py-2.5">Published manifest, eligibility policy, and the roster source used by the deployment.</td></tr>
+              <tr><td className="px-3 py-2.5 font-semibold">Credential issuer</td><td className="px-3 py-2.5">Issuer public key, supported protocol configuration, and independently reviewed issuance records.</td></tr>
+              <tr><td className="px-3 py-2.5 font-semibold">Witnesses</td><td className="px-3 py-2.5">Pinned witness keys, quorum policy, and evidence that witness operators are independently controlled.</td></tr>
+              <tr><td className="px-3 py-2.5 font-semibold">Blockchain anchor</td><td className="px-3 py-2.5">Chain ID, RPC endpoint, deployed contract address, relayer key and permissions, and finality policy.</td></tr>
+              <tr><td className="px-3 py-2.5 font-semibold">Privacy and cryptography</td><td className="px-3 py-2.5">Protocol review, data-flow analysis, key custody, and independent verification of any published proof.</td></tr>
             </tbody>
           </table>
         </div>
-      </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">No deployment-specific evidence is loaded or verified by this page.</p>
+      </section>
 
       {/* Public Auditor Links */}
       <div className="pt-6 border-t border-slate-200 dark:border-[#1E3352] flex flex-col sm:flex-row items-center justify-between gap-4">
         <span className="text-xs text-slate-500">
-          Source references: <code>docs/security_assumptions.md</code> &amp; <code>docs/threat_model.md v7.0</code>
+          No deployment-specific security evidence is attached to this page.
         </span>
         <div className="flex items-center gap-4">
           <Link

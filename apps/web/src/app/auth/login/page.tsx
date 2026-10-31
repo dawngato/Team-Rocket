@@ -144,15 +144,13 @@ export default function LoginPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/10 border border-sky-400/20 text-[#38BDF8] text-xs font-semibold tracking-wide">
               <KeyRound className="w-3.5 h-3.5" aria-hidden="true" />
-              <span>Cryptographically Verifiable Campus Democracy</span>
+              <span>Campus Election Prototype</span>
             </div>
             <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-white leading-tight">
-              Tamper-evident elections governed with cryptographic certainty.
+              A campus election workflow built for careful review.
             </h1>
             <p className="text-sm xl:text-base text-slate-300 leading-relaxed font-normal">
-              HimVote separates voter identity from cast ballots through blinded signatures,
-              anchoring every tally in an immutable Merkle tree with independent verification
-              and centralized Super Administrator governance.
+              HimVote demonstrates election workflows, credential handling, and evidence views. Privacy and verification depend on configured services, trusted keys, and independently reviewed evidence.
             </p>
           </div>
 
@@ -162,11 +160,11 @@ export default function LoginPage() {
               <div className="flex items-center gap-2.5 mb-1.5 text-[#38BDF8]">
                 <Fingerprint className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-                  Zero-Knowledge Secrecy
+                  Credential Privacy Design
                 </h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Ballot selections are mathematically blinded, safeguarding absolute voter privacy.
+                Blinded credentials are supported in the codebase. This interface does not establish unlinkability in a deployment.
               </p>
             </div>
 
@@ -174,11 +172,11 @@ export default function LoginPage() {
               <div className="flex items-center gap-2.5 mb-1.5 text-emerald-400">
                 <FileCheck2 className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-200">
-                  Verifiable Audit Tree
+                  Audit Evidence
                 </h3>
               </div>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Immutable Merkle inclusion proofs allow every participant to verify tally integrity.
+                Merkle inclusion data can be checked when complete proof fields and a trusted root are available.
               </p>
             </div>
 
@@ -216,13 +214,11 @@ export default function LoginPage() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="font-medium text-slate-300">
-              Institutional Service Node Active
+              Service availability is checked during sign-in
             </span>
           </div>
           <div className="flex items-center gap-3 text-slate-400 font-mono text-[11px]">
-            <span>Ed25519</span>
-            <span>•</span>
-            <span>BLS12-381 Blind Signatures</span>
+            <span>Protocol configuration varies by deployment</span>
           </div>
         </div>
       </section>

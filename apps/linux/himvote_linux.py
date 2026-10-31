@@ -3320,7 +3320,7 @@ class ElectionStore:
         if not an:
             return "# Election Report Not Available\n"
 
-        md = f"""# HimVote Official Certified Election Analytical Report
+        md = f"""# HimVote Local Election Analytics Report
 
 **Election Title:** {an['title']}  
 **Contest Office:** {an['contest']}  
@@ -3332,18 +3332,18 @@ class ElectionStore:
 
 ## 1. Executive Electorate Summary
 
-| Metric | Certified Value |
+| Metric | Recorded Value |
 | :--- | :--- |
-| **Total Registered Electorate** | {an['total_registered']:,} verified students |
+| **Students in Local Roster** | {an['total_registered']:,} |
 | **Total Ballots Cast** | {an['total_votes']:,} ballots |
 | **Turnout Rate** | **{an['turnout_percentage']}%** |
-| **One Student, One Vote Check** | **PASSED (0 Duplicate Nullifiers)** |
-| **Ballot Tree Merkle Root** | `{an['merkle_root']}` |
+| **Local Duplicate-ID Check** | **Repeated IDs are rejected in this local file** |
+| **Local Aggregate Hash** | `{an['merkle_root']}` |
 | **Margin of Victory** | **+{an['margin_of_victory']} votes** over runner-up |
 
 ---
 
-## 2. Certified Candidate Performance Breakdown
+## 2. Candidate Totals from Local Records
 
 | Rank | Candidate | Slate / Party | Department | Votes Received | Popular Vote Share | Outcome |
 | :---: | :--- | :--- | :--- | :---: | :---: | :---: |
@@ -3360,13 +3360,13 @@ class ElectionStore:
         md += f"""
 ---
 
-## 4. Cryptographic Proofs & Verifiability Statement
+## 4. Local Data Checks
 
-1. **One Student, One Vote**: Every ballot corresponds to a unique deterministic nullifier. All {an['nullifiers_checked']} cast nullifiers were verified to be distinct with 0 collisions.
-2. **RFC 9162 Merkle Commitment**: All ballots are anchored in the append-only tree with final root hash `{an['merkle_root']}`.
-3. **Receipt Verification**: Every voter received a deterministic receipt handle verifiable against independent witness cosignatures.
+1. **Duplicate-ID check**: The app rejects an ID already present in this election's local cast list. This does not prevent repeat submissions from other devices.
+2. **Aggregate hash**: The value `{an['merkle_root']}` is a local hash summary, not an RFC 9162 Merkle root or blockchain anchor.
+3. **Receipt handles**: The desktop app generates local receipt handles. This report does not verify independent witness signatures.
 
-*Report signed and certified by HimVote Linux Independent Verification Engine.*
+*Generated from local demo data. This report is not an independent audit or certification.*
 """
         return md
 
@@ -3584,7 +3584,7 @@ class StudentRegistrationModal(tk.Toplevel):
 
         ok, msg = self.election_store.register_student(sid, name, email, dept)
         if ok:
-            self.lbl_msg.configure(text="Student successfully registered and verified for voting.", fg=GREEN)
+            self.lbl_msg.configure(text="Student added to the local roster. Institutional eligibility was not checked.", fg=GREEN)
             if self.on_registered:
                 self.on_registered()
             self.after(1400, self.destroy)
@@ -3614,14 +3614,14 @@ class VotingBoothModal(tk.Toplevel):
     def _build_ui(self) -> None:
         header = tk.Frame(self, bg=NAVY, padx=20, pady=14)
         header.pack(fill="x")
-        tk.Label(header, text="AUTHENTICATED VOTER TERMINAL", font=("DejaVu Sans", 8, "bold"), fg=TEAL, bg=NAVY).pack(anchor="w")
+        tk.Label(header, text="STUDENT VOTING TERMINAL", font=("DejaVu Sans", 8, "bold"), fg=TEAL, bg=NAVY).pack(anchor="w")
         tk.Label(header, text=self.election.title, font=("DejaVu Sans", 13, "bold"), fg=WHITE, bg=NAVY, wraplength=560).pack(anchor="w")
 
         notice = tk.Frame(self, bg=LIGHT_BG, padx=16, pady=8, highlightthickness=1, highlightbackground=TEAL)
         notice.pack(fill="x", padx=16, pady=10)
         tk.Label(
             notice,
-            text="🔒 ONE STUDENT, ONE VOTE ENFORCEMENT: Your vote is cast anonymously via an RFC 9474 cryptographic blind signature. Duplicate voting is mathematically prevented via nullifier checks.",
+            text="This local demo stores each student ID with the selected candidate and rejects a repeated ID in the same election file. It does not provide anonymous voting, RFC 9474 blind credentials, or duplicate-vote prevention across devices.",
             font=("DejaVu Sans", 8),
             fg=NAVY,
             bg=LIGHT_BG,
@@ -3715,7 +3715,7 @@ class VotingBoothModal(tk.Toplevel):
             self.lbl_error.configure(text=f"ERROR: Student '{sid}' has already cast a ballot in this election!")
             messagebox.showerror(
                 "One Student, One Vote Violation",
-                f"ACCESS DENIED: Student '{sid}' has already cast a ballot in this election.\n\nHimVote strictly prevents duplicate votes via deterministic nullifier verification.",
+                f"This local election file already records a ballot for student '{sid}'. A local ID check does not prevent duplicate submissions from another installation.",
                 parent=self,
             )
             return
@@ -3776,7 +3776,7 @@ class AnalyticalReportModal(tk.Toplevel):
             tk.Label(box, text=subtext, font=("DejaVu Sans", 8), fg=TEAL, bg=SURFACE).pack(anchor="w")
 
         add_kpi(kpi_grid, "TOTAL REGISTERED", f"{self.analytics.get('total_registered', 0):,}", "Verified cohort")
-        add_kpi(kpi_grid, "BALLOTS CAST", f"{self.analytics.get('total_votes', 0):,}", "100% unique nullifiers")
+        add_kpi(kpi_grid, "BALLOTS CAST", f"{self.analytics.get('total_votes', 0):,}", "Local ID check only")
         add_kpi(kpi_grid, "VOTER TURNOUT", f"{self.analytics.get('turnout_percentage', 0.0)}%", "Popular participation")
         add_kpi(kpi_grid, "VICTORY MARGIN", f"+{self.analytics.get('margin_of_victory', 0)}", "Votes over runner-up")
 
@@ -3826,12 +3826,12 @@ class AnalyticalReportModal(tk.Toplevel):
             pct = round((count / tot) * 100.0, 1)
             tk.Label(r, text=f"{count} votes ({pct}%)", font=("DejaVu Sans", 9), fg=MUTED, bg=SURFACE).pack(side="right")
 
-        tk.Label(scrollable_frame, text="Cryptographic Ledger Integrity Proofs", font=("DejaVu Sans", 11, "bold"), fg=NAVY, bg=WHITE).pack(anchor="w", pady=(14, 6))
+        tk.Label(scrollable_frame, text="Local Record Checks", font=("DejaVu Sans", 11, "bold"), fg=NAVY, bg=WHITE).pack(anchor="w", pady=(14, 6))
         proof_box = tk.Frame(scrollable_frame, bg=LIGHT_BG, padx=12, pady=10, highlightthickness=1, highlightbackground=TEAL)
         proof_box.pack(fill="x", pady=(0, 16))
 
-        tk.Label(proof_box, text=f"RFC 9162 Merkle Root: {self.analytics.get('merkle_root')}", font=("DejaVu Sans Mono", 8, "bold"), fg=NAVY, bg=LIGHT_BG).pack(anchor="w")
-        tk.Label(proof_box, text=f"Nullifiers Verified: {self.analytics.get('nullifiers_checked')} • Collision Violations: 0 (PASSED)", font=("DejaVu Sans", 8), fg=GREEN, bg=LIGHT_BG).pack(anchor="w", pady=(2, 0))
+        tk.Label(proof_box, text=f"Local aggregate hash: {self.analytics.get('merkle_root')}", font=("DejaVu Sans Mono", 8, "bold"), fg=NAVY, bg=LIGHT_BG).pack(anchor="w")
+        tk.Label(proof_box, text="The live desktop demo does not build an RFC 9162 Merkle tree or perform an independent nullifier audit.", font=("DejaVu Sans", 8), fg=MUTED, bg=LIGHT_BG, wraplength=760, justify="left").pack(anchor="w", pady=(2, 0))
 
         bar = tk.Frame(self, bg=SURFACE, padx=20, pady=12, highlightthickness=1, highlightbackground=LINE)
         bar.pack(fill="x", side="bottom")
@@ -3878,7 +3878,7 @@ class AdminResultsPreviewModal(tk.Toplevel):
         header = tk.Frame(self, bg=NAVY, padx=20, pady=14)
         header.pack(fill="x")
         tk.Label(header, text="ADMINISTRATIVE ELECTION OVERSIGHT", font=("DejaVu Sans", 8, "bold"), fg=TEAL, bg=NAVY).pack(anchor="w")
-        tk.Label(header, text="Tally Preview & Certification Gate", font=("DejaVu Sans", 13, "bold"), fg=WHITE, bg=NAVY).pack(anchor="w")
+        tk.Label(header, text="Tally Preview", font=("DejaVu Sans", 13, "bold"), fg=WHITE, bg=NAVY).pack(anchor="w")
 
         body = tk.Frame(self, bg=WHITE, padx=20, pady=14)
         body.pack(fill="both", expand=True)
@@ -4235,7 +4235,7 @@ class HimVoteLinuxApp(tk.Tk):
 
         ttk.Label(
             hero_left,
-            text="PROMPT3 CRYPTOGRAPHIC ENCLAVE ARCHITECTURE",
+            text="LOCAL DESKTOP DEMO",
             font=("DejaVu Sans", 8, "bold"),
             foreground=TEAL,
             background=WHITE,
@@ -4243,7 +4243,7 @@ class HimVoteLinuxApp(tk.Tk):
 
         ttk.Label(
             hero_left,
-            text="Institutional Zero-Knowledge Voting System",
+            text="Local Election Prototype",
             font=("DejaVu Sans", 13, "bold"),
             foreground=NAVY,
             background=WHITE,
@@ -4251,7 +4251,7 @@ class HimVoteLinuxApp(tk.Tk):
 
         ttk.Label(
             hero_left,
-            text="Specification Rule 0.1(3) Security Notice: Native clients never implement custom ballot encryption. The ballot booth runs in an isolated cryptographic enclave communicating via verified API contracts.",
+            text="This desktop demo stores ballot selections locally. It does not provide an isolated cryptographic enclave or verify an external voting booth.",
             font=("DejaVu Sans", 9),
             foreground=MUTED,
             background=WHITE,
@@ -4470,9 +4470,9 @@ class HimVoteLinuxApp(tk.Tk):
         self.current_view_name = "how_it_works"
         self._clear_content()
         self._header(
-            "Verification Architecture",
-            "How Mathematical Election Verification Works",
-            "HimVote replaces administrative trust with 4 independent, mathematically verifiable layers. Every ballot is cast-as-intended, recorded-as-cast, and tallied-as-recorded.",
+            "Local Prototype",
+            "How the Desktop Demo Records Votes",
+            "This desktop demo stores each student ID with the selected candidate and uses a local ID list to reject repeat ballots. It does not implement anonymous credential issuance, encrypted ballots, independent witness signing, or public blockchain anchoring.",
         )
 
         container = ttk.Frame(self.content, style="App.TFrame")
@@ -4480,31 +4480,31 @@ class HimVoteLinuxApp(tk.Tk):
 
         tiers = [
             (
-                "Tier 1: Student Voter Booth",
-                "Zero-Knowledge & Blind Credentials",
-                "Voters obtain an RSA blind signature credential (RFC 9474) from the Identity Issuer. During casting, the booth blinds voter identity completely. The casting server verifies the signature without learning which student submitted the vote.",
-                "RFC 9474 Blind Signatures",
+                "Tier 1: Student ID Entry",
+                "Local roster and repeat-ID check",
+                "The student enters an ID in the desktop booth. The app stores that ID with the selected candidate and checks its local election file for a previous ballot. It does not issue RFC 9474 blind credentials or separate identity from the vote.",
+                "Local demo only",
                 GREEN,
             ),
             (
-                "Tier 2: Tamper-Evident Merkle Log",
-                "Canonical Hashing & RFC 9162 Log",
-                "Every accepted ballot is canonicalized per RFC 8785 (JCS) and inserted as an ordered leaf into an append-only RFC 9162 Merkle tree. Any alteration or deletion fundamentally corrupts the tree root.",
-                "RFC 8785 JCS & RFC 9162 Merkle",
+                "Tier 2: Local Vote Record",
+                "Local hash summary",
+                "The desktop demo saves vote records locally and computes a SHA-256 aggregate hash for its tally view. It does not encrypt candidate selections or build an RFC 9162 Merkle tree for live casts.",
+                "Not an RFC 9162 log",
                 TEAL,
             ),
             (
-                "Tier 3: Independent Witness Co-signing",
-                "External Validator Checkpoints",
-                "An autonomous witness service operated outside the university periodically inspects the log, verifies sequence continuity and consistency proofs, and co-signs tree head checkpoints.",
-                "Ed25519 Cosigned Checkpoints",
+                "Tier 3: Independent Witness",
+                "External checkpoint service",
+                "The desktop voting flow does not contact an independent witness service or verify witness co-signatures.",
+                "Not connected",
                 AMBER,
             ),
             (
-                "Tier 4: Immutable Blockchain Anchor",
-                "Public Consensus Finality",
-                "Witnessed checkpoints are anchored periodically onto the public Ethereum / EVM smart contract (HimVoteAnchor.sol). This provides tamper-proof public timestamps that no university administrator can rewrite.",
-                "EVM Smart Contract Consensus",
+                "Tier 4: Public Blockchain Anchor",
+                "External chain publication",
+                "The desktop voting flow does not submit checkpoints to Ethereum or another EVM network. A local hash is not a public blockchain anchor.",
+                "Not connected",
                 NAVY,
             ),
         ]
@@ -4525,10 +4525,10 @@ class HimVoteLinuxApp(tk.Tk):
 
         rule_card = ttk.Frame(container, style="Card.TFrame", padding=14)
         rule_card.pack(fill="x", pady=(8, 0))
-        ttk.Label(rule_card, text="Independent Verification Guarantee", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w")
+        ttk.Label(rule_card, text="Limits of Local Verification", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w")
         ttk.Label(
             rule_card,
-            text="Any voter or auditor can independently verify their ballot inclusion in the Merkle log using the Offline Audit view, completely without relying on server trust or internet access.",
+            text="Offline archive checks can recompute hashes from a supplied bundle. They do not make the live desktop vote records anonymous or establish that a supplied root or archive is authoritative.",
             font=("DejaVu Sans", 9),
             foreground=MUTED,
             background=WHITE,
@@ -4541,8 +4541,8 @@ class HimVoteLinuxApp(tk.Tk):
         self._clear_content()
         self._header(
             "Institutional Trust Model",
-            "Security Guarantees & Cryptographic Limits",
-            "In strict compliance with Specification Rule 0.1(7), HimVote never makes unqualified claims such as 'unhackable' or '100% secure'. Below are the exact verified mathematical properties and assumptions.",
+            "Security Limits and Local Checks",
+            "This desktop demo stores student IDs with candidate selections in a local election file. It does not provide anonymous voting, verified ballot encryption, independent witness attestations, or blockchain anchoring.",
         )
 
         container = ttk.Frame(self.content, style="App.TFrame")
@@ -4557,14 +4557,14 @@ class HimVoteLinuxApp(tk.Tk):
         card_guar = ttk.Frame(col1, style="Card.TFrame", padding=18)
         card_guar.pack(fill="both", expand=True)
 
-        ttk.Label(card_guar, text="What Independent Verification Proves", font=("DejaVu Sans", 13, "bold"), foreground=GREEN, background=WHITE).pack(anchor="w", pady=(0, 8))
+        ttk.Label(card_guar, text="What Local Checks Show", font=("DejaVu Sans", 13, "bold"), foreground=GREEN, background=WHITE).pack(anchor="w", pady=(0, 8))
 
         guarantees = [
-            ("Cast-as-Intended", "The voting booth encrypts the ballot using the election public key before submission, preventing network eavesdroppers from observing selections."),
-            ("Recorded-as-Cast", "The voter's receipt handle and ballot hash are mathematically proven to be present in the append-only RFC 9162 Merkle tree via verifiable sibling proof paths."),
-            ("Tallied-as-Recorded", "The candidate tallies shown in the Audit Explorer are recomputed directly by summing canonical decrypted ballots from the export archive, matching the published results."),
-            ("Double-Voting Impossibility", "The nullifier of each credential is cryptographically derived and unique. The audit engine verifies zero collisions across all leaves."),
-            ("Server Non-Equivocation", "Because tree checkpoints are co-signed by an independent witness and anchored on-chain, the server cannot show different tree states to different users."),
+            ("Local ballot records", "The desktop app stores student IDs and candidate choices together. Treat these records as identifiable; this flow does not provide ballot secrecy."),
+            ("Local duplicate-ID check", "The app rejects an ID already present in this election's local cast list. This does not prevent duplicate submissions from another device or installation."),
+            ("Tally calculation", "The results view sums the vote records in the local election file. It does not independently certify that the file is complete or authentic."),
+            ("Offline archive checks", "The separate archive verifier can recompute supplied hashes and proof paths. Trust in the archive still depends on authentic roots, keys, and source data."),
+            ("Witness and chain status", "The live desktop voting flow does not contact an independent witness or publish a checkpoint to a public blockchain."),
         ]
         for title, desc in guarantees:
             ttk.Label(card_guar, text=f"[ENFORCED] {title}", font=("DejaVu Sans", 10, "bold"), foreground=NAVY, background=WHITE).pack(anchor="w", pady=(6, 2))
@@ -4576,11 +4576,11 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Label(card_bound, text="Trust Assumptions & System Boundaries", font=("DejaVu Sans", 13, "bold"), foreground=AMBER, background=WHITE).pack(anchor="w", pady=(0, 8))
 
         boundaries = [
-            ("Client Device Integrity", "If the voter's personal phone or laptop is infected with malware, malicious software could tamper with display inputs before encryption."),
-            ("Honest Witness Threshold", "The system assumes at least one independent witness co-signer is honest and refuses to sign forks or inconsistent log heads."),
-            ("Coercion Resistance", "While ballots are private, standard receipt tokens must not disclose individual candidate choices to prevent vote-buying or coercion."),
-            ("Eligibility Authority Boundary", "The university identity issuer is the authoritative source for roster eligibility. The verifier proves ballots match issued credentials, but cannot verify if the student was legally eligible."),
-            ("Key Management Assurance", "Cryptographic keys must reside in reviewed Hardware Security Modules (HSMs) or cloud KMS per specification rules."),
+            ("Local file access", "The live demo stores identifiable vote records in local election data. Anyone who can read that file can see student IDs and selections."),
+            ("Eligibility checks", "The desktop demo uses its local student roster. It does not verify eligibility with a university identity service."),
+            ("Separate installations", "The local cast list is not shared across devices. It cannot enforce a campus-wide one-vote rule by itself."),
+            ("External witness", "No independent witness service is connected to the live desktop vote flow."),
+            ("Public blockchain", "No public blockchain is connected to the live desktop vote flow."),
         ]
         for title, desc in boundaries:
             ttk.Label(card_bound, text=f"!  {title}", font=("DejaVu Sans", 10, "bold"), foreground=AMBER, background=WHITE).pack(anchor="w", pady=(6, 2))
@@ -4754,7 +4754,7 @@ class HimVoteLinuxApp(tk.Tk):
         ttk.Button(net_hdr, text="⚡ Test All Endpoints", command=test_all_endpoints, style="Action.TButton").pack(side="right")
         ttk.Label(
             net_card,
-            text="HimVote enforces strict origin separation: Identity (authentication), Casting (anonymous ballots), and Witness (independent log checkpoints).",
+            text="This prototype lists separate identity, casting, and witness endpoints. Their separation and the availability of independent checkpoints depend on the deployed services.",
             style="CardBody.TLabel",
         ).pack(anchor="w", pady=(0, 12))
 

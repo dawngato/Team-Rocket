@@ -127,7 +127,7 @@ public struct VotingBoothView: View {
                     Image(systemName: "lock.shield.fill")
                         .foregroundStyle(ColorTokens.brandAccent)
                     
-                    Text("Zero Plaintext Ballot Visibility")
+                    Text("Ballot Data Handling")
                         .font(Typography.cardHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
                     
@@ -138,7 +138,7 @@ public struct VotingBoothView: View {
                         .foregroundStyle(ColorTokens.textTertiary)
                 }
                 
-                Text("Your ballot choices are encrypted client side inside an isolated ASWebAuthenticationSession booth. The mobile application runtime never accesses plaintext ballot selections, adhering strictly to Section 0.1 Rule 3.")
+                Text("The iOS app opens the booth in an ephemeral ASWebAuthenticationSession and forwards the returned ballot artifacts to the casting API. The app does not receive a plaintext candidate selection in this flow; ballot privacy also depends on booth and service behavior.")
                     .font(Typography.callout)
                     .foregroundStyle(ColorTokens.textSecondary)
                     .multilineTextAlignment(.leading)
@@ -225,11 +225,11 @@ public struct VotingBoothView: View {
             }
             
             VStack(spacing: 6) {
-                Text("Ballot Successfully Cast")
+                Text("Casting Service Accepted the Ballot")
                     .font(Typography.sectionHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
                 
-                Text("Your encrypted ballot has been recorded into the casting origin outbox.")
+                Text("The casting service accepted the ballot record. Witnessing and blockchain anchoring are tracked separately.")
                     .font(Typography.caption)
                     .foregroundStyle(ColorTokens.textSecondary)
                     .multilineTextAlignment(.center)

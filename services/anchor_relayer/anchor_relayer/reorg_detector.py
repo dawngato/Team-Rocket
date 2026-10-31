@@ -97,9 +97,10 @@ class ReorgDetector:
                 )
         except TransactionNotFound:
             return ReorgCheckResult(
-                is_reorg=True,
-                reason=f"Transaction {tx_hash} is absent from the canonical chain",
+                is_reorg=False,
+                reason=f"Transaction {tx_hash} was not returned by the RPC for the verified block",
                 canonical_block_hash=canonical_hash,
+                is_indeterminate=True,
             )
         except Exception as exc:
             return ReorgCheckResult(

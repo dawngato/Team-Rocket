@@ -39,7 +39,7 @@ fun CandidateDetailScreen(
     Scaffold(
         topBar = {
             HimVoteTopBar(
-                title = "Candidates & Manifesto",
+                title = "Nominated Candidates & Manifesto",
                 canNavigateBack = true,
                 onNavigateBack = onNavigateBack
             )
@@ -93,7 +93,7 @@ fun CandidateDetailScreen(
                                                     modifier = Modifier.size(16.dp)
                                                 )
                                                 Text(
-                                                    text = "Ballot Already Cast",
+                                                    text = "Ballot Already Submitted",
                                                     color = DesignTokens.Green600,
                                                     fontSize = 12.sp,
                                                     fontWeight = FontWeight.Bold
@@ -133,14 +133,14 @@ fun CandidateDetailScreen(
                                 state.hasVoted -> {
                                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                         StatusBanner(
-                                            title = "Single Cast Rule Enforced",
-                                            message = "You have recorded your vote. Your receipt is securely stored in hardware Keystore.",
+                                            title = "Cryptographic Receipt Recorded on This Device",
+                                            message = "The cryptographic receipt is securely stored in hardware-encrypted preferences on this device.",
                                             icon = Icons.Default.CheckCircle,
                                             tintColor = DesignTokens.Green600,
                                             backgroundColor = DesignTokens.Green600.copy(alpha = 0.1f)
                                         )
                                         HimVoteButton(
-                                            text = "View My Cast Receipt",
+                                            text = "View Cryptographic Receipt",
                                             onClick = { onNavigateToReceipt(state.electionId) }
                                         )
                                     }
@@ -150,13 +150,13 @@ fun CandidateDetailScreen(
                                         HimVoteButton(
                                             text = "Obtain Blind Voting Credential",
                                             onClick = { onNavigateToCredential(state.electionId) },
-                                            contentDesc = "Request anonymous blind voting credential"
+                                            contentDesc = "Request blind voting credential with identity and ballot separation"
                                         )
                                     } else {
                                         HimVoteButton(
-                                            text = "Proceed to Secure Voting Booth",
+                                            text = "Proceed to Ballot Submission",
                                             onClick = { onNavigateToVoting(state.electionId) },
-                                            contentDesc = "Launch secure Chrome Custom Tab voting booth"
+                                            contentDesc = "Launch isolated ballot submission booth"
                                         )
                                     }
                                 }
@@ -164,14 +164,14 @@ fun CandidateDetailScreen(
                                 election.status == ElectionStatus.AUDITOR_ATTESTED ||
                                 election.status == ElectionStatus.ANCHOR_FINALIZED -> {
                                     HimVoteButton(
-                                        text = "View Verified Election Results",
+                                        text = "View Certified Election Results",
                                         onClick = { onNavigateToResults(state.electionId) }
                                     )
                                 }
                                 else -> {
                                     StatusBanner(
                                         title = "Voting Window Closed",
-                                        message = "This election is currently in ${election.status.label} state. Ballot casting is not open at this time.",
+                                        message = "This election is currently in ${election.status.label} status. Ballot submission is not open at this time.",
                                         icon = Icons.Default.Info,
                                         tintColor = DesignTokens.Navy900,
                                         backgroundColor = DesignTokens.Navy900.copy(alpha = 0.08f)

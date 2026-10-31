@@ -206,7 +206,7 @@ public struct CandidateListView: View {
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "key.fill")
-                        Text("Obtain Anonymous Credential")
+                        Text("Obtain Voting Credential")
                     }
                     .font(Typography.cardHeader)
                     .foregroundStyle(.white)
@@ -219,7 +219,7 @@ public struct CandidateListView: View {
                 .simultaneousGesture(TapGesture().onEnded {
                     HapticFeedback.medium()
                 })
-                .accessibilityLabel("Obtain Anonymous Voter Credential button")
+                .accessibilityLabel("Obtain voting credential button")
             }
             
             if electionSummary.electionState == .published {

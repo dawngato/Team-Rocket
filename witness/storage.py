@@ -220,6 +220,21 @@ class WitnessStorage:
                 return None
             return dict(row)
 
+    def list_checkpoints(
+        self, election_id: str, after_sequence: int = 0
+    ) -> List[Dict[str, Any]]:
+        """Return witnessed checkpoints after a checkpoint sequence, oldest first."""
+        with self._get_connection() as conn:
+            cur = conn.execute(
+                """
+                SELECT * FROM checkpoints_audit
+                WHERE election_id = ? AND checkpoint_sequence > ?
+                ORDER BY checkpoint_sequence ASC
+                """,
+                (election_id, after_sequence),
+            )
+            return [dict(row) for row in cur.fetchall()]
+
     def get_final_checkpoint(self, election_id: str) -> Optional[Dict[str, Any]]:
         """Retrieve the sealed FINAL checkpoint audit record."""
         with self._get_connection() as conn:
@@ -464,9 +479,13 @@ class WitnessStorage:
                 conn.rollback()
                 raise ElectionNotFoundError(f"No checkpoint exists for election {election_id}")
 
-            # Decode existing checkpoint and update kind to FINAL
+            # Finalization appends a new checkpoint sequence that links to the
+            # latest accepted checkpoint, even when the Merkle tree is unchanged.
+            next_seq = state["latest_sequence"] + 1
             checkpoint_obj = json.loads(latest_audit["checkpoint_canonical_json"])
             checkpoint_obj["checkpoint_kind"] = "FINAL"
+            checkpoint_obj["checkpoint_sequence"] = next_seq
+            checkpoint_obj["previous_checkpoint_digest"] = latest_audit["checkpoint_digest"]
             from witness.canonical import canonical_json_str
             final_canonical_json = canonical_json_str(checkpoint_obj)
             import hashlib
@@ -483,7 +502,6 @@ class WitnessStorage:
             )
 
             # Insert final checkpoint into audit table
-            next_seq = state["latest_sequence"] + 1
             conn.execute("""
                 INSERT INTO checkpoints_audit (
                     election_id, checkpoint_sequence, witness_sequence,

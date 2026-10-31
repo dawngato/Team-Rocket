@@ -7,38 +7,10 @@ public struct AuditExplorerView: View {
     @State private var selectedNode: MerkleNodeDescriptor? = nil
     @State private var activeAdversarialDemo: String? = nil
     @State private var showSecuritySheet: Bool = false
+    @State private var electionId = ""
     
-    // Synthetic Merkle Tree Nodes
-    let treeNodes: [MerkleNodeDescriptor] = [
-        MerkleNodeDescriptor(
-            id: "node_root",
-            title: "Witness Merkle Root",
-            digest: "0x8fa32b0c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855667788",
-            level: "Level 2 (Root)",
-            isVerified: true
-        ),
-        MerkleNodeDescriptor(
-            id: "node_left",
-            title: "Branch Left [0..624]",
-            digest: "0x7da21a9b038efae3b7885ea81316bd30d3538a823b9384880a6741a7445566",
-            level: "Level 1 (Branch)",
-            isVerified: true
-        ),
-        MerkleNodeDescriptor(
-            id: "node_right",
-            title: "Branch Right [625..1247]",
-            digest: "0x6ca1098a927de9d2a6774d970205ac2f924279712a827377f9563096334455",
-            level: "Level 1 (Branch)",
-            isVerified: true
-        ),
-        MerkleNodeDescriptor(
-            id: "node_leaf_voter",
-            title: "Your Cast Ballot Leaf #1247",
-            digest: "0x77bca092149afbf4c8996fb92427ae41e4649b934ca495991b7852b855aa11",
-            level: "Level 0 (Leaf)",
-            isVerified: true
-        )
-    ]
+    // Evidence is populated only after it is fetched from the configured service.
+    let treeNodes: [MerkleNodeDescriptor] = []
     
     public init(authViewModel: AuthViewModel) {
         self.authViewModel = authViewModel
@@ -105,7 +77,7 @@ public struct AuditExplorerView: View {
                         .font(Typography.sectionHeader)
                         .foregroundStyle(ColorTokens.textPrimary)
                     
-                    Text("Append-Only Integrity • Merkle Transparency")
+                    Text("Evidence review • Metadata checks only")
                         .font(Typography.caption)
                         .foregroundStyle(ColorTokens.textSecondary)
                 }
@@ -113,7 +85,7 @@ public struct AuditExplorerView: View {
                 Spacer()
             }
             
-            Text("The verifier evaluates proof packages independently without trusting server databases. Checks ensure append-only consistency, witness monotonicity, and EVM contract anchors.")
+            Text("This screen does not independently verify signatures, Merkle proofs, blockchain inclusion, or finality. Load an evidence package and use the standalone verifier with out-of-band trust pins for those checks.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }
@@ -123,13 +95,13 @@ public struct AuditExplorerView: View {
     private var merkleTreeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("Merkle Transparency Tree")
+                Text("Merkle Checkpoint Evidence")
                     .font(Typography.cardHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
                 
                 Spacer()
                 
-                Text("TREE SIZE: 1,248")
+                Text(treeNodes.isEmpty ? "NO EVIDENCE LOADED" : "SERVICE DATA")
                     .font(Typography.badgeText)
                     .foregroundStyle(ColorTokens.tailAdminBrand)
                     .padding(.horizontal, 6)
@@ -139,6 +111,13 @@ public struct AuditExplorerView: View {
             }
             
             VStack(spacing: 10) {
+                if treeNodes.isEmpty {
+                    Text("No checkpoint evidence is loaded. Connect to the evidence service to inspect Merkle nodes.")
+                        .font(Typography.caption)
+                        .foregroundStyle(ColorTokens.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
                 ForEach(treeNodes) { node in
                     Button {
                         HapticFeedback.light()
@@ -197,20 +176,20 @@ public struct AuditExplorerView: View {
                 
                 Spacer()
                 
-                Text("FINALIZED")
+                Text("NOT VERIFIED")
                     .font(Typography.badgeText)
-                    .foregroundStyle(ColorTokens.tailAdminSuccess)
+                    .foregroundStyle(ColorTokens.tailAdminWarning)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .background(ColorTokens.tailAdminSuccessBg)
+                    .background(ColorTokens.tailAdminWarningBg)
                     .clipShape(Capsule())
             }
             
             VStack(alignment: .leading, spacing: 6) {
-                labeledField(label: "Contract Address", value: "0x5FbDB2315678afecb367f032d93F642f64180aa3")
-                labeledField(label: "Anchor Tx Hash", value: "0x4f128912abcdef98765432104567891234567890abcdef1234567890abcdef12")
-                labeledField(label: "Chain Network", value: "Local Anvil EVM (Chain ID: 31337)")
-                labeledField(label: "Anchor Block Height", value: "#142 (6 Confirmations)")
+                labeledField(label: "Contract Address", value: "Not reported by a connected service")
+                labeledField(label: "Anchor Transaction", value: "Not reported by a connected service")
+                labeledField(label: "Chain Network", value: "Not configured")
+                labeledField(label: "Block and Confirmations", value: "Not verified")
             }
             .padding(12)
             .background(Color.white.opacity(0.6))
@@ -234,13 +213,13 @@ public struct AuditExplorerView: View {
     private var mandatedAttackDemosSection: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text("5 Mandated Adversarial Checks")
+                Text("Illustrative Threat Scenarios")
                     .font(Typography.cardHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
                 
                 Spacer()
                 
-                Text("PROMPT1 / Q7")
+                Text("NOT EXECUTED")
                     .font(Typography.badgeText)
                     .foregroundStyle(ColorTokens.tailAdminPurple)
             }
@@ -248,28 +227,28 @@ public struct AuditExplorerView: View {
             VStack(spacing: 8) {
                 attackDemoRow(
                     name: "1. Duplicate Submission Replay",
-                    desc: "Simulate re-casting with spent nullifier",
-                    result: "REJECTED (409 Conflict)"
+                    desc: "Example scenario: replay a spent nullifier.",
+                    result: "NOT RUN"
                 )
                 attackDemoRow(
                     name: "2. Unauthorized Insertion",
-                    desc: "Simulate adding unissued leaf into log",
-                    result: "DETECTED (Root Mismatch)"
+                    desc: "Example scenario: insert an unissued leaf.",
+                    result: "NOT RUN"
                 )
                 attackDemoRow(
                     name: "3. Ballot Deletion Attempt",
-                    desc: "Simulate omitting accepted ballot from log",
-                    result: "DETECTED (Witness ACK Fail)"
+                    desc: "Example scenario: omit an accepted ballot.",
+                    result: "NOT RUN"
                 )
                 attackDemoRow(
                     name: "4. Ciphertext Tampering",
-                    desc: "Simulate modifying encrypted ballot bytes",
-                    result: "DETECTED (Proof Invalid)"
+                    desc: "Example scenario: modify encrypted ballot bytes.",
+                    result: "NOT RUN"
                 )
                 attackDemoRow(
                     name: "5. Tally Counter Manipulation",
-                    desc: "Simulate forged tally sum injection",
-                    result: "DETECTED (ZK Tally Mismatch)"
+                    desc: "Example scenario: alter a published tally.",
+                    result: "NOT RUN"
                 )
             }
         }
@@ -294,10 +273,10 @@ public struct AuditExplorerView: View {
                     
                     Text(result)
                         .font(Typography.badgeText)
-                        .foregroundStyle(ColorTokens.tailAdminSuccess)
+                        .foregroundStyle(ColorTokens.tailAdminWarning)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(ColorTokens.tailAdminSuccessBg)
+                        .background(ColorTokens.tailAdminWarningBg)
                         .clipShape(Capsule())
                 }
                 
@@ -313,12 +292,25 @@ public struct AuditExplorerView: View {
     
     private var verifierExecutionCard: some View {
         VStack(spacing: 12) {
+            TextField("Election ID", text: $electionId)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .textFieldStyle(.roundedBorder)
+
+            if authViewModel.currentUser?.sessionToken == nil {
+                Text("Sign in with an authorized account before requesting evidence.")
+                    .font(Typography.caption)
+                    .foregroundStyle(ColorTokens.tailAdminWarning)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             Button {
                 HapticFeedback.heavy()
                 Task {
+                    guard let sessionToken = authViewModel.currentUser?.sessionToken else { return }
                     await auditorViewModel.loadEvidenceAndVerify(
-                        electionId: "elec_01",
-                        sessionToken: authViewModel.currentUser?.sessionToken ?? "mock_tok"
+                        electionId: electionId.trimmingCharacters(in: .whitespacesAndNewlines),
+                        sessionToken: sessionToken
                     )
                 }
             } label: {
@@ -329,7 +321,7 @@ public struct AuditExplorerView: View {
                     } else {
                         Image(systemName: "play.circle.fill")
                     }
-                    Text(auditorViewModel.isLoading ? "Verifying Proof Package..." : "Execute Full Independent Verification")
+                    Text(auditorViewModel.isLoading ? "Reviewing Evidence Metadata..." : "Load and Review Evidence")
                 }
                 .font(Typography.callout)
                 .fontWeight(.bold)
@@ -339,14 +331,18 @@ public struct AuditExplorerView: View {
                 .background(ColorTokens.tailAdminBrand)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(auditorViewModel.isLoading)
+            .disabled(
+                auditorViewModel.isLoading
+                    || authViewModel.currentUser?.sessionToken == nil
+                    || electionId.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            )
             
             if !auditorViewModel.auditCheckItems.isEmpty {
                 VStack(spacing: 6) {
                     ForEach(auditorViewModel.auditCheckItems) { item in
                         HStack {
-                            Image(systemName: item.verdict == .pass ? "checkmark.circle.fill" : "xmark.circle.fill")
-                                .foregroundStyle(item.verdict == .pass ? ColorTokens.tailAdminSuccess : ColorTokens.tailAdminDanger)
+                            Image(systemName: verdictIcon(for: item.verdict))
+                                .foregroundStyle(verdictColor(for: item.verdict))
                             
                             Text(item.name)
                                 .font(Typography.caption)
@@ -356,7 +352,7 @@ public struct AuditExplorerView: View {
                             
                             Text(item.verdict.rawValue)
                                 .font(Typography.badgeText)
-                                .foregroundStyle(item.verdict == .pass ? ColorTokens.tailAdminSuccess : ColorTokens.tailAdminDanger)
+                                .foregroundStyle(verdictColor(for: item.verdict))
                         }
                         .padding(.vertical, 3)
                     }
@@ -367,5 +363,27 @@ public struct AuditExplorerView: View {
             }
         }
         .glassCard(cornerRadius: 20, padding: 18)
+    }
+
+    private func verdictIcon(for verdict: VerificationVerdict) -> String {
+        switch verdict {
+        case .pass:
+            return "checkmark.circle.fill"
+        case .fail:
+            return "xmark.circle.fill"
+        case .limited, .notChecked, .unverifiable:
+            return "minus.circle.fill"
+        }
+    }
+
+    private func verdictColor(for verdict: VerificationVerdict) -> Color {
+        switch verdict {
+        case .pass:
+            return ColorTokens.tailAdminSuccess
+        case .fail:
+            return ColorTokens.tailAdminDanger
+        case .limited, .notChecked, .unverifiable:
+            return ColorTokens.tailAdminWarning
+        }
     }
 }

@@ -489,10 +489,10 @@ public struct RolesProfileView: View {
                 .foregroundStyle(ColorTokens.textPrimary)
             
             VStack(alignment: .leading, spacing: 8) {
-                pinRow(label: "Pinned Manifest SHA256", value: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
-                pinRow(label: "Witness Public Key", value: "ed25519:98127391abfcde247891238914871298471928471928")
-                pinRow(label: "EVM Contract Address", value: "0x5FbDB2315678afecb367f032d93F642f64180aa3")
-                pinRow(label: "Blockchain Network ID", value: "Anvil Local EVM (31337)")
+                pinRow(label: "Pinned Manifest SHA256", value: "Not configured in this app")
+                pinRow(label: "Witness Public Key", value: "Not configured in this app")
+                pinRow(label: "EVM Contract Address", value: "Not configured in this app")
+                pinRow(label: "Blockchain Network ID", value: "Not configured in this app")
             }
             .padding(12)
             .background(colorScheme == .dark ? ColorTokens.tailAdminDarkCard : Color.white.opacity(0.6))
@@ -518,11 +518,11 @@ public struct RolesProfileView: View {
             HStack {
                 Image(systemName: "lock.shield.fill")
                     .foregroundStyle(ColorTokens.tailAdminSuccess)
-                Text("Apple Keychain Secure Enclave")
+                Text("Device-Scoped Keychain Storage")
                     .font(Typography.cardHeader)
                     .foregroundStyle(ColorTokens.textPrimary)
                 Spacer()
-                Text("SEALED")
+                Text("DEVICE SCOPED")
                     .font(Typography.badgeText)
                     .foregroundStyle(ColorTokens.tailAdminSuccess)
                     .padding(.horizontal, 6)
@@ -531,7 +531,7 @@ public struct RolesProfileView: View {
                     .clipShape(Capsule())
             }
             
-            Text("Session authorization tokens and blinded voter nonces are stored in OS-level hardware-backed Keychain with kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly protection.")
+            Text("The app stores credentials and receipts as Keychain items with kSecAttrAccessibleWhenUnlockedThisDeviceOnly. This setting limits access to an unlocked device and excludes migration to another device; it does not make each item a Secure Enclave object.")
                 .font(Typography.caption)
                 .foregroundStyle(ColorTokens.textSecondary)
         }

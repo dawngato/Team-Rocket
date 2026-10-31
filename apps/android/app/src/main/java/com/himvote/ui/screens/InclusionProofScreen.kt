@@ -100,7 +100,7 @@ fun InclusionProofScreen(
                     }
 
                     Text(
-                        text = "Merkle Tree Audit Verification",
+                        text = "Cryptographic Inclusion Verification",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = DesignTokens.Navy900,
@@ -108,7 +108,7 @@ fun InclusionProofScreen(
                     )
 
                     Text(
-                        text = "The platform constructs an append only cryptographic Merkle tree of all accepted ballots. Your client recomputed the hash path from your receipt leaf to the published root.",
+                        text = "HimVote recomputes the cryptographic Merkle authentication path from your ballot receipt leaf to the certified election root, verifying that your ballot submission is sealed within the immutable ledger.",
                         fontSize = 14.sp,
                         color = DesignTokens.TextPrimary,
                         lineHeight = 20.sp
@@ -120,7 +120,7 @@ fun InclusionProofScreen(
                             listOf(
                                 VerificationStep(
                                     id = "leaf_validation",
-                                    title = "Receipt Leaf Node Position",
+                                    title = "Ballot Leaf Node Verification",
                                     description = "Validate leaf index #${proof.leafIndex} within ledger boundary",
                                     state = if (recomputedStepIndex >= 1) VerificationStepState.COMPLETED else VerificationStepState.IN_PROGRESS,
                                     detailInfo = "Index: #${proof.leafIndex}\nHash: ${proof.ballotHash}"
@@ -128,14 +128,14 @@ fun InclusionProofScreen(
                                 VerificationStep(
                                     id = "path_hash_chain",
                                     title = "Merkle Sibling Hash Chain",
-                                    description = "Traverse ${proof.pathHashes.size} sibling hashes using SHA_256",
+                                    description = "Traverse ${proof.pathHashes.size} sibling hashes using SHA-256",
                                     state = if (recomputedStepIndex >= 2) VerificationStepState.COMPLETED else if (recomputedStepIndex == 1) VerificationStepState.IN_PROGRESS else VerificationStepState.PENDING,
                                     detailInfo = proof.pathHashes.mapIndexed { i, h -> "Sibling $i: ${h.take(24)}..." }.joinToString("\n")
                                 ),
                                 VerificationStep(
                                     id = "root_recomputation",
                                     title = "Computed Merkle Root Match",
-                                    description = "Compare computed root against published root hash",
+                                    description = "Verify computed root against certified election root hash",
                                     state = if (recomputedStepIndex >= 3) {
                                         if (state.isVerifiedLocally) VerificationStepState.COMPLETED else VerificationStepState.FAILED
                                     } else if (recomputedStepIndex == 2) VerificationStepState.IN_PROGRESS else VerificationStepState.PENDING,
@@ -143,12 +143,10 @@ fun InclusionProofScreen(
                                 ),
                                 VerificationStep(
                                     id = "consensus_finality",
-                                    title = "Chain Finality and Attestation",
-                                    description = "Validate block confirmation and witness signatures",
-                                    state = if (recomputedStepIndex >= 4) {
-                                        if (state.isVerifiedLocally) VerificationStepState.COMPLETED else VerificationStepState.FAILED
-                                    } else if (recomputedStepIndex == 3) VerificationStepState.IN_PROGRESS else VerificationStepState.PENDING,
-                                    detailInfo = "Cryptographic ledger confirmation verified"
+                                    title = "Consensus & Auditor Attestation",
+                                    description = "Auditor cryptographic signatures and ledger consensus",
+                                    state = VerificationStepState.PENDING,
+                                    detailInfo = "Auditor signature verification and ledger consensus state."
                                 )
                             )
                         }
@@ -158,9 +156,9 @@ fun InclusionProofScreen(
                                 isCompleted = recomputedStepIndex >= 4,
                                 isSuccess = state.isVerifiedLocally,
                                 summaryText = if (recomputedStepIndex >= 4) {
-                                    if (state.isVerifiedLocally) "Cryptographic inclusion proof sound and verified" else "Root mismatch detected in Merkle path"
+                                    if (state.isVerifiedLocally) "Merkle path verified against certified election root." else "Merkle path does not match the certified root."
                                 } else {
-                                    "Recomputing inclusion proof step $recomputedStepIndex of 4..."
+                                    "Recomputing Merkle path step $recomputedStepIndex of 3..."
                                 }
                             )
                         }
@@ -192,7 +190,11 @@ fun InclusionProofScreen(
                                         color = DesignTokens.Navy900
                                     )
                                     if (state.isVerifiedLocally) {
-                                        StateBadge(status = ElectionStatus.AUDIT_PASSED)
+                                        StateBadge(
+                                            status = ElectionStatus.AUDIT_PASSED,
+                                            labelOverride = "ROOT MATCHED",
+                                            accessibilityLabelOverride = "Merkle path verified against certified election root"
+                                        )
                                     } else {
                                         StateBadge(status = ElectionStatus.FAILED)
                                     }
@@ -280,7 +282,7 @@ fun InclusionProofScreen(
                                             modifier = Modifier.size(16.dp)
                                         )
                                         Text(
-                                            text = "Offline Mathematical Engine: Path Sound",
+                                            text = "Cryptographic Merkle path matches certified root",
                                             fontSize = 12.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = DesignTokens.Green600
@@ -293,13 +295,13 @@ fun InclusionProofScreen(
                         if (state.isVerifiedLocally) {
                             StyledStatusBanner(
                                 style = BannerStyle.VERIFIED,
-                                title = "Cryptographic Mathematical Proof Valid",
-                                message = "Green label indicates complete mathematical verification. Your ballot is confirmed inside the audited set."
+                                title = "Cryptographic Inclusion Verified",
+                                message = "The cryptographic Merkle path from your ballot receipt corresponds to the published election root, confirming ballot submission inclusion in the election ledger."
                             )
                         }
 
                         HimVoteButton(
-                            text = if (isRecomputing) "Recomputing Proof Steps..." else "Recompute Proof with Offline Engine",
+                            text = if (isRecomputing) "Recomputing Cryptographic Path..." else "Recompute Inclusion Proof",
                             onClick = {
                                 isRecomputing = true
                                 recomputedStepIndex = 0
@@ -318,11 +320,11 @@ fun InclusionProofScreen(
                             },
                             isLoading = isRecomputing,
                             isSecondary = true,
-                            contentDesc = "Recompute cryptographic root using local mathematical verification engine"
+                            contentDesc = "Recompute cryptographic Merkle path against certified election root"
                         )
 
                         HimVoteButton(
-                            text = "View Verified Election Tally",
+                            text = "View Election Results",
                             onClick = { onNavigateToResults(state.electionId) }
                         )
                     }

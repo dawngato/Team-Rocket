@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Plus, UserCheck, Users, Mail, Building } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import { Plus, UserCheck, Users, Mail, Building, ShieldCheck } from "lucide-react";
 import { apiClient } from "@/lib/api_client";
 import type { TeacherRecord } from "@/lib/types";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -71,10 +72,10 @@ export default function AdminTeachersPage() {
             Faculty Governance
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#10233F] dark:text-white">
-            Teachers & Verification Officers
+            Faculty Teachers &amp; Verification Officers
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-            Directory entries come directly from authoritative identity role assignments.
+            Authoritative faculty directory delegated with student voter identity verification authority.
           </p>
         </div>
         <button
@@ -83,9 +84,68 @@ export default function AdminTeachersPage() {
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#157E92] hover:bg-[#0E6273] px-4 text-xs sm:text-sm font-bold text-white shadow-sm transition-colors"
         >
           <Plus className="size-4" aria-hidden="true" />
-          <span>{showForm ? "Cancel" : "Invite Teacher"}</span>
+          <span>{showForm ? "Cancel" : "Invite Faculty Teacher"}</span>
         </button>
       </header>
+
+      {/* Statistics and Telemetry Tiles on Entrance */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Faculty Teachers
+          </span>
+          <div className="mt-2 text-2xl font-extrabold font-mono text-[#10233F] dark:text-white">
+            {loading ? "…" : teachers.length}
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Assigned departmental verification officers
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Verification Protocol
+          </span>
+          <div className="mt-2 text-base font-bold text-[#15805D] dark:text-[#34D399] flex items-center gap-1.5">
+            <ShieldCheck className="size-4" />
+            <span>Blind Signature Issuer</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Zero knowledge voter token signing
+          </span>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+          className="p-5 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md transition-shadow"
+        >
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
+            Roster Status
+          </span>
+          <div className="mt-2 text-base font-bold text-[#157E92] dark:text-[#38BDF8] flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#157E92] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#157E92]" />
+            </span>
+            <span>Identity Service Sync</span>
+          </div>
+          <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 block">
+            Authoritative institutional directory
+          </span>
+        </motion.div>
+      </div>
 
       {error && (
         <div
@@ -105,58 +165,64 @@ export default function AdminTeachersPage() {
         </div>
       )}
 
-      {showForm && (
-        <form
-          onSubmit={invite}
-          className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-4"
-        >
-          <h2 className="text-sm font-bold text-[#10233F] dark:text-white">
-            Issue Delegated Faculty Invitation
-          </h2>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="teacher-email"
-                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
-              >
-                Teacher Institutional Email
-              </label>
-              <input
-                id="teacher-email"
-                required
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="teacher@institution.edu"
-                className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="teacher-scope"
-                className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
-              >
-                Department / Program Scope
-              </label>
-              <input
-                id="teacher-scope"
-                required
-                value={scope}
-                onChange={(event) => setScope(event.target.value)}
-                placeholder="e.g. Computer Science or CSE-2026"
-                className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
-              />
-            </div>
-          </div>
-          <button
-            type="submit"
-            disabled={busy}
-            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#15805D] hover:bg-[#10664A] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+      <AnimatePresence>
+        {showForm && (
+          <motion.form
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ type: "spring", damping: 25, stiffness: 350 }}
+            onSubmit={invite}
+            className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135] space-y-4"
           >
-            {busy ? "Submitting to Registrar…" : "Send Verified Invitation"}
-          </button>
-        </form>
-      )}
+            <h2 className="text-sm font-bold text-[#10233F] dark:text-white">
+              Issue Delegated Faculty Teacher Invitation
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="teacher-email"
+                  className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Faculty Institutional Email
+                </label>
+                <input
+                  id="teacher-email"
+                  required
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="faculty@hptu.ac.in"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="teacher-scope"
+                  className="mb-1 block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  Department / Program Scope
+                </label>
+                <input
+                  id="teacher-scope"
+                  required
+                  value={scope}
+                  onChange={(event) => setScope(event.target.value)}
+                  placeholder="e.g. Computer Science or CSE-2026"
+                  className="min-h-11 w-full rounded-xl border border-slate-300 bg-transparent px-3.5 text-sm outline-none transition focus:border-[#157E92] focus:ring-2 focus:ring-[#157E92]/20 dark:border-[#1E3352] dark:text-white"
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={busy}
+              className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#15805D] hover:bg-[#10664A] px-5 text-sm font-bold text-white shadow-sm transition-colors disabled:opacity-50"
+            >
+              {busy ? "Submitting to Registrar…" : "Issue Verified Invitation"}
+            </button>
+          </motion.form>
+        )}
+      </AnimatePresence>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
         <div className="flex items-center gap-2 border-b border-slate-100 p-5 font-bold text-[#10233F] dark:border-[#1E3352] dark:text-white text-sm">
@@ -189,7 +255,7 @@ export default function AdminTeachersPage() {
                 </tr>
               ) : (
                 teachers.map((teacher) => (
-                  <tr key={teacher.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                  <tr key={teacher.id} className="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 hover:shadow-sm transition-all duration-150">
                     <td className="px-5 py-3.5 font-bold text-slate-900 dark:text-white">
                       {teacher.email || teacher.full_name}
                     </td>

@@ -171,7 +171,7 @@ def provision_teacher(
         rate_limiter.key("teacher_provision", str(req.email)),
         limit=5,
         window_seconds=3600,
-        detail="Too many teacher provisioning attempts; try again later",
+        detail="Too many teacher provisioning attempts have been detected. Please try again later.",
     )
     existing = db.query(User).filter(User.email == str(req.email).lower()).first()
     if existing:
@@ -288,7 +288,7 @@ def create_admin_invitation(
         rate_limiter.key("admin_invitation", str(req.email)),
         limit=5,
         window_seconds=3600,
-        detail="Too many invitation attempts; try again later",
+        detail="Too many invitation attempts have been detected. Please try again later.",
     )
     roles = get_user_roles(current_user, db)
     requested_role = req.role.strip().lower()

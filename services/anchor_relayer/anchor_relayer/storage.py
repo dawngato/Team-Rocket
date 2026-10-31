@@ -6,6 +6,7 @@ Manages persistent state of checkpoint anchoring jobs.
 import sqlite3
 import threading
 import uuid
+import os
 from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import List, Optional
@@ -77,6 +78,9 @@ class SQLiteOutboxRepository(OutboxRepository):
         if database_path == ":memory:":
             self._memory_conn = sqlite3.connect(":memory:", check_same_thread=False)
             self._memory_conn.row_factory = sqlite3.Row
+        else:
+            database_dir = os.path.dirname(os.path.abspath(database_path))
+            os.makedirs(database_dir, exist_ok=True)
         self._init_db()
 
     def _get_connection(self) -> sqlite3.Connection:
@@ -84,6 +88,9 @@ class SQLiteOutboxRepository(OutboxRepository):
             return self._memory_conn
         conn = sqlite3.connect(self.database_path, timeout=30)
         conn.row_factory = sqlite3.Row
+        conn.execute("PRAGMA busy_timeout = 30000")
+        conn.execute("PRAGMA journal_mode = WAL")
+        conn.execute("PRAGMA synchronous = FULL")
         return conn
 
     @staticmethod

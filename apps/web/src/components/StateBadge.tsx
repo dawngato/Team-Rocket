@@ -19,6 +19,11 @@ export interface StateBadgeProps {
 
 export function StateBadge({ state, size = "md", showDescription = false }: StateBadgeProps) {
   const config = getStateBadgeConfig(state);
+  const isLive =
+    state === "OPEN" ||
+    (state as string) === "TALLYING" ||
+    (state as string) === "ACTIVE" ||
+    (state as string) === "voting_open";
 
   const getIcon = () => {
     switch (config.iconName) {
@@ -49,6 +54,12 @@ export function StateBadge({ state, size = "md", showDescription = false }: Stat
         role="status"
         aria-label={`Election state: ${config.label}. ${config.description}`}
       >
+        {isLive && (
+          <span className="relative flex h-2 w-2 mr-0.5" aria-hidden="true">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-current" />
+          </span>
+        )}
         {getIcon()}
         <span>{config.label}</span>
       </span>

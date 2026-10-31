@@ -41,7 +41,7 @@ fun VotingScreen(
     Scaffold(
         topBar = {
             HimVoteTopBar(
-                title = "Cast Secret Ballot",
+                title = "Ballot Submission",
                 canNavigateBack = true,
                 onNavigateBack = onNavigateBack
             )
@@ -71,7 +71,7 @@ fun VotingScreen(
             }
 
             Text(
-                text = "Secure Voting Booth",
+                text = "Ballot Submission Booth",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = DesignTokens.Navy900,
@@ -81,8 +81,8 @@ fun VotingScreen(
             if (!state.canCast) {
                 StyledStatusBanner(
                     style = BannerStyle.ERROR,
-                    title = "Single Cast Enforcement Active",
-                    message = "A ballot has already been submitted and finalized for this election. Revoting is strictly prohibited by platform cryptography."
+                    title = "Ballot Already Submitted from This Device",
+                    message = "A cryptographic receipt is recorded for this election on this device. Multiple ballot submissions from this installation are prohibited. Institutional election rules enforce single submission across devices."
                 )
 
                 // Recorded cast card with elevation
@@ -107,7 +107,7 @@ fun VotingScreen(
                                 modifier = Modifier.size(20.dp)
                             )
                             Text(
-                                text = "Offline Proof Verification Status",
+                                text = "Cryptographic Receipt Format Check",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = DesignTokens.Green600
@@ -116,7 +116,7 @@ fun VotingScreen(
 
                         Text(
                             text = state.offlineVerificationSummary
-                                ?: "An accepted receipt is stored locally. Run verification after an authenticated proof has been cached.",
+                                ?: "A valid cryptographic receipt is recorded locally. Verification may be performed once inclusion proof is published.",
                             fontSize = 13.sp,
                             color = DesignTokens.TextPrimary.copy(alpha = 0.85f),
                             lineHeight = 18.sp
@@ -134,12 +134,12 @@ fun VotingScreen(
                 }
 
                 HimVoteButton(
-                    text = "View Recorded Cast Receipt",
+                    text = "View Cryptographic Receipt",
                     onClick = { onNavigateToReceipt(state.electionId) }
                 )
             } else {
                 Text(
-                    text = "Section 8.5 Security Standard: Ballot encryption and casting take place in an isolated Chrome Custom Tab session. In app WebViews are prohibited to protect ballot privacy.",
+                    text = "Ballot submission executes in an isolated Chrome Custom Tab session to guarantee secure enclave boundaries. Embedded WebViews are prohibited to preserve complete identity and ballot separation.",
                     fontSize = 14.sp,
                     color = DesignTokens.TextPrimary,
                     lineHeight = 20.sp
@@ -147,8 +147,8 @@ fun VotingScreen(
 
                 StyledStatusBanner(
                     style = BannerStyle.INFO,
-                    title = "Verified App Link Return",
-                    message = "Upon ballot submission, the voting engine returns you automatically to HimVote via an authenticated App Link with your cryptographic receipt."
+                    title = "Cryptographic Return Protocol",
+                    message = "Upon ballot submission, the voting booth returns a cryptographic receipt handle via an authenticated App Link. The application verifies receipt structure before recording the submission flag."
                 )
 
                 // Offline proof verification card. Only the actual cached proof result
@@ -182,7 +182,7 @@ fun VotingScreen(
                         }
 
                         Text(
-                            text = "Client side cryptographic verification works completely offline. You can audit proof integrity without network access.",
+                            text = "A cached cryptographic Merkle inclusion proof can be independently verified offline by recomputing tree hashes from the ballot receipt leaf to the certified root.",
                             fontSize = 13.sp,
                             color = DesignTokens.TextPrimary.copy(alpha = 0.8f),
                             lineHeight = 18.sp
@@ -213,7 +213,7 @@ fun VotingScreen(
                             modifier = Modifier.align(Alignment.Start)
                         ) {
                             Text(
-                                text = "Run Client Offline Verification Check",
+                                text = "Run Offline Cryptographic Verification Check",
                                 color = DesignTokens.Teal600,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 13.sp
@@ -233,13 +233,13 @@ fun VotingScreen(
                         verticalArrangement = Arrangement.spacedBy(DesignTokens.SpacingSmall)
                     ) {
                         Text(
-                            text = "Single Cast Policy",
+                            text = "Single Ballot Submission Policy",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = DesignTokens.Navy900
                         )
                         Text(
-                            text = "Once you submit your ballot in the booth, the cryptographic nullifier is spent and locked in the Android Keystore. You cannot submit another ballot.",
+                            text = "Upon verified ballot submission, the application permanently records the cryptographic receipt in hardware-backed storage to prevent re-submission from this device.",
                             fontSize = 13.sp,
                             color = DesignTokens.TextPrimary.copy(alpha = 0.8f),
                             lineHeight = 18.sp
@@ -256,9 +256,9 @@ fun VotingScreen(
                 }
 
                 HimVoteButton(
-                    text = "Launch Secure Booth in Custom Tab",
+                    text = "Open Ballot Submission Booth",
                     onClick = { viewModel.launchCustomTabsBooth(context) },
-                    contentDesc = "Open external secure voting booth"
+                    contentDesc = "Open secure isolated ballot submission booth"
                 )
 
             }

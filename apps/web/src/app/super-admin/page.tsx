@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { motion } from "motion/react";
 import {
   ShieldAlert,
   Building2,
@@ -95,7 +96,6 @@ export default function SuperAdminOverviewPage() {
       desc: "Campus administrator invitations, credential scopes, and mandatory hardware MFA enrollment.",
     },
     {
-    {
       kicker: "Super Admin Power",
       title: "Direct Role Assignment",
       href: "/super-admin/role-assignments",
@@ -111,7 +111,7 @@ export default function SuperAdminOverviewPage() {
       count: "Role Delegation Console",
       actionText: "Delegate Roles",
       icon: UserCheck2,
-      desc: "Grant verified institutional authority: Admin, Faculty Teacher, Student Voter, or Transparency Officer.",
+      desc: "Grant verified institutional authority: Campus Administrator, Faculty Teacher, Student Voter, or Transparency Officer.",
     },
     {
       kicker: "Quorum Rules",
@@ -196,7 +196,12 @@ export default function SuperAdminOverviewPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {/* Institution Tenant */}
-          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92]/50 transition-all space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#157E92]/50 transition-all space-y-3"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Institutional Tenant
@@ -211,10 +216,15 @@ export default function SuperAdminOverviewPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               Main university campus and affiliated engineering colleges bound to single sovereign ledger.
             </p>
-          </div>
+          </motion.div>
 
           {/* User Pool & Role Authority */}
-          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#15805D]/50 transition-all space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 }}
+            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-[#15805D]/50 transition-all space-y-3"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Role Authority
@@ -227,12 +237,17 @@ export default function SuperAdminOverviewPage() {
               SUPER ADMIN ONLY
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              All elevated capabilities (Admin, Teacher, Student, Officer) delegated strictly through this console.
+              All elevated capabilities (Campus Administrator, Faculty Teacher, Student Voter, Transparency Officer) delegated strictly through this console.
             </p>
-          </div>
+          </motion.div>
 
           {/* Bootstrap Invariant */}
-          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-amber-400/50 transition-all space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.1 }}
+            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-amber-400/50 transition-all space-y-3"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Bootstrap Token
@@ -247,10 +262,15 @@ export default function SuperAdminOverviewPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               Initial cluster bootstrap endpoint is permanently disabled against replay attacks.
             </p>
-          </div>
+          </motion.div>
 
           {/* Hardware MFA Enforcement */}
-          <div className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-purple-400/50 transition-all space-y-3">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.15 }}
+            className="p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:shadow-md hover:border-purple-400/50 transition-all space-y-3"
+          >
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Hardware MFA
@@ -265,7 +285,7 @@ export default function SuperAdminOverviewPage() {
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               Cryptographic security keys required for elevated administrative and audit actions.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -378,42 +398,49 @@ export default function SuperAdminOverviewPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {quickCards.map((card) => {
+          {quickCards.map((card, idx) => {
             const Icon = card.icon;
             return (
-              <Link
+              <motion.div
                 key={card.title}
-                href={card.href}
-                className="group p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] hover:shadow-md transition-all duration-150 ease-out flex flex-col justify-between space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: idx * 0.04 }}
+                className="flex"
               >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 group-hover:bg-[#157E92]/20 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center transition-colors">
-                      <Icon className="w-6 h-6" aria-hidden="true" />
+                <Link
+                  href={card.href}
+                  className="group w-full p-6 rounded-2xl border border-slate-200 dark:border-[#1E3352] bg-white dark:bg-[#132135] shadow-sm hover:border-[#157E92] dark:hover:border-[#38BDF8] hover:shadow-md transition-all duration-150 ease-out flex flex-col justify-between space-y-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#157E92] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0B1524]"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="w-12 h-12 rounded-xl bg-[#157E92]/10 group-hover:bg-[#157E92]/20 text-[#157E92] dark:text-[#38BDF8] flex items-center justify-center transition-colors">
+                        <Icon className="w-6 h-6" aria-hidden="true" />
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
+                        {card.count}
+                      </span>
                     </div>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-[#1E3352]">
-                      {card.count}
-                    </span>
+
+                    <div>
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
+                        {card.kicker}
+                      </span>
+                      <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight group-hover:text-[#157E92] dark:group-hover:text-[#38BDF8] transition-colors">
+                        {card.title}
+                      </h3>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                        {card.desc}
+                      </p>
+                    </div>
                   </div>
 
-                  <div>
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                      {card.kicker}
-                    </span>
-                    <h3 className="font-bold text-base text-[#10233F] dark:text-white tracking-tight group-hover:text-[#157E92] dark:group-hover:text-[#38BDF8] transition-colors">
-                      {card.title}
-                    </h3>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
-                      {card.desc}
-                    </p>
+                  <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
+                    <span>{card.actionText}</span>
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" aria-hidden="true" />
                   </div>
-                </div>
-
-                <div className="pt-3 border-t border-slate-100 dark:border-[#1E3352] flex items-center justify-between text-xs font-bold text-[#157E92] dark:text-[#38BDF8]">
-                  <span>{card.actionText}</span>
-                  <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
