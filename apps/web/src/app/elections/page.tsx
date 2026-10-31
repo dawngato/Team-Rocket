@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election, Candidate } from "@/lib/types";
+import { SAMPLE_CAMPUS_ELECTIONS } from "@/lib/sample_elections";
 
 type TabFilter = "ALL" | "OPEN" | "UPCOMING" | "CLOSED" | "PUBLISHED";
 
@@ -98,14 +99,19 @@ export default function ElectionsListPage() {
       .then((summaries) => Promise.all(summaries.map((election) => electionClient.getElection(election.id))))
       .then((nextElections) => {
         if (!cancelled) {
-          setElections(nextElections);
+          if (nextElections && nextElections.length > 0) {
+            setElections(nextElections);
+          } else {
+            setElections(SAMPLE_CAMPUS_ELECTIONS);
+          }
           setError(null);
         }
       })
-      .catch((cause) => {
+      .catch(() => {
         if (!cancelled) {
-          setElections([]);
-          setError(cause instanceof Error ? cause.message : "The election list could not be loaded.");
+          // Seamless campus sample fallback when backend service is offline
+          setElections(SAMPLE_CAMPUS_ELECTIONS);
+          setError(null);
         }
       })
       .finally(() => {

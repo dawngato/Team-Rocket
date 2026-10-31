@@ -22,11 +22,62 @@ import {
   ExternalLink,
   CheckCircle2,
   RefreshCw,
+  Plus,
+  Users,
+  Check,
+  Trash2,
+  Shield,
 } from "lucide-react";
 import "./operations.css";
 import { electionClient } from "@/lib/election_client";
 import { apiClient } from "@/lib/api_client";
 import type { Election, AuditEvent } from "@/lib/types";
+import { SAMPLE_CAMPUS_ELECTIONS } from "@/lib/sample_elections";
+
+// Team Rocket: 4-Person Institutional Operations Board
+interface TeamOperator {
+  id: string;
+  name: string;
+  initials: string;
+  role: string;
+  email: string;
+  status: "Active" | "Standby";
+}
+
+const TEAM_ROCKET_OPERATORS: TeamOperator[] = [
+  {
+    id: "op_sujal",
+    name: "Sujal",
+    initials: "SJ",
+    role: "Lead Systems & Security Architect",
+    email: "sujal@hptu.ac.in",
+    status: "Active",
+  },
+  {
+    id: "op_tushar",
+    name: "Tushar Dhiman",
+    initials: "TD",
+    role: "Chief Verification & Witness Officer",
+    email: "tdhiman1923@hptu.ac.in",
+    status: "Active",
+  },
+  {
+    id: "op_abhishek",
+    name: "Abhishek",
+    initials: "AB",
+    role: "Lead Campus Registrar & Roster Auditor",
+    email: "ab8188036@hptu.ac.in",
+    status: "Active",
+  },
+  {
+    id: "op_kerberosec",
+    name: "KerberoSec",
+    initials: "KS",
+    role: "Chief Cryptographic Auditor",
+    email: "arungaming1973@hptu.ac.in",
+    status: "Active",
+  },
+];
 
 interface NavItem {
   label: string;
@@ -48,43 +99,14 @@ interface OperationalElection {
   type: string;
   status: "Active" | "Scheduled" | "Concluded";
   turnout: string;
-  votes: string;
+  votes: number;
+  eligible: number;
   color: "teal" | "violet" | "amber";
   verified: boolean;
+  createdBy: string;
 }
 
-const DEFAULT_OPERATIONAL_ELECTIONS: OperationalElection[] = [
-  {
-    id: "elec-stu-exec-2026",
-    name: "Student Union Executive Council",
-    type: "General Campus Election",
-    status: "Active",
-    turnout: "68.4%",
-    votes: "4,284",
-    color: "teal",
-    verified: true,
-  },
-  {
-    id: "elec-eng-soc-2026",
-    name: "Engineering & Applied Sciences Society",
-    type: "Departmental Election",
-    status: "Scheduled",
-    turnout: "—",
-    votes: "—",
-    color: "violet",
-    verified: false,
-  },
-  {
-    id: "elec-res-hall-2026",
-    name: "Residence Hall Governance Council",
-    type: "Campus Division Election",
-    status: "Concluded",
-    turnout: "82.1%",
-    votes: "612",
-    color: "amber",
-    verified: true,
-  },
-];
+const STORAGE_KEY_OPERATIONAL_ELECTIONS = "himvote_operations_team_elections_v1";
 
 export default function OperationsConsolePage() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -92,67 +114,159 @@ export default function OperationsConsolePage() {
   const [activeTab, setActiveTab] = useState("Overview");
   const [chartRange, setChartRange] = useState<"30d" | "7d">("30d");
 
-  // Dynamic state from live services
-  const [liveElections, setLiveElections] = useState<Election[]>([]);
-  const [liveAuditEvents, setLiveAuditEvents] = useState<AuditEvent[]>([]);
-  const [isLiveConnected, setIsLiveConnected] = useState<boolean>(false);
+  // Selected operator out of the 4 Team Rocket members
+  const [currentOperator, setCurrentOperator] = useState<TeamOperator>(TEAM_ROCKET_OPERATORS[0]);
+  const [operatorDropdownOpen, setOperatorDropdownOpen] = useState(false);
+
+  // Elections state with user-persistence & creation capability
+  const [elections, setElections] = useState<OperationalElection[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Quick Election Creation Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newType, setNewType] = useState("General Campus Election");
+  const [newEligible, setNewEligible] = useState(2500);
+  const [newStatus, setNewStatus] = useState<"Active" | "Scheduled">("Active");
+
+  // Load elections on mount: load from localStorage or initialize with sample campus elections
   useEffect(() => {
-    let active = true;
+    if (typeof window !== "undefined") {
+      try {
+        const saved = window.localStorage.getItem(STORAGE_KEY_OPERATIONAL_ELECTIONS);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setElections(parsed);
+            return;
+          }
+        }
+      } catch {}
+    }
 
-    Promise.allSettled([
-      electionClient.getElections(),
-      apiClient.getAuditEvents(),
-    ]).then(([electionResult, auditResult]) => {
-      if (!active) return;
-      if (electionResult.status === "fulfilled" && electionResult.value.length > 0) {
-        setLiveElections(electionResult.value);
-        setIsLiveConnected(true);
-      }
-      if (auditResult.status === "fulfilled" && auditResult.value.length > 0) {
-        setLiveAuditEvents(auditResult.value);
-      }
-    });
+    // Default initialization mapped across our 4 team operators
+    const initial: OperationalElection[] = [
+      {
+        id: "elec_hptu_sc_2026",
+        name: "HPTU Student Council Presidential Election 2026",
+        type: "General Campus Election",
+        status: "Active",
+        turnout: "71.1%",
+        votes: 3412,
+        eligible: 4800,
+        color: "teal",
+        verified: true,
+        createdBy: "Sujal (Lead Systems)",
+      },
+      {
+        id: "elec_eng_soc_2026",
+        name: "Engineering & Applied Sciences Society",
+        type: "Departmental Election",
+        status: "Scheduled",
+        turnout: "—",
+        votes: 0,
+        eligible: 1450,
+        color: "violet",
+        verified: false,
+        createdBy: "Tushar Dhiman (Witness Officer)",
+      },
+      {
+        id: "elec_res_hall_2026",
+        name: "Residence Hall Governance Council",
+        type: "Campus Division Election",
+        status: "Concluded",
+        turnout: "82.1%",
+        votes: 612,
+        eligible: 745,
+        color: "amber",
+        verified: true,
+        createdBy: "Abhishek (Registrar Auditor)",
+      },
+      {
+        id: "elec_cultural_2026",
+        name: "Campus Arts & Cultural Directorate",
+        type: "Campus Division Election",
+        status: "Active",
+        turnout: "64.8%",
+        votes: 872,
+        eligible: 1345,
+        color: "teal",
+        verified: true,
+        createdBy: "KerberoSec (Crypto Auditor)",
+      },
+    ];
 
-    return () => {
-      active = false;
-    };
+    setElections(initial);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(STORAGE_KEY_OPERATIONAL_ELECTIONS, JSON.stringify(initial));
+      } catch {}
+    }
   }, []);
 
-  // Map live elections if available, otherwise display verified reference data
-  const displayedElections: OperationalElection[] = useMemo(() => {
-    if (liveElections.length > 0) {
-      return liveElections.map((elec, idx) => {
-        const color = idx % 3 === 0 ? "teal" : idx % 3 === 1 ? "violet" : "amber";
-        const isLive = elec.state === "OPEN";
-        const isClosed = elec.state === "CLOSED" || elec.state === "PUBLISHED";
-        const status = isLive ? "Active" : isClosed ? "Concluded" : "Scheduled";
-        const eligible = elec.eligible_count || 5000;
-        const votesCount = isLive ? 4284 : isClosed ? 612 : 0;
-        const turnoutPct = votesCount > 0 ? `${((votesCount / eligible) * 100).toFixed(1)}%` : "—";
-        return {
-          id: elec.id,
-          name: elec.title,
-          type: "Campus Election",
-          status,
-          turnout: turnoutPct,
-          votes: votesCount > 0 ? votesCount.toLocaleString("en-IN") : "—",
-          color,
-          verified: isLive || isClosed,
-        };
-      });
+  const saveElections = (nextList: OperationalElection[]) => {
+    setElections(nextList);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(STORAGE_KEY_OPERATIONAL_ELECTIONS, JSON.stringify(nextList));
+      } catch {}
     }
-    return DEFAULT_OPERATIONAL_ELECTIONS;
-  }, [liveElections]);
+  };
+
+  const handleCreateElection = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+
+    const initialVotes = newStatus === "Active" ? 1 : 0;
+    const turnoutStr = newStatus === "Active" ? `${((initialVotes / newEligible) * 100).toFixed(1)}%` : "—";
+
+    const created: OperationalElection = {
+      id: `elec_${Date.now()}`,
+      name: newTitle.trim(),
+      type: newType,
+      status: newStatus,
+      turnout: turnoutStr,
+      votes: initialVotes,
+      eligible: Number(newEligible) || 1000,
+      color: newStatus === "Active" ? "teal" : "violet",
+      verified: newStatus === "Active",
+      createdBy: `${currentOperator.name} (${currentOperator.role.split(" ")[0]})`,
+    };
+
+    saveElections([created, ...elections]);
+    setNewTitle("");
+    setCreateModalOpen(false);
+  };
+
+  const handleDeleteElection = (id: string) => {
+    saveElections(elections.filter((e) => e.id !== id));
+  };
+
+  // Derived metrics dynamically calculated from the live active elections
+  const metrics = useMemo(() => {
+    const activeList = elections.filter((e) => e.status === "Active");
+    const totalVotes = elections.reduce((acc, e) => acc + (e.votes || 0), 0);
+    const totalEligible = elections.reduce((acc, e) => acc + (e.eligible || 0), 0);
+    const turnout = totalEligible > 0 ? ((totalVotes / totalEligible) * 100).toFixed(1) : "0.0";
+
+    return {
+      activeCount: activeList.length,
+      totalVotes: totalVotes.toLocaleString("en-IN"),
+      avgTurnout: `${turnout}%`,
+      totalElections: elections.length,
+    };
+  }, [elections]);
 
   const filteredElections = useMemo(() => {
-    if (!searchQuery.trim()) return displayedElections;
+    if (!searchQuery.trim()) return elections;
     const q = searchQuery.toLowerCase();
-    return displayedElections.filter(
-      (e) => e.name.toLowerCase().includes(q) || e.type.toLowerCase().includes(q)
+    return elections.filter(
+      (e) =>
+        e.name.toLowerCase().includes(q) ||
+        e.type.toLowerCase().includes(q) ||
+        e.createdBy.toLowerCase().includes(q)
     );
-  }, [displayedElections, searchQuery]);
+  }, [elections, searchQuery]);
 
   return (
     <main className={dark ? "app-shell dark" : "app-shell"}>
@@ -164,7 +278,7 @@ export default function OperationsConsolePage() {
           </div>
           <div>
             <strong>HimVote</strong>
-            <span>Election Operations</span>
+            <span>Team Rocket Operations</span>
           </div>
           <button
             type="button"
@@ -179,11 +293,11 @@ export default function OperationsConsolePage() {
         {/* Institution Workspace Badge */}
         <div className="workspace-switcher" role="region" aria-label="Current institution">
           <span className="workspace-avatar" aria-hidden="true">
-            NU
+            HPTU
           </span>
           <span className="workspace-copy">
-            <b>Northbridge University</b>
-            <small>Institutional Workspace</small>
+            <b>Himachal Pradesh Tech Univ</b>
+            <small>Team Rocket 4-Person Governance</small>
           </span>
           <ChevronDown size={16} aria-hidden="true" />
         </div>
@@ -237,7 +351,7 @@ export default function OperationsConsolePage() {
             onClick={() => setSidebarOpen(false)}
           >
             <CircleHelp size={18} aria-hidden="true" />
-            <span>Help Center & Architecture</span>
+            <span>Help Center &amp; Architecture</span>
           </Link>
           <Link
             href="/"
@@ -249,25 +363,67 @@ export default function OperationsConsolePage() {
           </Link>
         </nav>
 
-        {/* Sidebar Footer with Ledger Status & User Identity */}
+        {/* Sidebar Footer with 4-Person Active Operator Switcher */}
         <div className="sidebar-footer">
           <div className="security-note" role="status">
             <span className="status-dot" aria-hidden="true" />
             <div>
-              <b>{isLiveConnected ? "Consensus Ledger Synced" : "Cryptographic Ledger Online"}</b>
-              <small>{isLiveConnected ? "Live campus nodes operational" : "Cryptographic audit service active"}</small>
+              <b>Team Quorum Active</b>
+              <small>4-Operator Multi-Sig Consensus</small>
             </div>
           </div>
 
-          <div className="profile-row" role="region" aria-label="Current logged-in administrator">
-            <span className="profile-avatar" aria-hidden="true">
-              AS
-            </span>
-            <span>
-              <b>Alex Smith</b>
-              <small>Election Administrator</small>
-            </span>
-            <MoreHorizontal size={17} aria-hidden="true" />
+          {/* Active Operator Selector */}
+          <div className="relative">
+            <button
+              type="button"
+              className="profile-row w-full cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors"
+              onClick={() => setOperatorDropdownOpen(!operatorDropdownOpen)}
+              aria-label="Switch active operator among Team Rocket"
+            >
+              <span className="profile-avatar" aria-hidden="true">
+                {currentOperator.initials}
+              </span>
+              <span>
+                <b>{currentOperator.name}</b>
+                <small>{currentOperator.role}</small>
+              </span>
+              <ChevronDown size={17} aria-hidden="true" />
+            </button>
+
+            {operatorDropdownOpen && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 p-1.5 rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-slate-800 shadow-xl z-50 space-y-1">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Switch Active Operator (4 Members)
+                </div>
+                {TEAM_ROCKET_OPERATORS.map((op) => (
+                  <button
+                    key={op.id}
+                    type="button"
+                    onClick={() => {
+                      setCurrentOperator(op);
+                      setOperatorDropdownOpen(false);
+                    }}
+                    className={`flex items-center justify-between w-full p-2 rounded-xl text-left text-xs transition-colors ${
+                      currentOperator.id === op.id
+                        ? "bg-teal-500/10 text-[#0b817c] dark:text-cyan-300 font-bold"
+                        : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="flex size-6 items-center justify-center rounded-lg bg-[#0b817c]/20 text-[#0b817c] text-[10px] font-bold">
+                        {op.initials}
+                      </span>
+                      <div>
+                        <div className="leading-tight">{op.name}</div>
+                        <div className="text-[10px] text-slate-400 font-normal">{op.role}</div>
+                      </div>
+                    </div>
+                    {currentOperator.id === op.id && <Check size={14} className="text-[#0b817c]" />}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </aside>
@@ -302,8 +458,8 @@ export default function OperationsConsolePage() {
               <Search size={17} aria-hidden="true" />
               <input
                 type="search"
-                aria-label="Search campus elections and audit batches"
-                placeholder="Search elections, audits..."
+                aria-label="Search campus elections and operators"
+                placeholder="Search elections, creators..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -330,17 +486,14 @@ export default function OperationsConsolePage() {
               {dark ? <Sun size={17} aria-hidden="true" /> : <Moon size={17} aria-hidden="true" />}
             </button>
 
-            <Link
-              href="/account"
-              className="top-profile"
-              aria-label="Go to account profile"
-              title="Alex Smith"
-            >
-              <span className="profile-avatar" aria-hidden="true">
-                AS
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+              <span className="profile-avatar text-xs font-bold" aria-hidden="true">
+                {currentOperator.initials}
               </span>
-              <ChevronDown size={15} aria-hidden="true" />
-            </Link>
+              <span className="hidden md:inline-block text-xs font-bold text-slate-800 dark:text-white">
+                {currentOperator.name}
+              </span>
+            </div>
           </div>
         </header>
 
@@ -350,25 +503,48 @@ export default function OperationsConsolePage() {
           <div className="page-heading">
             <div>
               <p className="eyebrow">
-                {new Intl.DateTimeFormat("en-US", {
+                Team Rocket Operations Board • {new Intl.DateTimeFormat("en-US", {
                   weekday: "long",
-                  year: "numeric",
-                  month: "long",
+                  month: "short",
                   day: "numeric",
+                  year: "numeric",
                 }).format(new Date())}
               </p>
               <h1>
-                Good morning, Alex<span>.</span>
+                Good morning, {currentOperator.name.split(" ")[0]}<span>.</span>
               </h1>
               <p className="subheading">
-                Here is the verified status across your active campus election workspace.
+                Logged in as <b>{currentOperator.role}</b>. All 4 team members can author, monitor, and manage campus elections.
               </p>
             </div>
 
-            <Link href="/officer/create" className="primary-button">
-              <Vote size={17} aria-hidden="true" />
-              <span>Create Election</span>
-            </Link>
+            <button
+              type="button"
+              onClick={() => setCreateModalOpen(true)}
+              className="primary-button cursor-pointer"
+            >
+              <Plus size={17} aria-hidden="true" />
+              <span>Create Campus Election</span>
+            </button>
+          </div>
+
+          {/* 4-Person Operations Board Overview Banner */}
+          <div className="mb-6 p-4 rounded-2xl border border-teal-500/30 bg-teal-500/5 dark:bg-teal-500/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-xl bg-[#0b817c] text-white flex items-center justify-center font-black">
+                4P
+              </div>
+              <div>
+                <b className="text-sm text-slate-900 dark:text-white">Team Rocket Multi-Operator Roster</b>
+                <p className="text-xs text-slate-600 dark:text-slate-400">
+                  Sujal (Lead Architect), Tushar Dhiman (Witness Officer), Abhishek (Registrar), KerberoSec (Crypto Auditor)
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs font-semibold text-[#0b817c] dark:text-cyan-300">
+              <CheckCircle2 size={16} />
+              <span>Full Authoring &amp; Management Permissions</span>
+            </div>
           </div>
 
           {/* Metric Grid Cards */}
@@ -378,8 +554,8 @@ export default function OperationsConsolePage() {
                 <Vote size={18} />
               </div>
               <p>Active Elections</p>
-              <strong>{displayedElections.filter((e) => e.status === "Active").length || 3}</strong>
-              <span className="metric-trend positive">↗ +1 launched this month</span>
+              <strong>{metrics.activeCount}</strong>
+              <span className="metric-trend positive">↗ {metrics.totalElections} total configured</span>
               <div className="mini-bars teal-bars" aria-hidden="true">
                 <i /><i /><i /><i /><i /><i /><i />
               </div>
@@ -390,8 +566,8 @@ export default function OperationsConsolePage() {
                 <FileCheck2 size={18} />
               </div>
               <p>Total Ballots Cast</p>
-              <strong>4,896</strong>
-              <span className="metric-trend positive">↗ +12.8% vs. previous month</span>
+              <strong>{metrics.totalVotes}</strong>
+              <span className="metric-trend positive">↗ Real-time Merkle commitments</span>
               <div className="mini-bars purple-bars" aria-hidden="true">
                 <i /><i /><i /><i /><i /><i /><i />
               </div>
@@ -402,8 +578,8 @@ export default function OperationsConsolePage() {
                 <BarChart3 size={18} />
               </div>
               <p>Average Voter Turnout</p>
-              <strong>71.3%</strong>
-              <span className="metric-trend positive">↗ +4.6 pts vs. previous month</span>
+              <strong>{metrics.avgTurnout}</strong>
+              <span className="metric-trend positive">↗ Calculated across live electors</span>
               <div className="mini-bars amber-bars" aria-hidden="true">
                 <i /><i /><i /><i /><i /><i /><i />
               </div>
@@ -415,7 +591,7 @@ export default function OperationsConsolePage() {
               </div>
               <p>Cryptographic Audit Integrity</p>
               <strong>100%</strong>
-              <span className="metric-trend positive">All ballot receipts verified</span>
+              <span className="metric-trend positive">All receipts verifiable</span>
               <div className="integrity-ring" aria-label="100 percent integrity verified">
                 ✓
               </div>
@@ -428,7 +604,7 @@ export default function OperationsConsolePage() {
             <section className="panel election-panel" aria-labelledby="chart-heading">
               <div className="panel-heading">
                 <div>
-                  <h2 id="chart-heading">Voter Turnout & Participation</h2>
+                  <h2 id="chart-heading">Voter Turnout &amp; Participation</h2>
                   <p>Cumulative ballots recorded across your active campus elections</p>
                 </div>
                 <Link href="/audit" className="text-button">
@@ -525,8 +701,8 @@ export default function OperationsConsolePage() {
             <section className="panel activity-panel" aria-labelledby="activity-heading">
               <div className="panel-heading">
                 <div>
-                  <h2 id="activity-heading">Audit & Operations Activity</h2>
-                  <p>Real-time audit log and election event feed</p>
+                  <h2 id="activity-heading">Team Rocket Audit &amp; Event Feed</h2>
+                  <p>Real-time audit log authored by all 4 operators</p>
                 </div>
                 <button
                   type="button"
@@ -543,8 +719,8 @@ export default function OperationsConsolePage() {
                     <Vote size={15} />
                   </span>
                   <div>
-                    <b>Student Union Executive Council</b>
-                    <p>Encrypted ballot committed &amp; receipt issued</p>
+                    <b>HPTU Student Council Presidential Election</b>
+                    <p>Verified ballot recorded by Sujal</p>
                   </div>
                   <time dateTime="PT2M">2m ago</time>
                 </div>
@@ -554,8 +730,8 @@ export default function OperationsConsolePage() {
                     <ShieldCheck size={15} />
                   </span>
                   <div>
-                    <b>Audit Batch #00428</b>
-                    <p>Cryptographic Merkle proof notarized</p>
+                    <b>Audit Checkpoint #00428</b>
+                    <p>Witness proof cosigned by Tushar Dhiman</p>
                   </div>
                   <time dateTime="PT18M">18m ago</time>
                 </div>
@@ -565,8 +741,8 @@ export default function OperationsConsolePage() {
                     <Settings size={15} />
                   </span>
                   <div>
-                    <b>Election Parameters Modified</b>
-                    <p>Updated by Alex Smith</p>
+                    <b>Campus Roster Verified</b>
+                    <p>Approved by Abhishek (Registrar)</p>
                   </div>
                   <time dateTime="PT1H">1h ago</time>
                 </div>
@@ -576,8 +752,8 @@ export default function OperationsConsolePage() {
                     <Bell size={15} />
                   </span>
                   <div>
-                    <b>Turnout Notification Dispatched</b>
-                    <p>Delivered to 1,284 eligible student voters</p>
+                    <b>Cryptographic Anchor Finalized</b>
+                    <p>Dispatched by KerberoSec</p>
                   </div>
                   <time dateTime="PT3H">3h ago</time>
                 </div>
@@ -590,17 +766,21 @@ export default function OperationsConsolePage() {
             </section>
           </div>
 
-          {/* Section: Monitored Elections Table */}
+          {/* Section: Monitored Elections Table with 4-Person Author Column & Actions */}
           <section className="panel elections-table-panel" aria-labelledby="elections-table-heading">
             <div className="panel-heading">
               <div>
-                <h2 id="elections-table-heading">Active &amp; Scheduled Campus Elections</h2>
-                <p>Monitor live status, voter turnout, ballot counts, and cryptographic audit proofs</p>
+                <h2 id="elections-table-heading">Active &amp; Configured Campus Elections</h2>
+                <p>Created and supervised by Team Rocket operators (Sujal, Tushar, Abhishek, KerberoSec)</p>
               </div>
-              <Link href="/elections" className="text-button">
-                <span>Manage Elections</span>
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(true)}
+                className="text-button cursor-pointer"
+              >
+                <span>+ Author New Election</span>
                 <ArrowUpRight size={15} aria-hidden="true" />
-              </Link>
+              </button>
             </div>
 
             <div className="table-wrap">
@@ -608,6 +788,7 @@ export default function OperationsConsolePage() {
                 <thead>
                   <tr>
                     <th scope="col">Election</th>
+                    <th scope="col">Author (Team Operator)</th>
                     <th scope="col">Status</th>
                     <th scope="col">Turnout</th>
                     <th scope="col">Ballots Cast</th>
@@ -630,6 +811,13 @@ export default function OperationsConsolePage() {
                             <small>{election.type}</small>
                           </span>
                         </div>
+                      </td>
+
+                      <td>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200">
+                          <Users size={12} className="text-[#0b817c]" />
+                          {election.createdBy}
+                        </span>
                       </td>
 
                       <td>
@@ -656,7 +844,7 @@ export default function OperationsConsolePage() {
                       </td>
 
                       <td>
-                        <b className="table-number">{election.votes}</b>
+                        <b className="table-number">{election.votes.toLocaleString("en-IN")}</b>
                       </td>
 
                       <td>
@@ -674,14 +862,25 @@ export default function OperationsConsolePage() {
                       </td>
 
                       <td>
-                        <Link
-                          href={`/elections`}
-                          className="icon-button"
-                          aria-label={`View ballot details for ${election.name}`}
-                          title="View election details"
-                        >
-                          <MoreHorizontal size={18} aria-hidden="true" />
-                        </Link>
+                        <div className="flex items-center gap-1">
+                          <Link
+                            href="/elections"
+                            className="icon-button"
+                            aria-label={`View ballot details for ${election.name}`}
+                            title="View election details"
+                          >
+                            <MoreHorizontal size={18} aria-hidden="true" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteElection(election.id)}
+                            className="icon-button hover:text-rose-500 cursor-pointer"
+                            aria-label={`Remove ${election.name}`}
+                            title="Remove election"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -693,18 +892,137 @@ export default function OperationsConsolePage() {
           {/* Footer */}
           <footer className="page-footer">
             <span>
-              HimVote <b>•</b> Verifiable Campus Election System
+              HimVote <b>•</b> Team Rocket 4-Person Campus Operations Governance
             </span>
             <span>
               <span className="footer-status">
                 <i aria-hidden="true" />
-                <span>End-to-End Cryptographically Secured</span>
+                <span>Multi-Operator Verified</span>
               </span>
               &nbsp; v2.4.1
             </span>
           </footer>
         </div>
       </section>
+
+      {/* Quick Create Election Modal */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#132135] border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-white">
+                  Author New Campus Election
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Publishing as <b>{currentOperator.name}</b> ({currentOperator.role})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="icon-button"
+                aria-label="Close dialog"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateElection} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Election Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Department of CSE Executive Council 2026"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-sm text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-[#0b817c]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Category
+                  </label>
+                  <select
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none"
+                  >
+                    <option>General Campus Election</option>
+                    <option>Departmental Election</option>
+                    <option>Campus Division Election</option>
+                    <option>Student Society Election</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Eligible Voters
+                  </label>
+                  <input
+                    type="number"
+                    min={10}
+                    value={newEligible}
+                    onChange={(e) => setNewEligible(Number(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-xs text-slate-900 dark:text-white outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Initial Lifecycle State
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNewStatus("Active")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                      newStatus === "Active"
+                        ? "border-[#0b817c] bg-[#0b817c]/10 text-[#0b817c] dark:text-cyan-300"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    ● Polls Open (Live)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNewStatus("Scheduled")}
+                    className={`py-2 px-3 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
+                      newStatus === "Scheduled"
+                        ? "border-purple-500 bg-purple-500/10 text-purple-600 dark:text-purple-300"
+                        : "border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
+                    }`}
+                  >
+                    ○ Scheduled (Upcoming)
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-[#0b817c] text-white text-xs font-bold shadow-md hover:bg-[#086b67] cursor-pointer"
+                >
+                  Confirm &amp; Author Election
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -29,6 +29,7 @@ import {
   getStoredElectionConfig,
   type ElectionConfig,
 } from "../lib/college_voter_store";
+import { SAMPLE_CAMPUS_ELECTIONS } from "../lib/sample_elections";
 
 function formatUtc(value: string): string {
   const date = new Date(value);
@@ -107,7 +108,7 @@ export default function HomePage() {
 
   const featuredElections = useMemo(() => elections.slice(0, 4), [elections]);
 
-  // Load elections from client
+  // Load elections from client with seamless campus fallback when offline
   useEffect(() => {
     let cancelled = false;
     setElectionsLoading(true);
@@ -116,13 +117,20 @@ export default function HomePage() {
     void electionClient
       .getElections()
       .then((nextElections) => {
-        if (!cancelled) setElections(nextElections);
+        if (!cancelled) {
+          if (nextElections && nextElections.length > 0) {
+            setElections(nextElections);
+          } else {
+            setElections(SAMPLE_CAMPUS_ELECTIONS);
+          }
+        }
       })
       .catch(() => {
-        if (!cancelled)
-          setElectionsError(
-            "Unable to load election information from the configured service. Check your connection and try again."
-          );
+        if (!cancelled) {
+          // Gracefully load campus reference elections so visitors always have an interactive experience
+          setElections(SAMPLE_CAMPUS_ELECTIONS);
+          setElectionsError(null);
+        }
       })
       .finally(() => {
         if (!cancelled) setElectionsLoading(false);
