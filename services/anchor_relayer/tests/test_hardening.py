@@ -4,9 +4,17 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from anchor_relayer.config import RelayerConfig
 from anchor_relayer.models import WitnessedCheckpoint
 from anchor_relayer.signer import KMSSigner, SignerConfigurationError
+from anchor_relayer.service import AnchorRelayerService
 from anchor_relayer.tx_builder import TransactionBuilder, TransactionPreparationError
+
+
+def test_relayer_refuses_to_use_implicit_public_development_signer():
+    config = RelayerConfig(relayer_private_key=None)
+    with pytest.raises(SignerConfigurationError, match="signer.*required"):
+        AnchorRelayerService(config=config, repository=MagicMock())
 
 
 def test_outbox_rejects_conflicting_checkpoint_for_same_sequence(sqlite_repo, sample_checkpoint):

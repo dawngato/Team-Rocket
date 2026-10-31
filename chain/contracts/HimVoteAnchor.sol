@@ -26,6 +26,11 @@ contract HimVoteAnchor is AccessControl, Pausable {
     /// @notice Mapping from election commitment hash to its latest anchor record.
     mapping(bytes32 => AnchorRecord) private _anchors;
 
+    /// @dev Retains every accepted checkpoint so relayers can reconcile replay,
+    ///      receipt loss, and reorg recovery against historical sequence data.
+    mapping(bytes32 => mapping(uint256 => AnchorRecord)) private _checkpointHistory;
+    mapping(bytes32 => mapping(uint256 => bytes32)) private _previousDigests;
+
     /// @notice Emitted when a new checkpoint is successfully anchored.
     event CheckpointAnchored(
         bytes32 indexed electionCommitment,
@@ -128,6 +133,8 @@ contract HimVoteAnchor is AccessControl, Pausable {
         current.blockNumber = block.number;
         current.blockTimestamp = block.timestamp;
         current.isFinal = isFinal;
+        _checkpointHistory[electionCommitment][sequence] = current;
+        _previousDigests[electionCommitment][sequence] = previousDigest;
 
         emit CheckpointAnchored(
             electionCommitment,
@@ -181,5 +188,63 @@ contract HimVoteAnchor is AccessControl, Pausable {
         returns (AnchorRecord memory)
     {
         return _anchors[electionCommitment];
+    }
+
+    /// @notice Returns the latest accepted checkpoint sequence, or zero if none exists.
+    function latestSequence(bytes32 electionCommitment) external view returns (uint256) {
+        return _anchors[electionCommitment].sequence;
+    }
+
+    /// @notice Returns whether the election has accepted a terminal checkpoint.
+    function isFinalized(bytes32 electionCommitment) external view returns (bool) {
+        return _anchors[electionCommitment].isFinal;
+    }
+
+    /// @notice Returns one historical checkpoint, or an all-zero record if absent.
+    function getCheckpoint(bytes32 electionCommitment, uint256 sequence)
+        external
+        view
+        returns (
+            uint256 checkpointSequence,
+            bytes32 digest,
+            bytes32 previousDigest,
+            bool isFinal,
+            uint256 blockNumber,
+            uint256 timestamp
+        )
+    {
+        AnchorRecord storage record = _checkpointHistory[electionCommitment][sequence];
+        return (
+            record.sequence,
+            record.digest,
+            _previousDigests[electionCommitment][sequence],
+            record.isFinal,
+            record.blockNumber,
+            record.blockTimestamp
+        );
+    }
+
+    /// @notice Returns the latest checkpoint in the same shape as getCheckpoint.
+    function getLatestCheckpoint(bytes32 electionCommitment)
+        external
+        view
+        returns (
+            uint256 sequence,
+            bytes32 digest,
+            bytes32 previousDigest,
+            bool isFinal,
+            uint256 blockNumber,
+            uint256 timestamp
+        )
+    {
+        AnchorRecord storage record = _anchors[electionCommitment];
+        return (
+            record.sequence,
+            record.digest,
+            _previousDigests[electionCommitment][record.sequence],
+            record.isFinal,
+            record.blockNumber,
+            record.blockTimestamp
+        );
     }
 }

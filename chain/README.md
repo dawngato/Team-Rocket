@@ -11,6 +11,7 @@ Core architectural properties:
 * Never stores student identities, cast votes, nullifiers, or ciphertexts
 * Enforces strict monotonic sequence incrementation
 * Requires contiguous digest chaining from genesis checkpoint to election finalization
+* Retains per-sequence checkpoint records for relayer replay and reorganization reconciliation
 * Prohibits modifications after final checkpoint commitment
 * Role based access control via OpenZeppelin AccessControl
 
@@ -30,7 +31,9 @@ Roles:
 
 #### anchorCheckpoint
 
-Anchors an election checkpoint with cryptographic proof verification.
+Anchors a checkpoint submitted by the authorized relayer. The contract checks
+the commitment, nonzero digest, contiguous sequence, previous-digest link, and
+finalization state; it does not verify a ballot proof or witness signature.
 
 Parameters:
 * electionCommitment: bytes32 unique identifier for the election
@@ -63,6 +66,10 @@ Returns:
 
 View function returning the complete AnchorRecord struct.
 
+#### Relayer reconciliation getters
+
+`latestSequence` and `isFinalized` expose the latest anchor state. `getCheckpoint` returns a historical sequence record including its previous digest, and `getLatestCheckpoint` returns the latest record in the same shape. These getters are part of `services/anchor_relayer/anchor_relayer/abi.py` and must remain signature-compatible with it.
+
 ## Testing and Verification
 
 The test suite in test/HimVoteAnchor.t.sol validates:
@@ -73,7 +80,7 @@ The test suite in test/HimVoteAnchor.t.sol validates:
 * Mismatched previous digest rejection
 * Modification attempts after finalization rejection
 * Emergency pause and resumption behavior
-* Gas consumption bounds for cold writes and warm updates
+* Gas consumption bounds for latest-state and per-sequence history writes
 * Multi election state isolation
 
 Execute test suite:
@@ -88,5 +95,9 @@ forge build
 
 Deploy script:
 ```bash
-forge script script/Deploy.s.sol
+DEPLOYER_PRIVATE_KEY="${DEPLOYER_PRIVATE_KEY:?set a secure deployment key}" \
+  forge script script/Deploy.s.sol \
+  --rpc-url "${CHAIN_RPC_URL:?set the chain RPC URL}" --broadcast
 ```
+
+The deploy script requires `DEPLOYER_PRIVATE_KEY`; it does not fall back to a publicly known Anvil development key. Set `ANCHOR_ADMIN` and `ANCHOR_RELAYER` explicitly when those roles must belong to different addresses.

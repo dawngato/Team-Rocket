@@ -255,6 +255,49 @@ contract HimVoteAnchorTest is Test {
         assertEq(dig, digest1);
     }
 
+    function test_HistoryGettersMatchRelayerAbi() public {
+        vm.startPrank(relayer);
+        anchor.anchorCheckpoint(electionA, 1, digest1, bytes32(0), false);
+        anchor.anchorCheckpoint(electionA, 2, digest2, digest1, true);
+        vm.stopPrank();
+
+        assertEq(anchor.latestSequence(electionA), 2);
+        assertTrue(anchor.isFinalized(electionA));
+
+        (
+            uint256 sequence,
+            bytes32 digest,
+            bytes32 previousDigest,
+            bool isFinal,
+            uint256 blockNumber,
+            uint256 timestamp
+        ) = anchor.getCheckpoint(electionA, 1);
+        assertEq(sequence, 1);
+        assertEq(digest, digest1);
+        assertEq(previousDigest, bytes32(0));
+        assertFalse(isFinal);
+        assertGt(blockNumber, 0);
+        assertGt(timestamp, 0);
+
+        (sequence, digest, previousDigest, isFinal, blockNumber, timestamp) =
+            anchor.getLatestCheckpoint(electionA);
+        assertEq(sequence, 2);
+        assertEq(digest, digest2);
+        assertEq(previousDigest, digest1);
+        assertTrue(isFinal);
+        assertGt(blockNumber, 0);
+        assertGt(timestamp, 0);
+
+        (sequence, digest, previousDigest, isFinal, blockNumber, timestamp) =
+            anchor.getCheckpoint(electionA, 3);
+        assertEq(sequence, 0);
+        assertEq(digest, bytes32(0));
+        assertEq(previousDigest, bytes32(0));
+        assertFalse(isFinal);
+        assertEq(blockNumber, 0);
+        assertEq(timestamp, 0);
+    }
+
     function test_RevertIf_UnauthorizedPause() public {
         bytes32 adminRole = anchor.DEFAULT_ADMIN_ROLE();
         vm.prank(unauthorizedUser);
@@ -297,21 +340,20 @@ contract HimVoteAnchorTest is Test {
     function test_GasBounds() public {
         vm.startPrank(relayer);
 
-        // Initial checkpoint requires cold SSTORE allocation
+        // Current state plus the historical record are written on sequence one.
         uint256 gasBeforeInit = gasleft();
         anchor.anchorCheckpoint(electionA, 1, digest1, bytes32(0), false);
         uint256 gasUsedInit = gasBeforeInit - gasleft();
 
-        // Gas for initial cold storage write must be bounded well below 150,000 gas
-        assertLt(gasUsedInit, 150000);
+        // Cold historical storage increases the first checkpoint's write cost.
+        assertLt(gasUsedInit, 300000);
 
-        // Subsequent checkpoint updates existing warm storage slots
+        // Each sequence writes a new historical record as well as latest state.
         uint256 gasBeforeSubsequent = gasleft();
         anchor.anchorCheckpoint(electionA, 2, digest2, digest1, false);
         uint256 gasUsedSubsequent = gasBeforeSubsequent - gasleft();
 
-        // Gas for subsequent warm updates must remain bounded below 55,000 gas
-        assertLt(gasUsedSubsequent, 55000);
+        assertLt(gasUsedSubsequent, 220000);
 
         vm.stopPrank();
     }

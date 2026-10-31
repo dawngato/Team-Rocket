@@ -13,7 +13,7 @@ from anchor_relayer.contract_client import HimVoteAnchorClient
 from anchor_relayer.models import OutboxRecord, OutboxStatus, WitnessedCheckpoint
 from anchor_relayer.poller import ConfirmationPoller
 from anchor_relayer.reorg_detector import ReorgDetector
-from anchor_relayer.signer import BaseSigner, LocalSigner
+from anchor_relayer.signer import BaseSigner, LocalSigner, SignerConfigurationError
 from anchor_relayer.storage import OutboxRepository, SQLiteOutboxRepository
 from anchor_relayer.tx_builder import (
     GasLimitExceededError,
@@ -50,9 +50,10 @@ class AnchorRelayerService:
         if signer is None:
             if config.relayer_private_key:
                 signer = LocalSigner(config.relayer_private_key)
-            else:
-                dummy_key = "0x" + "1" * 64
-                signer = LocalSigner(dummy_key)
+            elif tx_builder is None:
+                raise SignerConfigurationError(
+                    "a relayer signer or preconfigured transaction builder is required"
+                )
         self.signer = signer
 
         self.contract_client = contract_client or HimVoteAnchorClient(
