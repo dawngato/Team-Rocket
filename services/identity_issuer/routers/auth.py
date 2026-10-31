@@ -48,29 +48,29 @@ from .deps import get_current_user, get_user_roles, record_audit_event, INVITABL
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
+from ..rate_limiter import rate_limiter, build_rate_limit_key
+
 _LOGIN_WINDOW_SECONDS = 300
 _LOGIN_MAX_FAILURES = 5
-_login_failures: dict[str, deque[float]] = defaultdict(deque)
 
 
 def _login_key(request: Request, email: str) -> str:
-    remote = request.client.host if request.client else "unknown"
-    return hashlib.sha256(f"{email.strip().lower()}:{remote}".encode("utf-8")).hexdigest()
+    return build_rate_limit_key(request, "login", email)
 
 
 def _enforce_login_limit(request: Request, email: str) -> str:
     key = _login_key(request, email)
-    now = time.monotonic()
-    attempts = _login_failures[key]
-    while attempts and now - attempts[0] > _LOGIN_WINDOW_SECONDS:
-        attempts.popleft()
-    if len(attempts) >= _LOGIN_MAX_FAILURES:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many sign in attempts; try again later")
+    rate_limiter.check_rate_limit(
+        key,
+        max_attempts=_LOGIN_MAX_FAILURES,
+        window_seconds=_LOGIN_WINDOW_SECONDS,
+        error_detail="Too many sign in attempts; try again later",
+    )
     return key
 
 
 def _record_login_failure(key: str) -> None:
-    _login_failures[key].append(time.monotonic())
+    rate_limiter.record_failure(key, window_seconds=_LOGIN_WINDOW_SECONDS)
 
 
 @router.post(
@@ -80,8 +80,13 @@ def _record_login_failure(key: str) -> None:
 )
 def redeem_invitation(
     req: InvitationRedeemRequest,
+    request: Request = None,
     db: Session = Depends(get_db),
 ):
+    redeem_key = None
+    if request:
+        redeem_key = build_rate_limit_key(request, "redeem_invitation", req.invitation_token)
+        rate_limiter.check_rate_limit(redeem_key, max_attempts=10, window_seconds=300)
     """Redeem a single-use staff invitation and provision its scoped role.
 
     The invitation token is only accepted while pending and before expiry. The
@@ -277,7 +282,7 @@ def login(
 
     # Generate session token
     session_token = str(uuid.uuid4())
-    _login_failures.pop(login_key, None)
+    rate_limiter.reset(login_key)
     token_hash = hashlib.sha256(session_token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=SESSION_EXPIRE_HOURS)
@@ -392,8 +397,12 @@ def logout(
 @router.post("/recover", status_code=status.HTTP_202_ACCEPTED)
 def recover_account(
     req: RecoveryReqSchema,
+    request: Request = None,
     db: Session = Depends(get_db),
 ):
+    if request:
+        recover_key = build_rate_limit_key(request, "recover", req.email)
+        rate_limiter.check_rate_limit(recover_key, max_attempts=5, window_seconds=300)
     """Initiate account recovery via single use short lived token."""
     if APP_ENV == "production":
         # A token must travel through an independently controlled notification
@@ -521,15 +530,25 @@ def mfa_setup(
 def mfa_verify(
     req: MfaVerifyRequest,
     secret: str,
+    request: Request = None,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Confirm TOTP token and activate MFA enrollment for user."""
+    mfa_key = None
+    if request:
+        mfa_key = build_rate_limit_key(request, "mfa_verify", current_user.id)
+        rate_limiter.check_rate_limit(mfa_key, max_attempts=5, window_seconds=300)
+
     if not verify_totp(secret, req.token):
+        if mfa_key:
+            rate_limiter.record_failure(mfa_key, 300)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid TOTP verification code",
         )
+    if mfa_key:
+        rate_limiter.reset(mfa_key)
 
     cred = MfaCredential(
         user_id=current_user.id,

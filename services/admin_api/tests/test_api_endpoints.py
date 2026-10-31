@@ -245,3 +245,87 @@ def test_evidence_download_is_blocked_before_release(client, test_db):
 
     assert response.status_code == 404
     assert response.json()["error_code"] == "EVIDENCE_NOT_RELEASED"
+
+
+def test_unauthorized_actor_rejected_for_mutations_and_audit(client, test_db):
+    """Actors without the required role must be rejected with 403 Forbidden."""
+    # Student cannot create election
+    res = client.post(
+        "/v1/elections",
+        json={
+            "title": "Unauthorized attempt",
+            "contest": "Test",
+            "selection_rule": "plurality",
+            "opens_at_utc": "2026-11-20T09:00:00Z",
+            "closes_at_utc": "2026-11-20T17:00:00Z",
+            "issuance_cutoff_utc": "2026-11-20T08:30:00Z",
+        },
+        headers={"X-Actor-ID": "student_sam", "X-Actor-Roles": "student"}
+    )
+    assert res.status_code == 403
+
+    # Teacher cannot view administrative audit events
+    res = client.get(
+        "/v1/admin/audit-events",
+        headers={"X-Actor-ID": "teacher_tina", "X-Actor-Roles": "teacher"}
+    )
+    assert res.status_code == 403
+
+    # Administrator can view audit events
+    res = client.get(
+        "/v1/admin/audit-events",
+        headers={"X-Actor-ID": "admin_alice", "X-Actor-Roles": "administrator"}
+    )
+    assert res.status_code == 200
+
+
+def test_internal_election_visibility_enforcement(client, test_db):
+    """Internal elections (DRAFT, etc.) must not be visible publicly."""
+    election_id = "elec_draft_visibility_test"
+    test_db.add(ElectionModel(
+        id=election_id,
+        title="Secret Draft Election",
+        contest="Secret Contest",
+        selection_rule="plurality",
+        opens_at_utc="2026-12-01T09:00:00Z",
+        closes_at_utc="2026-12-01T17:00:00Z",
+        issuance_cutoff_utc="2026-12-01T08:00:00Z",
+    ))
+    test_db.add(ElectionStateModel(
+        election_id=election_id,
+        state="DRAFT",
+        manifest_digest="",
+        opens_at_utc="2026-12-01T09:00:00Z",
+        closes_at_utc="2026-12-01T17:00:00Z",
+        issuance_cutoff_utc="2026-12-01T08:00:00Z",
+    ))
+    test_db.commit()
+
+    # Public list does not return draft elections
+    res = client.get("/v1/elections")
+    assert res.status_code == 200
+    ids = [e["id"] for e in res.json()["elections"]]
+    assert election_id not in ids
+
+    # Public query for state=DRAFT is strictly rejected with 403
+    res = client.get("/v1/elections?state=DRAFT")
+    assert res.status_code == 403
+
+    # Direct query without include_internal returns 404
+    res = client.get(f"/v1/elections/{election_id}")
+    assert res.status_code == 404
+
+    # Query with include_internal by unauthorized user returns 403
+    res = client.get(
+        f"/v1/elections/{election_id}?include_internal=true",
+        headers={"X-Actor-ID": "student_sam", "X-Actor-Roles": "student"}
+    )
+    assert res.status_code == 403
+
+    # Query with include_internal by authorized officer returns 200
+    res = client.get(
+        f"/v1/elections/{election_id}?include_internal=true",
+        headers={"X-Actor-ID": "officer_dave", "X-Actor-Roles": "election_officer"}
+    )
+    assert res.status_code == 200
+    assert res.json()["id"] == election_id

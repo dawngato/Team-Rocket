@@ -95,7 +95,7 @@ export default function CandidateReviewPage() {
                               {candidate.name.charAt(0)}
                             </div>
                           )}
-                          <div className="absolute bottom-0 right-0 px-1 py-0.5 rounded text-[7px] font-bold bg-[#157E92] text-white">
+                          <div className="absolute bottom-0 right-0 px-1.5 py-0.5 rounded text-[7px] font-bold bg-[#157E92] text-white">
                             Candidate
                           </div>
                         </div>
