@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Sun,
@@ -23,15 +23,51 @@ import {
   BarChart3,
   Search,
   Activity,
+  LogOut,
+  UserRound,
 } from "lucide-react";
 import { useApp } from "../lib/query_provider";
+import { identityClient, type SessionProfile } from "../lib/identity_client";
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { theme, toggleTheme } = useApp();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [session, setSession] = useState<SessionProfile | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const current = identityClient.getSession();
+    if (mounted) {
+      setSession(current);
+    }
+    const unsubscribe = identityClient.onSessionChange((nextSession) => {
+      if (mounted) {
+        setSession(nextSession);
+      }
+    });
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      if (typeof window !== "undefined") {
+        window.sessionStorage.removeItem("himvote_session_receipts");
+        window.localStorage.removeItem("himvote_receipts");
+      }
+      await identityClient.logout();
+    } finally {
+      setSession(null);
+      setMobileMenuOpen(false);
+      router.push("/auth/login");
+    }
+  };
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -299,14 +335,37 @@ export function Navbar() {
               )}
             </button>
 
-            {/* Portal Login Primary CTA */}
-            <Link
-              href="/auth/login"
-              className="group relative inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#11697a] dark:from-cyan-600 dark:to-teal-500 dark:hover:from-cyan-500 dark:hover:to-teal-400 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-[0_0_16px_rgba(21,126,146,0.35)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
-            >
-              <span>Portal Login</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
-            </Link>
+            {/* Session Actions or Portal Login Primary CTA */}
+            {session ? (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <Link
+                  href="/account"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-slate-200/90 dark:border-slate-800 bg-slate-50/80 hover:bg-slate-100 text-slate-700 dark:bg-slate-900/60 dark:hover:bg-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 max-w-[130px] sm:max-w-[170px]"
+                  title={session.email}
+                >
+                  <UserRound className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{session.displayName || session.email.split("@")[0]}</span>
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  aria-label="Sign out of session"
+                  title="Sign out"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl border border-rose-200/80 dark:border-rose-900/40 bg-rose-50/80 hover:bg-rose-100/90 text-rose-700 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 dark:text-rose-300 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                >
+                  <LogOut className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  <span className="hidden sm:inline">Sign out</span>
+                </button>
+              </div>
+            ) : (
+              <Link
+                href="/auth/login"
+                className="group relative inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#11697a] dark:from-cyan-600 dark:to-teal-500 dark:hover:from-cyan-500 dark:hover:to-teal-400 text-white font-bold text-xs sm:text-sm shadow-sm hover:shadow-[0_0_16px_rgba(21,126,146,0.35)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
+              >
+                <span>Portal Login</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" aria-hidden="true" />
+              </Link>
+            )}
 
             {/* Mobile Menu Toggle Button */}
             <button
@@ -406,13 +465,37 @@ export function Navbar() {
                       Online &amp; Auditable
                     </span>
                   </div>
-                  <Link
-                    href="/auth/login"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#11697a] text-white font-bold text-center text-sm shadow-md"
-                  >
-                    Portal Login
-                  </Link>
+                  {session ? (
+                    <div className="flex flex-col gap-2">
+                      <Link
+                        href="/account"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="w-full py-2.5 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 text-slate-700 dark:bg-slate-900 dark:text-slate-200 text-xs font-semibold flex items-center justify-between"
+                      >
+                        <span className="flex items-center gap-2 truncate">
+                          <UserRound className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+                          <span className="truncate">{session.email}</span>
+                        </span>
+                        <ArrowRight className="w-3.5 h-3.5 opacity-40 shrink-0" />
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="w-full py-2.5 px-4 rounded-xl border border-rose-200/80 dark:border-rose-900/40 bg-rose-50/90 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 font-bold text-xs flex items-center justify-center gap-2"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Sign out of session</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-[#10233F] to-[#157E92] hover:from-[#0d1d35] hover:to-[#11697a] text-white font-bold text-center text-sm shadow-md"
+                    >
+                      Portal Login
+                    </Link>
+                  )}
                 </div>
               </nav>
             </motion.div>

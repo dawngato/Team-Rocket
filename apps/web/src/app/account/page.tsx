@@ -46,6 +46,33 @@ export default function AccountSettingsPage() {
           </div>
         </div>
       </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-6 dark:border-[#1E3352] dark:bg-[#132135]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="font-bold text-[#10233F] dark:text-white">Sign out of session</h2>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Terminates this authenticated session and revokes local session tokens.</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                if (typeof window !== "undefined") {
+                  window.sessionStorage.removeItem("himvote_session_receipts");
+                  window.localStorage.removeItem("himvote_receipts");
+                }
+                await identityClient.logout();
+              } finally {
+                window.location.href = "/auth/login";
+              }
+            }}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-rose-600 px-5 text-sm font-bold text-white hover:bg-rose-700 transition-colors shrink-0"
+          >
+            <LogOut className="size-4" aria-hidden="true" />
+            <span>Sign out</span>
+          </button>
+        </div>
+      </section>
     </main>
   );
 }
