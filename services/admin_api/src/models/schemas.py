@@ -16,6 +16,7 @@ class Candidate(BaseModel):
 
 class CreateElectionRequest(BaseModel):
     """Election creation payload for draft election."""
+    institution_id: Optional[str] = Field(default=None, min_length=1, max_length=255)
     title: str
     contest: str
     selection_rule: str
@@ -48,6 +49,7 @@ class ElectionSummary(BaseModel):
 class Election(BaseModel):
     """Full election detail schema."""
     id: str
+    institution_id: Optional[str] = None
     title: str
     state: str
     manifest_digest: str

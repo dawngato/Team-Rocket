@@ -22,8 +22,6 @@ import {
   HelpCircle
 } from "lucide-react";
 import { StateBadge } from "../components/StateBadge";
-import { LiveTurnoutHeroWidget } from "../components/LiveTurnoutHeroWidget";
-import { StudentIdCardVerifier } from "../components/StudentIdCardVerifier";
 import { electionClient } from "../lib/election_client";
 import type { Election } from "../lib/types";
 
@@ -107,33 +105,36 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Real Campus Community Metrics Bar */}
+            {/* Evidence status without fabricated operational metrics */}
             <div className="pt-4 border-t border-slate-200/60 dark:border-[#1E3352]/60 grid grid-cols-3 gap-4 animate-linear-reveal-5">
               <div>
                 <p className="text-xs text-slate-500 font-medium">Eligible Voters</p>
-                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">4,800</p>
+                <p className="text-sm sm:text-base font-bold text-[#10233F] dark:text-white">Authoritative roster only</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 font-medium">Campus Unity</p>
-                <p className="text-xl sm:text-2xl font-black text-[#10233F] dark:text-white font-mono">1 College</p>
+                <p className="text-sm sm:text-base font-bold text-[#10233F] dark:text-white">Institution scoped</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 font-medium">Voter Privacy</p>
-                <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">Guaranteed</p>
+                <p className="text-sm sm:text-base font-bold text-emerald-600 dark:text-emerald-400">Protocol dependent</p>
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Turnout Electorate Widget (Real-time Campus Meter) */}
+          {/* Right Column: privacy-preserving live status */}
           <div className="lg:col-span-5 flex flex-col items-center justify-center w-full">
-            <LiveTurnoutHeroWidget />
+            <div className="w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-[#1E3352] dark:bg-[#132135]">
+              <div className="flex items-center gap-3">
+                <ShieldCheck className="size-6 text-[#157E92] dark:text-[#38BDF8]" aria-hidden="true" />
+                <div>
+                  <h2 className="font-bold text-[#10233F] dark:text-white">Live turnout is not exposed here</h2>
+                  <p className="mt-1 text-xs leading-relaxed text-slate-600 dark:text-slate-400">Accepted-ballot aggregates are shown only through an authoritative election status endpoint and never as locally simulated activity.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
-
-      {/* 2. INSTANT STUDENT ID & ROLL NUMBER CHECK-IN (ANTI-FRAUD VERIFICATION) */}
-      <section>
-        <StudentIdCardVerifier />
       </section>
 
       {/* 4. ACTIVE ELECTIONS SHOWCASE */}
@@ -204,6 +205,12 @@ export default function HomePage() {
             ))}
           </div>
         )}
+        {!electionsLoading && electionsError && (
+          <div className="rounded-2xl border border-[#C23C45]/30 bg-[#C23C45]/10 p-6 text-sm text-[#8B2630] dark:text-[#FCA5A5]" role="alert">The authoritative election directory is unavailable. Please check the elections page and retry later.</div>
+        )}
+        {!electionsLoading && !electionsError && activeElections.length === 0 && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600 dark:border-[#1E3352] dark:bg-[#132135]" role="status">No elections are currently available.</div>
+        )}
       </section>
 
       {/* 5. INSTITUTIONAL RESPONSIBILITY & SEPARATION OF POWERS */}
@@ -213,7 +220,7 @@ export default function HomePage() {
             Separation Of Powers On Campus
           </h2>
           <p className="text-xs text-slate-500">
-            No single administrator, teacher, or server can alter results or deanonymize a voter.
+            Election controls are separated by role, while privacy and integrity depend on the configured protocol and independently retained evidence.
           </p>
         </div>
 

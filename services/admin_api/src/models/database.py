@@ -29,6 +29,7 @@ class ElectionModel(Base):
     __tablename__ = "elections"
 
     id = Column(String(64), primary_key=True)
+    institution_id = Column(String(255), nullable=False, default="legacy_unscoped")
     title = Column(String(255), nullable=False)
     contest = Column(String(255), nullable=False)
     selection_rule = Column(String(64), nullable=False)

@@ -60,6 +60,11 @@ class RecoveryResetRequest(BaseModel):
     password: str = Field(min_length=16)
 
 
+class AccountActivationRequest(BaseModel):
+    activation_token: str = Field(min_length=32)
+    password: str = Field(min_length=16)
+
+
 class BootstrapClaimRequest(BaseModel):
     invitation_token: str
     password: str = Field(min_length=16)
@@ -103,13 +108,14 @@ class CreateTeacherRequest(BaseModel):
     faculty_id: str = Field(min_length=1)
     email: EmailStr
     department: str = Field(min_length=1)
-    initial_password: Optional[str] = "TeacherSecurePass123!"
+    initial_password: Optional[str] = None
 
 
 class RosterCorrectionRequest(BaseModel):
     student_id: str = Field(min_length=1)
     student_name: str = Field(min_length=1)
     department: str = Field(min_length=1)
+    class_id: Optional[str] = Field(default=None, min_length=1)
     correction_type: str = Field(min_length=1)
     reason: str = Field(min_length=1)
 
@@ -119,6 +125,7 @@ class RosterCorrectionRecord(BaseModel):
     student_id: str
     student_name: str
     department: str
+    class_id: Optional[str] = None
     correction_type: str
     reason: str
     status: str

@@ -34,6 +34,7 @@ services:
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_DEV_MODE: "false"
+      IDENTITY_SERVICE_URL: ${IDENTITY_SERVICE_INTERNAL_URL:?Set IDENTITY_SERVICE_INTERNAL_URL for server side session validation}
     deploy:
       resources:
         limits:
@@ -94,6 +95,7 @@ services:
       ISSUER_PRIVATE_KEY_PEM: ${ISSUER_PRIVATE_KEY_PEM:?Set ISSUER_PRIVATE_KEY_PEM through the secret manager}
       IDENTITY_DB_SSL_MODE: verify-full
       KMS_PROVIDER: ${KMS_PROVIDER:-aws_kms}
+      REDIS_URL: ${IDENTITY_REDIS_URL:?Set IDENTITY_REDIS_URL for shared rate limiting}
     deploy:
       resources:
         limits:

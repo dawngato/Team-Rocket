@@ -6,6 +6,7 @@ Implements Section 4 and Section 6.2 endpoints.
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, Header, Response, Request
 from fastapi.responses import StreamingResponse
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 import io
 import uuid
@@ -47,9 +48,10 @@ from src.services.publication_service import PublicationService
 from src.services.evidence_service import EvidenceService
 from src.services.audit_service import AuditService
 from src.crypto.canonical import canonical_json_str
-from src.auth import get_authenticated_actor
+from src.auth import ActorContext, get_authenticated_actor, get_authenticated_context, require_operation
 
 router = APIRouter(prefix="/v1/elections", tags=["elections"])
+PUBLIC_ELECTION_STATES = {"OPEN", "CLOSED", "PUBLISHED"}
 
 
 def get_current_actor_id(request: Request) -> str:
@@ -62,6 +64,55 @@ def get_current_actor_id(request: Request) -> str:
     return get_authenticated_actor(request)
 
 
+def _serialize_election(election: ElectionModel, db: Session) -> Election:
+    roster_snap = (
+        db.query(ElectionRosterSnapshotModel)
+        .filter(ElectionRosterSnapshotModel.election_id == election.id)
+        .order_by(ElectionRosterSnapshotModel.id.desc())
+        .first()
+    )
+    return Election(
+        id=election.id,
+        institution_id=election.institution_id,
+        title=election.title,
+        state=election.state_record.state if election.state_record else "UNKNOWN",
+        manifest_digest=election.state_record.manifest_digest if election.state_record else "",
+        opens_at_utc=election.opens_at_utc,
+        closes_at_utc=election.closes_at_utc,
+        issuance_cutoff_utc=election.issuance_cutoff_utc,
+        contest=election.contest,
+        selection_rule=election.selection_rule,
+        eligible_count=roster_snap.eligible_count if roster_snap else 0,
+        candidates=[
+            Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
+            for c in election.candidates
+        ],
+    )
+
+
+def _scope_filter(query, context: ActorContext):
+    if context.development or context.has_scope():
+        return query
+    institution_ids = [
+        grant.scope_id
+        for grant in context.scopes
+        if grant.scope_type in {"institution", "tenant", "campus", "delegated"}
+        and grant.scope_id != "*"
+    ]
+    election_ids = [
+        grant.scope_id
+        for grant in context.scopes
+        if grant.scope_type in {"election", "election_id", "delegated"}
+        and grant.scope_id != "*"
+    ]
+    clauses = []
+    if institution_ids:
+        clauses.append(ElectionModel.institution_id.in_(institution_ids))
+    if election_ids:
+        clauses.append(ElectionModel.id.in_(election_ids))
+    return query.filter(or_(*clauses)) if clauses else query.filter(ElectionModel.id == "__no_scope__")
+
+
 @router.get("", response_model=ElectionList)
 def list_elections(
     state: Optional[str] = Query(None),
@@ -71,16 +122,19 @@ def list_elections(
 ):
     """Lists public elections, or scoped internal elections for operators."""
     query = db.query(ElectionModel).join(ElectionStateModel)
-    if state:
-        query = query.filter(ElectionStateModel.state == state)
-    elif include_internal:
-        # Internal lifecycle views must use the same authenticated actor
-        # boundary as mutations. Public callers never receive draft metadata.
-        get_current_actor_id(request)
+    if include_internal:
+        context = require_operation(request, "election.read_internal")
+        query = _scope_filter(query, context)
+        if state:
+            query = query.filter(ElectionStateModel.state == state)
     else:
-        query = query.filter(
-            ElectionStateModel.state.notin_(["DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"])
-        )
+        # Public callers cannot widen visibility by supplying an internal
+        # lifecycle state in the query string.
+        query = query.filter(ElectionStateModel.state.in_(PUBLIC_ELECTION_STATES))
+        if state and state not in PUBLIC_ELECTION_STATES:
+            query = query.filter(ElectionModel.id == "__no_public_election__")
+        elif state:
+            query = query.filter(ElectionStateModel.state == state)
 
     elections = query.all()
     summaries = [
@@ -99,10 +153,27 @@ def list_elections(
 @router.post("", response_model=Election, status_code=201)
 def create_election(
     req: CreateElectionRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Creates a new election in DRAFT state."""
+    context = get_authenticated_context(request)
+    institution_id = req.institution_id
+    if not institution_id and not context.development:
+        institution_id = next(
+            (
+                grant.scope_id
+                for grant in context.scopes
+                if grant.scope_type in {"institution", "tenant", "campus"} and grant.scope_id != "*"
+            ),
+            None,
+        )
+    if not institution_id and context.development:
+        institution_id = "development"
+    if not institution_id:
+        raise HTTPException(status_code=422, detail="institution_id is required for a scoped election")
+    require_operation(request, "election.create", institution_id=institution_id)
     ManifestService.validate_utc_timestamps(
         req.opens_at_utc,
         req.closes_at_utc,
@@ -112,6 +183,7 @@ def create_election(
     election_id = f"elec_{uuid.uuid4().hex[:12]}"
     election = ElectionModel(
         id=election_id,
+        institution_id=institution_id,
         title=req.title,
         contest=req.contest,
         selection_rule=req.selection_rule,
@@ -140,7 +212,7 @@ def create_election(
         actor_id=actor_id,
         action="CREATE_ELECTION",
         result="SUCCESS",
-        details={"election_id": election_id, "title": req.title}
+        details={"election_id": election_id, "institution_id": institution_id}
     )
 
     db.commit()
@@ -148,6 +220,7 @@ def create_election(
 
     return Election(
         id=election.id,
+        institution_id=election.institution_id,
         title=election.title,
         state="DRAFT",
         manifest_digest="",
@@ -171,43 +244,24 @@ def get_election(
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
     state = election.state_record.state if election.state_record else "UNKNOWN"
-    if state in {"DRAFT", "REVIEW", "APPROVED", "DISPUTED", "AUDIT_FAILED"}:
-        if not include_internal:
-            raise HTTPException(status_code=404, detail="Election not found")
-        get_current_actor_id(request)
+    if include_internal:
+        require_operation(
+            request,
+            "election.read_internal",
+            election_id=id,
+            institution_id=election.institution_id,
+        )
+    elif state not in PUBLIC_ELECTION_STATES:
+        raise HTTPException(status_code=404, detail="Election not found")
 
-    candidates = [
-        Candidate(id=c.id, name=c.name, contest=c.contest, statement=c.statement)
-        for c in election.candidates
-    ]
-
-    roster_snap = (
-        db.query(ElectionRosterSnapshotModel)
-        .filter(ElectionRosterSnapshotModel.election_id == id)
-        .order_by(ElectionRosterSnapshotModel.id.desc())
-        .first()
-    )
-    eligible_count = roster_snap.eligible_count if roster_snap else 0
-
-    return Election(
-        id=election.id,
-        title=election.title,
-        state=election.state_record.state if election.state_record else "UNKNOWN",
-        manifest_digest=election.state_record.manifest_digest if election.state_record else "",
-        opens_at_utc=election.opens_at_utc,
-        closes_at_utc=election.closes_at_utc,
-        issuance_cutoff_utc=election.issuance_cutoff_utc,
-        contest=election.contest,
-        selection_rule=election.selection_rule,
-        eligible_count=eligible_count,
-        candidates=candidates
-    )
+    return _serialize_election(election, db)
 
 
 @router.put("/{id}", response_model=Election)
 def update_election(
     id: str,
     req: UpdateElectionRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
@@ -215,6 +269,12 @@ def update_election(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "election.update",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     try:
@@ -254,12 +314,13 @@ def update_election(
 
     db.commit()
     db.refresh(election)
-    return get_election(id, db)
+    return _serialize_election(election, db)
 
 
 @router.delete("/{id}", status_code=204)
 def delete_election(
     id: str,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
@@ -267,6 +328,12 @@ def delete_election(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "election.delete",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     if state != "DRAFT":
@@ -288,11 +355,23 @@ def delete_election(
 @router.get("/{id}/candidates", response_model=List[Candidate])
 def list_candidates(
     id: str,
+    include_internal: bool = Query(False, alias="include_internal"),
+    request: Request = None,
     db: Session = Depends(get_db)
 ):
     """Lists candidates registered for an election."""
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    state = election.state_record.state if election.state_record else "UNKNOWN"
+    if include_internal:
+        require_operation(
+            request,
+            "election.read_internal",
+            election_id=id,
+            institution_id=election.institution_id,
+        )
+    elif state not in PUBLIC_ELECTION_STATES:
         raise HTTPException(status_code=404, detail="Election not found")
 
     return [
@@ -305,6 +384,7 @@ def list_candidates(
 def add_candidates(
     id: str,
     candidates: List[Candidate],
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
@@ -312,6 +392,12 @@ def add_candidates(
     election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
     if not election:
         raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "candidate.manage",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
 
     state = election.state_record.state if election.state_record else "UNKNOWN"
     try:
@@ -319,14 +405,18 @@ def add_candidates(
     except StateMachineError as e:
         raise HTTPException(status_code=409, detail=e.message)
 
-    submitted_ids = {candidate.id for candidate in candidates}
+    existing_ids = {candidate.id for candidate in election.candidates}
+    submitted_ids = {candidate.id for candidate in candidates if candidate.id in existing_ids}
     for existing in list(election.candidates):
         if existing.id not in submitted_ids:
             db.delete(existing)
 
     for c in candidates:
         cand_model = CandidateModel(
-            id=c.id,
+            # New candidate identifiers are always allocated by the service;
+            # the browser cannot choose an identifier that collides with
+            # another election or masquerades as an existing record.
+            id=c.id if c.id in existing_ids else f"cand_{uuid.uuid4().hex[:16]}",
             election_id=id,
             name=c.name,
             contest=c.contest,
@@ -350,10 +440,20 @@ def add_candidates(
 def submit_roster(
     id: str,
     req: RosterSubmitRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Submits roster snapshot for approval."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "roster.submit",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         res = RosterService.submit_roster(
             db=db,
@@ -378,10 +478,20 @@ def submit_roster(
 def approve_roster(
     id: str,
     req: RosterApproveRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Independent Roster Approver signs the roster."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "roster.approve",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         res = RosterService.approve_roster(
             db=db,
@@ -407,10 +517,20 @@ def approve_roster(
 def freeze_election(
     id: str,
     freeze_params: FreezeElectionRequest = FreezeElectionRequest(),
+    request: Request = None,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Freezes manifest deterministically and enforces immutability."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "election.freeze",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         res = ManifestService.freeze_election(
             db=db,
@@ -433,6 +553,7 @@ def freeze_election(
 @router.post("/{id}/open", status_code=200)
 def open_election(
     id: str,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
@@ -444,6 +565,13 @@ def open_election(
     )
     if not state_record:
         raise HTTPException(status_code=404, detail="Election not found")
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    require_operation(
+        request,
+        "election.open",
+        election_id=id,
+        institution_id=election.institution_id if election else None,
+    )
 
     try:
         if state_record.state == "FROZEN":
@@ -470,10 +598,20 @@ def open_election(
 @router.post("/{id}/close", status_code=200)
 def close_election(
     id: str,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Closes election and locks final tree size."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "election.close",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         state_record = ElectionLifecycleManager.transition(
             db=db,
@@ -502,10 +640,20 @@ def close_election(
 def publication_request(
     id: str,
     req: PublicationRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Auditor signature verification gate for publication."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "result.publish",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         res = PublicationService.process_publication_request(
             db=db,
@@ -594,10 +742,20 @@ def get_evidence(
 def cancel_election(
     id: str,
     req: CancelElectionRequest,
+    request: Request,
     actor_id: str = Depends(get_current_actor_id),
     db: Session = Depends(get_db)
 ):
     """Cancels an election with signed reason while keeping all evidence."""
+    election = db.query(ElectionModel).filter(ElectionModel.id == id).first()
+    if not election:
+        raise HTTPException(status_code=404, detail="Election not found")
+    require_operation(
+        request,
+        "election.update",
+        election_id=id,
+        institution_id=election.institution_id,
+    )
     try:
         ElectionLifecycleManager.transition(
             db=db,

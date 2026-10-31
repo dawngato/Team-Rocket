@@ -289,6 +289,20 @@ class RecoveryRequest(Base):
     consumed_at = Column(DateTime(timezone=True), nullable=True)
 
 
+class AccountActivation(Base):
+    """Single use password setup token created for a pending account."""
+
+    __tablename__ = "account_activations"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(255), unique=True, nullable=False, index=True)
+    status = Column(String(50), nullable=False, default="PENDING")
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
+    consumed_at = Column(DateTime(timezone=True), nullable=True)
+
+
 class AdminAuditEvent(Base):
     __tablename__ = "admin_audit_events"
 
@@ -389,6 +403,7 @@ class RosterCorrection(Base):
     student_id = Column(String(255), nullable=False, index=True)
     student_name = Column(String(255), nullable=False)
     department = Column(String(255), nullable=False)
+    class_id = Column(String(255), nullable=True)
     correction_type = Column(String(100), nullable=False)
     reason = Column(Text, nullable=False)
     status = Column(String(50), nullable=False, default="PENDING")

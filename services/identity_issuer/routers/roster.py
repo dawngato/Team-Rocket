@@ -6,11 +6,15 @@ Enforces that a Roster Approver must be an independent person from the importer.
 import uuid
 import hashlib
 import json
-from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+import secrets
+from datetime import datetime, timedelta, timezone
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from ..database import get_db
+from ..rate_limiter import rate_limiter
+from ..config import ACTIVATION_DELIVERY_MODE, ACTIVATION_EXPIRE_HOURS, APP_ENV
 from ..models import (
     User,
     StudentProfile,
@@ -19,6 +23,7 @@ from ..models import (
     ElectionRosterSnapshot,
     RosterMember,
     CredentialIssuanceRecord,
+    AccountActivation,
     Department,
     RoleAssignment,
     RoleDefinition,
@@ -41,26 +46,84 @@ from .deps import get_current_user, get_user_roles, require_roles, record_audit_
 router = APIRouter(prefix="/v1", tags=["roster"])
 
 
+def _teacher_has_department_scope(user: User, db: Session, department: Department, class_id: str | None = None) -> bool:
+    """Match teacher grants against authoritative department identifiers."""
+    if not department:
+        return False
+    assignments = (
+        db.query(RoleAssignment, RoleDefinition.name)
+        .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+        .filter(RoleAssignment.user_id == user.id, RoleDefinition.name == "teacher")
+        .all()
+    )
+    department_values = {department.id, department.name.strip().lower(), department.code.strip().lower()}
+    for assignment, _role_name in assignments:
+        if assignment.scope_type == "global" or assignment.scope_id == "*":
+            return True
+        if assignment.scope_type in {"department", "dept"} and assignment.scope_id.strip().lower() in department_values:
+            return True
+        if class_id and assignment.scope_type == "class" and assignment.scope_id == class_id:
+            return True
+    return False
+
+
+def _correction_record(row: RosterCorrection) -> RosterCorrectionRecord:
+    return RosterCorrectionRecord(
+        id=row.id,
+        student_id=row.student_id,
+        student_name=row.student_name,
+        department=row.department,
+        class_id=row.class_id,
+        correction_type=row.correction_type,
+        reason=row.reason,
+        status=row.status,
+        submitted_by=row.submitted_by,
+        created_at=row.created_at,
+        decided_by=row.decided_by,
+        decided_at=row.decided_at,
+    )
+
+
 @router.get("/roster/corrections", response_model=list[RosterCorrectionRecord], status_code=status.HTTP_200_OK)
 def list_roster_corrections(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin", "roster_approver"])),
     db: Session = Depends(get_db),
 ):
-    rows = db.query(RosterCorrection).order_by(RosterCorrection.created_at.desc()).limit(500).all()
-    return [
-        RosterCorrectionRecord(
-            id=row.id,
-            student_id=row.student_id,
-            student_name=row.student_name,
-            department=row.department,
-            correction_type=row.correction_type,
-            reason=row.reason,
-            status=row.status,
-            submitted_by=row.submitted_by,
-            created_at=row.created_at,
-            decided_by=row.decided_by,
-            decided_at=row.decided_at,
+    user_roles = get_user_roles(current_user, db)
+    is_broad_role = any(r in {"administrator", "super_admin", "roster_approver"} for r in user_roles)
+
+    query = db.query(RosterCorrection)
+    if not is_broad_role:
+        teacher_assignments = (
+            db.query(RoleAssignment)
+            .join(RoleDefinition, RoleAssignment.role_id == RoleDefinition.id)
+            .filter(RoleAssignment.user_id == current_user.id, RoleDefinition.name == "teacher")
+            .all()
         )
+        allowed_scopes: set[str] = set()
+        for assignment in teacher_assignments:
+            if assignment.scope_type in {"department", "dept"}:
+                department = db.query(Department).filter(
+                    (Department.id == assignment.scope_id)
+                    | (func.lower(Department.name) == assignment.scope_id.strip().lower())
+                    | (func.lower(Department.code) == assignment.scope_id.strip().lower())
+                ).first()
+                if department:
+                    allowed_scopes.update({department.id.lower(), department.name.strip().lower(), department.code.strip().lower()})
+                else:
+                    allowed_scopes.add(assignment.scope_id.strip().lower())
+            else:
+                allowed_scopes.add(assignment.scope_id.strip().lower())
+        if any(assignment.scope_type == "global" or assignment.scope_id == "*" for assignment in teacher_assignments):
+            pass
+        elif not allowed_scopes:
+            return []
+        else:
+            query = query.filter(func.lower(RosterCorrection.department).in_(allowed_scopes))
+
+    rows = query.order_by(RosterCorrection.created_at.desc()).limit(500).all()
+    return [
+        _correction_record(row)
         for row in rows
     ]
 
@@ -71,10 +134,31 @@ def submit_roster_correction(
     current_user: User = Depends(require_roles(["teacher", "administrator", "super_admin"])),
     db: Session = Depends(get_db),
 ):
+    user_roles = get_user_roles(current_user, db)
+    is_admin = any(r in {"administrator", "super_admin"} for r in user_roles)
+    target_dept = req.department.strip()
+
+    student_id_clean = req.student_id.strip()
+    profile = db.query(StudentProfile).filter(StudentProfile.student_id == student_id_clean).first()
+    if not profile or not profile.department:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Authoritative student enrollment is required")
+    if target_dept.lower() not in {
+        profile.department.id.lower(),
+        profile.department.name.strip().lower(),
+        profile.department.code.strip().lower(),
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Correction department does not match the authoritative enrollment record",
+        )
+    if not is_admin and not _teacher_has_department_scope(current_user, db, profile.department, req.class_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher is not authorized for this department or class")
+
     correction = RosterCorrection(
-        student_id=req.student_id.strip(),
+        student_id=student_id_clean,
         student_name=req.student_name.strip(),
-        department=req.department.strip(),
+        department=target_dept,
+        class_id=req.class_id.strip() if req.class_id else None,
         correction_type=req.correction_type.strip(),
         reason=req.reason.strip(),
         status="PENDING",
@@ -86,23 +170,11 @@ def submit_roster_correction(
         action="roster.correction.submitted",
         result="pending_review",
         actor_id=current_user.id,
-        details={"correction_id": correction.id, "student_id": correction.student_id},
+        details={"correction_id": correction.id, "student_id": correction.student_id, "department": target_dept, "class_id": correction.class_id},
     )
     db.commit()
     db.refresh(correction)
-    return RosterCorrectionRecord(
-        id=correction.id,
-        student_id=correction.student_id,
-        student_name=correction.student_name,
-        department=correction.department,
-        correction_type=correction.correction_type,
-        reason=correction.reason,
-        status=correction.status,
-        submitted_by=correction.submitted_by,
-        created_at=correction.created_at,
-        decided_by=correction.decided_by,
-        decided_at=correction.decided_at,
-    )
+    return _correction_record(correction)
 
 
 @router.post("/students/register", status_code=status.HTTP_202_ACCEPTED)
@@ -114,6 +186,17 @@ def register_student(
     Student self registration.
     Initial state is PENDING_VERIFICATION until confirmed by teacher or admin.
     """
+    if APP_ENV == "production" and ACTIVATION_DELIVERY_MODE != "configured":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Student activation delivery is not configured",
+        )
+    rate_limiter.enforce(
+        rate_limiter.key("student_registration", str(req.email)),
+        limit=3,
+        window_seconds=3600,
+        detail="Too many registration attempts; try again later",
+    )
     # Check for existing profile or user
     existing_profile = db.query(StudentProfile).filter(StudentProfile.student_id == req.student_id).first()
     existing_user = db.query(User).filter(User.external_id == req.student_id).first()
@@ -142,9 +225,32 @@ def register_student(
         full_name=req.full_name,
     )
     db.add(profile)
+    db.flush()
+    activation_token = secrets.token_urlsafe(32)
+    db.add(AccountActivation(
+        user_id=user.id,
+        token_hash=hashlib.sha256(activation_token.encode("utf-8")).hexdigest(),
+        status="PENDING",
+        expires_at=datetime.now(timezone.utc) + timedelta(hours=ACTIVATION_EXPIRE_HOURS),
+    ))
+    record_audit_event(
+        db=db,
+        action="roster.student.registration_submitted",
+        result="pending_verification",
+        actor_id=user.id,
+        details={"student_id": req.student_id},
+    )
     db.commit()
 
-    return {"status": "registration_pending_verification", "student_id": req.student_id}
+    response = {
+        "status": "registration_pending_verification",
+        "student_id": req.student_id,
+        "activation_delivery": "pending",
+    }
+    if APP_ENV != "production" and ACTIVATION_DELIVERY_MODE == "development":
+        response["activation_delivery"] = "development"
+        response["development_activation_token"] = activation_token
+    return response
 
 
 @router.post("/students/import", status_code=status.HTTP_202_ACCEPTED)
@@ -296,15 +402,21 @@ def verify_student(
         )
 
     current_roles = get_user_roles(current_user, db)
-    if (
-        "super_admin" not in current_roles
-        and "administrator" not in current_roles
-        and not user_has_scope(current_user, db, ["teacher"], req.department)
-    ):
+    authoritative_department = profile.department
+    if not authoritative_department:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Teacher scope does not include the requested department",
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Authoritative enrollment department is missing",
         )
+    if req.department.strip().lower() not in {
+        authoritative_department.id.lower(),
+        authoritative_department.name.strip().lower(),
+        authoritative_department.code.strip().lower(),
+    }:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Submitted department does not match authoritative enrollment")
+    if "teacher" in current_roles and not ({"super_admin", "administrator"} & set(current_roles)):
+        if not _teacher_has_department_scope(current_user, db, authoritative_department):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Teacher scope does not include the student's authoritative department")
 
     verified_by = req.verified_by or current_user.id
     if verified_by not in {current_user.id, current_user.email}:
@@ -313,16 +425,13 @@ def verify_student(
             detail="verified_by must identify the authenticated verifier",
         )
 
-    # Resolve or create department
-    dept = db.query(Department).filter(Department.name == req.department).first()
     if db.query(StudentVerification).filter(StudentVerification.student_id == profile.id).first():
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Student has already been verified")
-    dept_id = dept.id if dept else str(uuid.uuid4())
 
     verification = StudentVerification(
         student_id=profile.id,
         verified_by=current_user.id,
-        department_id=dept_id,
+        department_id=authoritative_department.id,
         verification_method="institutional_registry_match",
     )
     db.add(verification)
@@ -335,7 +444,7 @@ def verify_student(
         action="roster.student.verified",
         result="success",
         actor_id=current_user.id,
-        details={"student_id": student_id, "verified_by": verified_by},
+        details={"student_id": student_id, "verified_by": verified_by, "department_id": authoritative_department.id},
     )
     db.commit()
 

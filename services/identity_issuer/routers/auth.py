@@ -6,8 +6,6 @@ Handles Argon2id authentication, TOTP MFA validation, and session lifecycle.
 import uuid
 import hashlib
 import secrets
-import time
-from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.exc import IntegrityError
@@ -25,6 +23,7 @@ from ..models import (
     User,
     Session as UserSession,
     RecoveryRequest,
+    AccountActivation,
     MfaCredential,
     RoleAssignment,
     RoleDefinition,
@@ -37,6 +36,7 @@ from ..schemas import (
     InvitationRedeemResponse,
     RecoveryRequest as RecoveryReqSchema,
     RecoveryResetRequest,
+    AccountActivationRequest,
     MfaSetupResponse,
     MfaVerifyRequest,
     SessionProfile,
@@ -48,29 +48,44 @@ from .deps import get_current_user, get_user_roles, record_audit_event, INVITABL
 
 router = APIRouter(prefix="/v1/auth", tags=["auth"])
 
+from ..rate_limiter import rate_limiter
+
 _LOGIN_WINDOW_SECONDS = 300
 _LOGIN_MAX_FAILURES = 5
-_login_failures: dict[str, deque[float]] = defaultdict(deque)
 
 
-def _login_key(request: Request, email: str) -> str:
+def _login_keys(request: Request, email: str) -> tuple[str, str]:
     remote = request.client.host if request.client else "unknown"
-    return hashlib.sha256(f"{email.strip().lower()}:{remote}".encode("utf-8")).hexdigest()
+    return (
+        rate_limiter.key("login_account", email),
+        rate_limiter.key("login_source", f"{email.strip().lower()}:{remote}"),
+    )
 
 
-def _enforce_login_limit(request: Request, email: str) -> str:
-    key = _login_key(request, email)
-    now = time.monotonic()
-    attempts = _login_failures[key]
-    while attempts and now - attempts[0] > _LOGIN_WINDOW_SECONDS:
-        attempts.popleft()
-    if len(attempts) >= _LOGIN_MAX_FAILURES:
-        raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many sign in attempts; try again later")
-    return key
+def _enforce_login_limit(request: Request, email: str) -> tuple[str, str]:
+    keys = _login_keys(request, email)
+    rate_limiter.enforce(
+        keys[0],
+        limit=10,
+        window_seconds=_LOGIN_WINDOW_SECONDS,
+        detail="Too many sign in attempts; try again later",
+    )
+    rate_limiter.enforce(
+        keys[1],
+        limit=_LOGIN_MAX_FAILURES,
+        window_seconds=_LOGIN_WINDOW_SECONDS,
+        detail="Too many sign in attempts; try again later",
+    )
+    return keys
 
 
 def _record_login_failure(key: str) -> None:
-    _login_failures[key].append(time.monotonic())
+    return None
+
+
+def _clear_login_failure(keys: tuple[str, str]) -> None:
+    for key in keys:
+        rate_limiter.clear(key)
 
 
 @router.post(
@@ -80,6 +95,7 @@ def _record_login_failure(key: str) -> None:
 )
 def redeem_invitation(
     req: InvitationRedeemRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Redeem a single-use staff invitation and provision its scoped role.
@@ -88,6 +104,12 @@ def redeem_invitation(
     account is activated with a freshly generated TOTP credential so a
     privileged invite cannot be redeemed into a password-only account.
     """
+    rate_limiter.enforce(
+        rate_limiter.key("redeem_invitation", req.invitation_token),
+        limit=10,
+        window_seconds=300,
+        detail="Too many invitation redemption attempts; try again later",
+    )
     if APP_ENV == "production":
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -277,7 +299,7 @@ def login(
 
     # Generate session token
     session_token = str(uuid.uuid4())
-    _login_failures.pop(login_key, None)
+    _clear_login_failure(login_key)
     token_hash = hashlib.sha256(session_token.encode("utf-8")).hexdigest()
     now = datetime.now(timezone.utc)
     expires_at = now + timedelta(hours=SESSION_EXPIRE_HOURS)
@@ -392,9 +414,17 @@ def logout(
 @router.post("/recover", status_code=status.HTTP_202_ACCEPTED)
 def recover_account(
     req: RecoveryReqSchema,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Initiate account recovery via single use short lived token."""
+    remote = request.client.host if request.client else "unknown"
+    rate_limiter.enforce(
+        rate_limiter.key("recover", f"{req.email.lower()}:{remote}"),
+        limit=5,
+        window_seconds=300,
+        detail="Too many password recovery requests; try again later",
+    )
     if APP_ENV == "production":
         # A token must travel through an independently controlled notification
         # channel. This service does not silently fall back to returning it or
@@ -448,9 +478,16 @@ def recover_account(
 @router.post("/reset", status_code=status.HTTP_200_OK)
 def reset_password(
     req: RecoveryResetRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Redeem one short lived recovery token and revoke all user sessions."""
+    rate_limiter.enforce(
+        rate_limiter.key("reset", req.token[:16] if req.token else "token"),
+        limit=5,
+        window_seconds=300,
+        detail="Too many password reset requests; try again later",
+    )
     token_hash = hashlib.sha256(req.token.encode("utf-8")).hexdigest()
     recovery = db.query(RecoveryRequest).filter(
         RecoveryRequest.token_hash == token_hash,
@@ -504,6 +541,57 @@ def reset_password(
     return {"status": "password_reset", "sessions_revoked": True}
 
 
+@router.post("/activate", status_code=status.HTTP_200_OK)
+def activate_account(
+    req: AccountActivationRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Set a pending account password with a single-use activation token."""
+    rate_limiter.enforce(
+        rate_limiter.key("activation", req.activation_token),
+        limit=5,
+        window_seconds=300,
+        detail="Too many activation attempts; try again later",
+    )
+    token_hash = hashlib.sha256(req.activation_token.encode("utf-8")).hexdigest()
+    activation = db.query(AccountActivation).filter(
+        AccountActivation.token_hash == token_hash,
+        AccountActivation.status == "PENDING",
+    ).first()
+    if not activation:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Activation token is invalid or has already been used")
+
+    now = datetime.now(timezone.utc)
+    expires_at = activation.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at <= now:
+        activation.status = "EXPIRED"
+        db.commit()
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Activation token is invalid or expired")
+
+    user = db.query(User).filter(User.id == activation.user_id).first()
+    if not user or user.status in {"DEACTIVATED", "ARCHIVED"}:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Account cannot be activated")
+
+    password_hash, password_params = hash_password(req.password)
+    user.password_hash = password_hash
+    user.password_algorithm = password_params["algorithm"]
+    user.password_params = password_params
+    user.updated_at = now
+    activation.status = "CONSUMED"
+    activation.consumed_at = now
+    record_audit_event(
+        db=db,
+        action="auth.account_activation.completed",
+        result="success",
+        actor_id=user.id,
+    )
+    db.commit()
+    return {"status": "password_set", "login_enabled": user.status == "ACTIVE"}
+
+
 @router.post("/mfa/setup", response_model=MfaSetupResponse, status_code=status.HTTP_200_OK)
 def mfa_setup(
     current_user: User = Depends(get_current_user),
@@ -521,10 +609,17 @@ def mfa_setup(
 def mfa_verify(
     req: MfaVerifyRequest,
     secret: str,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Confirm TOTP token and activate MFA enrollment for user."""
+    rate_limiter.enforce(
+        rate_limiter.key("mfa_verify", current_user.id),
+        limit=5,
+        window_seconds=300,
+        detail="Too many MFA attempts; try again later",
+    )
     if not verify_totp(secret, req.token):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

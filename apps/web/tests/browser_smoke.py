@@ -67,18 +67,9 @@ def run_smoke() -> None:
         goto_ready(page, "/")
         Path(SCREENSHOT_PATH).parent.mkdir(parents=True, exist_ok=True)
         page.screenshot(path=SCREENSHOT_PATH, full_page=True)
-        assert page.get_by_text("Educational prototype.", exact=True).is_visible()
-        assert page.get_by_role(
-            "heading", name="Institutional voting, made verifiable.", exact=False
-        ).is_visible()
-        assert page.get_by_text("Voter Inclusion Check").is_visible()
-        assert page.get_by_role("heading", name="Institutional Elections").is_visible()
-        assert page.get_by_role(
-            "heading", name="See how a record moves toward review"
-        ).is_visible()
-        assert page.get_by_text("Evidence observatory").is_visible()
-        assert page.get_by_test_id("ballot-box-hero").is_visible()
-        assert page.get_by_text("Decorative only.").is_visible()
+        assert page.get_by_role("heading", name="Na darr kisi ka", exact=False).is_visible()
+        assert page.get_by_role("heading", name="Current Student Elections").is_visible()
+        assert page.get_by_text("Live turnout is not exposed here").is_visible()
         # Production public navigation contains no client-side role chooser.
         # Privileged navigation is rendered only after the server-authoritative
         # identity session is confirmed.
@@ -100,12 +91,15 @@ def run_smoke() -> None:
 
         # Mobile navigation remains reachable without leaving the already compiled route.
         page.set_viewport_size({"width": 390, "height": 844})
-        page.locator("button.sv-public-menu").click()
-        page.locator("nav.sv-public-nav.is-open").wait_for(state="visible")
-        assert page.get_by_role("link", name="Security limits", exact=True).is_visible()
-        assert page.get_by_role("link", name="Sign in", exact=True).is_visible()
+        page.get_by_role("button", name="Open navigation menu").click()
+        page.locator(".apple-mobile-menu").wait_for(state="visible")
+        assert page.get_by_role("link", name="Security Limits", exact=True).is_visible()
+        assert page.get_by_role("link", name="Sign In", exact=True).is_visible()
+        assert page.locator("a[href='/admin']").count() == 0
+        assert page.locator("a[href='/teacher']").count() == 0
+        assert page.locator("a[href='/auditor']").count() == 0
         assert_no_horizontal_overflow(page)
-        page.locator("button.sv-public-menu").click()
+        page.get_by_role("button", name="Close navigation menu").click()
         page.set_viewport_size({"width": 1440, "height": 900})
 
         goto_ready(page, "/how-it-works")
@@ -121,20 +115,21 @@ def run_smoke() -> None:
         # Protected voting routes stay behind the identity gate. A guest must
         # be redirected before receiving fixture ballots, election records,
         # or a cast form.
-        goto_ready(page, "/student/elections/elec_su_2026/cast")
-        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
+        protected_response = page.goto(f"{BASE_URL}/student/elections/elec_su_2026/cast", wait_until="domcontentloaded", timeout=60_000)
+        assert protected_response is not None and protected_response.status == 503
+        assert page.get_by_text("IDENTITY_SERVICE_UNAVAILABLE").is_visible()
 
         # Inclusion is also protected; the receipt handle must never be
         # resolved for an unauthenticated browser session.
-        goto_ready(page, "/student/receipts/HV_24F8_19C2/inclusion")
-        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
+        protected_response = page.goto(f"{BASE_URL}/student/receipts/HV_24F8_19C2/inclusion", wait_until="domcontentloaded", timeout=60_000)
+        assert protected_response is not None and protected_response.status == 503
 
         # Officer operational views also fail closed instead of rendering
         # local election fixtures when the identity service is absent.
-        goto_ready(page, "/officer")
-        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
-        goto_ready(page, "/officer/elections")
-        page.get_by_role("heading", name="Sign in to HimVote").wait_for(state="visible")
+        protected_response = page.goto(f"{BASE_URL}/officer", wait_until="domcontentloaded", timeout=60_000)
+        assert protected_response is not None and protected_response.status == 503
+        protected_response = page.goto(f"{BASE_URL}/officer/elections", wait_until="domcontentloaded", timeout=60_000)
+        assert protected_response is not None and protected_response.status == 503
 
         browser.close()
 

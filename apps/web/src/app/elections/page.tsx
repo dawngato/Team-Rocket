@@ -6,49 +6,6 @@ import { ArrowRight, Search, Vote, Clock, CheckCircle2, ShieldCheck, Activity, U
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election, ElectionState } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
-
-const DEMO_FALLBACK_ELECTIONS: Election[] = [
-  {
-    id: "demo_union_2026",
-    title: "Student Union Council 2026",
-    state: "OPEN",
-    contest: "Council Executive Board",
-    selection_rule: "Choose one president & executive slate",
-    opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-    closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-    manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-    issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-    eligible_count: 4800,
-    candidates: DEFAULT_CANDIDATES.filter((c) => c.election_id === "demo_union_2026"),
-  },
-  {
-    id: "demo_design_2026",
-    title: "School of Design Representatives",
-    state: "OPEN",
-    contest: "School of Design Cohort",
-    selection_rule: "Select one departmental delegate",
-    opens_at_utc: new Date(Date.now() - 3600000 * 12).toISOString(),
-    closes_at_utc: new Date(Date.now() + 3600000 * 72).toISOString(),
-    manifest_digest: "sha256:7b4e91c2a8f0d365e1029384756cba9182736450f1e2d3c4b5a6978102f9e8d7",
-    issuance_cutoff_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-    eligible_count: 1250,
-    candidates: DEFAULT_CANDIDATES.filter((c) => c.election_id === "demo_design_2026"),
-  },
-  {
-    id: "demo_eng_2026",
-    title: "Engineering Faculty Council",
-    state: "PUBLISHED",
-    contest: "Engineering Faculty Delegation",
-    selection_rule: "Faculty representative vote",
-    opens_at_utc: new Date(Date.now() - 3600000 * 96).toISOString(),
-    closes_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-    manifest_digest: "sha256:4c1e82a9d701f53b829471625340ebca9182736450f1e2d3c4b5a6978102f9e8",
-    issuance_cutoff_utc: new Date(Date.now() - 3600000 * 36).toISOString(),
-    eligible_count: 3200,
-    candidates: DEFAULT_CANDIDATES.filter((c) => c.election_id === "demo_union_2026").slice(0, 3),
-  },
-];
 
 function formatUtc(value: string): string {
   const parsed = new Date(value);
@@ -103,29 +60,25 @@ export default function ElectionsListPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     void electionClient.getElections().then((nextElections) => {
       if (!cancelled) {
-        if (nextElections && nextElections.length > 0) {
-          setElections(nextElections);
-        } else {
-          setElections(DEMO_FALLBACK_ELECTIONS);
-        }
+        setElections(nextElections);
         setError(null);
       }
     }).catch(() => {
       if (!cancelled) {
-        // Graceful presentation fallback
-        setElections(DEMO_FALLBACK_ELECTIONS);
-        setError(null);
+        setElections([]);
+        setError("The authoritative election directory could not be reached.");
       }
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [retryNonce]);
 
   const stats = useMemo(() => {
     const total = elections.length;
@@ -144,8 +97,6 @@ export default function ElectionsListPage() {
     { label: "All Directory", value: "ALL" },
     { label: "Active Voting", value: "OPEN" },
     { label: "Published Results", value: "PUBLISHED" },
-    { label: "Frozen Manifest", value: "FROZEN" },
-    { label: "Draft Stage", value: "DRAFT" },
   ];
 
   return (
@@ -199,6 +150,7 @@ export default function ElectionsListPage() {
           <div>
             <p className="font-bold">Service Directory Unavailable</p>
             <p className="mt-1">{error}</p>
+            <button type="button" onClick={() => { setLoading(true); setRetryNonce((value) => value + 1); }} className="mt-4 min-h-11 rounded-lg bg-[#157E92] px-4 py-2 text-xs font-bold text-white hover:bg-[#0E6273]">Retry</button>
           </div>
         </div>
       )}

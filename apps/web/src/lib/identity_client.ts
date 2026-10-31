@@ -43,6 +43,13 @@ export interface SessionProfile {
 export interface RegistrationResponse {
   status: string;
   student_id?: string;
+  activation_delivery?: "pending" | "development";
+  development_activation_token?: string;
+}
+
+export interface AccountActivationResponse {
+  status: string;
+  login_enabled: boolean;
 }
 
 export class IdentityApiError extends Error {
@@ -181,7 +188,13 @@ function isSessionProfile(value: unknown): value is SessionProfile {
 }
 
 function isRegistrationResponse(value: unknown): value is RegistrationResponse {
-  return isRecord(value) && typeof value.status === "string";
+  return isRecord(value) && typeof value.status === "string" &&
+    (value.activation_delivery === undefined || value.activation_delivery === "pending" || value.activation_delivery === "development") &&
+    (value.development_activation_token === undefined || isBase64Url(value.development_activation_token));
+}
+
+function isAccountActivationResponse(value: unknown): value is AccountActivationResponse {
+  return isRecord(value) && typeof value.status === "string" && typeof value.login_enabled === "boolean";
 }
 
 function isRecoveryResponse(value: unknown): value is { status: string } {
@@ -299,6 +312,10 @@ export function createIdentityClient(options: IdentityClientOptions = {}) {
 
     async registerStudent(input: { student_id: string; email: string; full_name: string }): Promise<RegistrationResponse> {
       return request("/v1/students/register", { method: "POST", body: JSON.stringify(input) }, isRegistrationResponse, "The identity service returned an invalid registration response.");
+    },
+
+    async activateStudent(activationToken: string, password: string): Promise<AccountActivationResponse> {
+      return request("/v1/auth/activate", { method: "POST", body: JSON.stringify({ activation_token: activationToken, password }) }, isAccountActivationResponse, "The identity service returned an invalid activation response.");
     },
 
     async requestRecovery(email: string): Promise<{ status: string }> {

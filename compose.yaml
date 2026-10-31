@@ -39,6 +39,7 @@ services:
       - NEXT_PUBLIC_API_BASE=http://localhost:8080
       - NEXT_PUBLIC_IDENTITY_BASE=http://localhost:8080
       - NEXT_PUBLIC_CASTING_BASE=http://localhost:8080
+      - IDENTITY_SERVICE_URL=http://identity_issuer:8081
     depends_on:
       - identity_issuer
       - casting
@@ -84,8 +85,11 @@ services:
       - LOG_LEVEL=info
       - LOG_REDACTION_ENABLED=true
       - BOOTSTRAP_ALLOWED=${BOOTSTRAP_ALLOWED:-true}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-himvote_dev_redis_pw}@redis:6379/0
     depends_on:
       identity_db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     networks:
       - himvote_identity_net

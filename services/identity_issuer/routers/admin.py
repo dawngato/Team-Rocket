@@ -5,9 +5,10 @@ Enforces separation of duties: creators can never approve their own requests.
 
 import uuid
 import hashlib
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from ..database import get_db
 from ..config import APP_ENV, INVITATION_DELIVERY_MODE, INVITATION_EXPIRE_DAYS
@@ -31,6 +32,7 @@ from ..schemas import (
     CreateTeacherRequest,
 )
 from ..crypto.hashing import hash_password
+from ..rate_limiter import rate_limiter
 from .deps import (
     get_current_user,
     get_user_roles,
@@ -140,12 +142,19 @@ def list_teachers(
 @router.post("/admin/teachers", response_model=TeacherDirectoryRecord, status_code=status.HTTP_201_CREATED)
 def provision_teacher(
     req: CreateTeacherRequest,
+    request: Request,
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
     """
     Provision a persistent teacher identity and assign the teacher role within the specified department scope.
     """
+    rate_limiter.enforce(
+        rate_limiter.key("teacher_provision", str(req.email)),
+        limit=5,
+        window_seconds=3600,
+        detail="Too many teacher provisioning attempts; try again later",
+    )
     existing = db.query(User).filter(User.email == str(req.email).lower()).first()
     if existing:
         raise HTTPException(
@@ -153,12 +162,39 @@ def provision_teacher(
             detail="A user with this email address already exists",
         )
 
-    pwd_hash, _ = hash_password(req.initial_password or "TeacherSecurePass123!")
+    if req.initial_password is not None:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Teacher passwords must be set through a single use invitation",
+        )
+    if APP_ENV == "production" and INVITATION_DELIVERY_MODE != "configured":
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Teacher invitation delivery is not configured",
+        )
+
+    invitation_token = secrets.token_urlsafe(32)
+    invitation_hash = hashlib.sha256(invitation_token.encode("utf-8")).hexdigest()
+    invitation = Invitation(
+        email=str(req.email).lower(),
+        role="teacher",
+        scope=req.department.strip(),
+        token_hash=invitation_hash,
+        invited_by=current_user.id,
+        status="PENDING",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=INVITATION_EXPIRE_DAYS),
+    )
+    db.add(invitation)
+
+    pwd_hash, pwd_params = hash_password(secrets.token_urlsafe(32))
     teacher_user = User(
         email=str(req.email).lower(),
         password_hash=pwd_hash,
+        password_algorithm=pwd_params["algorithm"],
+        password_params=pwd_params,
         external_id=req.faculty_id.strip(),
-        status="ACTIVE",
+        status="INVITED",
+        mfa_enrolled=False,
     )
     db.add(teacher_user)
     db.flush()
@@ -197,12 +233,14 @@ def provision_teacher(
         status=teacher_user.status,
         role="teacher",
         scope=req.department.strip(),
+        invitation_id=invitation.id,
     )
 
 
 @router.post("/admin/invitations", status_code=status.HTTP_201_CREATED)
 def create_admin_invitation(
     req: AdminInvitationRequest,
+    request: Request,
     current_user: User = Depends(require_roles(["super_admin", "administrator"])),
     db: Session = Depends(get_db),
 ):
@@ -210,6 +248,12 @@ def create_admin_invitation(
     Create an administrator invitation.
     Requires Super Administrator or Administrator role.
     """
+    rate_limiter.enforce(
+        rate_limiter.key("admin_invitation", str(req.email)),
+        limit=5,
+        window_seconds=3600,
+        detail="Too many invitation attempts; try again later",
+    )
     roles = get_user_roles(current_user, db)
     requested_role = req.role.strip().lower()
     requested_scope = req.scope.strip()

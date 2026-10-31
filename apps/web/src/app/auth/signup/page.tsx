@@ -10,6 +10,7 @@ export default function StudentSignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [activationToken, setActivationToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -18,7 +19,8 @@ export default function StudentSignupPage() {
     setLoading(true);
     setError(null);
     try {
-      await identityClient.registerStudent({ student_id: studentId, full_name: fullName, email });
+      const response = await identityClient.registerStudent({ student_id: studentId, full_name: fullName, email });
+      setActivationToken(response.development_activation_token || null);
       setSubmitted(true);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Registration could not be submitted.");
@@ -48,8 +50,13 @@ export default function StudentSignupPage() {
             Registration Submitted
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-            A verification link and one time passcode have been dispatched to <strong>{email}</strong>. Department verification officers will match your enrollment record against the university registrar database.
+            Your registration is pending institutional enrollment review. We only report an email delivery when a configured notification service accepts it; this registration has not been marked as delivered. A roster officer must approve the authoritative enrollment record before sign in is enabled.
           </p>
+          {activationToken && (
+            <div className="rounded-lg border border-[#AA6C0B]/30 bg-[#AA6C0B]/10 p-3 text-left text-xs text-[#6B4707] dark:text-[#FBBF24]">
+              Development activation token: <code className="break-all">{activationToken}</code>
+            </div>
+          )}
           <div className="pt-2">
             <Link
               href="/auth/verify"

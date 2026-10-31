@@ -51,6 +51,8 @@ RECOVERY_DELIVERY_MODE = os.getenv("RECOVERY_DELIVERY_MODE", "development").stri
 # caller. Production requires a separately operated notification adapter.
 INVITATION_DELIVERY_MODE = os.getenv("INVITATION_DELIVERY_MODE", "development").strip().lower()
 INVITATION_EXPIRE_DAYS = int(os.getenv("INVITATION_EXPIRE_DAYS", "7"))
+ACTIVATION_DELIVERY_MODE = os.getenv("ACTIVATION_DELIVERY_MODE", "development").strip().lower()
+ACTIVATION_EXPIRE_HOURS = int(os.getenv("ACTIVATION_EXPIRE_HOURS", "24"))
 
 # Cryptography and Key Management
 ISSUER_KEY_ID = os.getenv("ISSUER_KEY_ID", "himvote_rsa_issuer_key_v1")
@@ -58,6 +60,7 @@ ISSUER_PRIVATE_KEY_PEM = os.getenv("ISSUER_PRIVATE_KEY_PEM", "")
 if APP_ENV == "production" and not ISSUER_PRIVATE_KEY_PEM.strip():
     raise RuntimeError("ISSUER_PRIVATE_KEY_PEM must be provided by the production key custody system")
 MFA_ISSUER = os.getenv("MFA_ISSUER", "HimVote")
+REDIS_URL = os.getenv("REDIS_URL", "").strip() or None
 
 # Argon2id parameters
 ARGON2_TIME_COST = int(os.getenv("ARGON2_TIME_COST", "3"))

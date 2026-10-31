@@ -10,7 +10,7 @@
   },
   "engine_version": "electionguard_1.0.0",
   "expected_result": "ISSUANCE_PROTOCOL_CONCURRENCY_AND_CRASH_RECOVERY_PASS",
-  "manifest_digest": "sha256:018e7181bf9ed6b32cbb26430b78205fb7b6a4835db4f6f6abd33aa3c2aa12ae",
+  "manifest_digest": "sha256:37ce2346638c9aea0407738ef22a561db4dd972410cd4e1afd25f441e5a5019c",
   "notes": "",
   "passed": true,
   "postconditions": [
@@ -22,5 +22,5 @@
   ],
   "seed": 80101,
   "test_id": "protocol_issuance_concurrency_and_crash_recovery",
-  "verifier_sha256": "sha256:c97aae72e0fcdeaba5d1b82013e1bee3771bbbf4fb6190db00fa9113192127c2"
+  "verifier_sha256": "sha256:16a1b4ead1552b4a39b36230f7c345c4148ccf6e33ea507da1bed84ab2ebe362"
 }

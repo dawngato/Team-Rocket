@@ -5,7 +5,6 @@ import Link from "next/link";
 import { StateBadge } from "@/components/StateBadge";
 import { electionClient } from "@/lib/election_client";
 import type { Election } from "@/lib/types";
-import { DEFAULT_CANDIDATES, getStoredCandidates } from "@/lib/candidate_store";
 import { ArrowRight, Users, Vote } from "lucide-react";
 
 export default function StudentElectionsPage() {
@@ -24,36 +23,8 @@ export default function StudentElectionsPage() {
       })
       .catch(() => {
         if (!cancelled) {
-          const stored = typeof window !== "undefined" ? getStoredCandidates() : [];
-          setElections([
-            {
-              id: "demo_union_2026",
-              title: "Student Union Council 2026",
-              state: "OPEN",
-              contest: "Council Executive Board",
-              selection_rule: "Choose one president & executive slate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 24).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              manifest_digest: "sha256:9f8a3c20e184b291d84f2c019d84e2a1b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 24).toISOString(),
-              eligible_count: 4800,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_union_2026"),
-            },
-            {
-              id: "demo_design_2026",
-              title: "School of Design Representatives",
-              state: "OPEN",
-              contest: "School of Design Cohort",
-              selection_rule: "Select one departmental delegate",
-              opens_at_utc: new Date(Date.now() - 3600000 * 12).toISOString(),
-              closes_at_utc: new Date(Date.now() + 3600000 * 72).toISOString(),
-              manifest_digest: "sha256:7b4e91c2a8f0d365e1029384756cba9182736450f1e2d3c4b5a6978102f9e8d7",
-              issuance_cutoff_utc: new Date(Date.now() + 3600000 * 48).toISOString(),
-              eligible_count: 1250,
-              candidates: (stored.length > 0 ? stored : DEFAULT_CANDIDATES).filter((c) => c.election_id === "demo_design_2026"),
-            },
-          ]);
-          setError(null);
+          setElections([]);
+          setError("The authoritative election service could not be reached. Voting is unavailable until it recovers.");
         }
       })
       .finally(() => {
