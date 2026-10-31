@@ -19,15 +19,15 @@ describe("server granted workspace navigation", () => {
 
   it("keeps student navigation separate from staff workspaces", () => {
     const labels = labelsFor(["student"]);
-    expect(labels).toEqual(expect.arrayContaining(["Overview", "My elections", "My eligibility", "Receipts", "Published results", "Student help", "Account settings"]));
-    expect(labels).not.toEqual(expect.arrayContaining(["My classes", "Election builder", "Audit logs", "Trusted keys"]));
+    expect(labels).toEqual(expect.arrayContaining(["Overview", "My elections", "Voting eligibility", "Receipts", "Published results", "Student help", "Account settings"]));
+    expect(labels).not.toEqual(expect.arrayContaining(["My classes", "Election builder", "Audit logs", "Trusted verification keys"]));
     expect(canAccessWorkspaceRoute("/student/elections", ["student"])).toBe(true);
     expect(canAccessWorkspaceRoute("/teacher/classes", ["student"])).toBe(false);
   });
 
   it("unions explicitly granted capabilities without making roles hierarchical", () => {
     const labels = labelsFor(["teacher", "auditor"]);
-    expect(labels).toEqual(expect.arrayContaining(["My classes", "Student verification", "Evidence", "Trusted keys", "Verify results"]));
+    expect(labels).toEqual(expect.arrayContaining(["My classes", "Student verification", "Election evidence archive", "Trusted verification keys", "Verify results"]));
     expect(labels).not.toContain("Election builder");
     expect(canAccessWorkspaceRoute("/teacher", ["teacher", "auditor"])).toBe(true);
     expect(canAccessWorkspaceRoute("/officer", ["teacher", "auditor"])).toBe(false);
