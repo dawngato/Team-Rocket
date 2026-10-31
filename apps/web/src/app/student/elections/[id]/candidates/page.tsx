@@ -23,10 +23,10 @@ export default function CandidateReviewPage() {
         setElection(nextElection);
         setError(null);
       }
-    }).catch((cause) => {
+    }).catch((err: unknown) => {
       if (!cancelled) {
         setElection(null);
-        setError(cause instanceof Error ? cause.message : "The authoritative election manifest could not be loaded.");
+        setError(err instanceof Error ? err.message : "The authoritative candidate manifest could not be retrieved from the server.");
       }
     }).finally(() => {
       if (!cancelled) setLoading(false);
